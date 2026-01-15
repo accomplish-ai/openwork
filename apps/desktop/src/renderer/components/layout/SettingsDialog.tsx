@@ -25,12 +25,11 @@ const API_KEY_PROVIDERS = [
   { id: 'anthropic', name: 'Anthropic', prefix: 'sk-ant-', placeholder: 'sk-ant-...' },
   { id: 'openai', name: 'OpenAI', prefix: 'sk-', placeholder: 'sk-...' },
   { id: 'google', name: 'Google AI', prefix: 'AIza', placeholder: 'AIza...' },
+  { id: 'xai', name: 'xAI (Grok)', prefix: 'xai-', placeholder: 'xai-...' },
 ] as const;
 
 // Coming soon providers (displayed but not selectable)
-const COMING_SOON_PROVIDERS = [
-  { id: 'groq', name: 'Groq' },
-] as const;
+const COMING_SOON_PROVIDERS = [] as const;
 
 type ProviderId = typeof API_KEY_PROVIDERS[number]['id'];
 

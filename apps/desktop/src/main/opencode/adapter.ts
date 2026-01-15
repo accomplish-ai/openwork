@@ -373,9 +373,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       env.GOOGLE_GENERATIVE_AI_API_KEY = apiKeys.google;
       console.log('[OpenCode CLI] Using Google API key from settings');
     }
-    if (apiKeys.groq) {
-      env.GROQ_API_KEY = apiKeys.groq;
-      console.log('[OpenCode CLI] Using Groq API key from settings');
+    if (apiKeys.xai) {
+      env.XAI_API_KEY = apiKeys.xai;
+      console.log('[OpenCode CLI] Using xAI API key from settings');
     }
 
     // Log config environment variable
