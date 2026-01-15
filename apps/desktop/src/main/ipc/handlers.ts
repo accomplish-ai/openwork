@@ -68,25 +68,6 @@ const MAX_TEXT_LENGTH = 8000;
 const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'google', 'groq', 'custom']);
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
-/**
- * Fetch with timeout using AbortController
- */
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
 // Message batching configuration
 const MESSAGE_BATCH_DELAY_MS = 50;
 
