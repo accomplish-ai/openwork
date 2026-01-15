@@ -159,7 +159,7 @@ vi.mock('@main/store/secureStorage', () => ({
       anthropic: mockApiKeys['anthropic'] || null,
       openai: mockApiKeys['openai'] || null,
       google: mockApiKeys['google'] || null,
-      groq: mockApiKeys['groq'] || null,
+      xai: mockApiKeys['xai'] || null,
       custom: mockApiKeys['custom'] || null,
     })
   ),
@@ -1018,7 +1018,7 @@ describe('IPC Handlers Integration', () => {
         anthropic: 'sk-ant-12345678',
         openai: null,
         google: 'AIza1234567890',
-        groq: null,
+        xai: null,
         custom: null,
       };
 
