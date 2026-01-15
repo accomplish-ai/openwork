@@ -9,6 +9,8 @@
     "postinstall": "electron-rebuild && npm --prefix skills/dev-browser install && npm --prefix skills/file-permission install",
     "dev": "node scripts/patch-electron-name.cjs && rm -rf dist-electron && vite",
     "dev:clean": "CLEAN_START=1 vite",
+    "dev:agent2": "AGENT_ID=2 pnpm dev",
+    "dev:agent3": "AGENT_ID=3 pnpm dev",
     "build": "tsc && vite build && npm --prefix skills/dev-browser install --omit=dev && npm --prefix skills/file-permission install --omit=dev",
     "build:electron": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
