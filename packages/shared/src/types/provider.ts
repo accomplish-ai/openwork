@@ -71,18 +71,10 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     apiKeyEnvVar: 'OPENAI_API_KEY',
     models: [
       {
-        id: 'gpt-5.2-pro',
-        displayName: 'GPT 5.2 Pro',
+        id: 'gpt-5-codex',
+        displayName: 'GPT 5 Codex',
         provider: 'openai',
-        fullId: 'openai/gpt-5.2-pro',
-        contextWindow: 1000000,
-        supportsVision: true,
-      },
-      {
-        id: 'gpt-5.1-codex-max',
-        displayName: 'GPT 5.1 Codex Max',
-        provider: 'openai',
-        fullId: 'openai/gpt-5.1-codex-max',
+        fullId: 'openai/gpt-5-codex',
         contextWindow: 1000000,
         supportsVision: true,
       },
