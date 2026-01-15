@@ -11,6 +11,7 @@ import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import type { WSContext } from "hono/ws";
 
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -231,13 +232,8 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
     // Handle some CDP commands locally
     switch (method) {
       case "Browser.getVersion":
-        return {
-          protocolVersion: "1.3",
-          product: "Chrome/Extension-Bridge",
-          revision: "1.0.0",
-          userAgent: "dev-browser-relay/1.0.0",
-          jsVersion: "V8",
-        };
+        // Forward to Chrome - it will return actual browser version
+        break;
 
       case "Browser.setDownloadBehavior":
         return {};

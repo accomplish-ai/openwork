@@ -10,7 +10,8 @@
     "start-extension": "npx tsx scripts/start-relay.ts",
     "dev": "npx tsx --watch src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "update-user-agent": "node scripts/update-user-agent.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",
@@ -18,6 +19,8 @@
     "express": "^4.21.0",
     "hono": "^4.11.1",
     "playwright": "^1.49.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   },

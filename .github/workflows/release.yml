@@ -41,6 +41,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Update browser user agent to latest
+        run: pnpm -F dev-browser update-user-agent
+
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
 

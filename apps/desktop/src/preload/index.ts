@@ -97,6 +97,12 @@ const accomplishAPI = {
   hasAnyApiKey: (): Promise<boolean> =>
     ipcRenderer.invoke('api-keys:has-any'),
 
+  // Browser operations
+  clearBrowserProfile: (): Promise<void> =>
+    ipcRenderer.invoke('browser:clear-profile'),
+  importCookies: (): Promise<void> =>
+    ipcRenderer.invoke('browser:import-cookies'),
+
   // Event subscriptions
   onTaskUpdate: (callback: (event: unknown) => void) => {
     const listener = (_: unknown, event: unknown) => callback(event);

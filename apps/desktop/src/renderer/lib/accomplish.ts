@@ -61,6 +61,10 @@ interface AccomplishAPI {
   getAllApiKeys(): Promise<Record<string, { exists: boolean; prefix?: string }>>;
   hasAnyApiKey(): Promise<boolean>;
 
+  // Browser operations
+  clearBrowserProfile(): Promise<void>;
+  importCookies(): Promise<void>;
+
   // Onboarding
   getOnboardingComplete(): Promise<boolean>;
   setOnboardingComplete(complete: boolean): Promise<void>;
