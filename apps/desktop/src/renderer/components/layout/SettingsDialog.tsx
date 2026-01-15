@@ -28,7 +28,6 @@ const API_KEY_PROVIDERS = [
   { id: 'xai', name: 'xAI (Grok)', prefix: 'xai-', placeholder: 'xai-...' },
 ] as const;
 
-
 type ProviderId = typeof API_KEY_PROVIDERS[number]['id'];
 
 export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
