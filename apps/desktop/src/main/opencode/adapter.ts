@@ -85,13 +85,18 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
    * Start a new task with OpenCode CLI
    */
   async startTask(config: TaskConfig): Promise<Task> {
+    console.log('[OpenCode Adapter] startTask called with config:', JSON.stringify(config, null, 2));
+
     // Check if adapter has been disposed
     if (this.isDisposed) {
+      console.error('[OpenCode Adapter] ERROR: Adapter has been disposed');
       throw new Error('Adapter has been disposed and cannot start new tasks');
     }
 
     // Check if OpenCode CLI is installed before attempting to start
+    console.log('[OpenCode Adapter] Checking if OpenCode CLI is installed...');
     const cliInstalled = await isOpenCodeCliInstalled();
+    console.log('[OpenCode Adapter] CLI installed:', cliInstalled);
     if (!cliInstalled) {
       throw new OpenCodeCliNotFoundError();
     }
@@ -119,6 +124,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     // Build environment with API keys
     const env = await this.buildEnvironment();
+    console.log('[OpenCode CLI] Environment built, GOOGLE_API_KEY set:', !!env.GOOGLE_GENERATIVE_AI_API_KEY);
+    console.log('[OpenCode CLI] NODE_BIN_PATH:', env.NODE_BIN_PATH || 'not set');
 
     const allArgs = [...baseArgs, ...cliArgs];
     const cmdMsg = `Command: ${command}`;
@@ -168,13 +175,19 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI]', shellMsg);
       this.emit('debug', { type: 'info', message: shellMsg });
 
-      this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
-        name: 'xterm-256color',
-        cols: 200,
-        rows: 30,
-        cwd: safeCwd,
-        env: env as { [key: string]: string },
-      });
+      console.log('[OpenCode CLI] Spawning PTY...');
+      try {
+        this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
+          name: 'xterm-256color',
+          cols: 200,
+          rows: 30,
+          cwd: safeCwd,
+          env: env as { [key: string]: string },
+        });
+      } catch (ptyError) {
+        console.error('[OpenCode CLI] PTY spawn failed:', ptyError);
+        throw new Error(`Failed to spawn PTY: ${ptyError}`);
+      }
       const pidMsg = `PTY Process PID: ${this.ptyProcess.pid}`;
       console.log('[OpenCode CLI]', pidMsg);
       this.emit('debug', { type: 'info', message: pidMsg });
@@ -360,19 +373,32 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     // Load all API keys
     const apiKeys = await getAllApiKeys();
+    console.log('[OpenCode CLI] Loaded API keys:', {
+      anthropic: !!apiKeys.anthropic,
+      openai: !!apiKeys.openai,
+      google: !!apiKeys.google,
+      groq: !!apiKeys.groq,
+    });
 
     if (apiKeys.anthropic) {
       env.ANTHROPIC_API_KEY = apiKeys.anthropic;
       console.log('[OpenCode CLI] Using Anthropic API key from settings');
+    } else {
+      console.log('[OpenCode CLI] No Anthropic API key found');
     }
     if (apiKeys.openai) {
       env.OPENAI_API_KEY = apiKeys.openai;
       console.log('[OpenCode CLI] Using OpenAI API key from settings');
+    } else {
+      console.log('[OpenCode CLI] No OpenAI API key found');
     }
     if (apiKeys.google) {
       env.GOOGLE_GENERATIVE_AI_API_KEY = apiKeys.google;
       console.log('[OpenCode CLI] Using Google API key from settings');
+    } else {
+      console.log('[OpenCode CLI] No Google API key found');
     }
+<<<<<<< Updated upstream
     if (apiKeys.xai) {
       env.XAI_API_KEY = apiKeys.xai;
       console.log('[OpenCode CLI] Using xAI API key from settings');
@@ -383,6 +409,13 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (selectedModel?.provider === 'ollama' && selectedModel.baseUrl) {
       env.OLLAMA_HOST = selectedModel.baseUrl;
       console.log('[OpenCode CLI] Using Ollama host:', selectedModel.baseUrl);
+=======
+    if (apiKeys.groq) {
+      env.GROQ_API_KEY = apiKeys.groq;
+      console.log('[OpenCode CLI] Using Groq API key from settings');
+    } else {
+      console.log('[OpenCode CLI] No Groq API key found');
+>>>>>>> Stashed changes
     }
 
     // Log config environment variable

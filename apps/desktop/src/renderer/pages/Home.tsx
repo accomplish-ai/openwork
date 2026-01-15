@@ -85,7 +85,8 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const [checkingApiKey, setCheckingApiKey] = useState(false);
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, error } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
 
@@ -116,16 +117,24 @@ export default function HomePage() {
   }, [prompt, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (!prompt.trim() || isLoading || checkingApiKey) return;
 
     // Check if user has any API key (Anthropic, OpenAI, Google, etc.) before sending
-    const hasKey = await accomplish.hasAnyApiKey();
-    if (!hasKey) {
-      setShowSettingsDialog(true);
-      return;
+    setCheckingApiKey(true);
+    try {
+      const hasKey = await accomplish.hasAnyApiKey();
+      if (!hasKey) {
+        setShowSettingsDialog(true);
+        return;
+      }
+      await executeTask();
+    } catch (err) {
+      // Show error to user
+      console.error('Error checking API keys:', err);
+      alert(`Error: ${err instanceof Error ? err.message : 'Failed to check API keys'}`);
+    } finally {
+      setCheckingApiKey(false);
     }
-
-    await executeTask();
   };
 
   const handleSettingsDialogChange = (open: boolean) => {
@@ -174,13 +183,26 @@ export default function HomePage() {
         >
           <Card className="w-full bg-card/95 backdrop-blur-md shadow-xl gap-0 py-0 flex flex-col max-h-[calc(100vh-3rem)]">
             <CardContent className="p-6 pb-4 flex-shrink-0">
+              {/* Error Display */}
+              {error && (
+                <div className="mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+                  <div className="font-medium">Error:</div>
+                  <div>{error}</div>
+                </div>
+              )}
+
               {/* Input Section */}
               <TaskInputBar
                 value={prompt}
                 onChange={setPrompt}
                 onSubmit={handleSubmit}
+<<<<<<< Updated upstream
                 isLoading={isLoading}
                 placeholder={t('home.placeholder')}
+=======
+                isLoading={isLoading || checkingApiKey}
+                placeholder="Describe a task and let AI handle the rest"
+>>>>>>> Stashed changes
                 large={true}
                 autoFocus={true}
               />

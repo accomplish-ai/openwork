@@ -14,8 +14,10 @@
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
     "package": "pnpm build && node scripts/package.cjs --mac --publish never",
     "package:mac": "pnpm build && node scripts/package.cjs --mac --publish never",
+    "package:linux": "pnpm build && node scripts/package.cjs --linux --publish never",
     "release": "pnpm build && node scripts/package.cjs --mac --publish always",
     "release:mac": "pnpm build && node scripts/package.cjs --mac --publish always",
+    "release:linux": "pnpm build && node scripts/package.cjs --linux --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -171,6 +173,14 @@
           "path": "/Applications"
         }
       ]
+    },
+    "linux": {
+      "category": "public.app-category.productivity",
+      "icon": "resources/icon.png",
+      "target": ["AppImage"],
+      "executableName": "openwork",
+      "synopsis": "Openwork - Desktop AI Assistant",
+      "description": "Openwork is an AI-powered desktop automation assistant"
     }
   }
 }

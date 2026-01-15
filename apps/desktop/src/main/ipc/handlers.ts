@@ -58,7 +58,11 @@ import type {
   TaskResult,
   TaskStatus,
   SelectedModel,
+<<<<<<< Updated upstream
   OllamaConfig,
+=======
+  Task,
+>>>>>>> Stashed changes
 } from '@accomplish/shared';
 import { DEFAULT_PROVIDERS } from '@accomplish/shared';
 import {
@@ -409,7 +413,17 @@ export function registerIPCHandlers(): void {
     };
 
     // Start the task via TaskManager (creates isolated adapter or queues if busy)
-    const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
+    console.log('[IPC] Starting task via TaskManager...');
+    let task: Task;
+    try {
+      task = await taskManager.startTask(taskId, validatedConfig, callbacks);
+      console.log('[IPC] Task started successfully:', task.id);
+    } catch (error) {
+      console.error('[IPC] Failed to start task:', error);
+      // Update task status to failed
+      updateTaskStatus(taskId, 'failed', new Date().toISOString());
+      throw error;
+    }
 
     // Add initial user message with the prompt to the chat
     const initialUserMessage: TaskMessage = {
@@ -1015,11 +1029,17 @@ export function registerIPCHandlers(): void {
 
   // API Keys: Check if any key exists
   handle('api-keys:has-any', async (_event: IpcMainInvokeEvent) => {
+<<<<<<< Updated upstream
     // In E2E mock mode, pretend we have API keys
     if (isMockTaskEventsEnabled()) {
       return true;
     }
     return hasAnyApiKey();
+=======
+    const result = hasAnyApiKey();
+    console.log('[IPC] hasAnyApiKey called, result:', result);
+    return result;
+>>>>>>> Stashed changes
   });
 
   // Settings: Get debug mode setting
