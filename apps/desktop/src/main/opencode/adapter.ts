@@ -1,7 +1,6 @@
 import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import { app } from 'electron';
-import fs from 'fs';
 import { StreamParser } from './stream-parser';
 import {
   getOpenCodeCliPath,
@@ -13,7 +12,6 @@ import { getSelectedModel } from '../store/appSettings';
 import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
-import path from 'path';
 import type {
   TaskConfig,
   Task,
@@ -138,37 +136,15 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.emit('debug', { type: 'info', message: cwdMsg });
 
     // Always use PTY for proper terminal emulation
-    // We spawn via shell because posix_spawnp doesn't interpret shebangs
+    // We spawn OpenCode directly without shell to avoid shell metacharacter issues.
+    // OpenCode is a compiled binary (not a shebang script), so direct spawn works.
+    // This allows passing arguments with special chars (apostrophes, quotes, etc.) without escaping.
     {
-      const fullCommand = [command, ...allArgs].map(arg => {
-        // Escape single quotes in arguments for shell (Unix) or handle Windows quoting
-        if (process.platform === 'win32') {
-          // Windows: use double quotes for arguments with spaces
-          if (arg.includes(' ') || arg.includes('"')) {
-            return `"${arg.replace(/"/g, '\\"')}"`;
-          }
-          return arg;
-        } else {
-          // Unix: use single quotes
-          if (arg.includes("'") || arg.includes(' ') || arg.includes('"')) {
-            return `'${arg.replace(/'/g, "'\\''")}'`;
-          }
-          return arg;
-        }
-      }).join(' ');
+      const directMsg = `Spawning directly: ${command} with args: ${JSON.stringify(allArgs)}`;
+      console.log('[OpenCode CLI]', directMsg);
+      this.emit('debug', { type: 'info', message: directMsg });
 
-      const shellCmdMsg = `Full shell command: ${fullCommand}`;
-      console.log('[OpenCode CLI]', shellCmdMsg);
-      this.emit('debug', { type: 'info', message: shellCmdMsg });
-
-      // Use platform-appropriate shell
-      const shellCmd = this.getPlatformShell();
-      const shellArgs = this.getShellArgs(fullCommand);
-      const shellMsg = `Using shell: ${shellCmd} ${shellArgs.join(' ')}`;
-      console.log('[OpenCode CLI]', shellMsg);
-      this.emit('debug', { type: 'info', message: shellMsg });
-
-      this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
+      this.ptyProcess = pty.spawn(command, allArgs, {
         name: 'xterm-256color',
         cols: 200,
         rows: 30,
@@ -400,10 +376,15 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Get selected model from settings
     const selectedModel = getSelectedModel();
 
-    // OpenCode CLI uses: opencode run "message" --format json
+    // OpenCode CLI uses: opencode run [message..] --format json
+    // The yargs parser expects message as MULTIPLE positional arguments (one per word).
+    // We split the prompt into words here so PTY can pass them correctly.
+    // This allows handling special shell characters (apostrophes, quotes, etc.) without escaping.
+    const messageWords = config.prompt.split(/\s+/).filter(word => word.length > 0);
+    
     const args = [
       'run',
-      config.prompt,
+      ...messageWords,
       '--format', 'json',
     ];
 
@@ -638,55 +619,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  /**
-   * Get platform-appropriate shell command
-   *
-   * In packaged apps on macOS, we use /bin/sh instead of the user's shell
-   * to avoid loading ANY user config files. Even non-login zsh loads ~/.zshenv
-   * which may reference protected folders and trigger TCC permission dialogs.
-   *
-   * /bin/sh with -c flag doesn't load any user configuration.
-   */
-  private getPlatformShell(): string {
-    if (process.platform === 'win32') {
-      // Use PowerShell on Windows for better compatibility
-      return 'powershell.exe';
-    } else if (app.isPackaged && process.platform === 'darwin') {
-      // In packaged macOS apps, use /bin/sh to avoid loading user shell configs
-      // (zsh always loads ~/.zshenv, which may trigger TCC permissions)
-      return '/bin/sh';
-    } else {
-      // In dev mode, use the user's shell for better compatibility
-      const userShell = process.env.SHELL;
-      if (userShell) {
-        return userShell;
-      }
-      // Fallback chain: bash -> zsh -> sh
-      if (fs.existsSync('/bin/bash')) return '/bin/bash';
-      if (fs.existsSync('/bin/zsh')) return '/bin/zsh';
-      return '/bin/sh';
-    }
-  }
 
-  /**
-   * Get shell arguments for running a command
-   *
-   * Note: We intentionally do NOT use login shell (-l) on macOS to avoid
-   * triggering folder access permissions (TCC). Login shells load ~/.zprofile
-   * and ~/.zshrc which may reference protected folders like Desktop/Documents.
-   *
-   * Instead, we extend PATH in buildEnvironment() using path_helper and common
-   * Node.js installation paths. This is the proper macOS approach for GUI apps.
-   */
-  private getShellArgs(command: string): string[] {
-    if (process.platform === 'win32') {
-      // PowerShell: -NoProfile for faster startup, -Command to run the command
-      return ['-NoProfile', '-Command', command];
-    } else {
-      // Unix shells: -c to run command (no -l to avoid profile loading)
-      return ['-c', command];
-    }
-  }
 }
 
 interface AskUserQuestionInput {

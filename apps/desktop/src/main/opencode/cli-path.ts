@@ -67,6 +67,14 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
       return { command: opencodePath, args: [] };
     }
 
+    // Check official installer location first (has the latest version with --format json support)
+    const homeDir = process.env.HOME || '';
+    const officialInstallerPath = path.join(homeDir, '.opencode', 'bin', 'opencode');
+    if (fs.existsSync(officialInstallerPath)) {
+      console.log('[CLI Path] Using official OpenCode CLI:', officialInstallerPath);
+      return { command: officialInstallerPath, args: [] };
+    }
+
     // Check other global installations
     const globalOpenCodePaths = [
       // Global npm
@@ -133,6 +141,13 @@ export function isOpenCodeBundled(): boolean {
       // Check nvm installations (dynamically scan all versions)
       const nvmPaths = getNvmOpenCodePaths();
       if (nvmPaths.length > 0) {
+        return true;
+      }
+
+      // Check official installer location first (has the latest version with --format json support)
+      const homeDir = process.env.HOME || '';
+      const officialInstallerPath = path.join(homeDir, '.opencode', 'bin', 'opencode');
+      if (fs.existsSync(officialInstallerPath)) {
         return true;
       }
 

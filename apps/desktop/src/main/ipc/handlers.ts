@@ -1,6 +1,8 @@
 import { ipcMain, BrowserWindow, shell, app } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
+import { rm } from 'fs/promises';
+import { join } from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
@@ -952,6 +954,34 @@ export function registerIPCHandlers(): void {
       return { ok: true };
     }
   );
+
+  // Browser: Clear browser profile
+  // Clears persistent browser data (cookies, session storage, auth state)
+  handle('browser:clear-profile', async (_event: IpcMainInvokeEvent) => {
+    try {
+      const browserDataDir = join(process.cwd(), '.browser-data');
+      console.log(`Clearing browser profile at: ${browserDataDir}`);
+      await rm(browserDataDir, { recursive: true, force: true });
+      console.log('Browser profile cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear browser profile:', error);
+      throw error;
+    }
+  });
+
+  // Browser: Import cookies from manual browser auth
+  // Future enhancement: Allow user to import cookies from their regular browser
+  // to Openwork's browser profile after successful manual authentication
+  handle('browser:import-cookies', async (_event: IpcMainInvokeEvent) => {
+    // TODO: Implement cookie import functionality
+    // This will require:
+    // 1. UI to guide user through exporting cookies (using browser extension or DevTools)
+    // 2. File picker to select cookie file
+    // 3. Cookie format parsing (Netscape/JSON)
+    // 4. Import to Playwright browser profile
+    console.log('[Browser] Cookie import requested (not yet implemented)');
+    throw new Error('Cookie import is not yet implemented. This feature is planned for a future release.');
+  });
 }
 
 function createTaskId(): string {

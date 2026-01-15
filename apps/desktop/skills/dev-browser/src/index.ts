@@ -1,8 +1,13 @@
 import express, { type Express, type Request, type Response } from "express";
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { chromium as playwrightChromium, type BrowserContext, type Page } from "playwright";
+import { chromium } from "playwright-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { mkdirSync } from "fs";
 import { join } from "path";
 import type { Socket } from "net";
+
+// Apply stealth plugin to avoid bot detection
+chromium.use(StealthPlugin());
 import type {
   ServeOptions,
   GetPageRequest,
@@ -76,7 +81,9 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     throw new Error("port and cdpPort must be different");
   }
 
-  // Base profile directory
+  // Base profile directory for persistent browser sessions
+  // This directory stores cookies, localStorage, sessionStorage, and other browser state
+  // so authentication sessions persist across browser launches (no re-login needed)
   const baseProfileDir = profileDir ?? join(process.cwd(), ".browser-data");
 
   let context: BrowserContext;
@@ -87,6 +94,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     try {
       console.log("Trying to use system Chrome...");
       // Use separate profile directory for system Chrome to avoid compatibility issues
+      // launchPersistentContext() automatically persists cookies, session storage, and auth state
       const chromeUserDataDir = join(baseProfileDir, "chrome-profile");
       mkdirSync(chromeUserDataDir, { recursive: true });
 
@@ -107,6 +115,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   // Fall back to Playwright's bundled Chromium
   if (!usedSystemChrome) {
     // Use separate profile directory for Playwright Chromium to avoid compatibility issues
+    // launchPersistentContext() automatically persists cookies, session storage, and auth state
     const playwrightUserDataDir = join(baseProfileDir, "playwright-profile");
     mkdirSync(playwrightUserDataDir, { recursive: true });
 

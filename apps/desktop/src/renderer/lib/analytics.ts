@@ -96,6 +96,14 @@ export const analytics = {
     });
   },
 
+  // Track when user clears browser profile
+  trackClearBrowserProfile: () => {
+    trackEvent('clear_browser_profile', {
+      event_category: 'settings',
+      event_label: 'browser_profile_clear',
+    });
+  },
+
   // Track page views
   trackPageView,
 

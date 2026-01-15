@@ -234,6 +234,110 @@ describe('OpenCode Adapter Module', () => {
         expect(debugEvents.some((e) => e.type === 'info')).toBe(true);
       });
 
+      it('should split prompt into words for yargs positional args (openwork-ry4 fix)', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+
+        // Act - test prompt with apostrophes, quotes, and special chars
+        await adapter.startTask({ 
+          prompt: "Check my Google Calendar for tomorrow's meetings with \"special\" guests" 
+        });
+
+        // Assert - verify pty.spawn was called with direct args (no shell)
+        expect(mockPtySpawn).toHaveBeenCalled();
+        const spawnCall = mockPtySpawn.mock.calls[0];
+        const command = spawnCall[0];
+        const args = spawnCall[1];
+
+        // Should spawn opencode directly (no shell)
+        expect(command).toContain('opencode');
+        
+        // Args should be split by words, with all special chars preserved
+        expect(args).toContain('run');
+        expect(args).toContain('Check');
+        expect(args).toContain('my');
+        expect(args).toContain('Google');
+        expect(args).toContain('Calendar');
+        expect(args).toContain('for');
+        expect(args).toContain("tomorrow's"); // Apostrophe preserved
+        expect(args).toContain('meetings');
+        expect(args).toContain('with');
+        expect(args).toContain('"special"'); // Double quotes preserved
+        expect(args).toContain('guests');
+        expect(args).toContain('--format');
+        expect(args).toContain('json');
+      });
+
+      it('should spawn PTY directly without shell (openwork-ry4 fix)', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+
+        // Act
+        await adapter.startTask({ 
+          prompt: "Check my Google Calendar for tomorrow's meetings" 
+        });
+
+        // Assert - verify pty.spawn was called with command and args (NOT shell -c)
+        expect(mockPtySpawn).toHaveBeenCalled();
+        const spawnCall = mockPtySpawn.mock.calls[0];
+        const command = spawnCall[0];
+        const args = spawnCall[1];
+
+        // Command should be the direct opencode path, not a shell
+        expect(command).toContain('opencode');
+        expect(command).not.toContain('/bin/sh');
+        expect(command).not.toContain('/bin/zsh');
+        expect(command).not.toContain('powershell');
+        
+        // Args should be an array, not ['-c', 'command string']
+        expect(Array.isArray(args)).toBe(true);
+        expect(args[0]).toBe('run');
+        expect(args).not.toContain('-c');
+      });
+
+      it('should preserve special characters in message words (openwork-ry4 edge cases)', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+
+        // Act - test various special characters
+        await adapter.startTask({ 
+          prompt: "Calculate $500 for tomorrow's budget and run `date` in \"production\""
+        });
+
+        // Assert
+        expect(mockPtySpawn).toHaveBeenCalled();
+        const spawnCall = mockPtySpawn.mock.calls[0];
+        const args = spawnCall[1];
+
+        // All special chars should be preserved in their words
+        expect(args).toContain('$500'); // Dollar sign
+        expect(args).toContain("tomorrow's"); // Apostrophe
+        expect(args).toContain('`date`'); // Backticks
+        expect(args).toContain('"production"'); // Double quotes
+      });
+
+      it('should handle empty words in message splitting', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+
+        // Act - message with multiple spaces
+        await adapter.startTask({ 
+          prompt: "Check  my   calendar" // Multiple spaces
+        });
+
+        // Assert
+        expect(mockPtySpawn).toHaveBeenCalled();
+        const spawnCall = mockPtySpawn.mock.calls[0];
+        const args = spawnCall[1];
+
+        // Empty words should be filtered out
+        expect(args).toContain('Check');
+        expect(args).toContain('my');
+        expect(args).toContain('calendar');
+        expect(args).not.toContain(''); // No empty strings
+      });
+
+
       it('should throw error if adapter is disposed', async () => {
         // Arrange
         const adapter = new OpenCodeAdapter();

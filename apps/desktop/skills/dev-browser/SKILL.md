@@ -21,6 +21,10 @@ Two modes available. Ask the user if unclear which to use.
 
 Launches a new Chromium browser for fresh automation sessions.
 
+**Session Persistence**: Cookies, localStorage, sessionStorage, and authentication state automatically persist across browser launches via Playwright's `launchPersistentContext()`. This means users stay logged into websites between runs without needing to re-authenticate.
+
+**To clear all saved sessions**: Use the "Clear Browser Profile" button in Settings → Developer section.
+
 ```bash
 ./skills/dev-browser/server.sh &
 ```

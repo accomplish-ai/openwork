@@ -7,13 +7,16 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs } from '../lib/animations';
 import type { TaskMessage } from '@accomplish/shared';
+import { detectAuthError } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { AuthErrorBanner } from '@/components/ui/auth-error-banner';
 import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
+import { DebugLogs } from '../components/ui/debug-logs';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import openworkIcon from '/assets/openwork-icon.png';
 
@@ -74,6 +77,8 @@ export default function ExecutionPage() {
   const [taskRunCount, setTaskRunCount] = useState(0);
   const [currentTool, setCurrentTool] = useState<string | null>(null);
   const [currentToolInput, setCurrentToolInput] = useState<unknown>(null);
+  const [debugMode, setDebugMode] = useState(false);
+  const [lastFailedUrl, setLastFailedUrl] = useState<string | null>(null);
 
   const {
     currentTask,
@@ -185,6 +190,19 @@ export default function ExecutionPage() {
     }
   }, [canFollowUp]);
 
+  // Fetch debug mode state
+  useEffect(() => {
+    const fetchDebugMode = async () => {
+      try {
+        const enabled = await accomplish.getDebugMode();
+        setDebugMode(enabled);
+      } catch (err) {
+        console.error('Failed to fetch debug mode:', err);
+      }
+    };
+    fetchDebugMode();
+  }, [accomplish]);
+
   const handleFollowUp = async () => {
     if (!followUp.trim()) return;
     await sendFollowUp(followUp);
@@ -195,6 +213,59 @@ export default function ExecutionPage() {
     // Send a simple "continue" message to resume the task
     await sendFollowUp('continue');
   };
+
+  // Detect auth errors from task result or error messages
+  const authErrorInfo = useMemo(() => {
+    if (!currentTask) return detectAuthError('');
+    
+    // Check task result error
+    if (currentTask.result?.error) {
+      const detected = detectAuthError(currentTask.result.error);
+      if (detected.isAuthError) {
+        // Try to extract URL from recent messages
+        const recentMessages = currentTask.messages.slice(-5);
+        for (const msg of recentMessages) {
+          const urlMatch = msg.content?.match(/https?:\/\/[^\s]+/);
+          if (urlMatch) {
+            setLastFailedUrl(urlMatch[0]);
+            break;
+          }
+        }
+        return detected;
+      }
+    }
+    
+    // Check recent error messages
+    const recentMessages = currentTask.messages.slice(-5).reverse();
+    for (const msg of recentMessages) {
+      if (msg.type === 'system' || msg.type === 'assistant') {
+        const detected = detectAuthError(msg.content || '');
+        if (detected.isAuthError) {
+          // Try to extract URL
+          const urlMatch = msg.content?.match(/https?:\/\/[^\s]+/);
+          if (urlMatch) {
+            setLastFailedUrl(urlMatch[0]);
+          }
+          return detected;
+        }
+      }
+    }
+    
+    return detectAuthError('');
+  }, [currentTask]);
+
+  const handleOpenBrowser = useCallback((url: string) => {
+    accomplish.openExternal(url);
+  }, [accomplish]);
+
+  const handleImportCookies = useCallback(async () => {
+    try {
+      await accomplish.importCookies();
+    } catch (err) {
+      console.error('Cookie import failed:', err);
+      // The handler will show an error message about the feature not being implemented yet
+    }
+  }, [accomplish]);
 
   const handlePermissionResponse = async (allowed: boolean) => {
     if (!permissionRequest || !currentTask) return;
@@ -510,7 +581,27 @@ export default function ExecutionPage() {
               )}
             </AnimatePresence>
 
+            {/* Auth Error Banner - shown when auth failures detected */}
+            {authErrorInfo.isAuthError && (currentTask.status === 'failed' || currentTask.status === 'completed') && (
+              <AuthErrorBanner
+                authError={authErrorInfo}
+                url={lastFailedUrl || undefined}
+                onOpenBrowser={handleOpenBrowser}
+                onImportCookies={handleImportCookies}
+                className="mt-4"
+              />
+            )}
+
             <div ref={messagesEndRef} />
+          </div>
+        </div>
+      )}
+
+      {/* Debug Logs Section */}
+      {debugMode && currentTask && (
+        <div className="flex-shrink-0 px-6 pb-4">
+          <div className="max-w-4xl mx-auto">
+            <DebugLogs taskId={currentTask.id} />
           </div>
         </div>
       )}
