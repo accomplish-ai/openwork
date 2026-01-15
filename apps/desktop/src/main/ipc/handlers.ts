@@ -38,6 +38,8 @@ import {
   setSelectedModel,
 } from '../store/appSettings';
 import { getDesktopConfig } from '../config';
+import { logEvent, type LogEntry } from '../utils/logger';
+import { validateApiKey, AnthropicValidator } from '../utils/api-key-validators';
 import {
   startPermissionApiServer,
   initPermissionApi,
@@ -428,12 +430,16 @@ export function registerIPCHandlers(): void {
   });
 
   // Task: Delete task from history
-  handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
+  // Requires trusted window to prevent unauthorized deletion
+  handle('task:delete', async (event: IpcMainInvokeEvent, taskId: string) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     deleteTask(taskId);
   });
 
   // Task: Clear all history
-  handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
+  // Requires trusted window - destructive operation
+  handle('task:clear-history', async (event: IpcMainInvokeEvent) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     clearHistory();
   });
 
@@ -632,9 +638,12 @@ export function registerIPCHandlers(): void {
   });
 
   // Settings: Add API key (stores securely in OS keychain)
+  // Requires trusted window - security sensitive operation
   handle(
     'settings:add-api-key',
-    async (_event: IpcMainInvokeEvent, provider: string, key: string, label?: string) => {
+    async (event: IpcMainInvokeEvent, provider: string, key: string, label?: string) => {
+      assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+
       if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
         throw new Error('Unsupported API key provider');
       }
@@ -656,7 +665,10 @@ export function registerIPCHandlers(): void {
   );
 
   // Settings: Remove API key
-  handle('settings:remove-api-key', async (_event: IpcMainInvokeEvent, id: string) => {
+  // Requires trusted window - security sensitive operation
+  handle('settings:remove-api-key', async (event: IpcMainInvokeEvent, id: string) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+
     // Extract provider from id (format: local-{provider})
     const sanitizedId = sanitizeString(id, 'id', 128);
     const provider = sanitizedId.replace('local-', '');
@@ -670,7 +682,9 @@ export function registerIPCHandlers(): void {
   });
 
   // API Key: Set API key
-  handle('api-key:set', async (_event: IpcMainInvokeEvent, key: string) => {
+  // Requires trusted window - security sensitive operation
+  handle('api-key:set', async (event: IpcMainInvokeEvent, key: string) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
     await storeApiKey('anthropic', sanitizedKey);
     console.log('[API Key] Key set', { keyPrefix: sanitizedKey.substring(0, 8) });
@@ -682,51 +696,24 @@ export function registerIPCHandlers(): void {
   });
 
   // API Key: Validate API key by making a test request
+  // Uses AnthropicValidator with model fallback to handle deprecated models
   handle('api-key:validate', async (_event: IpcMainInvokeEvent, key: string) => {
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
-    console.log('[API Key] Validation requested');
+    console.log('[API Key] Validation requested for Anthropic');
 
-    try {
-      // Make a simple API call to validate the key
-      const response = await fetchWithTimeout(
-        'https://api.anthropic.com/v1/messages',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': sanitizedKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }],
-          }),
-        },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
+    const result = await validateApiKey('anthropic', sanitizedKey, API_KEY_VALIDATION_TIMEOUT_MS);
 
-      if (response.ok) {
-        console.log('[API Key] Validation succeeded');
-        return { valid: true };
-      }
-
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-
-      console.warn('[API Key] Validation failed', { status: response.status, error: errorMessage });
-
-      return { valid: false, error: errorMessage };
-    } catch (error) {
-      console.error('[API Key] Validation error', { error: error instanceof Error ? error.message : String(error) });
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { valid: false, error: 'Request timed out. Please check your internet connection and try again.' };
-      }
-      return { valid: false, error: 'Failed to validate API key. Check your internet connection.' };
+    if (result.valid) {
+      console.log('[API Key] Validation succeeded');
+    } else {
+      console.warn('[API Key] Validation failed', { error: result.error });
     }
+
+    return result;
   });
 
   // API Key: Validate API key for any provider
+  // Uses Strategy pattern with provider-specific validators
   handle('api-key:validate-provider', async (_event: IpcMainInvokeEvent, provider: string, key: string) => {
     if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
       return { valid: false, error: 'Unsupported provider' };
@@ -734,93 +721,21 @@ export function registerIPCHandlers(): void {
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
     console.log(`[API Key] Validation requested for provider: ${provider}`);
 
-    try {
-      let response: Response;
+    const result = await validateApiKey(provider, sanitizedKey, API_KEY_VALIDATION_TIMEOUT_MS);
 
-      switch (provider) {
-        case 'anthropic':
-          response = await fetchWithTimeout(
-            'https://api.anthropic.com/v1/messages',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': sanitizedKey,
-                'anthropic-version': '2023-06-01',
-              },
-              body: JSON.stringify({
-                model: 'claude-3-haiku-20240307',
-                max_tokens: 1,
-                messages: [{ role: 'user', content: 'test' }],
-              }),
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'openai':
-          response = await fetchWithTimeout(
-            'https://api.openai.com/v1/models',
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${sanitizedKey}`,
-              },
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'google':
-          response = await fetchWithTimeout(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${sanitizedKey}`,
-            {
-              method: 'GET',
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'groq':
-          response = await fetchWithTimeout(
-            'https://api.groq.com/openai/v1/models',
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${sanitizedKey}`,
-              },
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        default:
-          // For 'custom' provider, skip validation
-          console.log('[API Key] Skipping validation for custom provider');
-          return { valid: true };
-      }
-
-      if (response.ok) {
-        console.log(`[API Key] Validation succeeded for ${provider}`);
-        return { valid: true };
-      }
-
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-
-      console.warn(`[API Key] Validation failed for ${provider}`, { status: response.status, error: errorMessage });
-      return { valid: false, error: errorMessage };
-    } catch (error) {
-      console.error(`[API Key] Validation error for ${provider}`, { error: error instanceof Error ? error.message : String(error) });
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { valid: false, error: 'Request timed out. Please check your internet connection and try again.' };
-      }
-      return { valid: false, error: 'Failed to validate API key. Check your internet connection.' };
+    if (result.valid) {
+      console.log(`[API Key] Validation succeeded for ${provider}`);
+    } else {
+      console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
     }
+
+    return result;
   });
 
   // API Key: Clear API key
-  handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {
+  // Requires trusted window - security sensitive operation
+  handle('api-key:clear', async (event: IpcMainInvokeEvent) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     await deleteApiKey('anthropic');
     console.log('[API Key] Key cleared');
   });
@@ -888,7 +803,9 @@ export function registerIPCHandlers(): void {
   });
 
   // Settings: Set debug mode setting
-  handle('settings:set-debug-mode', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+  // Requires trusted window
+  handle('settings:set-debug-mode', async (event: IpcMainInvokeEvent, enabled: boolean) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     if (typeof enabled !== 'boolean') {
       throw new Error('Invalid debug mode flag');
     }
@@ -944,11 +861,22 @@ export function registerIPCHandlers(): void {
     }
   });
 
-  // Log event handler - now just returns ok (no external logging)
+  // Log event handler - logs to file and console via centralized logger
   handle(
     'log:event',
-    async (_event: IpcMainInvokeEvent, _payload: { level?: string; message?: string; context?: Record<string, unknown> }) => {
-      // No-op: external logging removed
+    async (_event: IpcMainInvokeEvent, payload: { level?: string; message?: string; context?: Record<string, unknown>; module?: string }) => {
+      if (!payload.message) {
+        return { ok: false, error: 'Message is required' };
+      }
+
+      const entry: LogEntry = {
+        level: (payload.level as LogEntry['level']) || 'info',
+        message: payload.message,
+        context: payload.context,
+        module: payload.module || 'renderer',
+      };
+
+      logEvent(entry);
       return { ok: true };
     }
   );
