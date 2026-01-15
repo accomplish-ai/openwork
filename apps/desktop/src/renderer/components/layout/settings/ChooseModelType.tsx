@@ -5,11 +5,18 @@ import type { ModelType } from './types';
 
 interface ChooseModelTypeProps {
   onSelect: (type: ModelType) => void;
+  currentModel?: { provider: string; model: string } | null;
 }
 
-export default function ChooseModelType({ onSelect }: ChooseModelTypeProps) {
+export default function ChooseModelType({ onSelect, currentModel }: ChooseModelTypeProps) {
   return (
     <div className="space-y-4">
+      {currentModel && (
+        <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border">
+          <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Current Model</div>
+          <div className="text-sm font-medium text-foreground">{currentModel.model}</div>
+        </div>
+      )}
       <h2 className="text-lg font-medium text-foreground">Choose Model</h2>
       <div className="grid grid-cols-2 gap-4">
         <button

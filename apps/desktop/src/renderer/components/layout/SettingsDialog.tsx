@@ -41,6 +41,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [loadingDebug, setLoadingDebug] = useState(true);
   const [appVersion, setAppVersion] = useState('');
   const [completionMessage, setCompletionMessage] = useState<string | null>(null);
+  const [currentModel, setCurrentModel] = useState<{ provider: string; model: string } | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -85,9 +86,19 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     };
 
+    const fetchCurrentModel = async () => {
+      try {
+        const model = await accomplish.getSelectedModel();
+        setCurrentModel(model);
+      } catch (err) {
+        console.error('Failed to fetch current model:', err);
+      }
+    };
+
     fetchKeys();
     fetchDebugSetting();
     fetchVersion();
+    fetchCurrentModel();
   }, [open]);
 
   const handleDebugToggle = async () => {
@@ -179,7 +190,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
 
     switch (wizardStep) {
       case 'choose-type':
-        return <ChooseModelType onSelect={handleModelTypeSelect} />;
+        return <ChooseModelType onSelect={handleModelTypeSelect} currentModel={currentModel} />;
       case 'select-provider':
         return <SelectProvider onSelect={handleProviderSelect} onBack={handleBack} />;
       case 'add-api-key':
