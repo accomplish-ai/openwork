@@ -188,6 +188,8 @@ async function ensureDevBrowserServer(
     }
 
     // Spawn server in background (detached, unref to not block)
+    // Dev-browser uses static ports 9224/9225 - shared by all agents
+    // Task isolation is handled by task-scoped page names (${taskId}-main)
     const child = spawn('bash', [serverScript], {
       detached: true,
       stdio: 'ignore',
@@ -196,7 +198,7 @@ async function ensureDevBrowserServer(
     });
     child.unref();
 
-    console.log('[TaskManager] Dev-browser server spawn initiated');
+    console.log('[TaskManager] Dev-browser server spawn initiated (ports: 9224/9225)');
   } catch (error) {
     console.error('[TaskManager] Failed to start dev-browser server:', error);
   }

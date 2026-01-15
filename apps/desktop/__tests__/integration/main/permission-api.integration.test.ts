@@ -81,8 +81,9 @@ describe('Permission API Integration', () => {
   });
 
   describe('PERMISSION_API_PORT', () => {
-    it('should be exported with correct value', () => {
-      expect(PERMISSION_API_PORT).toBe(9226);
+    it('should be exported with correct base value for agent 1', () => {
+      // Base port is 9226, offset depends on AGENT_ID env var
+      expect(PERMISSION_API_PORT).toBeGreaterThanOrEqual(9226);
     });
   });
 

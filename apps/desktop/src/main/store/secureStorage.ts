@@ -2,6 +2,7 @@ import Store from 'electron-store';
 import { app } from 'electron';
 import * as crypto from 'crypto';
 import * as os from 'os';
+import { getAgentSuffix } from '../utils/agent-config';
 
 /**
  * Secure storage using electron-store with custom AES-256-GCM encryption.
@@ -18,7 +19,10 @@ import * as os from 'os';
  */
 
 // Use different store names for dev vs production to avoid conflicts
-const getStoreName = () => (app.isPackaged ? 'secure-storage' : 'secure-storage-dev');
+const getStoreName = () => {
+  const suffix = getAgentSuffix();
+  return app.isPackaged ? `secure-storage${suffix}` : `secure-storage-dev${suffix}`;
+};
 
 interface SecureStorageSchema {
   /** Encrypted values stored as base64 strings (format: iv:authTag:ciphertext) */

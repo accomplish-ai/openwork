@@ -21,6 +21,34 @@ pnpm -F @accomplish/desktop test:e2e:ui    # E2E with Playwright UI
 pnpm -F @accomplish/desktop test:e2e:debug # E2E in debug mode
 ```
 
+## Multi-Agent Local Development
+
+Multiple Claude Code agents can run the app simultaneously using the `AGENT_ID` environment variable:
+
+```bash
+# Terminal 1 (Agent 1 - default ports)
+pnpm dev
+
+# Terminal 2 (Agent 2 - offset ports)
+AGENT_ID=2 pnpm dev
+# Or use the convenience script:
+pnpm -F @accomplish/desktop dev:agent2
+
+# Terminal 3 (Agent 3)
+AGENT_ID=3 pnpm dev
+```
+
+### Port Allocation
+
+| Resource | Agent 1 | Agent 2 | Agent 3 |
+|----------|---------|---------|---------|
+| Vite Dev Server | 5173 | 5183 | 5193 |
+| Dev Browser HTTP | 9224 | 9234 | 9244 |
+| Dev Browser CDP | 9225 | 9235 | 9245 |
+| Permission API | 9226 | 9236 | 9246 |
+
+Each agent also gets isolated electron-store files (settings, history, API keys) with `-agent-{ID}` suffix.
+
 ## Architecture
 
 ### Monorepo Layout

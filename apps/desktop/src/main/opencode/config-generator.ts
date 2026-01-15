@@ -355,8 +355,11 @@ export async function generateOpenCodeConfig(): Promise<string> {
   }
 
   // Get skills directory path and inject into system prompt
+  // Dev-browser uses static port 9224 - shared by all agents
+  // Task isolation is handled by task-scoped page names (${taskId}-main)
   const skillsPath = getSkillsPath();
-  const systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE.replace(/\{\{SKILLS_PATH\}\}/g, skillsPath);
+  const systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
+    .replace(/\{\{SKILLS_PATH\}\}/g, skillsPath);
 
   console.log('[OpenCode Config] Skills path:', skillsPath);
 

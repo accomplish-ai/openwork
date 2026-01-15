@@ -9,8 +9,9 @@
 import http from 'http';
 import type { BrowserWindow } from 'electron';
 import type { PermissionRequest, FileOperation } from '@accomplish/shared';
+import { getPortOffset } from './utils/agent-config';
 
-export const PERMISSION_API_PORT = 9226;
+export const PERMISSION_API_PORT = 9226 + getPortOffset();
 
 interface PendingPermission {
   resolve: (allowed: boolean) => void;

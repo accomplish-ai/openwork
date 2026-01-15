@@ -1,5 +1,6 @@
 import Store from 'electron-store';
 import type { SelectedModel, DEFAULT_MODEL } from '@accomplish/shared';
+import { getAgentSuffix } from '../utils/agent-config';
 
 /**
  * App settings schema
@@ -14,7 +15,7 @@ interface AppSettingsSchema {
 }
 
 const appSettingsStore = new Store<AppSettingsSchema>({
-  name: 'app-settings',
+  name: `app-settings${getAgentSuffix()}`,
   defaults: {
     debugMode: false,
     onboardingComplete: false,
