@@ -376,15 +376,13 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Get selected model from settings
     const selectedModel = getSelectedModel();
 
-    // OpenCode CLI uses: opencode run [message..] --format json
-    // The yargs parser expects message as MULTIPLE positional arguments (one per word).
-    // We split the prompt into words here so PTY can pass them correctly.
-    // This allows handling special shell characters (apostrophes, quotes, etc.) without escaping.
-    const messageWords = config.prompt.split(/\s+/).filter(word => word.length > 0);
-    
+    // OpenCode CLI uses: opencode run <message> --format json
+    // Since we spawn directly (not via shell), we pass the full prompt as a single argument.
+    // This preserves whitespace, newlines, and formatting (critical for Markdown, code blocks, etc.)
+    // and handles special shell characters (apostrophes, quotes, etc.) without escaping.
     const args = [
       'run',
-      ...messageWords,
+      config.prompt,
       '--format', 'json',
     ];
 

@@ -234,7 +234,7 @@ describe('OpenCode Adapter Module', () => {
         expect(debugEvents.some((e) => e.type === 'info')).toBe(true);
       });
 
-      it('should split prompt into words for yargs positional args (openwork-ry4 fix)', async () => {
+      it('should pass prompt as single argument (openwork-ry4 fix)', async () => {
         // Arrange
         const adapter = new OpenCodeAdapter();
 
@@ -252,18 +252,9 @@ describe('OpenCode Adapter Module', () => {
         // Should spawn opencode directly (no shell)
         expect(command).toContain('opencode');
         
-        // Args should be split by words, with all special chars preserved
+        // Args should pass the full prompt as a single argument to preserve whitespace and formatting
         expect(args).toContain('run');
-        expect(args).toContain('Check');
-        expect(args).toContain('my');
-        expect(args).toContain('Google');
-        expect(args).toContain('Calendar');
-        expect(args).toContain('for');
-        expect(args).toContain("tomorrow's"); // Apostrophe preserved
-        expect(args).toContain('meetings');
-        expect(args).toContain('with');
-        expect(args).toContain('"special"'); // Double quotes preserved
-        expect(args).toContain('guests');
+        expect(args).toContain("Check my Google Calendar for tomorrow's meetings with \"special\" guests");
         expect(args).toContain('--format');
         expect(args).toContain('json');
       });
@@ -295,7 +286,7 @@ describe('OpenCode Adapter Module', () => {
         expect(args).not.toContain('-c');
       });
 
-      it('should preserve special characters in message words (openwork-ry4 edge cases)', async () => {
+      it('should preserve special characters in prompt (openwork-ry4 edge cases)', async () => {
         // Arrange
         const adapter = new OpenCodeAdapter();
 
@@ -309,18 +300,15 @@ describe('OpenCode Adapter Module', () => {
         const spawnCall = mockPtySpawn.mock.calls[0];
         const args = spawnCall[1];
 
-        // All special chars should be preserved in their words
-        expect(args).toContain('$500'); // Dollar sign
-        expect(args).toContain("tomorrow's"); // Apostrophe
-        expect(args).toContain('`date`'); // Backticks
-        expect(args).toContain('"production"'); // Double quotes
+        // Prompt should be passed as a single argument with all special chars preserved
+        expect(args).toContain("Calculate $500 for tomorrow's budget and run `date` in \"production\"");
       });
 
-      it('should handle empty words in message splitting', async () => {
+      it('should preserve whitespace in prompt', async () => {
         // Arrange
         const adapter = new OpenCodeAdapter();
 
-        // Act - message with multiple spaces
+        // Act - message with multiple spaces, newlines, etc
         await adapter.startTask({ 
           prompt: "Check  my   calendar" // Multiple spaces
         });
@@ -330,11 +318,8 @@ describe('OpenCode Adapter Module', () => {
         const spawnCall = mockPtySpawn.mock.calls[0];
         const args = spawnCall[1];
 
-        // Empty words should be filtered out
-        expect(args).toContain('Check');
-        expect(args).toContain('my');
-        expect(args).toContain('calendar');
-        expect(args).not.toContain(''); // No empty strings
+        // Prompt should be preserved exactly as-is (including extra spaces)
+        expect(args).toContain('Check  my   calendar');
       });
 
 

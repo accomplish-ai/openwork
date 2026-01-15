@@ -959,7 +959,11 @@ export function registerIPCHandlers(): void {
   // Clears persistent browser data (cookies, session storage, auth state)
   handle('browser:clear-profile', async (_event: IpcMainInvokeEvent) => {
     try {
-      const browserDataDir = join(process.cwd(), '.browser-data');
+      // Use temp directory (same as task process cwd) to match dev-browser skill profile location
+      // The dev-browser skill uses join(process.cwd(), ".browser-data"), where process.cwd() 
+      // is set to app.getPath('temp') by default in the OpenCode adapter (line 127)
+      const taskCwd = app.getPath('temp');
+      const browserDataDir = join(taskCwd, '.browser-data');
       console.log(`Clearing browser profile at: ${browserDataDir}`);
       await rm(browserDataDir, { recursive: true, force: true });
       console.log('Browser profile cleared successfully');
