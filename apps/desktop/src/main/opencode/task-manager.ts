@@ -9,7 +9,9 @@
 import { OpenCodeAdapter, isOpenCodeCliInstalled, OpenCodeCliNotFoundError } from './adapter';
 import { getSkillsPath } from './config-generator';
 import { getNpxPath, getBundledNodePaths } from '../utils/bundled-node';
-import { spawn } from 'child_process';
+import { getProcessTracker, disposeProcessTracker } from '../utils/process-tracker';
+import { isMockModeEnabled, MockOpenCodeAdapter } from '../mock/mock-adapter';
+import { spawn, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -23,22 +25,82 @@ import type {
 } from '@accomplish/shared';
 
 /**
- * Check if system Chrome is installed
+ * Check if system Chrome or Chromium is installed
+ * Uses both hardcoded paths and system PATH detection for better coverage
  */
 function isSystemChromeInstalled(): boolean {
+  // First check hardcoded common paths (fast)
+  if (checkHardcodedChromePaths()) {
+    return true;
+  }
+
+  // Fall back to system PATH detection (slower but more reliable)
+  return checkChromeInPath();
+}
+
+/**
+ * Check hardcoded Chrome paths (fast, covers common installations)
+ */
+function checkHardcodedChromePaths(): boolean {
   if (process.platform === 'darwin') {
-    return fs.existsSync('/Applications/Google Chrome.app');
+    const macPaths = [
+      '/Applications/Google Chrome.app',
+      '/Applications/Google Chrome Canary.app',
+      '/Applications/Chromium.app',
+      path.join(os.homedir(), 'Applications', 'Google Chrome.app'),
+      path.join(os.homedir(), 'Applications', 'Chromium.app'),
+    ];
+    return macPaths.some(p => fs.existsSync(p));
   } else if (process.platform === 'win32') {
-    // Check common Windows Chrome locations
     const programFiles = process.env['PROGRAMFILES'] || 'C:\\Program Files';
     const programFilesX86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
-    return (
-      fs.existsSync(path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe')) ||
-      fs.existsSync(path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'))
-    );
+    const localAppData = process.env['LOCALAPPDATA'] || '';
+
+    const winPaths = [
+      path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(programFiles, 'Chromium', 'Application', 'chrome.exe'),
+      path.join(programFilesX86, 'Chromium', 'Application', 'chrome.exe'),
+    ];
+    return winPaths.some(p => fs.existsSync(p));
   }
+
   // Linux - check common paths
-  return fs.existsSync('/usr/bin/google-chrome') || fs.existsSync('/usr/bin/chromium-browser');
+  const linuxPaths = [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/snap/bin/chromium',
+    '/usr/local/bin/google-chrome',
+    '/usr/local/bin/chromium',
+  ];
+  return linuxPaths.some(p => fs.existsSync(p));
+}
+
+/**
+ * Check if Chrome/Chromium is available in system PATH
+ * Uses 'which' (Unix) or 'where' (Windows) command
+ */
+function checkChromeInPath(): boolean {
+  const browserNames = process.platform === 'win32'
+    ? ['chrome', 'chromium']
+    : ['google-chrome', 'google-chrome-stable', 'chromium-browser', 'chromium'];
+
+  for (const browser of browserNames) {
+    try {
+      const cmd = process.platform === 'win32' ? 'where' : 'which';
+      execSync(`${cmd} ${browser}`, { stdio: 'pipe', encoding: 'utf8' });
+      console.log(`[TaskManager] Found browser '${browser}' in PATH`);
+      return true;
+    } catch {
+      // Command failed, browser not found in PATH
+      continue;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -194,9 +256,15 @@ async function ensureDevBrowserServer(
       cwd: path.join(skillsPath, 'dev-browser'),
       env: spawnEnv,
     });
+
+    // Track the process to prevent zombies on app quit
+    if (child.pid) {
+      getProcessTracker().trackProcess(child.pid, 'dev-browser-server');
+    }
+
     child.unref();
 
-    console.log('[TaskManager] Dev-browser server spawn initiated');
+    console.log('[TaskManager] Dev-browser server spawn initiated', { pid: child.pid });
   } catch (error) {
     console.error('[TaskManager] Failed to start dev-browser server:', error);
   }
@@ -216,11 +284,30 @@ export interface TaskCallbacks {
 }
 
 /**
+ * Common interface for adapters (OpenCodeAdapter and MockOpenCodeAdapter)
+ */
+interface TaskAdapter {
+  startTask(config: TaskConfig): Promise<Task>;
+  resumeSession?(sessionId: string, prompt: string): Promise<Task>;
+  sendResponse(response: string): Promise<void>;
+  cancelTask(): Promise<void>;
+  interruptTask(): Promise<void>;
+  getSessionId(): string | null;
+  getTaskId(): string | null;
+  isAdapterDisposed(): boolean;
+  dispose(): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(event: string, listener: (...args: any[]) => void): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, listener: (...args: any[]) => void): void;
+}
+
+/**
  * Internal representation of a managed task
  */
 interface ManagedTask {
   taskId: string;
-  adapter: OpenCodeAdapter;
+  adapter: TaskAdapter;
   callbacks: TaskCallbacks;
   cleanup: () => void;
   createdAt: Date;
@@ -260,16 +347,25 @@ export class TaskManager {
   /**
    * Start a new task. Multiple tasks can run in parallel up to maxConcurrentTasks.
    * If at capacity, new tasks are queued and start automatically when a task completes.
+   *
+   * If MOCK_MODE is enabled, uses MockOpenCodeAdapter instead of real CLI.
+   * This allows contributors to develop UI without API keys.
    */
   async startTask(
     taskId: string,
     config: TaskConfig,
     callbacks: TaskCallbacks
   ): Promise<Task> {
-    // Check if CLI is installed
-    const cliInstalled = await isOpenCodeCliInstalled();
-    if (!cliInstalled) {
-      throw new OpenCodeCliNotFoundError();
+    // In mock mode, skip CLI check
+    const mockMode = isMockModeEnabled();
+    if (mockMode) {
+      console.log('[TaskManager] Running in MOCK_MODE - using mock adapter');
+    } else {
+      // Check if CLI is installed
+      const cliInstalled = await isOpenCodeCliInstalled();
+      if (!cliInstalled) {
+        throw new OpenCodeCliNotFoundError();
+      }
     }
 
     // Check if task already exists (either running or queued)
@@ -331,7 +427,11 @@ export class TaskManager {
     callbacks: TaskCallbacks
   ): Promise<Task> {
     // Create a new adapter instance for this task
-    const adapter = new OpenCodeAdapter(taskId);
+    // Use mock adapter if MOCK_MODE is enabled
+    const mockMode = isMockModeEnabled();
+    const adapter: TaskAdapter = mockMode
+      ? new MockOpenCodeAdapter(taskId)
+      : new OpenCodeAdapter(taskId);
 
     // Wire up event listeners
     const onMessage = (message: OpenCodeMessage) => {
@@ -372,15 +472,28 @@ export class TaskManager {
     adapter.on('error', onError);
     adapter.on('debug', onDebug);
 
-    // Create cleanup function
+    // Create cleanup function with guard against multiple calls
+    let isCleanedUp = false;
     const cleanup = () => {
+      // Prevent duplicate cleanup which could cause issues
+      if (isCleanedUp) {
+        console.log(`[TaskManager] Task ${taskId} cleanup already called, skipping`);
+        return;
+      }
+      isCleanedUp = true;
+
+      // Remove all listeners
       adapter.off('message', onMessage);
       adapter.off('progress', onProgress);
       adapter.off('permission-request', onPermissionRequest);
       adapter.off('complete', onComplete);
       adapter.off('error', onError);
       adapter.off('debug', onDebug);
-      adapter.dispose();
+
+      // Dispose adapter only if not already disposed
+      if (!adapter.isAdapterDisposed()) {
+        adapter.dispose();
+      }
     };
 
     // Register the managed task
@@ -408,10 +521,13 @@ export class TaskManager {
     // This allows the UI to navigate immediately while setup happens
     (async () => {
       try {
-        // Ensure browser is available (may download Playwright if needed)
-        await ensureDevBrowserServer(callbacks.onProgress);
+        // Skip browser setup in mock mode
+        if (!mockMode) {
+          // Ensure browser is available (may download Playwright if needed)
+          await ensureDevBrowserServer(callbacks.onProgress);
+        }
 
-        // Now start the agent
+        // Now start the agent (or mock adapter)
         await adapter.startTask({ ...config, taskId });
       } catch (error) {
         // Cleanup on failure and process queue
@@ -647,4 +763,7 @@ export function disposeTaskManager(): void {
     taskManagerInstance.dispose();
     taskManagerInstance = null;
   }
+
+  // Also dispose all tracked background processes (dev-browser server, etc.)
+  disposeProcessTracker();
 }
