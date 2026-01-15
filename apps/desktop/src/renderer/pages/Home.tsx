@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
@@ -80,6 +81,7 @@ const USE_CASE_EXAMPLES = [
 ];
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -161,7 +163,7 @@ export default function HomePage() {
           transition={springs.gentle}
           className="text-4xl font-light tracking-tight text-foreground"
         >
-          What will you accomplish today?
+          {t('home.title')}
         </motion.h1>
 
         <motion.div
@@ -178,7 +180,7 @@ export default function HomePage() {
                 onChange={setPrompt}
                 onSubmit={handleSubmit}
                 isLoading={isLoading}
-                placeholder="Describe a task and let AI handle the rest"
+                placeholder={t('home.placeholder')}
                 large={true}
                 autoFocus={true}
               />
@@ -188,9 +190,9 @@ export default function HomePage() {
             <div className="border-t border-border">
               <button
                 onClick={() => setShowExamples(!showExamples)}
-                className="w-full px-6 py-3 flex items-center justify-between text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
-              >
-                <span>Example prompts</span>
+                 className="w-full px-6 py-3 flex items-center justify-between text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
+               >
+                 <span>{t('home.examples.toggle')}</span>
                 <motion.div
                   animate={{ rotate: showExamples ? 180 : 0 }}
                   transition={{ duration: 0.2 }}

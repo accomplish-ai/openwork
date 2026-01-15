@@ -1,0 +1,88 @@
+{
+  "home": {
+    "title": "今日は何しますか？",
+    "placeholder": "タスクを説明して、AIに処理させましょう",
+    "examples": {
+      "title": "プロンプト例",
+      "toggle": "プロンプト例"
+    },
+    "prompts": {
+      "summarize": "このドキュメントを要約し、主要な洞察を抽出",
+      "organize": "ダウンロードフォルダをファイル種類と日付で整理",
+      "report": "会議ノートから週次レポートを作成",
+      "rename": "すべての写真に日付と場所を含めて名前変更"
+    }
+  },
+  "navigation": {
+    "home": "ホーム",
+    "history": "履歴",
+    "settings": "設定"
+  },
+  "settings": {
+    "title": "設定",
+    "apiKey": {
+      "title": "独自のモデル/APIキーを使用",
+      "description": "AIアシスタント用のAPIキーとモデルを設定します。",
+      "provider": "プロバイダー",
+      "model": "モデル",
+      "apiKey": "APIキー",
+      "saveButton": "APIキーを保存",
+      "saving": "保存中...",
+      "saved": "保存しました！",
+      "error": "APIキーの保存エラー",
+      "savedKeys": "保存済みキー",
+      "providers": {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI",
+        "google": "Google",
+        "groq": "Groq"
+      }
+    },
+    "debug": {
+      "title": "デバッグモード",
+      "description": "UIでバックエンドログを確認するためにデバッグモードを有効にする"
+    }
+  },
+  "execution": {
+    "title": "タスク実行",
+    "placeholder": "タスクを割り当てるか、何でも質問してください",
+    "stop": "停止",
+    "clear": "クリア",
+    "status": {
+      "running": "実行中...",
+      "completed": "完了",
+      "failed": "失敗",
+      "stopped": "停止"
+    }
+  },
+  "history": {
+    "title": "タスク履歴",
+    "empty": "まだタスクがありません",
+    "clearAll": "すべてクリア"
+  },
+  "settings": {
+    "language": {
+      "title": "言語",
+      "description": "アプリケーションインターフェースの言語を選択してください。",
+      "select": "言語を選択"
+    },
+    "model": {
+      "title": "モデル",
+      "description": "タスク実行に使用するAIモデルを選択してください。"
+    },
+    "about": {
+      "title": "について"
+    }
+  },
+  "common": {
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "close": "閉じる",
+    "confirm": "確認",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功"
+  }
+}

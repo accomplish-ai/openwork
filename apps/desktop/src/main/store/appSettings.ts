@@ -13,6 +13,8 @@ interface AppSettingsSchema {
   selectedModel: SelectedModel | null;
   /** Ollama server configuration */
   ollamaConfig: OllamaConfig | null;
+  /** Selected language ('en' | 'ja' | ...) */
+  language: string;
 }
 
 const appSettingsStore = new Store<AppSettingsSchema>({
@@ -25,6 +27,7 @@ const appSettingsStore = new Store<AppSettingsSchema>({
       model: 'anthropic/claude-opus-4-5',
     },
     ollamaConfig: null,
+    language: 'en',
   },
 });
 
@@ -85,6 +88,20 @@ export function setOllamaConfig(config: OllamaConfig | null): void {
 }
 
 /**
+ * Get selected language
+ */
+export function getLanguage(): string {
+  return appSettingsStore.get('language');
+}
+
+/**
+ * Set selected language
+ */
+export function setLanguage(language: string): void {
+  appSettingsStore.set('language', language);
+}
+
+/**
  * Get all app settings
  */
 export function getAppSettings(): AppSettingsSchema {
@@ -93,6 +110,7 @@ export function getAppSettings(): AppSettingsSchema {
     onboardingComplete: appSettingsStore.get('onboardingComplete'),
     selectedModel: appSettingsStore.get('selectedModel'),
     ollamaConfig: appSettingsStore.get('ollamaConfig'),
+    language: appSettingsStore.get('language'),
   };
 }
 

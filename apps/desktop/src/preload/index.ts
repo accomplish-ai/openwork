@@ -53,8 +53,14 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:debug-mode'),
   setDebugMode: (enabled: boolean): Promise<void> =>
     ipcRenderer.invoke('settings:set-debug-mode', enabled),
-  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean }> =>
+  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean; language: string }> =>
     ipcRenderer.invoke('settings:app-settings'),
+
+  // Language management
+  getLanguage: (): Promise<string> =>
+    ipcRenderer.invoke('language:get'),
+  setLanguage: (language: string): Promise<void> =>
+    ipcRenderer.invoke('language:set', language),
 
   // API Key management (new simplified handlers)
   hasApiKey: (): Promise<boolean> =>
