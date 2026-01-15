@@ -144,5 +144,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Update browser user agent
+        run: pnpm -F dev-browser update-user-agent
+
       - name: Run type check
         run: pnpm -F @accomplish/desktop typecheck

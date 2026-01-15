@@ -10,9 +10,14 @@ import type {
   ListPagesResponse,
   ServerInfoResponse,
 } from "./types";
-import { getUserAgent } from "./userAgent";
 
 export type { ServeOptions, GetPageResponse, ListPagesResponse, ServerInfoResponse };
+
+// Realistic user agent to avoid "This browser or app may not be secure" errors
+// Chrome will provide its own actual version via CDP, this is just for HTTP headers
+// Auto-updated during CI builds via scripts/update-user-agent.js
+const BROWSER_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.192 Safari/537.36";
+
 
 export interface DevBrowserServer {
   wsEndpoint: string;
@@ -85,19 +90,11 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
       const chromeUserDataDir = join(baseProfileDir, "chrome-profile");
       mkdirSync(chromeUserDataDir, { recursive: true });
 
-      const userAgentConfig = getUserAgent("chrome");
-
       context = await chromium.launchPersistentContext(chromeUserDataDir, {
         headless,
         channel: 'chrome', // Use system Chrome instead of Playwright's Chromium
         args: [`--remote-debugging-port=${cdpPort}`],
-        userAgent: userAgentConfig.userAgent,
-        extraHTTPHeaders: {
-          "Accept-Language": userAgentConfig.acceptLanguage,
-          "Sec-Ch-Ua": userAgentConfig.secChUa,
-          "Sec-Ch-Ua-Mobile": userAgentConfig.secChUaMobile,
-          "Sec-Ch-Ua-Platform": userAgentConfig.secChUaPlatform,
-        },
+        userAgent: BROWSER_USER_AGENT,
       });
       usedSystemChrome = true;
       console.log("Using system Chrome (fast startup!)");
@@ -113,19 +110,11 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     const playwrightUserDataDir = join(baseProfileDir, "playwright-profile");
     mkdirSync(playwrightUserDataDir, { recursive: true });
 
-    const userAgentConfig = getUserAgent("chrome");
-
     console.log("Launching browser with Playwright Chromium...");
     context = await chromium.launchPersistentContext(playwrightUserDataDir, {
       headless,
       args: [`--remote-debugging-port=${cdpPort}`],
-      userAgent: userAgentConfig.userAgent,
-      extraHTTPHeaders: {
-        "Accept-Language": userAgentConfig.acceptLanguage,
-        "Sec-Ch-Ua": userAgentConfig.secChUa,
-        "Sec-Ch-Ua-Mobile": userAgentConfig.secChUaMobile,
-        "Sec-Ch-Ua-Platform": userAgentConfig.secChUaPlatform,
-      },
+      userAgent: BROWSER_USER_AGENT,
     });
     console.log("Browser launched with Playwright Chromium");
   }

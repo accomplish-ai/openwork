@@ -10,7 +10,8 @@
     "start-extension": "npx tsx scripts/start-relay.ts",
     "dev": "npx tsx --watch src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "update-user-agent": "node scripts/update-user-agent.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",

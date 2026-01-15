@@ -10,7 +10,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import type { WSContext } from "hono/ws";
-import { getUserAgent } from "./userAgent";
+
 
 // ============================================================================
 // Types
@@ -231,16 +231,9 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
   }): Promise<unknown> {
     // Handle some CDP commands locally
     switch (method) {
-      case "Browser.getVersion": {
-        const userAgentConfig = getUserAgent("chrome");
-        return {
-          protocolVersion: "1.3",
-          product: "Chrome/120.0.6099.109",
-          revision: "1.0.0",
-          userAgent: userAgentConfig.userAgent,
-          jsVersion: "V8",
-        };
-      }
+      case "Browser.getVersion":
+        // Forward to Chrome - it will return actual browser version
+        break;
 
       case "Browser.setDownloadBehavior":
         return {};
