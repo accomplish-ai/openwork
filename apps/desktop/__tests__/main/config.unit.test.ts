@@ -94,32 +94,55 @@ describe('config.ts', () => {
         expect(config.apiUrl).toBe('https://api.example.com:8443');
       });
 
-      it('should throw error for invalid URL format', async () => {
+      it('should fallback to default URL for invalid URL format and log warning', async () => {
         // Arrange
         process.env.ACCOMPLISH_API_URL = 'not-a-url';
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        // Act & Assert
+        // Act
         const { getDesktopConfig } = await import('../../src/main/config');
-        expect(() => getDesktopConfig()).toThrow('Invalid desktop configuration');
+        const config = getDesktopConfig();
+
+        // Assert - should fallback to default and log warning
+        expect(config.apiUrl).toBe('https://lite.accomplish.ai');
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid ACCOMPLISH_API_URL')
+        );
+
+        warnSpy.mockRestore();
       });
 
-      it('should throw error for URL without protocol', async () => {
+      it('should fallback to default URL for URL without protocol and log warning', async () => {
         // Arrange
         process.env.ACCOMPLISH_API_URL = 'example.com';
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        // Act & Assert
+        // Act
         const { getDesktopConfig } = await import('../../src/main/config');
-        expect(() => getDesktopConfig()).toThrow('Invalid desktop configuration');
+        const config = getDesktopConfig();
+
+        // Assert - should fallback to default and log warning
+        expect(config.apiUrl).toBe('https://lite.accomplish.ai');
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid ACCOMPLISH_API_URL')
+        );
+
+        warnSpy.mockRestore();
       });
 
-      it('should throw error for empty string URL (invalid url)', async () => {
+      it('should fallback to default URL for empty string URL', async () => {
         // Arrange
         process.env.ACCOMPLISH_API_URL = '';
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        // Act & Assert
-        // Empty string is an invalid URL and throws an error
+        // Act
         const { getDesktopConfig } = await import('../../src/main/config');
-        expect(() => getDesktopConfig()).toThrow('Invalid desktop configuration');
+        const config = getDesktopConfig();
+
+        // Assert - empty string should fallback to default (may or may not warn)
+        expect(config.apiUrl).toBe('https://lite.accomplish.ai');
+
+        warnSpy.mockRestore();
       });
     });
 
