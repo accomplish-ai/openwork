@@ -78,7 +78,9 @@ exports.default = async function afterPack(context) {
     console.log('[after-pack] macOS universal build - copying both x64 and arm64 Node.js binaries');
     await copyNodeBinary(context, nodePlatform, 'x64');
     await copyNodeBinary(context, nodePlatform, 'arm64');
-    await resignMacApp(context);
+    // Skip re-signing for universal builds - electron-builder will sign after merging
+    // Re-signing here would cause SHA mismatches between x64 and arm64 temp builds
+    console.log('[after-pack] Skipping re-sign for universal build (will be signed after merge)');
     return;
   }
 
