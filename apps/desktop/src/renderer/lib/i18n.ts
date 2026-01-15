@@ -6,27 +6,11 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from '../locales/en.json';
 import ja from '../locales/ja.json';
 
-// Initialize with empty resources
+// Use static imports directly - no async loading needed
 const resources = {
-  en: { translation: {} },
-  ja: { translation: {} },
+  en: { translation: en },
+  ja: { translation: ja },
 };
-
-// Load translation files dynamically
-async function loadTranslations() {
-  try {
-    const enTranslations = await import('../locales/en.json');
-    const jaTranslations = await import('../locales/ja.json');
-    
-    i18n.addResourceBundle('en', 'translation', enTranslations.default, true, true);
-    i18n.addResourceBundle('ja', 'translation', jaTranslations.default, true, true);
-  } catch (error) {
-    console.error('Failed to load translations:', error);
-  }
-}
-
-// Load translations immediately
-loadTranslations();
 
 i18n
   .use(LanguageDetector)

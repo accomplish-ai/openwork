@@ -593,7 +593,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                           </div>
                           {keyToDelete === key.id ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Are you sure?</span>
+                              <span className="text-xs text-muted-foreground">{t('settings.apiKey.deleteConfirm')}</span>
                               <button
                                 onClick={() => {
                                   handleDeleteApiKey(key.id, key.provider);
@@ -601,20 +601,20 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                                 }}
                                 className="rounded px-2 py-1 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
                               >
-                                Yes
+                                {t('common.yes')}
                               </button>
                               <button
                                 onClick={() => setKeyToDelete(null)}
                                 className="rounded px-2 py-1 text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                               >
-                                No
+                                {t('common.no')}
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => setKeyToDelete(key.id)}
                               className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors duration-200 ease-accomplish"
-                              title="Remove API key"
+                              title={t('settings.apiKey.removeTitle')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

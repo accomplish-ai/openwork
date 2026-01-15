@@ -24,13 +24,14 @@
       "title": "Bring Your Own Model/API Key",
       "description": "Setup the API key and model for your own AI coworker.",
       "provider": "Provider",
-      "model": "Model",
       "apiKey": "API Key",
       "saveButton": "Save API Key",
       "saving": "Saving...",
       "saved": "Saved!",
       "error": "Error saving API key",
       "savedKeys": "Saved Keys",
+      "deleteConfirm": "Are you sure?",
+      "removeTitle": "Remove API key",
       "providers": {
         "anthropic": "Anthropic",
         "openai": "OpenAI",
@@ -38,9 +39,40 @@
         "groq": "Groq"
       }
     },
+    "model": {
+      "title": "Model",
+      "description": "Select AI model to use for task execution.",
+      "cloudProviders": "Cloud Providers",
+      "localModels": "Local Models",
+      "cloudDescription": "Select a cloud AI model. Requires an API key for the provider.",
+      "localDescription": "Connect to a local Ollama server to use models running on your machine.",
+      "selectModel": "Select a model...",
+      "selectModelLabel": "Select Model",
+      "noApiKey": "No API key",
+      "noApiKeyWarning": "No API key configured for {{provider}}. Add one below.",
+      "ollamaUrl": "Ollama Server URL",
+      "test": "Test",
+      "testing": "Testing...",
+      "connected": "Connected - {{count}} model(s) available",
+      "saving": "Saving...",
+      "useThisModel": "Use This Model",
+      "ollamaHelp": "Make sure Ollama is installed and running, then click Test to connect.",
+      "currentlyUsing": "Currently using:"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Select your preferred language for the application interface.",
+      "select": "Select language"
+    },
+    "developer": {
+      "title": "Developer"
+    },
     "debug": {
       "title": "Debug Mode",
       "description": "Enable debug mode to see backend logs in the UI"
+    },
+    "about": {
+      "title": "About"
     }
   },
   "execution": {
@@ -60,20 +92,6 @@
     "empty": "No tasks yet",
     "clearAll": "Clear All"
   },
-  "settings": {
-    "language": {
-      "title": "Language",
-      "description": "Select your preferred language for the application interface.",
-      "select": "Select language"
-    },
-    "model": {
-      "title": "Model",
-      "description": "Select AI model to use for task execution."
-    },
-    "about": {
-      "title": "About"
-    }
-  },
   "common": {
     "cancel": "Cancel",
     "save": "Save",
@@ -81,6 +99,8 @@
     "edit": "Edit",
     "close": "Close",
     "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success"
