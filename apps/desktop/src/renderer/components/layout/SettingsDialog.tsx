@@ -256,6 +256,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       await accomplish.setOllamaConfig({
         baseUrl: ollamaUrl,
         enabled: true,
+        lastValidated: Date.now(),
+        models: ollamaModels,  // Include discovered models
       });
 
       // Set as selected model
@@ -474,9 +476,10 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
             </div>
           </section>
 
-          {/* API Key Section */}
-          <section>
-            <h2 className="mb-4 text-base font-medium text-foreground">Bring Your Own Model/API Key</h2>
+          {/* API Key Section - Only show for cloud providers */}
+          {activeTab === 'cloud' && (
+            <section>
+              <h2 className="mb-4 text-base font-medium text-foreground">Bring Your Own Model/API Key</h2>
             <div className="rounded-lg border border-border bg-card p-5">
               <p className="mb-5 text-sm text-muted-foreground leading-relaxed">
                 Setup the API key and model for your own AI coworker.
@@ -589,7 +592,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                 </div>
               )}
             </div>
-          </section>
+            </section>
+          )}
 
           {/* Developer Section */}
           <section>

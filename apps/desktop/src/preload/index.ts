@@ -104,10 +104,10 @@ const accomplishAPI = {
     error?: string;
   }> => ipcRenderer.invoke('ollama:test-connection', url),
 
-  getOllamaConfig: (): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number } | null> =>
+  getOllamaConfig: (): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number }> } | null> =>
     ipcRenderer.invoke('ollama:get-config'),
 
-  setOllamaConfig: (config: { baseUrl: string; enabled: boolean; lastValidated?: number } | null): Promise<void> =>
+  setOllamaConfig: (config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number }> } | null): Promise<void> =>
     ipcRenderer.invoke('ollama:set-config', config),
 
   // Event subscriptions
