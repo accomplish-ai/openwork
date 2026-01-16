@@ -115,6 +115,12 @@
 
 <br />
 
+<p align="center">
+  <img src="docs/chatgpt-signin.png" alt="ChatGPT sign-in (OAuth)" width="720" />
+</p>
+
+<br />
+
 <div align="center">
 
 [**Download for Mac (Apply Silicon)**](https://downloads.accomplish.ai/downloads/0.1.0/macos/Openwork-0.1.0-mac-arm64.dmg)
