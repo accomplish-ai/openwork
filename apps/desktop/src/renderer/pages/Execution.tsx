@@ -10,11 +10,12 @@ import type { TaskMessage } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, Terminal, Clock, Square, Play, Download, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
 import { isWaitingForUser } from '../lib/waiting-detection';
+import { ActivityRow, ThinkingRow } from '../components/execution';
 import loadingSymbol from '/assets/loading-symbol.svg';
 
 // Spinning Openwork icon component
@@ -25,22 +26,6 @@ const SpinningIcon = ({ className }: { className?: string }) => (
     className={cn('animate-spin-ccw', className)}
   />
 );
-
-// Tool name to human-readable progress mapping
-const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }> = {
-  // Standard Claude Code tools
-  Read: { label: 'Reading files', icon: FileText },
-  Glob: { label: 'Finding files', icon: Search },
-  Grep: { label: 'Searching code', icon: Search },
-  Bash: { label: 'Running command', icon: Terminal },
-  Write: { label: 'Writing file', icon: FileText },
-  Edit: { label: 'Editing file', icon: FileText },
-  Task: { label: 'Running agent', icon: Brain },
-  WebFetch: { label: 'Fetching web page', icon: Search },
-  WebSearch: { label: 'Searching web', icon: Search },
-  // Dev Browser tools
-  dev_browser_execute: { label: 'Executing browser action', icon: Terminal },
-};
 
 // Debounce utility
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
@@ -408,11 +393,21 @@ export default function ExecutionPage() {
       {currentTask.status === 'queued' && currentTask.messages.length > 0 && (
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
-            {currentTask.messages
-              .filter((m) => !(m.type === 'tool' && m.toolName?.toLowerCase() === 'bash'))
-              .map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
+            {currentTask.messages.map((message) => {
+              if (message.type === 'tool') {
+                return (
+                  <ActivityRow
+                    key={message.id}
+                    id={message.id}
+                    tool={message.toolName || 'unknown'}
+                    input={message.toolInput}
+                    output={message.content}
+                    status="complete"
+                  />
+                );
+              }
+              return <MessageBubble key={message.id} message={message} />;
+            })}
 
             {/* Inline waiting indicator */}
             <motion.div
@@ -443,12 +438,28 @@ export default function ExecutionPage() {
       {currentTask.status !== 'queued' && (
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
-            {currentTask.messages
-              .filter((m) => !(m.type === 'tool' && m.toolName?.toLowerCase() === 'bash'))
-              .map((message, index, filteredMessages) => {
-              const isLastMessage = index === filteredMessages.length - 1;
-              const isLastAssistantMessage =
-                message.type === 'assistant' && isLastMessage;
+            {currentTask.messages.map((message, index, allMessages) => {
+              // Render tool messages as ActivityRow
+              if (message.type === 'tool') {
+                const isLastTool = !allMessages.slice(index + 1).some(m => m.type === 'tool');
+                return (
+                  <ActivityRow
+                    key={message.id}
+                    id={message.id}
+                    tool={message.toolName || 'unknown'}
+                    input={message.toolInput}
+                    output={message.content}
+                    status={isLastTool && currentTask.status === 'running' ? 'running' : 'complete'}
+                  />
+                );
+              }
+
+              // Render other messages as MessageBubble
+              const filteredMessages = allMessages.filter(m => m.type !== 'tool');
+              const filteredIndex = filteredMessages.findIndex(m => m.id === message.id);
+              const isLastMessage = filteredIndex === filteredMessages.length - 1;
+              const isLastAssistantMessage = message.type === 'assistant' && isLastMessage;
+
               // Find the last assistant message index for the continue button
               let lastAssistantIndex = -1;
               for (let i = filteredMessages.length - 1; i >= 0; i--) {
@@ -457,13 +468,15 @@ export default function ExecutionPage() {
                   break;
                 }
               }
-              const isLastAssistantForContinue = index === lastAssistantIndex;
+              const isLastAssistantForContinue = filteredIndex === lastAssistantIndex;
+
               // Show continue button on last assistant message when:
               // - Task was interrupted (user can always continue)
               // - Task completed AND the message indicates agent is waiting for user action
               const showContinue = isLastAssistantForContinue && !!hasSession &&
                 (currentTask.status === 'interrupted' ||
                  (currentTask.status === 'completed' && isWaitingForUser(message.content)));
+
               return (
                 <MessageBubble
                   key={message.id}
@@ -480,28 +493,20 @@ export default function ExecutionPage() {
             })}
 
             <AnimatePresence>
-              {currentTask.status === 'running' && !permissionRequest && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={springs.gentle}
-                  className="flex items-center gap-2 text-muted-foreground py-2"
-                  data-testid="execution-thinking-indicator"
-                >
-                  <SpinningIcon className="h-4 w-4" />
-                  <span className="text-sm">
-                    {currentTool
-                      ? ((currentToolInput as { description?: string })?.description || TOOL_PROGRESS_MAP[currentTool]?.label || currentTool)
-                      : 'Thinking...'}
-                  </span>
-                  {currentTool && !(currentToolInput as { description?: string })?.description && (
-                    <span className="text-xs text-muted-foreground/60">
-                      ({currentTool})
-                    </span>
-                  )}
-                </motion.div>
-              )}
+              {(() => {
+                // Only show thinking if:
+                // 1. Task is running
+                // 2. No permission request pending
+                // 3. No tool currently active
+                // 4. Last message is NOT an assistant message (agent hasn't just spoken)
+                const lastMessage = currentTask.messages[currentTask.messages.length - 1];
+                const lastMessageIsAssistant = lastMessage?.type === 'assistant';
+                const showThinking = currentTask.status === 'running' &&
+                  !permissionRequest &&
+                  !currentTool &&
+                  !lastMessageIsAssistant;
+                return showThinking ? <ThinkingRow /> : null;
+              })()}
             </AnimatePresence>
 
             <div ref={messagesEndRef} />
@@ -713,13 +718,8 @@ interface MessageBubbleProps {
 const MessageBubble = memo(function MessageBubble({ message, shouldStream = false, isLastMessage = false, isRunning = false, showContinueButton = false, continueLabel, onContinue, isLoading = false }: MessageBubbleProps) {
   const [streamComplete, setStreamComplete] = useState(!shouldStream);
   const isUser = message.type === 'user';
-  const isTool = message.type === 'tool';
   const isSystem = message.type === 'system';
   const isAssistant = message.type === 'assistant';
-
-  // Get tool icon from mapping
-  const toolName = message.toolName || message.content?.match(/Using tool: (\w+)/)?.[1];
-  const ToolIcon = toolName && TOOL_PROGRESS_MAP[toolName]?.icon;
 
   // Mark stream as complete when shouldStream becomes false
   useEffect(() => {
@@ -755,80 +755,63 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
           'max-w-[85%] rounded-2xl px-4 py-3 transition-all duration-150',
           isUser
             ? 'bg-primary text-primary-foreground'
-            : isTool
-              ? 'bg-muted border border-border'
-              : isSystem
-                ? 'bg-muted/50 border border-border'
-                : 'bg-card border border-border'
+            : isSystem
+              ? 'bg-muted/50 border border-border'
+              : 'bg-card border border-border'
         )}
       >
-        {/* Tool messages: show only label and loading animation */}
-        {isTool ? (
-          <>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-              {ToolIcon ? <ToolIcon className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
-              <span>{TOOL_PROGRESS_MAP[toolName || '']?.label || toolName || 'Processing'}</span>
-              {isLastMessage && isRunning && (
-                <SpinningIcon className="h-3.5 w-3.5 ml-1" />
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            {isSystem && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5 font-medium">
-                <Terminal className="h-3.5 w-3.5" />
-                System
-              </div>
+        {isSystem && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5 font-medium">
+            <Terminal className="h-3.5 w-3.5" />
+            System
+          </div>
+        )}
+        {isUser ? (
+          <p
+            className={cn(
+              'text-sm whitespace-pre-wrap break-words',
+              'text-primary-foreground'
             )}
-            {isUser ? (
-              <p
-                className={cn(
-                  'text-sm whitespace-pre-wrap break-words',
-                  'text-primary-foreground'
-                )}
-              >
-                {message.content}
-              </p>
-            ) : isAssistant && shouldStream && !streamComplete ? (
-              <StreamingText
-                text={message.content}
-                speed={120}
-                isComplete={streamComplete}
-                onComplete={() => setStreamComplete(true)}
-              >
-                {(streamedText) => (
-                  <div className={proseClasses}>
-                    <ReactMarkdown>{streamedText}</ReactMarkdown>
-                  </div>
-                )}
-              </StreamingText>
-            ) : (
+          >
+            {message.content}
+          </p>
+        ) : isAssistant && shouldStream && !streamComplete ? (
+          <StreamingText
+            text={message.content}
+            speed={120}
+            isComplete={streamComplete}
+            onComplete={() => setStreamComplete(true)}
+          >
+            {(streamedText) => (
               <div className={proseClasses}>
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown>{streamedText}</ReactMarkdown>
               </div>
             )}
-            <p
-              className={cn(
-                'text-xs mt-1.5',
-                isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-              )}
-            >
-              {new Date(message.timestamp).toLocaleTimeString()}
-            </p>
-            {/* Continue button inside assistant bubble */}
-            {isAssistant && showContinueButton && onContinue && (
-              <Button
-                size="sm"
-                onClick={onContinue}
-                disabled={isLoading}
-                className="mt-3 gap-1.5"
-              >
-                <Play className="h-3 w-3" />
-                {continueLabel || 'Continue'}
-              </Button>
-            )}
-          </>
+          </StreamingText>
+        ) : (
+          <div className={proseClasses}>
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
+        <p
+          className={cn(
+            'text-xs mt-1.5',
+            isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+          )}
+        >
+          {new Date(message.timestamp).toLocaleTimeString()}
+        </p>
+        {/* Continue button inside assistant bubble */}
+        {isAssistant && showContinueButton && onContinue && (
+          <Button
+            size="sm"
+            onClick={onContinue}
+            disabled={isLoading}
+            className="mt-3 gap-1.5"
+          >
+            <Play className="h-3 w-3" />
+            {continueLabel || 'Continue'}
+          </Button>
         )}
       </div>
     </motion.div>
