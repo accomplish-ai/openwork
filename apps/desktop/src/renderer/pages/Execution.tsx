@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
 import { isWaitingForUser } from '../lib/waiting-detection';
-import { ActivityRow, ThinkingRow, DebugPanel, StepGroup } from '../components/execution';
+import { ActivityRow, ThinkingRow, DebugPanel } from '../components/execution';
 import type { DebugLog } from '../components/execution';
 import loadingSymbol from '/assets/loading-symbol.svg';
 
@@ -488,111 +488,92 @@ export default function ExecutionPage() {
       {currentTask.status !== 'queued' && (
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
-            {(() => {
-              // Group messages: consecutive tools go in StepGroup, others render normally
-              const allMessages = currentTask.messages;
-              const filteredMessages = allMessages.filter(m => m.type !== 'tool');
-              const elements: React.ReactNode[] = [];
-              let toolGroup: typeof allMessages = [];
-              let groupKey = 0;
-
-              const flushToolGroup = () => {
-                if (toolGroup.length > 0) {
-                  const isLastToolInTask = !allMessages.slice(allMessages.indexOf(toolGroup[toolGroup.length - 1]) + 1).some(m => m.type === 'tool');
-                  elements.push(
-                    <StepGroup key={`tool-group-${groupKey++}`}>
-                      {toolGroup.map((tool, idx) => {
-                        const isLastInGroup = idx === toolGroup.length - 1;
-                        return (
-                          <ActivityRow
-                            key={tool.id}
-                            id={tool.id}
-                            tool={tool.toolName || 'unknown'}
-                            input={tool.toolInput}
-                            output={tool.content}
-                            status={isLastInGroup && isLastToolInTask && currentTask.status === 'running' ? 'running' : 'complete'}
-                            debugMode={debugMode}
-                          />
-                        );
-                      })}
-                      {/* Show thinking inside the last tool group if running */}
-                      {isLastToolInTask && currentTask.status === 'running' && !permissionRequest && (
-                        <ThinkingRow />
-                      )}
-                    </StepGroup>
-                  );
-                  toolGroup = [];
-                }
-              };
-
-              allMessages.forEach((message, index) => {
-                if (message.type === 'tool') {
-                  toolGroup.push(message);
-                } else {
-                  // Flush any pending tool group
-                  flushToolGroup();
-
-                  // Skip assistant messages that duplicate the next tool's description
-                  if (message.type === 'assistant') {
-                    const nextMessage = allMessages[index + 1];
-                    if (nextMessage?.type === 'tool') {
-                      const toolInput = nextMessage.toolInput as Record<string, unknown> | undefined;
-                      const toolDescription = toolInput?.description as string | undefined;
-                      const messageContent = message.content?.trim();
-                      if (messageContent && toolDescription &&
-                          messageContent.toLowerCase() === toolDescription.toLowerCase()) {
-                        return; // Skip this message
-                      }
-                    }
-                  }
-
-                  // Render message bubble
-                  const filteredIndex = filteredMessages.findIndex(m => m.id === message.id);
-                  const isLastMessage = filteredIndex === filteredMessages.length - 1;
-                  const isLastAssistantMessage = message.type === 'assistant' && isLastMessage;
-
-                  let lastAssistantIndex = -1;
-                  for (let i = filteredMessages.length - 1; i >= 0; i--) {
-                    if (filteredMessages[i].type === 'assistant') {
-                      lastAssistantIndex = i;
-                      break;
-                    }
-                  }
-                  const isLastAssistantForContinue = filteredIndex === lastAssistantIndex;
-
-                  const showContinue = isLastAssistantForContinue && !!hasSession &&
-                    (currentTask.status === 'interrupted' ||
-                     (currentTask.status === 'completed' && isWaitingForUser(message.content)));
-
-                  elements.push(
-                    <MessageBubble
-                      key={message.id}
-                      message={message}
-                      shouldStream={isLastAssistantMessage && currentTask.status === 'running'}
-                      isLastMessage={isLastMessage}
-                      isRunning={currentTask.status === 'running'}
-                      showContinueButton={showContinue}
-                      continueLabel={currentTask.status === 'interrupted' ? 'Continue' : 'Done, Continue'}
-                      onContinue={handleContinue}
-                      isLoading={isLoading}
-                    />
-                  );
-                }
-              });
-
-              // Flush any remaining tool group
-              flushToolGroup();
-
-              // Show thinking indicator if running with no tools (task just started)
-              const hasAnyTools = allMessages.some(m => m.type === 'tool');
-              const lastMessage = allMessages[allMessages.length - 1];
-              const lastMessageIsAssistant = lastMessage?.type === 'assistant';
-              if (!hasAnyTools && currentTask.status === 'running' && !permissionRequest && !lastMessageIsAssistant) {
-                elements.push(<ThinkingRow key="thinking-standalone" />);
+            {currentTask.messages.map((message, index, allMessages) => {
+              // Render tool messages as ActivityRow
+              if (message.type === 'tool') {
+                const isLastTool = !allMessages.slice(index + 1).some(m => m.type === 'tool');
+                return (
+                  <ActivityRow
+                    key={message.id}
+                    id={message.id}
+                    tool={message.toolName || 'unknown'}
+                    input={message.toolInput}
+                    output={message.content}
+                    status={isLastTool && currentTask.status === 'running' ? 'running' : 'complete'}
+                    debugMode={debugMode}
+                  />
+                );
               }
 
-              return elements;
-            })()}
+              // Skip assistant messages that duplicate the next tool's description
+              if (message.type === 'assistant') {
+                const nextMessage = allMessages[index + 1];
+                if (nextMessage?.type === 'tool') {
+                  const toolInput = nextMessage.toolInput as Record<string, unknown> | undefined;
+                  const toolDescription = toolInput?.description as string | undefined;
+                  const messageContent = message.content?.trim();
+                  // Skip if content matches tool description (case-insensitive)
+                  if (messageContent && toolDescription &&
+                      messageContent.toLowerCase() === toolDescription.toLowerCase()) {
+                    return null;
+                  }
+                }
+              }
+
+              // Render other messages as MessageBubble
+              const filteredMessages = allMessages.filter(m => m.type !== 'tool');
+              const filteredIndex = filteredMessages.findIndex(m => m.id === message.id);
+              const isLastMessage = filteredIndex === filteredMessages.length - 1;
+              const isLastAssistantMessage = message.type === 'assistant' && isLastMessage;
+
+              // Find the last assistant message index for the continue button
+              let lastAssistantIndex = -1;
+              for (let i = filteredMessages.length - 1; i >= 0; i--) {
+                if (filteredMessages[i].type === 'assistant') {
+                  lastAssistantIndex = i;
+                  break;
+                }
+              }
+              const isLastAssistantForContinue = filteredIndex === lastAssistantIndex;
+
+              // Show continue button on last assistant message when:
+              // - Task was interrupted (user can always continue)
+              // - Task completed AND the message indicates agent is waiting for user action
+              const showContinue = isLastAssistantForContinue && !!hasSession &&
+                (currentTask.status === 'interrupted' ||
+                 (currentTask.status === 'completed' && isWaitingForUser(message.content)));
+
+              return (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  shouldStream={isLastAssistantMessage && currentTask.status === 'running'}
+                  isLastMessage={isLastMessage}
+                  isRunning={currentTask.status === 'running'}
+                  showContinueButton={showContinue}
+                  continueLabel={currentTask.status === 'interrupted' ? 'Continue' : 'Done, Continue'}
+                  onContinue={handleContinue}
+                  isLoading={isLoading}
+                />
+              );
+            })}
+
+            <AnimatePresence>
+              {(() => {
+                // Only show thinking if:
+                // 1. Task is running
+                // 2. No permission request pending
+                // 3. No tool currently active
+                // 4. Last message is NOT an assistant message (agent hasn't just spoken)
+                const lastMessage = currentTask.messages[currentTask.messages.length - 1];
+                const lastMessageIsAssistant = lastMessage?.type === 'assistant';
+                const showThinking = currentTask.status === 'running' &&
+                  !permissionRequest &&
+                  !currentTool &&
+                  !lastMessageIsAssistant;
+                return showThinking ? <ThinkingRow /> : null;
+              })()}
+            </AnimatePresence>
 
             <div ref={messagesEndRef} />
           </div>
