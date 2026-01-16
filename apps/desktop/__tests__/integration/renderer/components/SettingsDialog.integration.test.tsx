@@ -36,6 +36,7 @@ const mockAccomplish = {
   getDebugMode: mockGetDebugMode,
   getVersion: mockGetVersion,
   getSelectedModel: mockGetSelectedModel,
+  getOllamaConfig: vi.fn().mockResolvedValue(null),
   setDebugMode: mockSetDebugMode,
   setSelectedModel: mockSetSelectedModel,
   addApiKey: mockAddApiKey,

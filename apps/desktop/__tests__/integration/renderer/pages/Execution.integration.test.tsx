@@ -61,6 +61,8 @@ const mockAccomplish = {
   onTaskUpdateBatch: mockOnTaskUpdateBatch.mockReturnValue(() => {}),
   onPermissionRequest: mockOnPermissionRequest.mockReturnValue(() => {}),
   onTaskStatusChange: mockOnTaskStatusChange.mockReturnValue(() => {}),
+  getSelectedModel: vi.fn().mockResolvedValue({ provider: 'anthropic', id: 'claude-3-opus' }),
+  getOllamaConfig: vi.fn().mockResolvedValue(null),
 };
 
 // Mock the accomplish module
