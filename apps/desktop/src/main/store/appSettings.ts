@@ -11,6 +11,12 @@ interface AppSettingsSchema {
   onboardingComplete: boolean;
   /** Selected AI model (provider/model format) */
   selectedModel: SelectedModel | null;
+  /**
+   * Optional OpenAI-compatible base URL override.
+   * - Empty string means "use provider default".
+   * - Example: https://openrouter.ai/api/v1
+   */
+  openaiBaseUrl: string;
 }
 
 const appSettingsStore = new Store<AppSettingsSchema>({
@@ -22,6 +28,7 @@ const appSettingsStore = new Store<AppSettingsSchema>({
       provider: 'anthropic',
       model: 'anthropic/claude-opus-4-5',
     },
+    openaiBaseUrl: '',
   },
 });
 
@@ -68,6 +75,20 @@ export function setSelectedModel(model: SelectedModel): void {
 }
 
 /**
+ * Get OpenAI base URL override (empty string means default).
+ */
+export function getOpenAiBaseUrl(): string {
+  return appSettingsStore.get('openaiBaseUrl');
+}
+
+/**
+ * Set OpenAI base URL override (empty string clears override).
+ */
+export function setOpenAiBaseUrl(baseUrl: string): void {
+  appSettingsStore.set('openaiBaseUrl', baseUrl);
+}
+
+/**
  * Get all app settings
  */
 export function getAppSettings(): AppSettingsSchema {
@@ -75,6 +96,7 @@ export function getAppSettings(): AppSettingsSchema {
     debugMode: appSettingsStore.get('debugMode'),
     onboardingComplete: appSettingsStore.get('onboardingComplete'),
     selectedModel: appSettingsStore.get('selectedModel'),
+    openaiBaseUrl: appSettingsStore.get('openaiBaseUrl'),
   };
 }
 

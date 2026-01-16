@@ -116,6 +116,7 @@ vi.mock('@main/store/secureStorage', () => ({
 // Mock app settings
 vi.mock('@main/store/appSettings', () => ({
   getSelectedModel: vi.fn(() => ({ model: 'claude-3-opus-20240229' })),
+  getOpenAiBaseUrl: vi.fn(() => ''),
 }));
 
 // Mock config generator

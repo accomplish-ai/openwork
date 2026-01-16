@@ -23,12 +23,13 @@ interface SettingsDialogProps {
 // Provider configuration
 const API_KEY_PROVIDERS = [
   { id: 'anthropic', name: 'Anthropic', prefix: 'sk-ant-', placeholder: 'sk-ant-...' },
+  { id: 'openai', name: 'OpenAI', prefix: 'sk-', placeholder: 'sk-...' },
+  { id: 'openrouter', name: 'OpenRouter', prefix: 'sk-or-', placeholder: 'sk-or-...' },
   { id: 'google', name: 'Google AI', prefix: 'AIza', placeholder: 'AIza...' },
 ] as const;
 
 // Coming soon providers (displayed but not selectable)
 const COMING_SOON_PROVIDERS = [
-  { id: 'openai', name: 'OpenAI' },
   { id: 'groq', name: 'Groq' },
 ] as const;
 
@@ -38,6 +39,10 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [apiKey, setApiKey] = useState('');
   const [provider, setProvider] = useState<ProviderId>('anthropic');
   const [isSaving, setIsSaving] = useState(false);
+  const [openAiBaseUrl, setOpenAiBaseUrl] = useState('');
+  const [isSavingOpenAiBaseUrl, setIsSavingOpenAiBaseUrl] = useState(false);
+  const [openAiOauthStatus, setOpenAiOauthStatus] = useState<{ connected: boolean; expires?: number } | null>(null);
+  const [isSigningInWithChatGpt, setIsSigningInWithChatGpt] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedKeys, setSavedKeys] = useState<ApiKeyConfig[]>([]);
@@ -85,6 +90,24 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     };
 
+    const fetchOpenAiBaseUrl = async () => {
+      try {
+        const baseUrl = await accomplish.getOpenAiBaseUrl();
+        setOpenAiBaseUrl(baseUrl || '');
+      } catch (err) {
+        console.error('Failed to fetch OpenAI base URL:', err);
+      }
+    };
+
+    const fetchOpenAiOauthStatus = async () => {
+      try {
+        const status = await accomplish.getOpenAiOauthStatus();
+        setOpenAiOauthStatus(status);
+      } catch (err) {
+        console.error('Failed to fetch OpenAI OAuth status:', err);
+      }
+    };
+
     const fetchSelectedModel = async () => {
       try {
         const model = await accomplish.getSelectedModel();
@@ -99,6 +122,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     fetchKeys();
     fetchDebugSetting();
     fetchVersion();
+    fetchOpenAiBaseUrl();
+    fetchOpenAiOauthStatus();
     fetchSelectedModel();
   }, [open]);
 
@@ -181,6 +206,49 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     }
   };
 
+  const handleSaveOpenAiBaseUrl = async () => {
+    const accomplish = getAccomplish();
+    const trimmed = openAiBaseUrl.trim();
+
+    setIsSavingOpenAiBaseUrl(true);
+    setError(null);
+    setStatusMessage(null);
+
+    try {
+      await accomplish.setOpenAiBaseUrl(trimmed);
+      setOpenAiBaseUrl(trimmed);
+      setStatusMessage(trimmed ? 'OpenAI base URL saved.' : 'OpenAI base URL cleared.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save OpenAI base URL.';
+      setError(message);
+    } finally {
+      setIsSavingOpenAiBaseUrl(false);
+    }
+  };
+
+  const handleLoginOpenAiWithChatGpt = async () => {
+    const accomplish = getAccomplish();
+    setIsSigningInWithChatGpt(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      await accomplish.loginOpenAiWithChatGpt();
+      const status = await accomplish.getOpenAiOauthStatus();
+      setOpenAiOauthStatus(status);
+      if (status.connected) {
+        setStatusMessage('ChatGPT sign-in successful.');
+        onApiKeySaved?.();
+      } else {
+        setStatusMessage('ChatGPT sign-in started. Complete it in your browser.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to sign in with ChatGPT.';
+      setError(message);
+    } finally {
+      setIsSigningInWithChatGpt(false);
+    }
+  };
+
   const handleDeleteApiKey = async (id: string, providerName: string) => {
     const accomplish = getAccomplish();
     const providerConfig = API_KEY_PROVIDERS.find((p) => p.id === providerName);
@@ -256,7 +324,72 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   placeholder={API_KEY_PROVIDERS.find((p) => p.id === provider)?.placeholder}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
+                {provider === 'openrouter' && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Uses the OpenAI-compatible endpoint at <span className="font-mono">https://openrouter.ai/api/v1</span>. Select an OpenAI model below.
+                  </p>
+                )}
               </div>
+
+              {/* OpenAI Base URL Override (for OpenRouter / proxies) */}
+              {provider === 'openai' && (
+                <div className="mb-5">
+                  <label className="mb-2.5 block text-sm font-medium text-foreground">
+                    OpenAI Base URL (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={openAiBaseUrl}
+                    onChange={(e) => setOpenAiBaseUrl(e.target.value)}
+                    placeholder="https://api.openai.com/v1"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                  />
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      Leave blank for OpenAI. Set to <span className="font-mono">https://openrouter.ai/api/v1</span> for OpenRouter.
+                    </p>
+                    <button
+                      type="button"
+                      className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                      onClick={handleSaveOpenAiBaseUrl}
+                      disabled={isSavingOpenAiBaseUrl}
+                    >
+                      {isSavingOpenAiBaseUrl ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ChatGPT OAuth Sign-in (OpenAI) */}
+              {provider === 'openai' && (
+                <div className="mb-5 rounded-xl border border-border bg-muted p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">Sign in with ChatGPT</div>
+                      <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                        Use your ChatGPT Pro/Plus subscription via OAuth (no API key). This opens your browser for authorization.
+                      </p>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Status:{' '}
+                        <span className="font-medium text-foreground">
+                          {openAiOauthStatus?.connected ? 'Connected' : 'Not connected'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60"
+                      onClick={handleLoginOpenAiWithChatGpt}
+                      disabled={isSigningInWithChatGpt}
+                    >
+                      {isSigningInWithChatGpt ? 'Signing in...' : 'Sign in'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
               {statusMessage && (
@@ -335,7 +468,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   {DEFAULT_PROVIDERS.filter((p) => p.requiresApiKey).map((provider) => {
-                    const hasApiKey = savedKeys.some((k) => k.provider === provider.id);
+                    const hasOpenAiAccess = savedKeys.some((k) => k.provider === 'openai' || k.provider === 'openrouter') || Boolean(openAiOauthStatus?.connected);
+                    const hasApiKey = provider.id === 'openai' ? hasOpenAiAccess : savedKeys.some((k) => k.provider === provider.id);
                     return (
                       <optgroup key={provider.id} label={provider.name}>
                         {provider.models.map((model) => (
@@ -344,7 +478,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                             value={model.fullId}
                             disabled={!hasApiKey}
                           >
-                            {model.displayName}{!hasApiKey ? ' (No API key)' : ''}
+                            {model.displayName}{!hasApiKey ? (provider.id === 'openai' ? ' (No API key / ChatGPT sign-in)' : ' (No API key)') : ''}
                           </option>
                         ))}
                       </optgroup>
@@ -355,9 +489,16 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
               {modelStatusMessage && (
                 <p className="mt-3 text-sm text-success">{modelStatusMessage}</p>
               )}
-              {selectedModel && !savedKeys.some((k) => k.provider === selectedModel.provider) && (
+              {selectedModel && !(
+                selectedModel.provider === 'openai'
+                  ? (savedKeys.some((k) => k.provider === 'openai' || k.provider === 'openrouter') || Boolean(openAiOauthStatus?.connected))
+                  : savedKeys.some((k) => k.provider === selectedModel.provider)
+              ) && (
                 <p className="mt-3 text-sm text-warning">
-                  No API key configured for {DEFAULT_PROVIDERS.find((p) => p.id === selectedModel.provider)?.name}. Add one above to use this model.
+                  {selectedModel.provider === 'openai'
+                    ? 'No API key or ChatGPT sign-in configured for '
+                    : 'No API key configured for '}
+                  {DEFAULT_PROVIDERS.find((p) => p.id === selectedModel.provider)?.name}. Add one above to use this model.
                 </p>
               )}
             </div>

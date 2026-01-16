@@ -26,9 +26,18 @@ export interface AuthTokens {
   expiresIn: number;
 }
 
+export type ApiKeyProvider =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'groq'
+  | 'custom'
+  | 'aws_bedrock';
+
 export interface ApiKeyConfig {
   id: string;
-  provider: 'anthropic' | 'aws_bedrock';
+  provider: ApiKeyProvider;
   label?: string;
   keyPrefix?: string;
   isActive: boolean;
