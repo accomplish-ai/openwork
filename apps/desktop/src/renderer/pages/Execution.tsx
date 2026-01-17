@@ -668,25 +668,77 @@ export default function ExecutionPage() {
                     {/* File permission specific UI */}
                     {permissionRequest.type === 'file' && (
                       <>
-                        <div className="mb-3">
-                          <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                            getOperationBadgeClasses(permissionRequest.fileOperation)
-                          )}>
-                            {permissionRequest.fileOperation?.toUpperCase()}
-                          </span>
-                        </div>
+                        {/* Delete operation warning banner */}
+                        {isDeleteOperation(permissionRequest) && (
+                          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                            <p className="text-sm text-red-600">
+                              {(() => {
+                                const paths = getDisplayFilePaths(permissionRequest);
+                                return paths.length > 1
+                                  ? `${paths.length} files will be permanently deleted:`
+                                  : 'This file will be permanently deleted:';
+                              })()}
+                            </p>
+                          </div>
+                        )}
 
-                        <div className="mb-4 p-3 rounded-lg bg-muted">
-                          <p className="text-sm font-mono text-foreground break-all">
-                            {permissionRequest.filePath}
-                          </p>
+                        {/* Non-delete operation badge */}
+                        {!isDeleteOperation(permissionRequest) && (
+                          <div className="mb-3">
+                            <span className={cn(
+                              "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                              getOperationBadgeClasses(permissionRequest.fileOperation)
+                            )}>
+                              {permissionRequest.fileOperation?.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* File path(s) display */}
+                        <div className={cn(
+                          "mb-4 p-3 rounded-lg",
+                          isDeleteOperation(permissionRequest)
+                            ? "bg-red-500/5 border border-red-500/20"
+                            : "bg-muted"
+                        )}>
+                          {(() => {
+                            const paths = getDisplayFilePaths(permissionRequest);
+                            if (paths.length > 1) {
+                              return (
+                                <ul className="space-y-1">
+                                  {paths.map((path, idx) => (
+                                    <li key={idx} className={cn(
+                                      "text-sm font-mono break-all",
+                                      isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
+                                    )}>
+                                      • {path}
+                                    </li>
+                                  ))}
+                                </ul>
+                              );
+                            }
+                            return (
+                              <p className={cn(
+                                "text-sm font-mono break-all",
+                                isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
+                              )}>
+                                {paths[0]}
+                              </p>
+                            );
+                          })()}
                           {permissionRequest.targetPath && (
                             <p className="text-sm font-mono text-muted-foreground mt-1">
                               → {permissionRequest.targetPath}
                             </p>
                           )}
                         </div>
+
+                        {/* Delete warning text */}
+                        {isDeleteOperation(permissionRequest) && (
+                          <p className="text-sm text-red-600/80 mb-4">
+                            This action cannot be undone.
+                          </p>
+                        )}
 
                         {permissionRequest.contentPreview && (
                           <details className="mb-4">
