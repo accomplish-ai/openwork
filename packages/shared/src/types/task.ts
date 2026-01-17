@@ -65,6 +65,8 @@ export interface TaskResult {
   sessionId?: string;
   durationMs?: number;
   error?: string;
+  /** Specific error code for actionable errors (e.g., MODEL_NO_TOOLS) */
+  errorCode?: string;
 }
 
 /**

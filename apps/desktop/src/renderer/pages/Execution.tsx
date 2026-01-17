@@ -143,6 +143,8 @@ export default function ExecutionPage() {
     startupStageTaskId,
     todos,
     todosTaskId,
+    openSettings,
+    retryTask,
   } = useTaskStore();
 
   // Debounced scroll function
@@ -1113,12 +1115,35 @@ export default function ExecutionPage() {
       {/* Completed/Failed state (no session to continue) */}
       {isComplete && !canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
-          </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          {currentTask.result?.errorCode === 'MODEL_NO_TOOLS' ? (
+            <>
+              <div className="flex items-center justify-center gap-2 text-amber-500 mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">Model Not Compatible</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                The selected model doesn't support tool use. Please switch to a compatible model like llama3.2, qwen2.5, or mistral.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => openSettings()}>
+                  Change Model
+                </Button>
+                <Button onClick={() => retryTask()}>
+                  <Play className="h-4 w-4 mr-1" />
+                  Retry Task
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-3">
+                Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
+              </p>
+              <Button onClick={() => navigate('/')}>
+                Start New Task
+              </Button>
+            </>
+          )}
         </div>
       )}
 
