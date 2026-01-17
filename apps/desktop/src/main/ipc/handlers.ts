@@ -663,15 +663,31 @@ export function registerIPCHandlers(): void {
       .filter((credential) => credential.account.startsWith('apiKey:'))
       .map((credential) => {
         const provider = credential.account.replace('apiKey:', '');
-        const keyPrefix =
-          credential.password && credential.password.length > 0
-            ? `${credential.password.substring(0, 8)}...`
-            : '';
+
+        // Handle Bedrock specially - it stores JSON credentials
+        let keyPrefix = '';
+        if (provider === 'bedrock') {
+          try {
+            const parsed = JSON.parse(credential.password);
+            if (parsed.authType === 'accessKeys') {
+              keyPrefix = `${parsed.accessKeyId?.substring(0, 8) || 'AKIA'}...`;
+            } else if (parsed.authType === 'profile') {
+              keyPrefix = `Profile: ${parsed.profileName || 'default'}`;
+            }
+          } catch {
+            keyPrefix = 'AWS Credentials';
+          }
+        } else {
+          keyPrefix =
+            credential.password && credential.password.length > 0
+              ? `${credential.password.substring(0, 8)}...`
+              : '';
+        }
 
         return {
           id: `local-${provider}`,
           provider,
-          label: 'Local API Key',
+          label: provider === 'bedrock' ? 'AWS Credentials' : 'Local API Key',
           keyPrefix,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -904,12 +920,16 @@ export function registerIPCHandlers(): void {
 
       if (parsed.authType === 'accessKeys') {
         // Access key authentication
+        const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
+          accessKeyId: parsed.accessKeyId,
+          secretAccessKey: parsed.secretAccessKey,
+        };
+        if (parsed.sessionToken) {
+          awsCredentials.sessionToken = parsed.sessionToken;
+        }
         client = new BedrockClient({
           region: parsed.region || 'us-east-1',
-          credentials: {
-            accessKeyId: parsed.accessKeyId,
-            secretAccessKey: parsed.secretAccessKey,
-          },
+          credentials: awsCredentials,
         });
       } else if (parsed.authType === 'profile') {
         // AWS Profile authentication

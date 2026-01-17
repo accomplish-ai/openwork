@@ -40,6 +40,7 @@ export interface BedrockAccessKeyCredentials {
   authType: 'accessKeys';
   accessKeyId: string;
   secretAccessKey: string;
+  sessionToken?: string;  // Optional: for temporary credentials (STS)
   region: string;
 }
 

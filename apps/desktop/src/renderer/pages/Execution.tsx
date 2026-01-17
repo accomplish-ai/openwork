@@ -128,7 +128,8 @@ export default function ExecutionPage() {
     return () => {
       unsubscribeDebugMode?.();
     };
-  }, [accomplish]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - accomplish is a stable singleton wrapper
 
   // Load task and subscribe to events
   useEffect(() => {
@@ -198,7 +199,8 @@ export default function ExecutionPage() {
       unsubscribeStatusChange?.();
       unsubscribeDebugLog();
     };
-  }, [id, loadTaskById, addTaskUpdate, addTaskUpdateBatch, updateTaskStatus, setPermissionRequest, accomplish]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loadTaskById, addTaskUpdate, addTaskUpdateBatch, updateTaskStatus, setPermissionRequest]); // accomplish is stable singleton
 
   // Increment counter when task starts/resumes
   useEffect(() => {

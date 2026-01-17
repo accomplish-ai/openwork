@@ -395,6 +395,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       if (bedrockCredentials.authType === 'accessKeys') {
         env.AWS_ACCESS_KEY_ID = bedrockCredentials.accessKeyId;
         env.AWS_SECRET_ACCESS_KEY = bedrockCredentials.secretAccessKey;
+        if (bedrockCredentials.sessionToken) {
+          env.AWS_SESSION_TOKEN = bedrockCredentials.sessionToken;
+        }
         console.log('[OpenCode CLI] Using Bedrock Access Key credentials');
       } else if (bedrockCredentials.authType === 'profile') {
         env.AWS_PROFILE = bedrockCredentials.profileName;

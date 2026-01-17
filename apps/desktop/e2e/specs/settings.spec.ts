@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures';
-import { SettingsPage } from '../pages';
+import { SettingsPage, HomePage, ExecutionPage } from '../pages';
 import { captureForAI } from '../utils';
-import { TEST_TIMEOUTS } from '../config';
+import { TEST_TIMEOUTS, TEST_SCENARIOS } from '../config';
 
 test.describe('Settings Dialog', () => {
   test('should open settings dialog when clicking settings button', async ({ window }) => {
@@ -343,6 +343,59 @@ test.describe('Settings Dialog', () => {
         'All six cloud providers are visible',
         'Anthropic, OpenAI, Google AI, xAI, DeepSeek, Z.AI all present',
         'User can select any provider'
+      ]
+    );
+  });
+
+  /**
+   * Regression test for: "Maximum update depth exceeded" infinite loop bug
+   *
+   * Bug: Execution.tsx called getAccomplish() on every render, creating a new
+   * object reference. This was used as a useEffect dependency, causing:
+   * render -> new accomplish -> useEffect runs -> setState -> render -> loop
+   *
+   * This test verifies Settings dialog opens correctly after a task completes.
+   */
+  test('should open settings dialog after task completes without crashing', async ({ window }) => {
+    const homePage = new HomePage(window);
+    const executionPage = new ExecutionPage(window);
+    const settingsPage = new SettingsPage(window);
+
+    await window.waitForLoadState('domcontentloaded');
+
+    // Step 1: Start a task
+    await homePage.enterTask(TEST_SCENARIOS.SUCCESS.keyword);
+    await homePage.submitTask();
+
+    // Step 2: Wait for navigation to execution page
+    await window.waitForURL(/.*#\/execution.*/, { timeout: TEST_TIMEOUTS.NAVIGATION });
+
+    // Step 3: Wait for task to complete
+    await executionPage.waitForComplete();
+
+    // Verify task completed
+    await expect(executionPage.statusBadge).toBeVisible();
+
+    // Step 4: Open settings dialog - this is where the bug would cause infinite loop
+    // The test should NOT timeout here. If it does, the infinite loop bug is present.
+    await settingsPage.navigateToSettings();
+
+    // Step 5: Verify settings dialog opened successfully (no crash/freeze)
+    await expect(settingsPage.modelSelect).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+
+    // Additional verification: can interact with the dialog
+    const dialogTitle = window.getByRole('heading', { name: 'Settings' });
+    await expect(dialogTitle).toBeVisible();
+
+    // Capture successful state
+    await captureForAI(
+      window,
+      'settings-dialog',
+      'after-task-completion',
+      [
+        'Settings dialog opened successfully after task completion',
+        'No infinite loop or crash occurred',
+        'Dialog is fully functional'
       ]
     );
   });

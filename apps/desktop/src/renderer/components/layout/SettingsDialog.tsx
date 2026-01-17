@@ -59,6 +59,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [bedrockAuthTab, setBedrockAuthTab] = useState<'accessKeys' | 'profile'>('accessKeys');
   const [bedrockAccessKeyId, setBedrockAccessKeyId] = useState('');
   const [bedrockSecretKey, setBedrockSecretKey] = useState('');
+  const [bedrockSessionToken, setBedrockSessionToken] = useState('');
   const [bedrockProfileName, setBedrockProfileName] = useState('default');
   const [bedrockRegion, setBedrockRegion] = useState('us-east-1');
   const [savingBedrock, setSavingBedrock] = useState(false);
@@ -321,6 +322,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
             authType: 'accessKeys' as const,
             accessKeyId: bedrockAccessKeyId.trim(),
             secretAccessKey: bedrockSecretKey.trim(),
+            sessionToken: bedrockSessionToken.trim() || undefined,
             region: bedrockRegion.trim() || 'us-east-1',
           }
         : {
@@ -347,6 +349,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
 
       // Clear sensitive fields
       setBedrockSecretKey('');
+      setBedrockSessionToken('');
       onApiKeySaved?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save credentials.';
@@ -635,6 +638,19 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                             value={bedrockSecretKey}
                             onChange={(e) => setBedrockSecretKey(e.target.value)}
                             placeholder="Enter your secret access key"
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div className="mb-4">
+                          <label className="mb-2.5 block text-sm font-medium text-foreground">
+                            Session Token <span className="text-muted-foreground">(Optional)</span>
+                          </label>
+                          <input
+                            data-testid="bedrock-session-token-input"
+                            type="password"
+                            value={bedrockSessionToken}
+                            onChange={(e) => setBedrockSessionToken(e.target.value)}
+                            placeholder="For temporary credentials (STS)"
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           />
                         </div>
