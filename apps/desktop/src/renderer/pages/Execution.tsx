@@ -615,17 +615,27 @@ export default function ExecutionPage() {
                 <div className="flex items-start gap-4">
                   <div className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full shrink-0",
+                    isDeleteOperation(permissionRequest) ? "bg-red-500/10" :
                     permissionRequest.type === 'file' ? "bg-amber-500/10" : "bg-warning/10"
                   )}>
-                    {permissionRequest.type === 'file' ? (
+                    {isDeleteOperation(permissionRequest) ? (
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    ) : permissionRequest.type === 'file' ? (
                       <File className="h-5 w-5 text-amber-600" />
                     ) : (
                       <AlertCircle className="h-5 w-5 text-warning" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {permissionRequest.type === 'file' ? 'File Permission Required' : 'Permission Required'}
+                    <h3 className={cn(
+                      "text-lg font-semibold mb-2",
+                      isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
+                    )}>
+                      {isDeleteOperation(permissionRequest)
+                        ? 'File Deletion Warning'
+                        : permissionRequest.type === 'file'
+                          ? 'File Permission Required'
+                          : 'Permission Required'}
                     </h3>
 
                     {/* File permission specific UI */}
