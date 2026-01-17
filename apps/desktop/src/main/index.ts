@@ -1,12 +1,13 @@
 import { config } from 'dotenv';
 import { app, BrowserWindow, shell, ipcMain, nativeImage } from 'electron';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { registerIPCHandlers } from './ipc/handlers';
 import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
 import { checkAndCleanupFreshInstall } from './store/freshInstallCleanup';
+import { performCleanStart } from './utils/clean-start';
+import { flushAllLoggers } from './utils/logger';
 
 // Local UI - no longer uses remote URL
 
@@ -19,22 +20,10 @@ if (process.argv.includes('--e2e-mock-tasks') || process.env.E2E_MOCK_TASK_EVENT
   (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS = true;
 }
 
-// Clean mode - wipe all stored data for a fresh start
+// Clean mode - wipe all stored data for a fresh start (DEVELOPMENT ONLY)
 // Use CLEAN_START env var since CLI args don't pass through vite to Electron
-if (process.env.CLEAN_START === '1') {
-  const userDataPath = app.getPath('userData');
-  console.log('[Clean Mode] Clearing userData directory:', userDataPath);
-  try {
-    if (fs.existsSync(userDataPath)) {
-      fs.rmSync(userDataPath, { recursive: true, force: true });
-      console.log('[Clean Mode] Successfully cleared userData');
-    }
-  } catch (err) {
-    console.error('[Clean Mode] Failed to clear userData:', err);
-  }
-  // Note: Secure storage (API keys, auth tokens) is stored in electron-store
-  // which lives in userData, so it gets cleared with the directory above
-}
+// Note: This is blocked in production builds for safety - see clean-start.ts
+performCleanStart();
 
 // Set app name before anything else (affects deep link dialogs)
 app.name = 'Openwork';
@@ -194,6 +183,8 @@ app.on('before-quit', () => {
   flushPendingTasks();
   // Dispose all active tasks and cleanup PTY processes
   disposeTaskManager();
+  // Flush any buffered log entries to prevent log loss
+  flushAllLoggers();
 });
 
 // Handle custom protocol (accomplish://)
