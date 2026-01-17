@@ -10,7 +10,7 @@ import type { TaskMessage } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
@@ -71,6 +71,22 @@ function getOperationBadgeClasses(operation?: string): string {
     case 'move': return 'bg-blue-500/10 text-blue-600';
     default: return 'bg-gray-500/10 text-gray-600';
   }
+}
+
+// Helper to check if this is a delete operation
+function isDeleteOperation(request: { type: string; fileOperation?: string }): boolean {
+  return request.type === 'file' && request.fileOperation === 'delete';
+}
+
+// Get file paths to display (handles both single and multiple)
+function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] }): string[] {
+  if (request.filePaths && request.filePaths.length > 0) {
+    return request.filePaths;
+  }
+  if (request.filePath) {
+    return [request.filePath];
+  }
+  return [];
 }
 
 export default function ExecutionPage() {
