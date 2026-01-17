@@ -857,7 +857,10 @@ export default function ExecutionPage() {
                       </Button>
                       <Button
                         onClick={() => handlePermissionResponse(true)}
-                        className="flex-1"
+                        className={cn(
+                          "flex-1",
+                          isDeleteOperation(permissionRequest) && "bg-red-600 hover:bg-red-700 text-white"
+                        )}
                         data-testid="permission-allow-button"
                         disabled={
                           permissionRequest.type === 'question' &&
@@ -866,7 +869,13 @@ export default function ExecutionPage() {
                           selectedOptions.length === 0
                         }
                       >
-                        {permissionRequest.type === 'question' ? 'Submit' : 'Allow'}
+                        {isDeleteOperation(permissionRequest)
+                          ? getDisplayFilePaths(permissionRequest).length > 1
+                            ? 'Delete All'
+                            : 'Delete'
+                          : permissionRequest.type === 'question'
+                            ? 'Submit'
+                            : 'Allow'}
                       </Button>
                     </div>
                   </div>
