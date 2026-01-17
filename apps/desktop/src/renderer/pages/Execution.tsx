@@ -754,10 +754,17 @@ export default function ExecutionPage() {
                       </Button>
                       <Button
                         onClick={() => handlePermissionResponse(true)}
-                        className="flex-1"
+                        className={cn(
+                          "flex-1",
+                          isDeleteOperation(permissionRequest) && "bg-red-600 hover:bg-red-700 text-white"
+                        )}
                         data-testid="permission-allow-button"
                       >
-                        Allow
+                        {isDeleteOperation(permissionRequest)
+                          ? getDisplayFilePaths(permissionRequest).length > 1
+                            ? 'Delete All'
+                            : 'Delete'
+                          : 'Allow'}
                       </Button>
                     </div>
                   </div>
