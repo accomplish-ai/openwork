@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '../../lib/accomplish';
 import { analytics } from '../../lib/analytics';
 import { CornerDownLeft, Loader2 } from 'lucide-react';
@@ -20,12 +21,13 @@ export default function TaskInputBar({
   value,
   onChange,
   onSubmit,
-  placeholder = 'Assign a task or ask anything',
+  placeholder,
   isLoading = false,
   disabled = false,
   large = false,
   autoFocus = false,
 }: TaskInputBarProps) {
+  const { t } = useTranslation('common');
   const isDisabled = disabled || isLoading;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const accomplish = getAccomplish();
@@ -83,7 +85,7 @@ export default function TaskInputBar({
         }}
         disabled={!value.trim() || isDisabled}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-        title="Submit"
+        title={t('buttons.submit')}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />

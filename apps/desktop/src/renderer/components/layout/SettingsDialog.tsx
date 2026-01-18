@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '@/lib/accomplish';
 import { analytics } from '@/lib/analytics';
+import { changeLanguage, getLanguagePreference } from '@/i18n';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ const API_KEY_PROVIDERS = [
 type ProviderId = typeof API_KEY_PROVIDERS[number]['id'];
 
 export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
+  const { t } = useTranslation('settings');
   const [apiKey, setApiKey] = useState('');
   const [provider, setProvider] = useState<ProviderId>('anthropic');
   const [isSaving, setIsSaving] = useState(false);
@@ -65,6 +68,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [savingBedrock, setSavingBedrock] = useState(false);
   const [bedrockError, setBedrockError] = useState<string | null>(null);
   const [bedrockStatus, setBedrockStatus] = useState<string | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh-CN' | 'auto'>('auto');
 
   useEffect(() => {
     if (!open) return;
@@ -150,12 +154,22 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     };
 
+    const fetchLanguage = async () => {
+      try {
+        const lang = await getLanguagePreference();
+        setCurrentLanguage(lang);
+      } catch (err) {
+        console.error('Failed to fetch language setting:', err);
+      }
+    };
+
     fetchKeys();
     fetchDebugSetting();
     fetchVersion();
     fetchSelectedModel();
     fetchOllamaConfig();
     fetchBedrockCredentials();
+    fetchLanguage();
   }, [open]);
 
   const handleDebugToggle = async () => {
@@ -168,6 +182,15 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     } catch (err) {
       console.error('Failed to save debug setting:', err);
       setDebugMode(!newValue);
+    }
+  };
+
+  const handleLanguageChange = async (language: 'en' | 'zh-CN' | 'auto') => {
+    setCurrentLanguage(language);
+    try {
+      await changeLanguage(language);
+    } catch (err) {
+      console.error('Failed to change language:', err);
     }
   };
 
@@ -368,13 +391,13 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-8 mt-4">
           {/* Model Selection Section */}
           <section>
-            <h2 className="mb-4 text-base font-medium text-foreground">Model</h2>
+            <h2 className="mb-4 text-base font-medium text-foreground">{t('model.title')}</h2>
             <div className="rounded-lg border border-border bg-card p-5">
               {/* Tabs */}
               <div className="flex gap-2 mb-5">
@@ -385,7 +408,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                 >
-                  Cloud Providers
+                  {t('model.cloudProviders')}
                 </button>
                 <button
                   onClick={() => setActiveTab('local')}
@@ -394,14 +417,14 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                 >
-                  Local Models
+                  {t('model.localModels')}
                 </button>
               </div>
 
               {activeTab === 'cloud' ? (
                 <>
                   <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-                    Select a cloud AI model. Requires an API key for the provider.
+                    {t('model.cloudDescription')}
                   </p>
                   {loadingModel ? (
                     <div className="h-10 animate-pulse rounded-md bg-muted" />
@@ -412,7 +435,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       onChange={(e) => handleModelChange(e.target.value)}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     >
-                      <option value="" disabled>Select a model...</option>
+                      <option value="" disabled>{t('model.selectModel')}</option>
                       {DEFAULT_PROVIDERS.filter((p) => p.requiresApiKey || p.id === 'bedrock').map((provider) => {
                         const hasApiKey = provider.id === 'bedrock'
                           ? savedKeys.some((k) => k.provider === 'bedrock')
@@ -425,7 +448,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                                 value={model.fullId}
                                 disabled={!hasApiKey}
                               >
-                                {model.displayName}{!hasApiKey ? ' (No API key)' : ''}
+                                {model.displayName}{!hasApiKey ? ` ${t('model.noApiKey')}` : ''}
                               </option>
                             ))}
                           </optgroup>
@@ -438,20 +461,20 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   )}
                   {selectedModel && selectedModel.provider !== 'ollama' && !savedKeys.some((k) => k.provider === selectedModel.provider) && (
                     <p className="mt-3 text-sm text-warning">
-                      No API key configured for {DEFAULT_PROVIDERS.find((p) => p.id === selectedModel.provider)?.name}. Add one below.
+                      {t('model.noApiKeyWarning', { provider: DEFAULT_PROVIDERS.find((p) => p.id === selectedModel.provider)?.name })}
                     </p>
                   )}
                 </>
               ) : (
                 <>
                   <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
-                    Connect to a local Ollama server to use models running on your machine.
+                    {t('ollama.description')}
                   </p>
 
                   {/* Ollama URL Input */}
                   <div className="mb-4">
                     <label className="mb-2 block text-sm font-medium text-foreground">
-                      Ollama Server URL
+                      {t('ollama.serverUrl')}
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -470,7 +493,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                         disabled={testingOllama}
                         className="rounded-md bg-muted px-4 py-2 text-sm font-medium hover:bg-muted/80 disabled:opacity-50"
                       >
-                        {testingOllama ? 'Testing...' : 'Test'}
+                        {testingOllama ? t('common:buttons.testing') : t('common:buttons.test')}
                       </button>
                     </div>
                   </div>
@@ -481,7 +504,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Connected - {ollamaModels.length} model{ollamaModels.length !== 1 ? 's' : ''} available
+                      {t('ollama.connected', { count: ollamaModels.length })}
                     </div>
                   )}
 
@@ -498,7 +521,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   {ollamaConnected && ollamaModels.length > 0 && (
                     <div className="mb-4">
                       <label className="mb-2 block text-sm font-medium text-foreground">
-                        Select Model
+                        {t('ollama.selectModel')}
                       </label>
                       <select
                         value={selectedOllamaModel}
@@ -521,14 +544,14 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       disabled={savingOllama}
                       className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                     >
-                      {savingOllama ? 'Saving...' : 'Use This Model'}
+                      {savingOllama ? t('common:buttons.saving') : t('ollama.useThisModel')}
                     </button>
                   )}
 
                   {/* Help text when not connected */}
                   {!ollamaConnected && !ollamaError && (
                     <p className="text-sm text-muted-foreground">
-                      Make sure{' '}
+                      {t('ollama.helpText').split('Ollama')[0]}
                       <a
                         href="https://ollama.ai"
                         target="_blank"
@@ -536,8 +559,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                         className="text-primary hover:underline"
                       >
                         Ollama
-                      </a>{' '}
-                      is installed and running, then click Test to connect.
+                      </a>
+                      {t('ollama.helpText').split('Ollama')[1]}
                     </p>
                   )}
 
@@ -545,7 +568,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   {selectedModel?.provider === 'ollama' && (
                     <div className="mt-4 rounded-lg bg-muted p-3">
                       <p className="text-sm text-foreground">
-                        <span className="font-medium">Currently using:</span>{' '}
+                        <span className="font-medium">{t('ollama.currentlyUsing')}:</span>{' '}
                         {selectedModel.model.replace('ollama/', '')}
                       </p>
                     </div>
@@ -558,16 +581,16 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
           {/* API Key Section - Only show for cloud providers */}
           {activeTab === 'cloud' && (
             <section>
-              <h2 className="mb-4 text-base font-medium text-foreground">Bring Your Own Model/API Key</h2>
+              <h2 className="mb-4 text-base font-medium text-foreground">{t('apiKey.title')}</h2>
               <div className="rounded-lg border border-border bg-card p-5">
                 <p className="mb-5 text-sm text-muted-foreground leading-relaxed">
-                  Setup the API key and model for your own AI coworker.
+                  {t('apiKey.description')}
                 </p>
 
                 {/* Provider Selection */}
                 <div className="mb-5">
                   <label className="mb-2.5 block text-sm font-medium text-foreground">
-                    Provider
+                    {t('apiKey.provider')}
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {API_KEY_PROVIDERS.map((p) => (
@@ -600,7 +623,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                             : 'bg-muted text-muted-foreground hover:text-foreground'
                           }`}
                       >
-                        Access Keys
+                        {t('bedrock.accessKeys')}
                       </button>
                       <button
                         onClick={() => setBedrockAuthTab('profile')}
@@ -609,7 +632,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                             : 'bg-muted text-muted-foreground hover:text-foreground'
                           }`}
                       >
-                        AWS Profile
+                        {t('bedrock.awsProfile')}
                       </button>
                     </div>
 
@@ -617,7 +640,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       <>
                         <div className="mb-4">
                           <label className="mb-2.5 block text-sm font-medium text-foreground">
-                            Access Key ID
+                            {t('bedrock.accessKeyId')}
                           </label>
                           <input
                             data-testid="bedrock-access-key-input"
@@ -630,27 +653,27 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                         </div>
                         <div className="mb-4">
                           <label className="mb-2.5 block text-sm font-medium text-foreground">
-                            Secret Access Key
+                            {t('bedrock.secretAccessKey')}
                           </label>
                           <input
                             data-testid="bedrock-secret-key-input"
                             type="password"
                             value={bedrockSecretKey}
                             onChange={(e) => setBedrockSecretKey(e.target.value)}
-                            placeholder="Enter your secret access key"
+                            placeholder={t('bedrock.secretAccessKey')}
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           />
                         </div>
                         <div className="mb-4">
                           <label className="mb-2.5 block text-sm font-medium text-foreground">
-                            Session Token <span className="text-muted-foreground">(Optional)</span>
+                            {t('bedrock.sessionToken')} <span className="text-muted-foreground">({t('bedrock.sessionTokenOptional')})</span>
                           </label>
                           <input
                             data-testid="bedrock-session-token-input"
                             type="password"
                             value={bedrockSessionToken}
                             onChange={(e) => setBedrockSessionToken(e.target.value)}
-                            placeholder="For temporary credentials (STS)"
+                            placeholder={t('bedrock.sessionTokenHint')}
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           />
                         </div>
@@ -658,7 +681,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                     ) : (
                       <div className="mb-4">
                         <label className="mb-2.5 block text-sm font-medium text-foreground">
-                          Profile Name
+                          {t('bedrock.profileName')}
                         </label>
                         <input
                           data-testid="bedrock-profile-input"
@@ -673,7 +696,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
 
                     <div className="mb-4">
                       <label className="mb-2.5 block text-sm font-medium text-foreground">
-                        Region
+                        {t('bedrock.region')}
                       </label>
                       <input
                         data-testid="bedrock-region-input"
@@ -694,7 +717,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                       onClick={handleSaveBedrockCredentials}
                       disabled={savingBedrock}
                     >
-                      {savingBedrock ? 'Validating...' : 'Save Bedrock Credentials'}
+                      {savingBedrock ? t('common:buttons.validating') : t('bedrock.saveButton')}
                     </button>
                   </div>
                 )}
@@ -703,7 +726,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                 {provider !== 'bedrock' && (
                   <div className="mb-5">
                     <label className="mb-2.5 block text-sm font-medium text-foreground">
-                      {API_KEY_PROVIDERS.find((p) => p.id === provider)?.name} API Key
+                      {t('apiKey.apiKeyLabel', { provider: API_KEY_PROVIDERS.find((p) => p.id === provider)?.name })}
                     </label>
                     <input
                       data-testid="settings-api-key-input"
@@ -727,7 +750,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                     onClick={handleSaveApiKey}
                     disabled={isSaving}
                   >
-                    {isSaving ? 'Saving...' : 'Save API Key'}
+                    {isSaving ? t('common:buttons.saving') : t('apiKey.saveButton')}
                   </button>
                 )}
 
@@ -739,7 +762,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   </div>
                 ) : savedKeys.length > 0 && (
                   <div className="mt-6">
-                    <h3 className="mb-3 text-sm font-medium text-foreground">Saved Keys</h3>
+                    <h3 className="mb-3 text-sm font-medium text-foreground">{t('apiKey.savedKeys')}</h3>
                     <div className="space-y-2">
                       {savedKeys.map((key) => {
                         const providerConfig = API_KEY_PROVIDERS.find((p) => p.id === key.provider);
@@ -765,7 +788,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                             </div>
                             {keyToDelete === key.id ? (
                               <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">Are you sure?</span>
+                                <span className="text-xs text-muted-foreground">{t('apiKey.confirmDelete')}</span>
                                 <button
                                   onClick={() => {
                                     handleDeleteApiKey(key.id, key.provider);
@@ -773,20 +796,20 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                                   }}
                                   className="rounded px-2 py-1 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
                                 >
-                                  Yes
+                                  {t('common:buttons.yes')}
                                 </button>
                                 <button
                                   onClick={() => setKeyToDelete(null)}
                                   className="rounded px-2 py-1 text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                                 >
-                                  No
+                                  {t('common:buttons.no')}
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => setKeyToDelete(key.id)}
                                 className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors duration-200 ease-accomplish"
-                                title="Remove API key"
+                                title={t('common:buttons.delete')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -803,14 +826,13 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
 
           {/* Developer Section */}
           <section>
-            <h2 className="mb-4 text-base font-medium text-foreground">Developer</h2>
+            <h2 className="mb-4 text-base font-medium text-foreground">{t('developer.title')}</h2>
             <div className="rounded-lg border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="font-medium text-foreground">Debug Mode</div>
+                  <div className="font-medium text-foreground">{t('developer.debugMode')}</div>
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                    Show detailed backend logs including Claude CLI commands, flags,
-                    and stdout/stderr output in the task view.
+                    {t('developer.debugDescription')}
                   </p>
                 </div>
                 <div className="ml-4">
@@ -834,17 +856,35 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
               {debugMode && (
                 <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
                   <p className="text-sm text-warning">
-                    Debug mode is enabled. Backend logs will appear in the task view
-                    when running tasks.
+                    {t('developer.debugEnabled')}
                   </p>
                 </div>
               )}
             </div>
           </section>
 
+          {/* Language Section */}
+          <section>
+            <h2 className="mb-4 text-base font-medium text-foreground">{t('language.title')}</h2>
+            <div className="rounded-lg border border-border bg-card p-5">
+              <p className="mb-4 text-sm text-muted-foreground leading-relaxed">
+                {t('language.description')}
+              </p>
+              <select
+                value={currentLanguage}
+                onChange={(e) => handleLanguageChange(e.target.value as 'en' | 'zh-CN' | 'auto')}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="auto">{t('language.auto')}</option>
+                <option value="en">{t('language.en')}</option>
+                <option value="zh-CN">{t('language.zhCN')}</option>
+              </select>
+            </div>
+          </section>
+
           {/* About Section */}
           <section>
-            <h2 className="mb-4 text-base font-medium text-foreground">About</h2>
+            <h2 className="mb-4 text-base font-medium text-foreground">{t('about.title')}</h2>
             <div className="rounded-lg border border-border bg-card p-5">
               <div className="flex items-center gap-4">
                 <img
@@ -854,14 +894,14 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                 />
                 <div>
                   <div className="font-medium text-foreground">Openwork</div>
-                  <div className="text-sm text-muted-foreground">Version {appVersion || '0.1.0'}</div>
+                  <div className="text-sm text-muted-foreground">{t('about.version', { version: appVersion || '0.1.0' })}</div>
                 </div>
               </div>
               <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                Openwork is a local computer-use AI agent for your Mac that reads your files, creates documents, and automates repetitive knowledge work—all open-source with your AI models of choice.
+                {t('about.description')}
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                Any questions or feedback? <a href="mailto:openwork-support@accomplish.ai" className="text-primary hover:underline">Click here to contact us</a>.
+                <a href="mailto:openwork-support@accomplish.ai" className="text-primary hover:underline">{t('about.contact')}</a>
               </p>
             </div>
           </section>

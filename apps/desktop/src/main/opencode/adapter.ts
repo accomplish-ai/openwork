@@ -13,6 +13,7 @@ import { getSelectedModel } from '../store/appSettings';
 import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME, syncApiKeysToOpenCodeAuth } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+import { t } from '../i18n';
 import path from 'path';
 import type {
   TaskConfig,
@@ -28,9 +29,7 @@ import type {
  */
 export class OpenCodeCliNotFoundError extends Error {
   constructor() {
-    super(
-      'OpenCode CLI is not available. The bundled CLI may be missing or corrupted. Please reinstall the application.'
-    );
+    super(t('errors:adapter.cliNotFound'));
     this.name = 'OpenCodeCliNotFoundError';
   }
 }
@@ -87,7 +86,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   async startTask(config: TaskConfig): Promise<Task> {
     // Check if adapter has been disposed
     if (this.isDisposed) {
-      throw new Error('Adapter has been disposed and cannot start new tasks');
+      throw new Error(t('errors:adapter.disposed'));
     }
 
     // Check if OpenCode CLI is installed before attempting to start
@@ -232,7 +231,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
    */
   async sendResponse(response: string): Promise<void> {
     if (!this.ptyProcess) {
-      throw new Error('No active process');
+      throw new Error(t('errors:adapter.noActiveProcess'));
     }
 
     this.ptyProcess.write(response + '\n');
@@ -605,7 +604,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           this.emit('complete', {
             status: 'error',
             sessionId: this.currentSessionId || undefined,
-            error: 'Task failed',
+            error: t('errors:task.taskFailed'),
           });
         }
         // 'tool_use' reason means agent is continuing, don't emit complete
@@ -666,7 +665,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         });
       } else if (code !== null) {
         // Error exit
-        this.emit('error', new Error(`OpenCode CLI exited with code ${code}`));
+        this.emit('error', new Error(t('errors:adapter.exitWithCode', { code })));
       }
     }
 
