@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
 import { analytics } from '@/lib/analytics';
@@ -19,6 +20,7 @@ export default function Sidebar() {
   const [showSettings, setShowSettings] = useState(false);
   const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher } = useTaskStore();
   const accomplish = getAccomplish();
+  const { t } = useTranslation('sidebar');
 
   useEffect(() => {
     loadTasks();
@@ -57,17 +59,17 @@ export default function Sidebar() {
             variant="default"
             size="sm"
             className="flex-1 justify-center gap-2"
-            title="New Task"
+            title={t('newTask')}
           >
             <MessageSquarePlus className="h-4 w-4" />
-            New Task
+            {t('newTask')}
           </Button>
           <Button
             onClick={openLauncher}
             variant="outline"
             size="sm"
             className="px-2"
-            title="Search Tasks (⌘K)"
+            title={t('searchTasks')}
           >
             <Search className="h-4 w-4" />
           </Button>
@@ -85,7 +87,7 @@ export default function Sidebar() {
                   exit={{ opacity: 0 }}
                   className="px-3 py-8 text-center text-sm text-muted-foreground"
                 >
-                  No conversations yet
+                  {t('noConversations')}
                 </motion.div>
               ) : (
                 <motion.div
@@ -124,7 +126,7 @@ export default function Sidebar() {
               analytics.trackOpenSettings();
               setShowSettings(true);
             }}
-            title="Settings"
+            title={t('settings')}
           >
             <Settings className="h-4 w-4" />
           </Button>
