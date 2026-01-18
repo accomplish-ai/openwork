@@ -143,6 +143,55 @@ pnpm test:e2e:debug
 pnpm test:e2e:report
 ```
 
+## Docker Testing (Headless)
+
+Run E2E tests in a Docker container with virtual display. This prevents test windows from blocking your desktop and enables concurrent test runs from multiple worktrees.
+
+### Prerequisites
+
+- Docker Desktop installed and running
+
+### Commands
+
+```bash
+# Run E2E tests in Docker (builds image if needed)
+pnpm test:e2e:docker
+
+# Build Docker image only (useful for caching)
+pnpm test:e2e:docker:build
+
+# Clean up Docker resources
+pnpm test:e2e:docker:clean
+```
+
+### How It Works
+
+1. Docker container runs Ubuntu with Xvfb (X Virtual Framebuffer)
+2. Xvfb provides a virtual display at `:99`
+3. Electron runs "headfully" inside the container, but the display is virtual
+4. Test results are mounted to the host for viewing
+
+### Concurrent Worktree Testing
+
+Each worktree can run `pnpm test:e2e:docker` simultaneously because:
+- Each container has its own isolated filesystem
+- Each container has its own virtual display
+- Electron's single-instance lock is per-container, not per-host
+
+### Troubleshooting
+
+**Tests fail with "cannot open display"**
+- Ensure Xvfb is starting (check Docker logs)
+- Verify `DISPLAY=:99` is set
+
+**Tests fail with sandbox errors**
+- The `--no-sandbox` flag is automatically added in Docker
+- Ensure `DOCKER_ENV=1` is in the environment
+
+**Out of memory errors**
+- Increase Docker's memory allocation in Docker Desktop settings
+- The compose file sets `shm_size: 2gb` for Chromium
+
 ## Writing Tests
 
 1. Import fixtures and page objects:
