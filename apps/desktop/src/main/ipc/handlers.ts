@@ -71,6 +71,7 @@ import {
 } from './validation';
 import { BedrockClient, ListFoundationModelsCommand } from '@aws-sdk/client-bedrock';
 import { fromIni } from '@aws-sdk/credential-providers';
+import { VertexAI } from '@google-cloud/vertexai';
 import {
   isMockTaskEventsEnabled,
   createMockTask,
@@ -79,7 +80,7 @@ import {
 } from '../test-utils/mock-task-flow';
 
 const MAX_TEXT_LENGTH = 8000;
-const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai', 'custom', 'bedrock']);
+const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai', 'custom', 'bedrock', 'vertex-ai']);
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
 interface OllamaModel {
@@ -697,7 +698,23 @@ export function registerIPCHandlers(): void {
           } catch {
             keyPrefix = 'AWS Credentials';
           }
-        } else {
+        }
+
+        // Handle Vertex AI specially - it stores JSON credentials
+        if (provider === 'vertex-ai') {
+          try {
+            const parsed = JSON.parse(credential.password);
+            if (parsed.authType === 'serviceAccount') {
+              keyPrefix = `Project: ${parsed.projectId?.substring(0, 12) || ''}...`;
+            } else if (parsed.authType === 'adc') {
+              keyPrefix = `ADC: ${parsed.projectId || 'default'}`;
+            }
+          } catch {
+            keyPrefix = 'GCP Credentials';
+          }
+        }
+
+        if (provider !== 'bedrock' && provider !== 'vertex-ai') {
           keyPrefix =
             credential.password && credential.password.length > 0
               ? `${credential.password.substring(0, 8)}...`
@@ -707,7 +724,7 @@ export function registerIPCHandlers(): void {
         return {
           id: `local-${provider}`,
           provider,
-          label: provider === 'bedrock' ? 'AWS Credentials' : 'Local API Key',
+          label: provider === 'bedrock' ? 'AWS Credentials' : provider === 'vertex-ai' ? 'GCP Credentials' : 'Local API Key',
           keyPrefix,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -1032,6 +1049,125 @@ export function registerIPCHandlers(): void {
   // Bedrock: Get credentials
   handle('bedrock:get-credentials', async (_event: IpcMainInvokeEvent) => {
     const stored = getApiKey('bedrock');
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  });
+
+  // Vertex AI: Validate GCP credentials
+  handle('vertex-ai:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
+    console.log('[Vertex AI] Validation requested');
+
+    try {
+      const parsed = JSON.parse(credentials);
+      const { projectId, location } = parsed;
+
+      if (!projectId) {
+        return { valid: false, error: 'Project ID is required' };
+      }
+
+      if (!location) {
+        return { valid: false, error: 'Location is required' };
+      }
+
+      let vertexAI: VertexAI;
+
+      if (parsed.authType === 'serviceAccount') {
+        if (!parsed.serviceAccountKey) {
+          return { valid: false, error: 'Service Account Key is required' };
+        }
+
+        let serviceAccountJson;
+        try {
+          serviceAccountJson = JSON.parse(parsed.serviceAccountKey);
+        } catch {
+          return { valid: false, error: 'Invalid Service Account Key JSON format' };
+        }
+
+        vertexAI = new VertexAI({
+          project: projectId,
+          location: location,
+          googleAuthOptions: {
+            credentials: serviceAccountJson,
+          },
+        });
+      } else if (parsed.authType === 'adc') {
+        vertexAI = new VertexAI({
+          project: projectId,
+          location: location,
+        });
+      } else {
+        return { valid: false, error: 'Invalid authentication type' };
+      }
+
+      // Test by getting a generative model (this validates credentials)
+      const model = vertexAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+      if (!model) {
+        return { valid: false, error: 'Failed to initialize Vertex AI client' };
+      }
+
+      console.log('[Vertex AI] Validation succeeded');
+      return { valid: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Validation failed';
+      console.warn('[Vertex AI] Validation failed:', message);
+
+      if (message.includes('Could not load the default credentials')) {
+        return { valid: false, error: 'Application Default Credentials not found. Run: gcloud auth application-default login' };
+      }
+      if (message.includes('Permission denied') || message.includes('403')) {
+        return { valid: false, error: 'Permission denied. Ensure your credentials have Vertex AI permissions.' };
+      }
+      if (message.includes('invalid_grant') || message.includes('Invalid JWT')) {
+        return { valid: false, error: 'Invalid service account credentials. Check your JSON key.' };
+      }
+
+      return { valid: false, error: message };
+    }
+  });
+
+  // Vertex AI: Save credentials
+  handle('vertex-ai:save', async (_event: IpcMainInvokeEvent, credentials: string) => {
+    const parsed = JSON.parse(credentials);
+
+    if (!parsed.projectId) {
+      throw new Error('Project ID is required');
+    }
+    if (!parsed.location) {
+      throw new Error('Location is required');
+    }
+
+    if (parsed.authType === 'serviceAccount') {
+      if (!parsed.serviceAccountKey) {
+        throw new Error('Service Account Key is required');
+      }
+      try {
+        JSON.parse(parsed.serviceAccountKey);
+      } catch {
+        throw new Error('Invalid Service Account Key JSON format');
+      }
+    } else if (parsed.authType !== 'adc') {
+      throw new Error('Invalid authentication type');
+    }
+
+    storeApiKey('vertex-ai', credentials);
+
+    return {
+      id: 'local-vertex-ai',
+      provider: 'vertex-ai',
+      label: parsed.authType === 'serviceAccount' ? 'Service Account' : `ADC: ${parsed.projectId}`,
+      keyPrefix: `Project: ${parsed.projectId.substring(0, 12)}...`,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+  });
+
+  // Vertex AI: Get credentials
+  handle('vertex-ai:get-credentials', async (_event: IpcMainInvokeEvent) => {
+    const stored = getApiKey('vertex-ai');
     if (!stored) return null;
     try {
       return JSON.parse(stored);

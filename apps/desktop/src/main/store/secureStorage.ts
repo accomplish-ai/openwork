@@ -187,13 +187,13 @@ export function deleteApiKey(provider: string): boolean {
 /**
  * Supported API key providers
  */
-export type ApiKeyProvider = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock';
+export type ApiKeyProvider = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'vertex-ai';
 
 /**
  * Get all API keys for all providers
  */
 export async function getAllApiKeys(): Promise<Record<ApiKeyProvider, string | null>> {
-  const [anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock] = await Promise.all([
+  const [anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock, vertexAi] = await Promise.all([
     getApiKey('anthropic'),
     getApiKey('openai'),
     getApiKey('openrouter'),
@@ -203,9 +203,10 @@ export async function getAllApiKeys(): Promise<Record<ApiKeyProvider, string | n
     getApiKey('zai'),
     getApiKey('custom'),
     getApiKey('bedrock'),
+    getApiKey('vertex-ai'),
   ]);
 
-  return { anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock };
+  return { anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock, 'vertex-ai': vertexAi };
 }
 
 /**
@@ -220,6 +221,26 @@ export function storeBedrockCredentials(credentials: string): void {
  */
 export function getBedrockCredentials(): Record<string, string> | null {
   const stored = getApiKey('bedrock');
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Store Vertex AI credentials (JSON stringified)
+ */
+export function storeVertexAICredentials(credentials: string): void {
+  storeApiKey('vertex-ai', credentials);
+}
+
+/**
+ * Get Vertex AI credentials (returns parsed object or null)
+ */
+export function getVertexAICredentials(): Record<string, string> | null {
+  const stored = getApiKey('vertex-ai');
   if (!stored) return null;
   try {
     return JSON.parse(stored);

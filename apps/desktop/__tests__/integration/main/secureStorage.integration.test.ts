@@ -246,6 +246,7 @@ describe('secureStorage Integration', () => {
         zai: null,
         openrouter: null,
         bedrock: null,
+        'vertex-ai': null,
         custom: null,
       });
     });
@@ -357,6 +358,7 @@ describe('secureStorage Integration', () => {
         zai: null,
         openrouter: null,
         bedrock: null,
+        'vertex-ai': null,
         custom: null,
       });
     });
@@ -415,6 +417,59 @@ describe('secureStorage Integration', () => {
       expect(result).toHaveLength(2);
       expect(result).toContainEqual({ account: 'apiKey:anthropic', password: 'anthropic-key-123' });
       expect(result).toContainEqual({ account: 'apiKey:openai', password: 'openai-key-456' });
+    });
+  });
+
+  describe('Vertex AI credentials', () => {
+    it('should store and retrieve Vertex AI service account credentials', async () => {
+      // Arrange
+      const { storeVertexAICredentials, getVertexAICredentials } = await import(
+        '@main/store/secureStorage'
+      );
+      const credentials = {
+        authType: 'serviceAccount',
+        projectId: 'test-project',
+        location: 'us-central1',
+        serviceAccountKey: '{"type": "service_account", "project_id": "test"}',
+      };
+
+      // Act
+      storeVertexAICredentials(JSON.stringify(credentials));
+      const retrieved = getVertexAICredentials();
+
+      // Assert
+      expect(retrieved).toEqual(credentials);
+    });
+
+    it('should store and retrieve Vertex AI ADC credentials', async () => {
+      // Arrange
+      const { storeVertexAICredentials, getVertexAICredentials } = await import(
+        '@main/store/secureStorage'
+      );
+      const credentials = {
+        authType: 'adc',
+        projectId: 'test-project',
+        location: 'europe-west1',
+      };
+
+      // Act
+      storeVertexAICredentials(JSON.stringify(credentials));
+      const retrieved = getVertexAICredentials();
+
+      // Assert
+      expect(retrieved).toEqual(credentials);
+    });
+
+    it('should return null for missing Vertex AI credentials', async () => {
+      // Arrange
+      const { deleteApiKey, getVertexAICredentials } = await import('@main/store/secureStorage');
+
+      // Act
+      deleteApiKey('vertex-ai');
+      const retrieved = getVertexAICredentials();
+
+      // Assert
+      expect(retrieved).toBeNull();
     });
   });
 

@@ -76,6 +76,35 @@ export class SettingsPage {
     return this.page.getByTestId('bedrock-save-button');
   }
 
+  // Vertex AI
+  get vertexProviderButton() {
+    return this.page.locator('button:has-text("Google Vertex AI")');
+  }
+
+  get vertexServiceAccountTab() {
+    return this.page.locator('button:has-text("Service Account")');
+  }
+
+  get vertexADCTab() {
+    return this.page.locator('button:has-text("ADC (gcloud)")');
+  }
+
+  get vertexProjectIdInput() {
+    return this.page.getByTestId('vertex-project-id-input');
+  }
+
+  get vertexLocationSelect() {
+    return this.page.getByTestId('vertex-location-select');
+  }
+
+  get vertexServiceAccountInput() {
+    return this.page.getByTestId('vertex-service-account-input');
+  }
+
+  get vertexSaveButton() {
+    return this.page.getByTestId('vertex-save-button');
+  }
+
   // Tab buttons
   get cloudProvidersTab() {
     return this.page.getByRole('button', { name: 'Cloud Providers' });
@@ -164,6 +193,18 @@ export class SettingsPage {
 
   async selectBedrockProfileTab() {
     await this.bedrockProfileTab.click();
+  }
+
+  async selectVertexProvider() {
+    await this.vertexProviderButton.click();
+  }
+
+  async selectVertexServiceAccountTab() {
+    await this.vertexServiceAccountTab.click();
+  }
+
+  async selectVertexADCTab() {
+    await this.vertexADCTab.click();
   }
 
   async selectProxyPlatformsTab() {

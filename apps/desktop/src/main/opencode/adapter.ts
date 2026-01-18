@@ -8,7 +8,7 @@ import {
   isOpenCodeBundled,
   getBundledOpenCodeVersion,
 } from './cli-path';
-import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
+import { getAllApiKeys, getBedrockCredentials, getVertexAICredentials } from '../store/secureStorage';
 import { getSelectedModel } from '../store/appSettings';
 import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME, syncApiKeysToOpenCodeAuth } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
@@ -410,6 +410,25 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       if (bedrockCredentials.region) {
         env.AWS_REGION = bedrockCredentials.region;
         console.log('[OpenCode CLI] Using Bedrock region:', bedrockCredentials.region);
+      }
+    }
+
+    // Set Vertex AI credentials if configured
+    const vertexCredentials = getVertexAICredentials();
+    if (vertexCredentials) {
+      env.GOOGLE_CLOUD_PROJECT = vertexCredentials.projectId;
+      env.GOOGLE_CLOUD_LOCATION = vertexCredentials.location;
+      console.log('[OpenCode CLI] Using Vertex AI project:', vertexCredentials.projectId);
+      console.log('[OpenCode CLI] Using Vertex AI location:', vertexCredentials.location);
+
+      if (vertexCredentials.authType === 'serviceAccount' && vertexCredentials.serviceAccountKey) {
+        // Write service account key to temp file
+        const keyPath = path.join(app.getPath('temp'), 'vertex-ai-key.json');
+        fs.writeFileSync(keyPath, vertexCredentials.serviceAccountKey, { mode: 0o600 });
+        env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+        console.log('[OpenCode CLI] Using Vertex AI Service Account credentials');
+      } else {
+        console.log('[OpenCode CLI] Using Vertex AI ADC credentials');
       }
     }
 

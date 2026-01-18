@@ -4,7 +4,7 @@ import fs from 'fs';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
 import { getOllamaConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
-import type { BedrockCredentials } from '@accomplish/shared';
+import type { BedrockCredentials, VertexAICredentials } from '@accomplish/shared';
 
 /**
  * Agent name used by Accomplish
@@ -351,6 +351,13 @@ interface BedrockProviderConfig {
   };
 }
 
+interface VertexAIProviderConfig {
+  options: {
+    projectId: string;
+    location: string;
+  };
+}
+
 interface OpenRouterProviderModelConfig {
   name: string;
   tools?: boolean;
@@ -365,7 +372,7 @@ interface OpenRouterProviderConfig {
   models: Record<string, OpenRouterProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | OpenRouterProviderConfig;
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | OpenRouterProviderConfig | VertexAIProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -407,7 +414,7 @@ export async function generateOpenCodeConfig(): Promise<string> {
 
   // Enable providers - add ollama if configured
   const ollamaConfig = getOllamaConfig();
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'vertex-ai'];
   const enabledProviders = ollamaConfig?.enabled
     ? [...baseProviders, 'ollama']
     : baseProviders;
@@ -492,6 +499,28 @@ export async function generateOpenCodeConfig(): Promise<string> {
       console.log('[OpenCode Config] Bedrock provider configured:', bedrockOptions);
     } catch (e) {
       console.warn('[OpenCode Config] Failed to parse Bedrock credentials:', e);
+    }
+  }
+
+  // Add Vertex AI provider configuration if credentials are stored
+  const vertexAICredsJson = getApiKey('vertex-ai');
+  if (vertexAICredsJson) {
+    try {
+      const creds = JSON.parse(vertexAICredsJson) as VertexAICredentials;
+
+      providerConfig['vertex-ai'] = {
+        options: {
+          projectId: creds.projectId,
+          location: creds.location,
+        },
+      };
+
+      console.log('[OpenCode Config] Vertex AI provider configured:', {
+        projectId: creds.projectId,
+        location: creds.location,
+      });
+    } catch (e) {
+      console.warn('[OpenCode Config] Failed to parse Vertex AI credentials:', e);
     }
   }
 

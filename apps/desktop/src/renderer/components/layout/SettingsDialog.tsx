@@ -30,6 +30,7 @@ const API_KEY_PROVIDERS = [
   { id: 'deepseek', name: 'DeepSeek', prefix: 'sk-', placeholder: 'sk-...' },
   { id: 'zai', name: 'Z.AI Coding Plan', prefix: '', placeholder: 'Your Z.AI API key...' },
   { id: 'bedrock', name: 'Amazon Bedrock', prefix: '', placeholder: '' },
+  { id: 'vertex-ai', name: 'Google Vertex AI', prefix: '', placeholder: '' },
 ] as const;
 
 type ProviderId = typeof API_KEY_PROVIDERS[number]['id'];
@@ -46,6 +47,14 @@ const OPENROUTER_PROVIDER_PRIORITY = [
   'cohere',
   'perplexity',
   'amazon',
+];
+
+// Vertex AI locations that support Claude models
+const VERTEX_AI_LOCATIONS = [
+  { id: 'us-central1', name: 'Iowa (us-central1)' },
+  { id: 'us-east4', name: 'N. Virginia (us-east4)' },
+  { id: 'europe-west1', name: 'Belgium (europe-west1)' },
+  { id: 'europe-west4', name: 'Netherlands (europe-west4)' },
 ];
 
 export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
@@ -80,6 +89,15 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [savingBedrock, setSavingBedrock] = useState(false);
   const [bedrockError, setBedrockError] = useState<string | null>(null);
   const [bedrockStatus, setBedrockStatus] = useState<string | null>(null);
+
+  // Vertex AI state
+  const [vertexAuthTab, setVertexAuthTab] = useState<'serviceAccount' | 'adc'>('serviceAccount');
+  const [vertexProjectId, setVertexProjectId] = useState('');
+  const [vertexLocation, setVertexLocation] = useState('us-central1');
+  const [vertexServiceAccountKey, setVertexServiceAccountKey] = useState('');
+  const [savingVertex, setSavingVertex] = useState(false);
+  const [vertexError, setVertexError] = useState<string | null>(null);
+  const [vertexStatus, setVertexStatus] = useState<string | null>(null);
 
   // OpenRouter state
   const [selectedProxyPlatform, setSelectedProxyPlatform] = useState<'openrouter' | 'litellm'>('openrouter');
@@ -178,12 +196,26 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     };
 
+    const fetchVertexAICredentials = async () => {
+      try {
+        const credentials = await accomplish.getVertexAICredentials();
+        if (credentials) {
+          setVertexAuthTab(credentials.authType);
+          setVertexProjectId(credentials.projectId || '');
+          setVertexLocation(credentials.location || 'us-central1');
+        }
+      } catch (err) {
+        console.error('Failed to fetch Vertex AI credentials:', err);
+      }
+    };
+
     fetchKeys();
     fetchDebugSetting();
     fetchVersion();
     fetchSelectedModel();
     fetchOllamaConfig();
     fetchBedrockCredentials();
+    fetchVertexAICredentials();
   }, [open]);
 
   const handleDebugToggle = async () => {
@@ -384,6 +416,50 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       setBedrockError(message);
     } finally {
       setSavingBedrock(false);
+    }
+  };
+
+  const handleSaveVertexAICredentials = async () => {
+    const accomplish = getAccomplish();
+    setSavingVertex(true);
+    setVertexError(null);
+    setVertexStatus(null);
+
+    try {
+      const credentials = vertexAuthTab === 'serviceAccount'
+        ? {
+            authType: 'serviceAccount' as const,
+            projectId: vertexProjectId.trim(),
+            location: vertexLocation.trim() || 'us-central1',
+            serviceAccountKey: vertexServiceAccountKey.trim(),
+          }
+        : {
+            authType: 'adc' as const,
+            projectId: vertexProjectId.trim(),
+            location: vertexLocation.trim() || 'us-central1',
+          };
+
+      const validation = await accomplish.validateVertexAICredentials(credentials);
+      if (!validation.valid) {
+        setVertexError(validation.error || 'Invalid credentials');
+        setSavingVertex(false);
+        return;
+      }
+
+      const savedKey = await accomplish.saveVertexAICredentials(credentials);
+      setVertexStatus('Google Vertex AI credentials saved successfully.');
+      setSavedKeys((prev) => {
+        const filtered = prev.filter((k) => k.provider !== 'vertex-ai');
+        return [...filtered, savedKey];
+      });
+
+      setVertexServiceAccountKey('');
+      onApiKeySaved?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save credentials.';
+      setVertexError(message);
+    } finally {
+      setSavingVertex(false);
     }
   };
 
@@ -1039,8 +1115,106 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   </div>
                 )}
 
-                {/* API Key Input - hide for Bedrock */}
-                {provider !== 'bedrock' && (
+                {/* Vertex AI Credentials Form */}
+                {provider === 'vertex-ai' && (
+                  <div className="mb-5">
+                    {/* Auth Type Tabs */}
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        onClick={() => setVertexAuthTab('serviceAccount')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${vertexAuthTab === 'serviceAccount'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                      >
+                        Service Account
+                      </button>
+                      <button
+                        onClick={() => setVertexAuthTab('adc')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${vertexAuthTab === 'adc'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                      >
+                        ADC (gcloud)
+                      </button>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="mb-2.5 block text-sm font-medium text-foreground">
+                        Project ID
+                      </label>
+                      <input
+                        data-testid="vertex-project-id-input"
+                        type="text"
+                        value={vertexProjectId}
+                        onChange={(e) => setVertexProjectId(e.target.value)}
+                        placeholder="my-gcp-project"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="mb-2.5 block text-sm font-medium text-foreground">
+                        Location
+                      </label>
+                      <select
+                        data-testid="vertex-location-select"
+                        value={vertexLocation}
+                        onChange={(e) => setVertexLocation(e.target.value)}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        {VERTEX_AI_LOCATIONS.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {vertexAuthTab === 'serviceAccount' && (
+                      <div className="mb-4">
+                        <label className="mb-2.5 block text-sm font-medium text-foreground">
+                          Service Account Key (JSON)
+                        </label>
+                        <textarea
+                          data-testid="vertex-service-account-input"
+                          value={vertexServiceAccountKey}
+                          onChange={(e) => setVertexServiceAccountKey(e.target.value)}
+                          placeholder='{"type": "service_account", "project_id": "...", ...}'
+                          rows={6}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                        />
+                      </div>
+                    )}
+
+                    {vertexAuthTab === 'adc' && (
+                      <div className="mb-4 rounded-lg bg-muted p-3">
+                        <p className="text-sm text-muted-foreground">
+                          Using Application Default Credentials. Make sure you have run:
+                        </p>
+                        <code className="mt-2 block text-xs bg-background p-2 rounded">
+                          gcloud auth application-default login
+                        </code>
+                      </div>
+                    )}
+
+                    {vertexError && <p className="mb-4 text-sm text-destructive">{vertexError}</p>}
+                    {vertexStatus && <p className="mb-4 text-sm text-success">{vertexStatus}</p>}
+
+                    <button
+                      data-testid="vertex-save-button"
+                      className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                      onClick={handleSaveVertexAICredentials}
+                      disabled={savingVertex}
+                    >
+                      {savingVertex ? 'Validating...' : 'Save Vertex AI Credentials'}
+                    </button>
+                  </div>
+                )}
+
+                {/* API Key Input - hide for Bedrock and Vertex AI */}
+                {provider !== 'bedrock' && provider !== 'vertex-ai' && (
                   <div className="mb-5">
                     <label className="mb-2.5 block text-sm font-medium text-foreground">
                       {API_KEY_PROVIDERS.find((p) => p.id === provider)?.name} API Key
@@ -1056,12 +1230,12 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   </div>
                 )}
 
-                {provider !== 'bedrock' && error && <p className="mb-4 text-sm text-destructive">{error}</p>}
-                {provider !== 'bedrock' && statusMessage && (
+                {provider !== 'bedrock' && provider !== 'vertex-ai' && error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+                {provider !== 'bedrock' && provider !== 'vertex-ai' && statusMessage && (
                   <p className="mb-4 text-sm text-success">{statusMessage}</p>
                 )}
 
-                {provider !== 'bedrock' && (
+                {provider !== 'bedrock' && provider !== 'vertex-ai' && (
                   <button
                     className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     onClick={handleSaveApiKey}

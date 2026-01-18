@@ -42,7 +42,7 @@ const accomplishAPI = {
   // Settings
   getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke('settings:api-keys'),
   addApiKey: (
-    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock',
+    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'vertex-ai',
     key: string,
     label?: string
   ): Promise<unknown> =>
@@ -124,6 +124,14 @@ const accomplishAPI = {
     ipcRenderer.invoke('bedrock:save', credentials),
   getBedrockCredentials: () =>
     ipcRenderer.invoke('bedrock:get-credentials'),
+
+  // Vertex AI
+  validateVertexAICredentials: (credentials: string): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke('vertex-ai:validate', credentials),
+  saveVertexAICredentials: (credentials: string): Promise<unknown> =>
+    ipcRenderer.invoke('vertex-ai:save', credentials),
+  getVertexAICredentials: (): Promise<Record<string, string> | null> =>
+    ipcRenderer.invoke('vertex-ai:get-credentials'),
 
   // Event subscriptions
   onTaskUpdate: (callback: (event: unknown) => void) => {
