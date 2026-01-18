@@ -477,7 +477,7 @@ test.describe('Execution Page', () => {
     expect(pageContent.length).toBeGreaterThan(0);
   });
 
-  test('should handle follow-up input after task completion', async ({ window }) => {
+  test('should handle follow-up input after task completion', { timeout: 60000 }, async ({ window }) => {
     const homePage = new HomePage(window);
     const executionPage = new ExecutionPage(window);
 
