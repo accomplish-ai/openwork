@@ -92,6 +92,7 @@ jobs:
           echo "minor_version=$MINOR_VERSION" >> $GITHUB_OUTPUT
           echo "major_version=$MAJOR_VERSION" >> $GITHUB_OUTPUT
           echo "current_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
           # Store commits in a file (multiline handling)
           echo "$COMMITS" > /tmp/commits.txt
@@ -99,33 +100,41 @@ jobs:
       - name: Send Slack notification
         if: steps.check.outputs.has_commits == 'true'
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
-          # Validate secret is configured
-          if [ -z "$SLACK_WEBHOOK" ]; then
-            echo "Error: SLACK_RELEASE_WEBHOOK_URL secret is not configured"
+          # Validate secrets are configured
+          if [ -z "$SLACK_BOT_TOKEN" ]; then
+            echo "Error: SLACK_BOT_TOKEN secret is not configured"
+            exit 1
+          fi
+          if [ -z "$SLACK_CHANNEL_ID" ]; then
+            echo "Error: SLACK_CHANNEL_ID secret is not configured"
             exit 1
           fi
 
           COMMITS=$(cat /tmp/commits.txt)
           COMMIT_COUNT="${{ steps.check.outputs.commit_count }}"
           CURRENT="${{ steps.format.outputs.current_version }}"
+          LATEST_TAG="${{ steps.format.outputs.latest_tag }}"
           PATCH="${{ steps.format.outputs.patch_version }}"
           MINOR="${{ steps.format.outputs.minor_version }}"
           MAJOR="${{ steps.format.outputs.major_version }}"
+          COMPARE_URL="https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...HEAD"
 
-          WORKFLOW_URL="https://github.com/${{ github.repository }}/actions/workflows/release.yml"
-
-          # Build payload safely using jq to handle special characters in commit messages
+          # Build payload using Slack Web API (chat.postMessage)
+          # Bot token is required for interactive buttons to work properly
           PAYLOAD=$(jq -n \
+            --arg channel "$SLACK_CHANNEL_ID" \
             --arg commit_count "$COMMIT_COUNT" \
             --arg current "$CURRENT" \
             --arg commits "$COMMITS" \
             --arg patch "$PATCH" \
             --arg minor "$MINOR" \
             --arg major "$MAJOR" \
-            --arg workflow_url "$WORKFLOW_URL" \
+            --arg compare_url "$COMPARE_URL" \
             '{
+              channel: $channel,
               blocks: [
                 {
                   type: "header",
@@ -133,21 +142,39 @@ jobs:
                 },
                 {
                   type: "section",
-                  text: { type: "mrkdwn", text: "*\($commit_count) commits since v\($current):*\n\n\($commits)" }
+                  text: { type: "mrkdwn", text: "*\($commit_count) commits since v\($current):*\n\n\($commits)" },
+                  accessory: {
+                    type: "button",
+                    text: { type: "plain_text", text: "View all commits", emoji: true },
+                    url: $compare_url
+                  }
                 },
                 { type: "divider" },
                 {
                   type: "actions",
+                  block_id: "release_actions",
                   elements: [
-                    { type: "button", text: { type: "plain_text", text: "🔧 Patch → \($patch)", emoji: true }, url: $workflow_url },
-                    { type: "button", text: { type: "plain_text", text: "✨ Minor → \($minor)", emoji: true }, url: $workflow_url },
-                    { type: "button", text: { type: "plain_text", text: "🚀 Major → \($major)", emoji: true }, url: $workflow_url }
+                    { type: "button", text: { type: "plain_text", text: "🔧 Patch → \($patch)", emoji: true }, action_id: "release_patch", value: "patch", style: "primary" },
+                    { type: "button", text: { type: "plain_text", text: "✨ Minor → \($minor)", emoji: true }, action_id: "release_minor", value: "minor" },
+                    { type: "button", text: { type: "plain_text", text: "🚀 Major → \($major)", emoji: true }, action_id: "release_major", value: "major", style: "danger" }
                   ]
                 }
               ]
             }')
 
-          # Send to Slack with error handling
-          curl -f -X POST -H 'Content-type: application/json' \
+          # Send via Slack Web API (supports interactive buttons properly)
+          # Note: Slack returns HTTP 200 even for errors, with "ok": false in body
+          RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-type: application/json; charset=utf-8" \
             --data "$PAYLOAD" \
-            "$SLACK_WEBHOOK" || { echo "Failed to send Slack notification"; exit 1; }
+            "https://slack.com/api/chat.postMessage")
+
+          # Check if Slack API returned success
+          if ! echo "$RESPONSE" | jq -e '.ok == true' > /dev/null 2>&1; then
+            echo "Failed to send Slack notification"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "Slack notification sent successfully"
