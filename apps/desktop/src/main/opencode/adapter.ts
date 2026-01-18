@@ -9,7 +9,7 @@ import {
   getBundledOpenCodeVersion,
 } from './cli-path';
 import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
-import { getSelectedModel } from '../store/appSettings';
+import { getSelectedModel, getOpenAiBaseUrl } from '../store/appSettings';
 import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME, syncApiKeysToOpenCodeAuth } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
@@ -368,9 +368,15 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       env.ANTHROPIC_API_KEY = apiKeys.anthropic;
       console.log('[OpenCode CLI] Using Anthropic API key from settings');
     }
+    const configuredOpenAiBaseUrl = getOpenAiBaseUrl().trim();
     if (apiKeys.openai) {
       env.OPENAI_API_KEY = apiKeys.openai;
       console.log('[OpenCode CLI] Using OpenAI API key from settings');
+
+      if (configuredOpenAiBaseUrl) {
+        env.OPENAI_BASE_URL = configuredOpenAiBaseUrl;
+        console.log('[OpenCode CLI] Using OPENAI_BASE_URL override from settings');
+      }
     }
     if (apiKeys.google) {
       env.GOOGLE_GENERATIVE_AI_API_KEY = apiKeys.google;
@@ -770,4 +776,3 @@ export function getOpenCodeAdapter(): OpenCodeAdapter {
   }
   return adapterInstance;
 }
-
