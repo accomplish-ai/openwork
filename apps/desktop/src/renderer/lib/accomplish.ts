@@ -16,6 +16,7 @@ import type {
   ApiKeyConfig,
   TaskMessage,
   BedrockCredentials,
+  VertexAICredentials,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -95,6 +96,11 @@ interface AccomplishAPI {
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
 
+  // Vertex AI configuration
+  validateVertexAICredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
+  saveVertexAICredentials(credentials: string): Promise<ApiKeyConfig>;
+  getVertexAICredentials(): Promise<VertexAICredentials | null>;
+
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
   onTaskUpdateBatch?(callback: (event: { taskId: string; messages: TaskMessage[] }) => void): () => void;
@@ -144,6 +150,18 @@ export function getAccomplish() {
 
     getBedrockCredentials: async (): Promise<BedrockCredentials | null> => {
       return window.accomplish!.getBedrockCredentials();
+    },
+
+    validateVertexAICredentials: async (credentials: VertexAICredentials): Promise<{ valid: boolean; error?: string }> => {
+      return window.accomplish!.validateVertexAICredentials(JSON.stringify(credentials));
+    },
+
+    saveVertexAICredentials: async (credentials: VertexAICredentials): Promise<ApiKeyConfig> => {
+      return window.accomplish!.saveVertexAICredentials(JSON.stringify(credentials));
+    },
+
+    getVertexAICredentials: async (): Promise<VertexAICredentials | null> => {
+      return window.accomplish!.getVertexAICredentials();
     },
   };
 }
