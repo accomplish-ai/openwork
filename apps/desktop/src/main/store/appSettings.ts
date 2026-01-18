@@ -11,6 +11,12 @@ interface AppSettingsSchema {
   onboardingComplete: boolean;
   /** Selected AI model (provider/model format) */
   selectedModel: SelectedModel | null;
+  /**
+   * Optional OpenAI-compatible base URL override.
+   * - Empty string means "use provider default".
+   * - Example: https://api.openai.com/v1
+   */
+  openaiBaseUrl: string;
   /** Ollama server configuration */
   ollamaConfig: OllamaConfig | null;
 }
@@ -24,6 +30,7 @@ const appSettingsStore = new Store<AppSettingsSchema>({
       provider: 'anthropic',
       model: 'anthropic/claude-opus-4-5',
     },
+    openaiBaseUrl: '',
     ollamaConfig: null,
   },
 });
@@ -71,6 +78,20 @@ export function setSelectedModel(model: SelectedModel): void {
 }
 
 /**
+ * Get OpenAI base URL override (empty string means default).
+ */
+export function getOpenAiBaseUrl(): string {
+  return appSettingsStore.get('openaiBaseUrl');
+}
+
+/**
+ * Set OpenAI base URL override (empty string clears override).
+ */
+export function setOpenAiBaseUrl(baseUrl: string): void {
+  appSettingsStore.set('openaiBaseUrl', baseUrl);
+}
+
+/**
  * Get Ollama configuration
  */
 export function getOllamaConfig(): OllamaConfig | null {
@@ -92,6 +113,7 @@ export function getAppSettings(): AppSettingsSchema {
     debugMode: appSettingsStore.get('debugMode'),
     onboardingComplete: appSettingsStore.get('onboardingComplete'),
     selectedModel: appSettingsStore.get('selectedModel'),
+    openaiBaseUrl: appSettingsStore.get('openaiBaseUrl'),
     ollamaConfig: appSettingsStore.get('ollamaConfig') ?? null,
   };
 }
