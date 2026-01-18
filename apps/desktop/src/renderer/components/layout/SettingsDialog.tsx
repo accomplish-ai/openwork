@@ -34,6 +34,20 @@ const API_KEY_PROVIDERS = [
 
 type ProviderId = typeof API_KEY_PROVIDERS[number]['id'];
 
+// Priority order for OpenRouter providers (lower index = higher priority)
+const OPENROUTER_PROVIDER_PRIORITY = [
+  'anthropic',
+  'openai',
+  'google',
+  'meta-llama',
+  'mistralai',
+  'x-ai',
+  'deepseek',
+  'cohere',
+  'perplexity',
+  'amazon',
+];
+
 export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
   const [apiKey, setApiKey] = useState('');
   const [provider, setProvider] = useState<ProviderId>('anthropic');
@@ -805,7 +819,17 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                               {/* Grouped Model List */}
                               <div className="mb-4 max-h-64 overflow-y-auto rounded-md border border-input">
                                 {Object.entries(groupedOpenrouterModels)
-                                  .sort(([a], [b]) => a.localeCompare(b))
+                                  .sort(([a], [b]) => {
+                                    const priorityA = OPENROUTER_PROVIDER_PRIORITY.indexOf(a);
+                                    const priorityB = OPENROUTER_PROVIDER_PRIORITY.indexOf(b);
+                                    // If both have priority, sort by priority
+                                    if (priorityA !== -1 && priorityB !== -1) return priorityA - priorityB;
+                                    // Priority providers come first
+                                    if (priorityA !== -1) return -1;
+                                    if (priorityB !== -1) return 1;
+                                    // Otherwise alphabetical
+                                    return a.localeCompare(b);
+                                  })
                                   .map(([provider, models]) => (
                                     <div key={provider}>
                                       <div className="sticky top-0 bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground uppercase">
