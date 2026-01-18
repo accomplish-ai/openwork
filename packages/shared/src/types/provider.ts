@@ -2,7 +2,7 @@
  * Provider and model configuration types for multi-provider support
  */
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'custom' | 'bedrock';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'vertex-ai';
 
 export interface ProviderConfig {
   id: ProviderType;
@@ -251,6 +251,37 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
         displayName: 'Claude Haiku 4.5',
         provider: 'bedrock',
         fullId: 'amazon-bedrock/anthropic.claude-haiku-4-5-20251001-v1:0',
+        contextWindow: 200000,
+        supportsVision: true,
+      },
+    ],
+  },
+  {
+    id: 'vertex-ai',
+    name: 'Google Vertex AI',
+    requiresApiKey: false, // Uses GCP credentials
+    models: [
+      {
+        id: 'claude-opus-4-5@20251101',
+        displayName: 'Claude Opus 4.5',
+        provider: 'vertex-ai',
+        fullId: 'vertex-ai/claude-opus-4-5@20251101',
+        contextWindow: 200000,
+        supportsVision: true,
+      },
+      {
+        id: 'claude-sonnet-4-5@20250929',
+        displayName: 'Claude Sonnet 4.5',
+        provider: 'vertex-ai',
+        fullId: 'vertex-ai/claude-sonnet-4-5@20250929',
+        contextWindow: 200000,
+        supportsVision: true,
+      },
+      {
+        id: 'claude-haiku-4-5@20251001',
+        displayName: 'Claude Haiku 4.5',
+        provider: 'vertex-ai',
+        fullId: 'vertex-ai/claude-haiku-4-5@20251001',
         contextWindow: 200000,
         supportsVision: true,
       },

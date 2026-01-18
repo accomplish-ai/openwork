@@ -28,7 +28,7 @@ export interface AuthTokens {
 
 export interface ApiKeyConfig {
   id: string;
-  provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock';
+  provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'vertex-ai';
   label?: string;
   keyPrefix?: string;
   isActive: boolean;
@@ -51,6 +51,21 @@ export interface BedrockProfileCredentials {
 }
 
 export type BedrockCredentials = BedrockAccessKeyCredentials | BedrockProfileCredentials;
+
+export interface VertexAIServiceAccountCredentials {
+  authType: 'serviceAccount';
+  projectId: string;
+  location: string;
+  serviceAccountKey: string; // JSON string of service account key
+}
+
+export interface VertexAIADCCredentials {
+  authType: 'adc';
+  projectId: string;
+  location: string;
+}
+
+export type VertexAICredentials = VertexAIServiceAccountCredentials | VertexAIADCCredentials;
 
 export interface QuotaStatus {
   callsUsed: number;
