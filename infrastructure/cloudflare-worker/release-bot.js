@@ -9,7 +9,7 @@
  */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     // Only accept POST from Slack
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
@@ -36,14 +36,40 @@ export default {
       // Get action (release_patch, release_minor, release_major)
       const actionId = payload.actions[0].action_id;
       const bumpType = actionId.replace('release_', '');
+      const responseUrl = payload.response_url;
 
       // Validate bump type
       if (!['patch', 'minor', 'major'].includes(bumpType)) {
-        return jsonResponse({
+        await postToSlack(responseUrl, {
           response_type: 'ephemeral',
           text: `❌ Invalid release type: ${bumpType}`
         });
+        return new Response('', { status: 200 });
       }
+
+      const typeEmoji = { patch: '🔧', minor: '✨', major: '🚀' };
+
+      // Immediately acknowledge and post "triggering" message
+      ctx.waitUntil(postToSlack(responseUrl, {
+        response_type: 'in_channel',
+        replace_original: false,
+        text: `${typeEmoji[bumpType]} ${capitalize(bumpType)} release triggered by <@${payload.user.id}>! Building...`,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `${typeEmoji[bumpType]} *${capitalize(bumpType)} release* triggered by <@${payload.user.id}>!\n\n_Building... this may take ~10 minutes._`
+            },
+            accessory: {
+              type: 'button',
+              text: { type: 'plain_text', text: 'View Build', emoji: true },
+              url: 'https://github.com/accomplish-ai/openwork/actions/workflows/release.yml',
+              style: 'primary'
+            }
+          }
+        ]
+      }));
 
       // Trigger GitHub workflow
       const githubResponse = await fetch(
@@ -66,35 +92,15 @@ export default {
       if (!githubResponse.ok) {
         const error = await githubResponse.text();
         console.error('GitHub API error:', githubResponse.status, error);
-        return jsonResponse({
+        await postToSlack(responseUrl, {
           response_type: 'ephemeral',
+          replace_original: false,
           text: `❌ Failed to trigger release: ${githubResponse.status}`
         });
       }
 
-      // Success - return message to Slack
-      const typeEmoji = { patch: '🔧', minor: '✨', major: '🚀' };
-
-      return jsonResponse({
-        response_type: 'in_channel',
-        replace_original: false,
-        text: `${typeEmoji[bumpType]} ${capitalize(bumpType)} release triggered by <@${payload.user.id}>! Building...`,
-        blocks: [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `${typeEmoji[bumpType]} *${capitalize(bumpType)} release* triggered by <@${payload.user.id}>!\n\n_Building... this may take ~10 minutes._`
-            },
-            accessory: {
-              type: 'button',
-              text: { type: 'plain_text', text: 'View Build', emoji: true },
-              url: 'https://github.com/accomplish-ai/openwork/actions/workflows/release.yml',
-              style: 'primary'
-            }
-          }
-        ]
-      });
+      // Return empty 200 to acknowledge receipt
+      return new Response('', { status: 200 });
 
     } catch (error) {
       console.error('Worker error:', error);
@@ -105,6 +111,21 @@ export default {
     }
   }
 };
+
+/**
+ * Post message to Slack via response_url
+ */
+async function postToSlack(responseUrl, message) {
+  const response = await fetch(responseUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(message)
+  });
+  if (!response.ok) {
+    console.error('Failed to post to Slack:', response.status, await response.text());
+  }
+  return response;
+}
 
 /**
  * Create JSON response for Slack
