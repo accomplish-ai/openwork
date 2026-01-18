@@ -45,6 +45,14 @@ interface TaskState {
   openLauncher: () => void;
   closeLauncher: () => void;
 
+  // Settings dialog
+  isSettingsOpen: boolean;
+  openSettings: () => void;
+  closeSettings: () => void;
+
+  // Retry failed task
+  retryTask: () => Promise<void>;
+
   // Actions
   startTask: (config: TaskConfig) => Promise<Task | null>;
   setSetupProgress: (taskId: string | null, message: string | null) => void;
@@ -78,6 +86,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   setupProgressTaskId: null,
   setupDownloadStep: 1,
   isLauncherOpen: false,
+  isSettingsOpen: false,
 
   setSetupProgress: (taskId: string | null, message: string | null) => {
     // Detect which package is being downloaded from the message
@@ -462,11 +471,73 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       setupProgressTaskId: null,
       setupDownloadStep: 1,
       isLauncherOpen: false,
+      isSettingsOpen: false,
     });
   },
 
   openLauncher: () => set({ isLauncherOpen: true }),
   closeLauncher: () => set({ isLauncherOpen: false }),
+
+  openSettings: () => set({ isSettingsOpen: true }),
+  closeSettings: () => set({ isSettingsOpen: false }),
+
+  retryTask: async () => {
+    const { currentTask } = get();
+    if (!currentTask) {
+      return;
+    }
+
+    const accomplish = getAccomplish();
+    void accomplish.logEvent({
+      level: 'info',
+      message: 'UI retry task',
+      context: { taskId: currentTask.id, prompt: currentTask.prompt },
+    });
+
+    // Reset task state before retrying (same entry, not a new task)
+    const taskId = currentTask.id;
+    set((state) => ({
+      currentTask: state.currentTask
+        ? {
+            ...state.currentTask,
+            status: 'pending',
+            result: undefined,
+            messages: [], // Clear previous messages for fresh retry
+          }
+        : null,
+      tasks: state.tasks.map((t) =>
+        t.id === taskId ? { ...t, status: 'pending' as TaskStatus } : t
+      ),
+      isLoading: true,
+      error: null,
+    }));
+
+    try {
+      // Pass the existing taskId to reuse the same task entry
+      const task = await accomplish.startTask({
+        prompt: currentTask.prompt,
+        taskId: currentTask.id,
+      });
+
+      // Update with new task state
+      set((state) => ({
+        currentTask: task,
+        tasks: state.tasks.map((t) => (t.id === task.id ? task : t)),
+        isLoading: task.status === 'queued',
+      }));
+    } catch (err) {
+      set((state) => ({
+        error: err instanceof Error ? err.message : 'Failed to retry task',
+        isLoading: false,
+        currentTask: state.currentTask
+          ? { ...state.currentTask, status: 'failed' }
+          : null,
+        tasks: state.tasks.map((t) =>
+          t.id === taskId ? { ...t, status: 'failed' as TaskStatus } : t
+        ),
+      }));
+    }
+  },
 }));
 
 // Global subscription to setup progress events (browser download, etc.)

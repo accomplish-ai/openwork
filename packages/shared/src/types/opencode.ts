@@ -117,12 +117,33 @@ export interface OpenCodeStepFinishMessage extends OpenCodeMessageBase {
   };
 }
 
+/** API Error data structure from OpenCode CLI */
+export interface OpenCodeAPIErrorData {
+  name: string;
+  data: {
+    message: string;
+    statusCode?: number;
+    isRetryable?: boolean;
+    responseHeaders?: Record<string, string>;
+    responseBody?: string;
+    metadata?: {
+      url?: string;
+    };
+  };
+}
+
 /** Error event */
 export interface OpenCodeErrorMessage extends OpenCodeMessageBase {
   type: 'error';
-  error: string;
+  /** Error can be a string or an API error object */
+  error: string | OpenCodeAPIErrorData;
   code?: string;
 }
+
+/** Known error codes for specific handling */
+export const OPENCODE_ERROR_CODES = {
+  MODEL_NO_TOOLS: 'MODEL_NO_TOOLS',
+} as const;
 
 /** All OpenCode message types */
 export type OpenCodeMessage =
