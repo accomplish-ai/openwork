@@ -119,12 +119,22 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [savingLitellm, setSavingLitellm] = useState(false);
   const [litellmSearch, setLitellmSearch] = useState('');
 
-  // Sync selectedProxyPlatform with the actual selected model's provider
+  // Sync selectedProxyPlatform and selected model radio button with the actual selected model
   useEffect(() => {
     if (selectedModel?.provider === 'litellm') {
       setSelectedProxyPlatform('litellm');
+      // Extract model ID from "litellm/anthropic/claude-haiku" -> "anthropic/claude-haiku"
+      const modelId = selectedModel.model?.replace(/^litellm\//, '') || '';
+      if (modelId) {
+        setSelectedLitellmModel(modelId);
+      }
     } else if (selectedModel?.provider === 'openrouter') {
       setSelectedProxyPlatform('openrouter');
+      // Extract model ID from "openrouter/anthropic/..." -> "anthropic/..."
+      const modelId = selectedModel.model?.replace(/^openrouter\//, '') || '';
+      if (modelId) {
+        setSelectedOpenrouterModel(modelId);
+      }
     }
   }, [selectedModel]);
 
