@@ -570,6 +570,14 @@ export function registerIPCHandlers(): void {
         queueMessage(taskId, taskMessage, forwardToRenderer, addTaskMessage);
       },
 
+      onTextDelta: (delta: { messageId: string; content: string; isComplete: boolean }) => {
+        // Forward streaming text updates directly to renderer (low latency)
+        forwardToRenderer('task:text-delta', {
+          taskId,
+          ...delta,
+        });
+      },
+
       onProgress: (progress: { stage: string; message?: string }) => {
         forwardToRenderer('task:progress', {
           taskId,

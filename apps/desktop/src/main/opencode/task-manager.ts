@@ -8,6 +8,7 @@
 
 import { OpenCodeAdapter, isOpenCodeCliInstalled, OpenCodeCliNotFoundError } from './adapter';
 import { OpenCodeServerAdapter, isOpenCodeServerAvailable } from './server-adapter';
+import { disposeSharedServer } from './shared-server';
 import { getSkillsPath } from './config-generator';
 import { getNpxPath, getBundledNodePaths } from '../utils/bundled-node';
 import { getStreamingMode } from '../store/appSettings';
@@ -391,13 +392,26 @@ export class TaskManager {
     };
 
     const onComplete = (result: TaskResult) => {
-      callbacks.onComplete(result);
+      // IMPORTANT: Get session ID BEFORE cleanup, as dispose() clears it
+      // This ensures the session ID is available for follow-up messages
+      const sessionId = adapter.getSessionId();
+      const resultWithSession: TaskResult = {
+        ...result,
+        sessionId: result.sessionId || sessionId || undefined,
+      };
+      console.log(`[TaskManager] Task ${taskId} complete, sessionId: ${resultWithSession.sessionId}`);
+
+      callbacks.onComplete(resultWithSession);
       // Auto-cleanup on completion and process queue
       this.cleanupTask(taskId);
       this.processQueue();
     };
 
     const onError = (error: Error) => {
+      // Get session ID before cleanup for potential recovery
+      const sessionId = adapter.getSessionId();
+      console.log(`[TaskManager] Task ${taskId} error, sessionId preserved: ${sessionId}`);
+
       callbacks.onError(error);
       // Auto-cleanup on error and process queue
       this.cleanupTask(taskId);
@@ -710,4 +724,6 @@ export function disposeTaskManager(): void {
     taskManagerInstance.dispose();
     taskManagerInstance = null;
   }
+  // Also dispose the shared OpenCode server
+  disposeSharedServer();
 }

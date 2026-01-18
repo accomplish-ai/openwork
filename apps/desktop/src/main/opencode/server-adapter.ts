@@ -1,12 +1,8 @@
 import { EventEmitter } from 'events';
-import { app } from 'electron';
-import { spawn, ChildProcess } from 'child_process';
-import { getOpenCodeCliPath, isOpenCodeBundled, getBundledOpenCodeVersion } from './cli-path';
-import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
+import { isOpenCodeBundled, getBundledOpenCodeVersion } from './cli-path';
 import { getSelectedModel } from '../store/appSettings';
-import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME, syncApiKeysToOpenCodeAuth } from './config-generator';
-import { getExtendedNodePath } from '../utils/system-path';
-import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+import { ACCOMPLISH_AGENT_NAME } from './config-generator';
+import { getSharedServer } from './shared-server';
 import type {
   TaskConfig,
   Task,
@@ -65,9 +61,9 @@ interface SSEEvent {
  * Uses `opencode serve` HTTP API with SSE for real-time streaming
  */
 export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEvents> {
-  private serverProcess: ChildProcess | null = null;
+  // Server management is now handled by SharedOpenCodeServer
+  // We just keep a reference to the port for API calls
   private serverPort: number | null = null;
-  private serverReady: boolean = false;
   private currentSessionId: string | null = null;
   private currentTaskId: string | null = null;
   private currentMessageId: string | null = null;
@@ -88,6 +84,8 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
   constructor(taskId?: string) {
     super();
     this.currentTaskId = taskId || null;
+    // Acquire a reference to the shared server
+    getSharedServer().acquire();
   }
 
   /**
@@ -122,50 +120,63 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     this.streamingMessageId = null;
     this.streamingText = '';
 
-    // Sync API keys
     // Log the currently selected model
     const selectedModel = getSelectedModel();
     console.log('[OpenCode Server] Selected model from settings:', JSON.stringify(selectedModel));
     this.emit('debug', { type: 'info', message: `Selected model: ${JSON.stringify(selectedModel)}` });
 
-    console.log('[OpenCode Server] Syncing API keys...');
-    this.emit('debug', { type: 'info', message: 'Syncing API keys...' });
-    await syncApiKeysToOpenCodeAuth();
+    // Ensure shared server is running (handles config generation and API key sync)
+    console.log('[OpenCode Server] Ensuring shared server is running...');
+    this.emit('debug', { type: 'info', message: 'Ensuring shared server is running...' });
+    const sharedServer = getSharedServer();
+    this.serverPort = await sharedServer.ensureRunning(config.workingDirectory);
+    console.log('[OpenCode Server] Shared server ready on port:', this.serverPort);
+    this.emit('debug', { type: 'info', message: `Shared server ready on port: ${this.serverPort}` });
 
-    // Generate config
-    console.log('[OpenCode Server] Generating config...');
-    this.emit('debug', { type: 'info', message: 'Generating config...' });
-    const configPath = await generateOpenCodeConfig();
-    console.log('[OpenCode Server] Config generated at:', configPath);
-    this.emit('debug', { type: 'info', message: `Config generated at: ${configPath}` });
+    // Create or reuse session
+    // IMPORTANT: For follow-ups, config.sessionId should be provided to maintain context
+    if (config.sessionId) {
+      console.log('[OpenCode Server] REUSING existing session:', config.sessionId);
+      this.emit('debug', { type: 'info', message: `REUSING existing session: ${config.sessionId}` });
+      this.currentSessionId = config.sessionId;
 
-    // Read and log the generated config for debugging
-    try {
-      const fs = await import('fs');
-      const configContent = fs.readFileSync(configPath, 'utf-8');
-      const parsedConfig = JSON.parse(configContent);
-      console.log('[OpenCode Server] Config model:', parsedConfig.model);
-      this.emit('debug', { type: 'info', message: `Config default model: ${parsedConfig.model || 'not set'}` });
-    } catch (e) {
-      console.warn('[OpenCode Server] Could not read config:', e);
+      // Verify the session exists and log its current state
+      try {
+        const sessionResponse = await fetch(
+          `http://localhost:${this.serverPort}/session/${config.sessionId}`,
+          { method: 'GET', headers: { 'Accept': 'application/json' } }
+        );
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json() as Record<string, unknown>;
+          console.log('[OpenCode Server] Session verified, keys:', Object.keys(sessionData));
+          this.emit('debug', { type: 'info', message: `Session verified: ${JSON.stringify(sessionData).substring(0, 200)}` });
+
+          // Also fetch messages to see what context exists
+          const messagesResponse = await fetch(
+            `http://localhost:${this.serverPort}/session/${config.sessionId}/message`,
+            { method: 'GET', headers: { 'Accept': 'application/json' } }
+          );
+          if (messagesResponse.ok) {
+            const messages = await messagesResponse.json() as unknown[];
+            console.log('[OpenCode Server] Session has', messages.length, 'messages in history');
+            this.emit('debug', { type: 'info', message: `Session has ${messages.length} messages in history` });
+          }
+        } else {
+          console.warn('[OpenCode Server] Session not found, creating new one');
+          this.emit('debug', { type: 'warning', message: 'Session not found on server, creating new one' });
+          this.currentSessionId = await this.createSession();
+        }
+      } catch (error) {
+        console.warn('[OpenCode Server] Failed to verify session:', error);
+        this.emit('debug', { type: 'warning', message: `Failed to verify session: ${(error as Error).message}` });
+      }
+    } else {
+      console.log('[OpenCode Server] Creating NEW session...');
+      this.emit('debug', { type: 'info', message: 'Creating NEW session...' });
+      this.currentSessionId = await this.createSession();
+      console.log('[OpenCode Server] NEW session created:', this.currentSessionId);
+      this.emit('debug', { type: 'info', message: `NEW session created: ${this.currentSessionId}` });
     }
-
-    // Start the server if not running
-    if (!this.serverReady) {
-      console.log('[OpenCode Server] Starting server...');
-      this.emit('debug', { type: 'info', message: 'Starting server...' });
-      await this.startServer(config.workingDirectory);
-      console.log('[OpenCode Server] Server started successfully');
-      this.emit('debug', { type: 'info', message: 'Server started successfully' });
-    }
-
-    // Create or get session
-    console.log('[OpenCode Server] Creating session...');
-    this.emit('debug', { type: 'info', message: 'Creating session...' });
-    const sessionId = config.sessionId || await this.createSession();
-    this.currentSessionId = sessionId;
-    console.log('[OpenCode Server] Session created:', sessionId);
-    this.emit('debug', { type: 'info', message: `Session created: ${sessionId}` });
 
     // Subscribe to SSE events
     console.log('[OpenCode Server] Subscribing to SSE events...');
@@ -173,11 +184,11 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     this.subscribeToEvents();
 
     // Send the message
-    console.log('[OpenCode Server] Sending initial message...');
-    this.emit('debug', { type: 'info', message: 'Sending initial message...' });
+    console.log('[OpenCode Server] Sending message...');
+    this.emit('debug', { type: 'info', message: 'Sending message...' });
     await this.sendMessage(config.prompt);
-    console.log('[OpenCode Server] Initial message sent');
-    this.emit('debug', { type: 'info', message: 'Initial message sent' });
+    console.log('[OpenCode Server] Message sent');
+    this.emit('debug', { type: 'info', message: 'Message sent' });
 
     this.emit('progress', { stage: 'init', message: 'Task started' });
 
@@ -189,154 +200,6 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
       createdAt: new Date().toISOString(),
       startedAt: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Start the OpenCode server
-   */
-  private async startServer(workingDirectory?: string): Promise<void> {
-    // Find an available port
-    this.serverPort = await this.findAvailablePort();
-
-    const { command, args: baseArgs } = getOpenCodeCliPath();
-    const env = await this.buildEnvironment();
-    const safeCwd = workingDirectory || app.getPath('temp');
-
-    const serverArgs = [...baseArgs, 'serve', '--port', String(this.serverPort)];
-
-    console.log('[OpenCode Server] Starting server on port', this.serverPort);
-    console.log('[OpenCode Server] Command:', command, serverArgs.join(' '));
-    this.emit('debug', { type: 'info', message: `Starting server on port ${this.serverPort}` });
-
-    return new Promise((resolve, reject) => {
-      this.serverProcess = spawn(command, serverArgs, {
-        cwd: safeCwd,
-        env: env as NodeJS.ProcessEnv,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      let startupOutput = '';
-      const startupTimeout = setTimeout(() => {
-        reject(new OpenCodeServerError('Server startup timeout'));
-      }, 30000);
-
-      this.serverProcess.stdout?.on('data', (data: Buffer) => {
-        const output = data.toString();
-        startupOutput += output;
-        console.log('[OpenCode Server stdout]:', output);
-        this.emit('debug', { type: 'stdout', message: output });
-
-        // Check if server is ready (look for port binding message)
-        if (output.includes('listening') || output.includes('started') || output.includes(String(this.serverPort))) {
-          clearTimeout(startupTimeout);
-          this.serverReady = true;
-          console.log('[OpenCode Server] Server is ready');
-          this.emit('debug', { type: 'info', message: 'Server is ready' });
-          resolve();
-        }
-      });
-
-      this.serverProcess.stderr?.on('data', (data: Buffer) => {
-        const output = data.toString();
-        console.error('[OpenCode Server stderr]:', output);
-        this.emit('debug', { type: 'stderr', message: output });
-      });
-
-      this.serverProcess.on('error', (err) => {
-        clearTimeout(startupTimeout);
-        console.error('[OpenCode Server] Process error:', err);
-        this.emit('error', err);
-        reject(err);
-      });
-
-      this.serverProcess.on('exit', (code, signal) => {
-        console.log('[OpenCode Server] Process exited:', code, signal);
-        this.emit('debug', { type: 'exit', message: `Server exited with code ${code}` });
-        this.serverReady = false;
-        this.serverProcess = null;
-
-        if (!this.hasCompleted && !this.isDisposed) {
-          this.emit('complete', {
-            status: code === 0 ? 'success' : 'error',
-            sessionId: this.currentSessionId || undefined,
-            error: code !== 0 ? `Server exited with code ${code}` : undefined,
-          });
-        }
-      });
-
-      // Also try to detect ready state by polling the health endpoint
-      this.pollServerReady().then(() => {
-        clearTimeout(startupTimeout);
-        this.serverReady = true;
-        resolve();
-      }).catch(() => {
-        // Polling failed, rely on stdout detection
-      });
-    });
-  }
-
-  /**
-   * Poll the server health endpoint until ready
-   */
-  private async pollServerReady(): Promise<void> {
-    const maxAttempts = 30;
-    const delay = 500;
-
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-        const response = await fetch(`http://localhost:${this.serverPort}/health`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(1000),
-        });
-        if (response.ok) {
-          console.log('[OpenCode Server] Health check passed');
-
-          // Also fetch the OpenAPI spec to debug available routes
-          try {
-            const docResponse = await fetch(`http://localhost:${this.serverPort}/doc`, {
-              method: 'GET',
-              signal: AbortSignal.timeout(2000),
-            });
-            if (docResponse.ok) {
-              const spec = await docResponse.json();
-              const paths = Object.keys(spec.paths || {}).filter(p => p.includes('session'));
-              console.log('[OpenCode Server] Session-related endpoints:', paths);
-              this.emit('debug', { type: 'info', message: `Available session endpoints: ${paths.join(', ')}` });
-            }
-          } catch (e) {
-            console.log('[OpenCode Server] Could not fetch OpenAPI spec');
-          }
-
-          return;
-        }
-      } catch {
-        // Server not ready yet
-      }
-      await new Promise(r => setTimeout(r, delay));
-    }
-    throw new Error('Server health check timeout');
-  }
-
-  /**
-   * Find an available port using Node's net module
-   */
-  private async findAvailablePort(): Promise<number> {
-    const net = await import('net');
-
-    return new Promise((resolve) => {
-      const server = net.createServer();
-      server.listen(0, '127.0.0.1', () => {
-        const address = server.address();
-        const port = typeof address === 'object' && address ? address.port : 40000;
-        server.close(() => {
-          resolve(port);
-        });
-      });
-      server.on('error', () => {
-        // Fallback to random port in range
-        resolve(40000 + Math.floor(Math.random() * 10000));
-      });
-    });
   }
 
   /**
@@ -726,11 +589,7 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
         }
 
         const chunk = decoder.decode(value, { stream: true });
-        // Log first 200 chars of chunk for debugging
-        if (chunk.length > 0) {
-          console.log('[OpenCode Server] SSE chunk:', chunk.substring(0, 200));
-          this.emit('debug', { type: 'info', message: `SSE data: ${chunk.substring(0, 100)}...` });
-        }
+        // Don't log every SSE chunk - too noisy
         buffer += chunk;
 
         // Process complete SSE events
@@ -803,8 +662,11 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     const data = event.data as Record<string, unknown>;
     const eventType = event.type || (data.type as string);
 
-    console.log('[OpenCode Server] SSE event:', eventType);
-    this.emit('debug', { type: 'sse-event', message: `Event: ${eventType}`, data });
+    // Only log important events, skip message.part.updated to reduce noise
+    if (eventType !== 'message.part.updated') {
+      console.log('[OpenCode Server] SSE event:', eventType);
+      this.emit('debug', { type: 'sse-event', message: `Event: ${eventType}`, data });
+    }
 
     switch (eventType) {
       case 'session.updated':
@@ -907,8 +769,11 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     const partType = part.type as string;
     const messageId = (props.messageID || part.messageID || this.currentMessageId) as string;
 
-    console.log('[OpenCode Server] Part updated:', partType, 'messageId:', messageId);
-    this.emit('debug', { type: 'info', message: `Part: ${partType}` });
+    // Only log non-streaming part types to reduce noise
+    if (partType !== 'text' && partType !== 'text-delta' && partType !== 'reasoning') {
+      console.log('[OpenCode Server] Part updated:', partType, 'messageId:', messageId);
+      this.emit('debug', { type: 'info', message: `Part: ${partType}` });
+    }
 
     switch (partType) {
       case 'text-start':
@@ -1054,11 +919,11 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     }
 
     console.log('[OpenCode Server] Sending async message to session:', this.currentSessionId);
-    this.emit('debug', { type: 'info', message: `Sending message: ${prompt.substring(0, 100)}...` });
+    this.emit('debug', { type: 'info', message: `Sending message to ${this.currentSessionId}: ${prompt.substring(0, 100)}...` });
 
     // Build message body
     // Note: Model is set in the config file and session creation, not in individual messages.
-    // The prompt_async API expects model as an object, not a string, so we don't include it here.
+    // Always specify the agent for consistency (CLI does this too with --agent flag)
     const messageBody: Record<string, unknown> = {
       parts: [{ type: 'text', text: prompt }],
       agent: ACCOMPLISH_AGENT_NAME,
@@ -1100,24 +965,31 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
       throw new Error('No active server or session');
     }
 
-    // Send as a new message
+    // Send as a message
     await this.sendMessage(response);
     console.log('[OpenCode Server] Response sent');
   }
 
   /**
    * Cancel the current task
+   * Note: We abort the SSE connection but don't stop the shared server
    */
   async cancelTask(): Promise<void> {
     this.abortController?.abort();
     this.abortController = null;
 
-    if (this.serverProcess) {
-      this.serverProcess.kill();
-      this.serverProcess = null;
+    // Try to abort the session on the server if we have one
+    if (this.serverPort && this.currentSessionId) {
+      try {
+        await fetch(`http://localhost:${this.serverPort}/session/${this.currentSessionId}/abort`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(5000),
+        });
+        console.log('[OpenCode Server] Session aborted on server');
+      } catch (error) {
+        console.warn('[OpenCode Server] Failed to abort session:', error);
+      }
     }
-
-    this.serverReady = false;
   }
 
   /**
@@ -1159,6 +1031,7 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
 
   /**
    * Dispose the adapter and clean up all resources
+   * Note: We do NOT stop the shared server here - it's kept alive for session continuity
    */
   dispose(): void {
     if (this.isDisposed) return;
@@ -1166,19 +1039,14 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     console.log(`[OpenCode Server] Disposing adapter for task ${this.currentTaskId}`);
     this.isDisposed = true;
 
+    // Abort any pending SSE connections
     this.abortController?.abort();
     this.abortController = null;
 
-    if (this.serverProcess) {
-      try {
-        this.serverProcess.kill();
-      } catch (error) {
-        console.error('[OpenCode Server] Error killing server:', error);
-      }
-      this.serverProcess = null;
-    }
+    // Release our reference to the shared server (but don't stop it)
+    getSharedServer().release();
 
-    this.serverReady = false;
+    // Clear adapter state (but keep serverPort as it's shared)
     this.currentSessionId = null;
     this.currentTaskId = null;
     this.currentMessageId = null;
@@ -1188,69 +1056,7 @@ export class OpenCodeServerAdapter extends EventEmitter<OpenCodeServerAdapterEve
     this.streamingText = '';
 
     this.removeAllListeners();
-    console.log('[OpenCode Server] Adapter disposed');
-  }
-
-  /**
-   * Build environment variables
-   */
-  private async buildEnvironment(): Promise<NodeJS.ProcessEnv> {
-    const env: NodeJS.ProcessEnv = { ...process.env };
-
-    if (app.isPackaged) {
-      env.ELECTRON_RUN_AS_NODE = '1';
-      logBundledNodeInfo();
-
-      const bundledNode = getBundledNodePaths();
-      if (bundledNode) {
-        const delimiter = process.platform === 'win32' ? ';' : ':';
-        env.PATH = `${bundledNode.binDir}${delimiter}${env.PATH || ''}`;
-        env.NODE_BIN_PATH = bundledNode.binDir;
-      }
-
-      if (process.platform === 'darwin') {
-        env.PATH = getExtendedNodePath(env.PATH);
-      }
-    }
-
-    const apiKeys = await getAllApiKeys();
-    if (apiKeys.anthropic) env.ANTHROPIC_API_KEY = apiKeys.anthropic;
-    if (apiKeys.openai) env.OPENAI_API_KEY = apiKeys.openai;
-    if (apiKeys.google) env.GOOGLE_GENERATIVE_AI_API_KEY = apiKeys.google;
-    if (apiKeys.xai) env.XAI_API_KEY = apiKeys.xai;
-    if (apiKeys.deepseek) env.DEEPSEEK_API_KEY = apiKeys.deepseek;
-    if (apiKeys.zai) env.ZAI_API_KEY = apiKeys.zai;
-
-    const bedrockCredentials = getBedrockCredentials();
-    if (bedrockCredentials) {
-      if (bedrockCredentials.authType === 'accessKeys') {
-        env.AWS_ACCESS_KEY_ID = bedrockCredentials.accessKeyId;
-        env.AWS_SECRET_ACCESS_KEY = bedrockCredentials.secretAccessKey;
-        if (bedrockCredentials.sessionToken) {
-          env.AWS_SESSION_TOKEN = bedrockCredentials.sessionToken;
-        }
-      } else if (bedrockCredentials.authType === 'profile') {
-        env.AWS_PROFILE = bedrockCredentials.profileName;
-      }
-      if (bedrockCredentials.region) {
-        env.AWS_REGION = bedrockCredentials.region;
-      }
-    }
-
-    const selectedModel = getSelectedModel();
-    if (selectedModel?.provider === 'ollama' && selectedModel.baseUrl) {
-      env.OLLAMA_HOST = selectedModel.baseUrl;
-    }
-
-    if (process.env.OPENCODE_CONFIG) {
-      env.OPENCODE_CONFIG = process.env.OPENCODE_CONFIG;
-    }
-
-    if (this.currentTaskId) {
-      env.ACCOMPLISH_TASK_ID = this.currentTaskId;
-    }
-
-    return env;
+    console.log('[OpenCode Server] Adapter disposed (shared server kept alive for session continuity)');
   }
 
   private handleAskUserQuestion(input: AskUserQuestionInput): void {
