@@ -91,6 +91,7 @@ export function startPermissionApiServer(): http.Server {
     let data: {
       operation?: string;
       filePath?: string;
+      filePaths?: string[];
       targetPath?: string;
       contentPreview?: string;
     };
@@ -104,9 +105,9 @@ export function startPermissionApiServer(): http.Server {
     }
 
     // Validate required fields
-    if (!data.operation || !data.filePath) {
+    if (!data.operation || (!data.filePath && (!data.filePaths || data.filePaths.length === 0))) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'operation and filePath are required' }));
+      res.end(JSON.stringify({ error: 'operation and either filePath or filePaths are required' }));
       return;
     }
 
@@ -141,6 +142,7 @@ export function startPermissionApiServer(): http.Server {
       type: 'file',
       fileOperation: data.operation as FileOperation,
       filePath: data.filePath,
+      filePaths: data.filePaths,
       targetPath: data.targetPath,
       contentPreview: data.contentPreview?.substring(0, 500),
       createdAt: new Date().toISOString(),
