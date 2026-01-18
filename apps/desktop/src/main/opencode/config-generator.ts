@@ -419,12 +419,17 @@ export async function generateOpenCodeConfig(): Promise<string> {
   // Build file-permission MCP server command
   const filePermissionServerPath = path.join(skillsPath, 'file-permission', 'src', 'index.ts');
 
-  // Enable providers - add ollama if configured
+  // Enable providers - add ollama and litellm if configured
   const ollamaConfig = getOllamaConfig();
+  const litellmConfig = getLiteLLMConfig();
   const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock'];
-  const enabledProviders = ollamaConfig?.enabled
-    ? [...baseProviders, 'ollama']
-    : baseProviders;
+  let enabledProviders = [...baseProviders];
+  if (ollamaConfig?.enabled) {
+    enabledProviders.push('ollama');
+  }
+  if (litellmConfig?.enabled) {
+    enabledProviders.push('litellm');
+  }
 
   // Build provider configurations
   const providerConfig: Record<string, ProviderConfig> = {};
@@ -510,7 +515,6 @@ export async function generateOpenCodeConfig(): Promise<string> {
   }
 
   // Add LiteLLM provider configuration if enabled
-  const litellmConfig = getLiteLLMConfig();
   if (litellmConfig?.enabled && litellmConfig.baseUrl) {
     // Get the selected model to configure LiteLLM
     const { getSelectedModel } = await import('../store/appSettings');
