@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
-import { getOllamaConfig } from '../store/appSettings';
+import { getOllamaConfig, getLiteLLMConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import type { BedrockCredentials } from '@accomplish/shared';
 
@@ -365,7 +365,21 @@ interface OpenRouterProviderConfig {
   models: Record<string, OpenRouterProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | OpenRouterProviderConfig;
+interface LiteLLMProviderModelConfig {
+  name: string;
+  tools?: boolean;
+}
+
+interface LiteLLMProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    baseURL: string;
+  };
+  models: Record<string, LiteLLMProviderModelConfig>;
+}
+
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -405,12 +419,17 @@ export async function generateOpenCodeConfig(): Promise<string> {
   // Build file-permission MCP server command
   const filePermissionServerPath = path.join(skillsPath, 'file-permission', 'src', 'index.ts');
 
-  // Enable providers - add ollama if configured
+  // Enable providers - add ollama and litellm if configured
   const ollamaConfig = getOllamaConfig();
+  const litellmConfig = getLiteLLMConfig();
   const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock'];
-  const enabledProviders = ollamaConfig?.enabled
-    ? [...baseProviders, 'ollama']
-    : baseProviders;
+  let enabledProviders = [...baseProviders];
+  if (ollamaConfig?.enabled) {
+    enabledProviders.push('ollama');
+  }
+  if (litellmConfig?.enabled) {
+    enabledProviders.push('litellm');
+  }
 
   // Build provider configurations
   const providerConfig: Record<string, ProviderConfig> = {};
@@ -492,6 +511,38 @@ export async function generateOpenCodeConfig(): Promise<string> {
       console.log('[OpenCode Config] Bedrock provider configured:', bedrockOptions);
     } catch (e) {
       console.warn('[OpenCode Config] Failed to parse Bedrock credentials:', e);
+    }
+  }
+
+  // Add LiteLLM provider configuration if enabled
+  if (litellmConfig?.enabled && litellmConfig.baseUrl) {
+    // Get the selected model to configure LiteLLM
+    const { getSelectedModel } = await import('../store/appSettings');
+    const selectedModel = getSelectedModel();
+
+    const litellmModels: Record<string, LiteLLMProviderModelConfig> = {};
+
+    // If a model is selected via LiteLLM, add it to the config
+    if (selectedModel?.provider === 'litellm' && selectedModel.model) {
+      // Extract model ID from full ID (e.g., "litellm/openai/gpt-4" -> "openai/gpt-4")
+      const modelId = selectedModel.model.replace('litellm/', '');
+      litellmModels[modelId] = {
+        name: modelId,
+        tools: true,
+      };
+    }
+
+    // Only configure LiteLLM if we have at least one model
+    if (Object.keys(litellmModels).length > 0) {
+      providerConfig.litellm = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'LiteLLM',
+        options: {
+          baseURL: `${litellmConfig.baseUrl}/v1`,
+        },
+        models: litellmModels,
+      };
+      console.log('[OpenCode Config] LiteLLM provider configured with model:', Object.keys(litellmModels));
     }
   }
 

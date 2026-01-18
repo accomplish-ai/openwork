@@ -44,7 +44,7 @@ interface AccomplishAPI {
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;
-  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock', key: string, label?: string): Promise<ApiKeyConfig>;
+  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm', key: string, label?: string): Promise<ApiKeyConfig>;
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
@@ -89,6 +89,20 @@ interface AccomplishAPI {
     models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
     error?: string;
   }>;
+
+  // LiteLLM configuration
+  testLiteLLMConnection(url: string, apiKey?: string): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }>;
+  fetchLiteLLMModels(): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }>;
+  getLiteLLMConfig(): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null>;
+  setLiteLLMConfig(config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null): Promise<void>;
 
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;

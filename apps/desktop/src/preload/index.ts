@@ -42,7 +42,7 @@ const accomplishAPI = {
   // Settings
   getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke('settings:api-keys'),
   addApiKey: (
-    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock',
+    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm',
     key: string,
     label?: string
   ): Promise<unknown> =>
@@ -116,6 +116,25 @@ const accomplishAPI = {
     models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
     error?: string;
   }> => ipcRenderer.invoke('openrouter:fetch-models'),
+
+  // LiteLLM configuration
+  testLiteLLMConnection: (url: string, apiKey?: string): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }> => ipcRenderer.invoke('litellm:test-connection', url, apiKey),
+
+  fetchLiteLLMModels: (): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }> => ipcRenderer.invoke('litellm:fetch-models'),
+
+  getLiteLLMConfig: (): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null> =>
+    ipcRenderer.invoke('litellm:get-config'),
+
+  setLiteLLMConfig: (config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null): Promise<void> =>
+    ipcRenderer.invoke('litellm:set-config', config),
 
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>

@@ -95,7 +95,31 @@ export class SettingsPage {
   }
 
   get litellmPlatformButton() {
-    return this.page.locator('button:has-text("LiteLLM")');
+    return this.page.locator('button:has-text("LiteLLM"):not([disabled])');
+  }
+
+  get litellmUrlInput() {
+    return this.page.locator('[data-testid="litellm-url-input"]');
+  }
+
+  get litellmApiKeyInput() {
+    return this.page.locator('[data-testid="litellm-api-key-input"]');
+  }
+
+  get litellmTestConnectionButton() {
+    return this.page.locator('[data-testid="litellm-test-button"]');
+  }
+
+  get litellmModelSearch() {
+    return this.page.locator('[data-testid="litellm-search-input"]');
+  }
+
+  get litellmUseModelButton() {
+    return this.page.locator('[data-testid="litellm-save-button"]');
+  }
+
+  async selectLiteLLMPlatform() {
+    await this.litellmPlatformButton.click();
   }
 
   get fetchModelsButton() {
