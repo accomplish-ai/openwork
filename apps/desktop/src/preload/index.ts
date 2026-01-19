@@ -144,6 +144,24 @@ const accomplishAPI = {
   getBedrockCredentials: () =>
     ipcRenderer.invoke('bedrock:get-credentials'),
 
+  // New Provider Settings API
+  getProviderSettings: (): Promise<unknown> =>
+    ipcRenderer.invoke('provider-settings:get'),
+  setActiveProvider: (providerId: string | null): Promise<void> =>
+    ipcRenderer.invoke('provider-settings:set-active', providerId),
+  getConnectedProvider: (providerId: string): Promise<unknown> =>
+    ipcRenderer.invoke('provider-settings:get-connected', providerId),
+  setConnectedProvider: (providerId: string, provider: unknown): Promise<void> =>
+    ipcRenderer.invoke('provider-settings:set-connected', providerId, provider),
+  removeConnectedProvider: (providerId: string): Promise<void> =>
+    ipcRenderer.invoke('provider-settings:remove-connected', providerId),
+  updateProviderModel: (providerId: string, modelId: string | null): Promise<void> =>
+    ipcRenderer.invoke('provider-settings:update-model', providerId, modelId),
+  setProviderDebugMode: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('provider-settings:set-debug', enabled),
+  getProviderDebugMode: (): Promise<boolean> =>
+    ipcRenderer.invoke('provider-settings:get-debug'),
+
   // Event subscriptions
   onTaskUpdate: (callback: (event: unknown) => void) => {
     const listener = (_: unknown, event: unknown) => callback(event);

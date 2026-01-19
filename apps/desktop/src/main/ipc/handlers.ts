@@ -43,6 +43,17 @@ import {
   getLiteLLMConfig,
   setLiteLLMConfig,
 } from '../store/appSettings';
+import {
+  getProviderSettings,
+  setActiveProvider,
+  getConnectedProvider,
+  setConnectedProvider,
+  removeConnectedProvider,
+  updateProviderModel,
+  setProviderDebugMode,
+  getProviderDebugMode,
+} from '../store/providerSettings';
+import type { ProviderId, ConnectedProvider } from '@accomplish/shared';
 import { getDesktopConfig } from '../config';
 import {
   startPermissionApiServer,
@@ -1486,6 +1497,39 @@ export function registerIPCHandlers(): void {
       return { ok: true };
     }
   );
+
+  // Provider Settings
+  handle('provider-settings:get', async () => {
+    return getProviderSettings();
+  });
+
+  handle('provider-settings:set-active', async (_event: IpcMainInvokeEvent, providerId: ProviderId | null) => {
+    setActiveProvider(providerId);
+  });
+
+  handle('provider-settings:get-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
+    return getConnectedProvider(providerId);
+  });
+
+  handle('provider-settings:set-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId, provider: ConnectedProvider) => {
+    setConnectedProvider(providerId, provider);
+  });
+
+  handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
+    removeConnectedProvider(providerId);
+  });
+
+  handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
+    updateProviderModel(providerId, modelId);
+  });
+
+  handle('provider-settings:set-debug', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    setProviderDebugMode(enabled);
+  });
+
+  handle('provider-settings:get-debug', async () => {
+    return getProviderDebugMode();
+  });
 }
 
 function createTaskId(): string {
