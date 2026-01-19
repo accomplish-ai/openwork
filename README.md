@@ -1,4 +1,8 @@
 <p align="center">
+  <strong>English</strong> | <a href="README.zh.md">中文</a>
+</p>
+
+<p align="center">
   <img src="docs/banner.svg" alt="Openwork - Open source AI desktop agent that automates file management, document creation, and browser tasks with your own AI API keys" width="100%" />
 </p>
 
