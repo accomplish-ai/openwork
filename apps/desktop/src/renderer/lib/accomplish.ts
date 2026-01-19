@@ -16,6 +16,9 @@ import type {
   ApiKeyConfig,
   TaskMessage,
   BedrockCredentials,
+  ProviderSettings,
+  ProviderId,
+  ConnectedProvider,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -108,6 +111,16 @@ interface AccomplishAPI {
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
+
+  // Provider Settings API
+  getProviderSettings(): Promise<ProviderSettings>;
+  setActiveProvider(providerId: ProviderId | null): Promise<void>;
+  getConnectedProvider(providerId: ProviderId): Promise<ConnectedProvider | null>;
+  setConnectedProvider(providerId: ProviderId, provider: ConnectedProvider): Promise<void>;
+  removeConnectedProvider(providerId: ProviderId): Promise<void>;
+  updateProviderModel(providerId: ProviderId, modelId: string | null): Promise<void>;
+  setProviderDebugMode(enabled: boolean): Promise<void>;
+  getProviderDebugMode(): Promise<boolean>;
 
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
