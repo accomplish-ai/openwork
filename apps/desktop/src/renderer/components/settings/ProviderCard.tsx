@@ -52,11 +52,9 @@ export function ProviderCard({
       onClick={onClick}
       data-testid={`provider-card-${providerId}`}
       className={`relative flex flex-col items-center justify-center rounded-xl border p-4 transition-all duration-200 min-w-[120px] ${
-        isActive
-          ? 'border-[#4A7C59] border-2 bg-[#4A7C59]/5'
-          : isSelected
-          ? 'border-primary bg-muted'
-          : 'border-border hover:border-ring'
+        isSelected
+          ? 'border-[#4A7C59] border-2 bg-[#D4E8D5]'
+          : 'border-border bg-white hover:border-ring'
       }`}
     >
       {/* Connected badge */}
@@ -78,12 +76,12 @@ export function ProviderCard({
       </div>
 
       {/* Name */}
-      <span className={`text-sm font-medium ${isActive ? 'text-[#4A7C59]' : 'text-foreground'}`}>
+      <span className="text-sm font-medium text-foreground">
         {meta.name}
       </span>
 
       {/* Label */}
-      <span className={`text-xs ${isActive ? 'text-[#4A7C59]/70' : 'text-muted-foreground'}`}>
+      <span className="text-xs text-muted-foreground">
         {meta.label}
       </span>
     </button>

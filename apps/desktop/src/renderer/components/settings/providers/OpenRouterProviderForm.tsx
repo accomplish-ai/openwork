@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import { getAccomplish } from '@/lib/accomplish';
 import type { ConnectedProvider, OpenRouterCredentials } from '@accomplish/shared';
-import { ModelSelector } from '../shared';
 import { PROVIDER_META } from '@accomplish/shared';
+import {
+  ModelSelector,
+  ConnectButton,
+  ConnectedControls,
+  ProviderFormHeader,
+  FormError,
+} from '../shared';
 
 // Import OpenRouter logo
 import openrouterLogo from '/assets/ai-logos/openrouter.svg';
-
-// Import icons
-import connectIcon from '/assets/icons/connect.svg';
-import connectedIcon from '/assets/icons/connected.svg';
 
 interface OpenRouterProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -102,15 +104,7 @@ export function OpenRouterProviderForm({
 
   return (
     <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      {/* Header with Logo */}
-      <div className="flex items-center gap-3 mb-5">
-        <img
-          src={openrouterLogo}
-          alt="OpenRouter logo"
-          className="h-6 w-6 object-contain"
-        />
-        <span className="text-base font-medium text-foreground">OpenRouter Settings</span>
-      </div>
+      <ProviderFormHeader logoSrc={openrouterLogo} providerName="OpenRouter" />
 
       <div className="space-y-3">
         {!isConnected ? (
@@ -153,30 +147,8 @@ export function OpenRouterProviderForm({
               </button>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
-            {/* Connect Button */}
-            <button
-              onClick={handleConnect}
-              disabled={connecting || !apiKey.trim()}
-              data-testid="connect-button"
-              className="w-full flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {connecting ? (
-                <>
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-                  </svg>
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <img src={connectIcon} alt="" className="h-4 w-4" />
-                  Connect
-                </>
-              )}
-            </button>
+            <FormError error={error} />
+            <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
           </>
         ) : (
           <>
@@ -207,26 +179,7 @@ export function OpenRouterProviderForm({
               className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
             />
 
-            {/* Connected Button + Trash */}
-            <div className="flex gap-2">
-              <button
-                className="flex-1 flex items-center justify-center gap-2 rounded-md bg-[#4A7C59] px-4 py-2.5 text-sm font-medium text-white"
-                disabled
-              >
-                <img src={connectedIcon} alt="" className="h-4 w-4 brightness-0 invert" />
-                Connected
-              </button>
-              <button
-                onClick={onDisconnect}
-                data-testid="disconnect-button"
-                className="rounded-md border border-border p-2.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                title="Disconnect"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
+            <ConnectedControls onDisconnect={onDisconnect} />
 
             {/* Model Selector */}
             <ModelSelector
