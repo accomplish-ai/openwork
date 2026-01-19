@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 # Prevent concurrent releases - only one release at a time
 concurrency:
@@ -95,27 +96,68 @@ jobs:
           cd apps/desktop
           npm version ${{ steps.bump.outputs.new_version }} --no-git-tag-version
 
-      - name: Commit version bump and create tag
+      - name: Create release PR and merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.bump.outputs.new_version }}"
+          BRANCH="release/v${VERSION}"
           DRY_RUN="${{ steps.inputs.outputs.dry_run }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Commit version bump
+          # Create release branch
+          git checkout -b "$BRANCH"
           git add apps/desktop/package.json
           git commit -m "chore(release): bump version to ${VERSION}"
 
           if [ "$DRY_RUN" == "true" ]; then
-            echo "DRY RUN: Creating test tag without pushing to main"
+            echo "DRY RUN: Creating test tag without PR"
             git tag "v${VERSION}"
             git push origin "v${VERSION}" --force
           else
-            # Push version bump to main
-            git push origin main
+            # Push branch
+            git push origin "$BRANCH"
 
-            # Create and push tag
+            # Create PR
+            PR_URL=$(gh pr create \
+              --title "chore(release): bump version to ${VERSION}" \
+              --body "Automated release PR for v${VERSION}" \
+              --base main \
+              --head "$BRANCH")
+            echo "Created PR: $PR_URL"
+
+            # Enable auto-merge (squash)
+            gh pr merge "$BRANCH" --squash --auto --delete-branch
+
+            # Wait for PR to be merged (max 3 minutes)
+            echo "Waiting for auto-merge..."
+            for i in {1..36}; do
+              sleep 5
+              STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
+              echo "PR state: $STATE"
+              if [ "$STATE" == "MERGED" ]; then
+                echo "PR merged successfully"
+                break
+              fi
+              if [ "$STATE" == "CLOSED" ]; then
+                echo "Error: PR was closed without merging"
+                exit 1
+              fi
+            done
+
+            # Verify merge happened
+            FINAL_STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
+            if [ "$FINAL_STATE" != "MERGED" ]; then
+              echo "Error: PR did not merge within timeout"
+              exit 1
+            fi
+
+            # Fetch latest main and create tag
+            git fetch origin main
+            git checkout main
+            git pull origin main
             git tag "v${VERSION}"
             git push origin "v${VERSION}"
           fi
