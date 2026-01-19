@@ -14,6 +14,9 @@ import { useProviderSettings } from '@/components/settings/hooks/useProviderSett
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 
+// First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
+const FIRST_FOUR_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'google', 'deepseek'];
+
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +45,14 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     if (!open) return;
     refetch();
   }, [open, refetch]);
+
+  // Auto-expand grid if active provider is not in the first 4 visible providers
+  useEffect(() => {
+    if (!open || !settings?.activeProviderId) return;
+    if (!FIRST_FOUR_PROVIDERS.includes(settings.activeProviderId)) {
+      setGridExpanded(true);
+    }
+  }, [open, settings?.activeProviderId]);
 
   // Reset state when dialog closes
   useEffect(() => {

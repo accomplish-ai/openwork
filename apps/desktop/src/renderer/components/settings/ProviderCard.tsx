@@ -15,6 +15,9 @@ import ollamaLogo from '/assets/ai-logos/ollama.svg';
 import openrouterLogo from '/assets/ai-logos/openrouter.svg';
 import litellmLogo from '/assets/ai-logos/litellm.svg';
 
+// Import connected badge icon
+import connectedKeyIcon from '/assets/icons/connected-key.svg';
+
 const PROVIDER_LOGOS: Record<ProviderId, string> = {
   anthropic: anthropicLogo,
   openai: openaiLogo,
@@ -60,9 +63,7 @@ export function ProviderCard({
       {/* Connected badge */}
       {isConnected && (
         <div className="absolute top-2 right-2" data-testid={`provider-connected-badge-${providerId}`}>
-          <svg className="h-4 w-4 text-[#4A7C59]" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
-          </svg>
+          <img src={connectedKeyIcon} alt="Connected" className="h-5 w-5" />
         </div>
       )}
 
