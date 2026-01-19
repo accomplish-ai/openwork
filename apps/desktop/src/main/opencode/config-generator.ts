@@ -375,6 +375,7 @@ interface LiteLLMProviderConfig {
   name: string;
   options: {
     baseURL: string;
+    apiKey?: string;
   };
   models: Record<string, LiteLLMProviderModelConfig>;
 }
@@ -534,12 +535,23 @@ export async function generateOpenCodeConfig(): Promise<string> {
 
     // Only configure LiteLLM if we have at least one model
     if (Object.keys(litellmModels).length > 0) {
+      // Get LiteLLM API key if configured
+      const litellmApiKey = getApiKey('litellm');
+      
+      const litellmOptions: LiteLLMProviderConfig['options'] = {
+        baseURL: `${litellmConfig.baseUrl}/v1`,
+      };
+      
+      // Add API key to options if available
+      if (litellmApiKey) {
+        litellmOptions.apiKey = litellmApiKey;
+        console.log('[OpenCode Config] LiteLLM API key configured');
+      }
+      
       providerConfig.litellm = {
         npm: '@ai-sdk/openai-compatible',
         name: 'LiteLLM',
-        options: {
-          baseURL: `${litellmConfig.baseUrl}/v1`,
-        },
+        options: litellmOptions,
         models: litellmModels,
       };
       console.log('[OpenCode Config] LiteLLM provider configured with model:', Object.keys(litellmModels));

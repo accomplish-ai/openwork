@@ -392,6 +392,10 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       env.OPENROUTER_API_KEY = apiKeys.openrouter;
       console.log('[OpenCode CLI] Using OpenRouter API key from settings');
     }
+    if (apiKeys.litellm) {
+      env.LITELLM_API_KEY = apiKeys.litellm;
+      console.log('[OpenCode CLI] Using LiteLLM API key from settings');
+    }
 
     // Set Bedrock credentials if configured
     const bedrockCredentials = getBedrockCredentials();
