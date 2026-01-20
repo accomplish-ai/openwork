@@ -285,41 +285,42 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
             </section>
           )}
 
-          {/* Debug Mode Section */}
-          <section>
-            <div className="rounded-lg border border-border bg-card p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Debug Mode</div>
-                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                    Show detailed backend logs including Claude CLI commands, flags,
-                    and stdout/stderr output in the task view.
-                  </p>
-                </div>
-                <div className="ml-4">
-                  <button
-                    data-testid="settings-debug-toggle"
-                    onClick={handleDebugToggle}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${debugMode ? 'bg-primary' : 'bg-muted'
-                      }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${debugMode ? 'translate-x-6' : 'translate-x-1'
+          {/* Debug Mode Section - only shown when a provider is selected */}
+          {selectedProvider && (
+            <section>
+              <div className="rounded-lg border border-border bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground">Debug Mode</div>
+                    <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                      Show detailed backend logs in the task view.
+                    </p>
+                  </div>
+                  <div className="ml-4">
+                    <button
+                      data-testid="settings-debug-toggle"
+                      onClick={handleDebugToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${debugMode ? 'bg-primary' : 'bg-muted'
                         }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${debugMode ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
                 </div>
+                {debugMode && (
+                  <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
+                    <p className="text-sm text-warning">
+                      Debug mode is enabled. Backend logs will appear in the task view
+                      when running tasks.
+                    </p>
+                  </div>
+                )}
               </div>
-              {debugMode && (
-                <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
-                  <p className="text-sm text-warning">
-                    Debug mode is enabled. Backend logs will appear in the task view
-                    when running tasks.
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Done Button */}
           <div className="flex justify-end">
