@@ -1,6 +1,6 @@
 {
   "name": "@accomplish/desktop",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "type": "module",
   "description": "Accomplish Desktop App",
@@ -186,11 +186,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "resources/icon.ico",
@@ -204,7 +208,6 @@
       "deleteAppDataOnUninstall": true,
       "differentialPackage": false
     },
-    "npmRebuild": false,
     "buildDependenciesFromSource": false
   }
 }
