@@ -2,7 +2,7 @@
  * Provider and model configuration types for multi-provider support
  */
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm' | 'qwen' |;
 
 export interface ProviderConfig {
   id: ProviderType;
@@ -266,6 +266,39 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     name: 'Amazon Bedrock',
     requiresApiKey: false, // Uses AWS credentials
     models: [], // Now fetched dynamically from AWS API
+  },
+   {
+    id: 'qwen',
+    name: 'Tongyi Qianwen',
+    requiresApiKey: true,
+    apiKeyEnvVar: 'QWEN_API_KEY',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', 
+    models: [
+      {
+        id: 'qwen3-max',
+        displayName: 'Qwen Max (Latest)',
+        provider: 'qwen',
+        fullId: 'qwen/qwen3-max',
+        contextWindow: 128000,
+        supportsVision: true,
+      },
+      {
+        id: 'qwen-plus',
+        displayName: 'Qwen Plus',
+        provider: 'qwen',
+        fullId: 'qwen/qwen-plus',
+        contextWindow: 32000,
+        supportsVision: true,
+      },
+      {
+        id: 'qwen-flash',
+        displayName: 'Qwen Flash',
+        provider: 'qwen',
+        fullId: 'qwen/qwen-flash',
+        contextWindow: 128000,
+        supportsVision: false,
+      },
+    ],
   },
 ];
 
