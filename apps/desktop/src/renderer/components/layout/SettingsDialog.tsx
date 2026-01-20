@@ -107,17 +107,14 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     await connectProvider(provider.providerId, provider);
     analytics.trackSaveApiKey(provider.providerId);
 
-    // Auto-set as active if no active provider
-    if (!settings?.activeProviderId) {
-      await setActiveProvider(provider.providerId);
-    }
-
-    // If provider is already ready (has a default model auto-selected), call onApiKeySaved
-    // Otherwise, wait for manual model selection via handleModelChange
+    // Auto-set as active if the new provider is ready (connected + has model selected)
+    // This ensures newly connected ready providers become active, regardless of
+    // whether another provider was already active
     if (isProviderReady(provider)) {
+      await setActiveProvider(provider.providerId);
       onApiKeySaved?.();
     }
-  }, [connectProvider, settings?.activeProviderId, setActiveProvider, onApiKeySaved]);
+  }, [connectProvider, setActiveProvider, onApiKeySaved]);
 
   // Handle provider disconnection
   const handleDisconnect = useCallback(async () => {
