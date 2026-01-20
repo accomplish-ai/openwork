@@ -10,6 +10,9 @@ import { cn } from '@/lib/utils';
 // Context to share animation state with content
 const DialogAnimationContext = React.createContext<{ isOpen: boolean }>({ isOpen: false });
 
+// Animation duration for exit (keep in sync with motion transitions below)
+const EXIT_ANIMATION_DURATION = 100;
+
 // Dialog with exit animation support
 function Dialog({
   open,
@@ -17,17 +20,17 @@ function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   // Track if we should show the dialog (delays close for exit animation)
-  const [shouldShow, setShouldShow] = React.useState(open);
+  const [shouldShow, setShouldShow] = React.useState(!!open);
 
   React.useEffect(() => {
     if (open) {
       setShouldShow(true);
-    } else {
-      // Delay unmount to allow exit animation
-      const timer = setTimeout(() => setShouldShow(false), 150);
+    } else if (shouldShow) {
+      // Only delay if we were previously showing
+      const timer = setTimeout(() => setShouldShow(false), EXIT_ANIMATION_DURATION);
       return () => clearTimeout(timer);
     }
-  }, [open]);
+  }, [open, shouldShow]);
 
   return (
     <DialogAnimationContext.Provider value={{ isOpen: !!open }}>
@@ -79,7 +82,7 @@ const DialogContent = React.forwardRef<
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: isOpen ? 1 : 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: EXIT_ANIMATION_DURATION / 1000 }}
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
         />
       </DialogPrimitive.Overlay>
@@ -96,7 +99,7 @@ const DialogContent = React.forwardRef<
             scale: isOpen ? 1 : 0.95,
             y: isOpen ? 0 : -10,
           }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          transition={{ duration: EXIT_ANIMATION_DURATION / 1000, ease: 'easeOut' }}
           className={cn(
             'relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
             className
