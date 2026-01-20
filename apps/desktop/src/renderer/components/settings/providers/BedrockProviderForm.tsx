@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { getAccomplish } from '@/lib/accomplish';
 import type { ConnectedProvider, BedrockProviderCredentials } from '@accomplish/shared';
+import { getDefaultModelForProvider } from '@accomplish/shared';
 import {
   ModelSelector,
   RegionSelector,
@@ -74,18 +75,20 @@ export function BedrockProviderForm({
       // Save credentials
       await accomplish.saveBedrockCredentials(credentials);
 
-      // Preset Bedrock models
-      const models = [
-        { id: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0', name: 'Claude Opus 4.5' },
-        { id: 'amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5' },
-        { id: 'amazon-bedrock/anthropic.claude-haiku-4-5-20251001-v1:0', name: 'Claude Haiku 4.5' },
-      ];
-      setAvailableModels(models);
+      // Fetch available models dynamically from AWS
+      const credentialsJson = JSON.stringify(credentials);
+      const modelsResult = await accomplish.fetchBedrockModels(credentialsJson);
+      const fetchedModels = modelsResult.success ? modelsResult.models : [];
+      setAvailableModels(fetchedModels);
+
+      // Auto-select default model if available in fetched list
+      const defaultModelId = getDefaultModelForProvider('bedrock');
+      const hasDefaultModel = defaultModelId && fetchedModels.some(m => m.id === defaultModelId);
 
       const provider: ConnectedProvider = {
         providerId: 'bedrock',
         connectionStatus: 'connected',
-        selectedModelId: null,
+        selectedModelId: hasDefaultModel ? defaultModelId : null,
         credentials: {
           type: 'bedrock',
           authMethod: authTab,
@@ -96,7 +99,7 @@ export function BedrockProviderForm({
           ),
         } as BedrockProviderCredentials,
         lastConnectedAt: new Date().toISOString(),
-        availableModels: models,
+        availableModels: fetchedModels,
       };
 
       onConnect(provider);

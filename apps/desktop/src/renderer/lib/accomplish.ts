@@ -111,6 +111,7 @@ interface AccomplishAPI {
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
+  fetchBedrockModels(credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }>;
 
   // E2E Testing
   isE2EMode(): Promise<boolean>;
@@ -175,6 +176,8 @@ export function getAccomplish() {
     getBedrockCredentials: async (): Promise<BedrockCredentials | null> => {
       return window.accomplish!.getBedrockCredentials();
     },
+
+    fetchBedrockModels: (credentials: string) => window.accomplish!.fetchBedrockModels(credentials),
   };
 }
 

@@ -143,6 +143,8 @@ const accomplishAPI = {
     ipcRenderer.invoke('bedrock:save', credentials),
   getBedrockCredentials: () =>
     ipcRenderer.invoke('bedrock:get-credentials'),
+  fetchBedrockModels: (credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }> =>
+    ipcRenderer.invoke('bedrock:fetch-models', credentials),
 
   // E2E Testing
   isE2EMode: (): Promise<boolean> =>

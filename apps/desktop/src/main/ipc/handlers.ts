@@ -54,7 +54,7 @@ import {
   getProviderDebugMode,
   hasReadyProvider,
 } from '../store/providerSettings';
-import type { ProviderId, ConnectedProvider } from '@accomplish/shared';
+import type { ProviderId, ConnectedProvider, BedrockCredentials } from '@accomplish/shared';
 import { getDesktopConfig } from '../config';
 import {
   startPermissionApiServer,
@@ -1023,6 +1023,50 @@ export function registerIPCHandlers(): void {
       }
 
       return { valid: false, error: message };
+    }
+  });
+
+  // Fetch available Bedrock models
+  handle('bedrock:fetch-models', async (_event: IpcMainInvokeEvent, credentialsJson: string) => {
+    try {
+      const credentials = JSON.parse(credentialsJson) as BedrockCredentials;
+
+      // Create Bedrock client (same pattern as validate)
+      let bedrockClient: BedrockClient;
+      if (credentials.authType === 'accessKeys') {
+        bedrockClient = new BedrockClient({
+          region: credentials.region || 'us-east-1',
+          credentials: {
+            accessKeyId: credentials.accessKeyId,
+            secretAccessKey: credentials.secretAccessKey,
+            sessionToken: credentials.sessionToken,
+          },
+        });
+      } else {
+        bedrockClient = new BedrockClient({
+          region: credentials.region || 'us-east-1',
+          credentials: fromIni({ profile: credentials.profileName }),
+        });
+      }
+
+      // Fetch all foundation models
+      const command = new ListFoundationModelsCommand({});
+      const response = await bedrockClient.send(command);
+
+      // Transform to standard format, filtering for text output models
+      const models = (response.modelSummaries || [])
+        .filter(m => m.outputModalities?.includes('TEXT'))
+        .map(m => ({
+          id: `amazon-bedrock/${m.modelId}`,
+          name: m.modelName || m.modelId || 'Unknown',
+          provider: m.providerName || 'Unknown',
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      return { success: true, models };
+    } catch (error) {
+      console.error('[Bedrock] Failed to fetch models:', error);
+      return { success: false, error: normalizeIpcError(error), models: [] };
     }
   });
 
