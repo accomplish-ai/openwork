@@ -325,10 +325,11 @@ export async function generateOpenCodeConfig(): Promise<string> {
     ollama: 'ollama',
     openrouter: 'openrouter',
     litellm: 'litellm',
+    qwen: 'qwen',
   };
 
   // Build enabled providers list from new settings or fall back to base providers
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'qwen'];
   let enabledProviders = baseProviders;
 
   // If we have connected providers in the new settings, use those
@@ -653,6 +654,14 @@ export async function syncApiKeysToOpenCodeAuth(): Promise<void> {
       auth['zai-coding-plan'] = { type: 'api', key: apiKeys.zai };
       updated = true;
       console.log('[OpenCode Auth] Synced Z.AI Coding Plan API key');
+    }
+  }
+ // Sync Qwen API key
+   if (apiKeys.qwen) {
+    if (!auth['qwen'] || auth['qwen'].key !== apiKeys.qwen) {
+     auth['qwen'] = { type: 'api', key: apiKeys.qwen };
+     updated = true;
+    console.log('[OpenCode Auth] Synced Qwen API key');
     }
   }
 
