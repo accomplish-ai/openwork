@@ -1172,7 +1172,8 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
     'prose-li:text-foreground prose-li:my-1',
     'prose-a:text-primary prose-a:underline',
     'prose-blockquote:text-muted-foreground prose-blockquote:border-l-4 prose-blockquote:border-border prose-blockquote:pl-4',
-    'prose-hr:border-border'
+    'prose-hr:border-border',
+    'break-words'
   );
 
   return (

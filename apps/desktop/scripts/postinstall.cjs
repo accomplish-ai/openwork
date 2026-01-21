@@ -49,7 +49,7 @@ if (isWindows) {
 }
 
 // Install skill dependencies (works on all platforms)
-const skills = ['dev-browser', 'dev-browser-mcp', 'file-permission', 'ask-user-question'];
+const skills = ['dev-browser', 'dev-browser-mcp', 'file-permission', 'ask-user-question', 'complete-task'];
 for (const skill of skills) {
   runCommand(`npm --prefix skills/${skill} install`, `Installing ${skill} dependencies`);
 }

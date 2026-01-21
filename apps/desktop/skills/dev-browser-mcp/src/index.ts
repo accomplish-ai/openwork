@@ -36,6 +36,8 @@ let browser: Browser | null = null;
 let connectingPromise: Promise<Browser> | null = null;
 // Cached server mode (fetched once at connection time)
 let cachedServerMode: string | null = null;
+// Active page override for tab switching (dev-browser server doesn't track this)
+let activePageOverride: Page | null = null;
 
 /**
  * Fetch with retry for handling concurrent connection issues
@@ -152,6 +154,15 @@ interface GetPageResponse {
  * Get or create a page by name
  */
 async function getPage(pageName?: string): Promise<Page> {
+  // If we have an active page override from tab switching, use it
+  if (activePageOverride) {
+    if (!activePageOverride.isClosed()) {
+      return activePageOverride;
+    }
+    // Page closed, clear override
+    activePageOverride = null;
+  }
+
   const fullName = getFullPageName(pageName);
 
   const res = await fetchWithRetry(`${DEV_BROWSER_URL}/pages`, {
@@ -2744,8 +2755,12 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         if (action === 'list') {
           const allPages = b.contexts().flatMap((ctx) => ctx.pages());
           const pageList = allPages.map((p, i) => `${i}: ${p.url()}`).join('\n');
+          let output = `Open tabs (${allPages.length}):\n${pageList}`;
+          if (allPages.length > 1) {
+            output += `\n\nMultiple tabs detected! Use browser_tabs(action="switch", index=N) to switch to another tab.`;
+          }
           return {
-            content: [{ type: 'text', text: `Open tabs (${allPages.length}):\n${pageList}` }],
+            content: [{ type: 'text', text: output }],
           };
         }
 
@@ -2765,8 +2780,9 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
           }
           const targetPage = allPages[index]!;
           await targetPage.bringToFront();
+          activePageOverride = targetPage;  // Set the override so getPage() returns this tab
           return {
-            content: [{ type: 'text', text: `Switched to tab ${index}: ${targetPage.url()}` }],
+            content: [{ type: 'text', text: `Switched to tab ${index}: ${targetPage.url()}\n\nNow use browser_snapshot() to see the content of this tab.` }],
           };
         }
 
@@ -2786,6 +2802,10 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
           }
           const targetPage = allPages[index]!;
           const closedUrl = targetPage.url();
+          // Clear override if closing the active tab
+          if (activePageOverride === targetPage) {
+            activePageOverride = null;
+          }
           await targetPage.close();
           return {
             content: [{ type: 'text', text: `Closed tab ${index}: ${closedUrl}` }],

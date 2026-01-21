@@ -143,6 +143,37 @@ To ask ANY question or get user input, you MUST use the AskUserQuestion MCP tool
 See the ask-user-question skill for full documentation and examples.
 </important>
 
+<behavior name="task-planning">
+**TASK PLANNING - REQUIRED FOR EVERY TASK**
+
+Before taking ANY action, you MUST first output a plan:
+
+1. **State the goal** - What the user wants accomplished
+2. **List steps with verification** - Numbered steps, each with a completion criterion
+
+Format:
+**Plan:**
+Goal: [what user asked for]
+
+Steps:
+1. [Action] → verify: [how to confirm it's done]
+2. [Action] → verify: [how to confirm it's done]
+...
+
+Then execute the steps. When calling \`complete_task\`:
+- Review each step's verification criterion
+- Only use status "success" if ALL criteria are met
+- Use "partial" if some steps incomplete, list which ones in \`remaining_work\`
+
+**Example:**
+Goal: Extract analytics data from a website
+
+Steps:
+1. Navigate to URL → verify: page title contains expected text
+2. Locate data section → verify: can see the target metrics
+3. Extract values → verify: have captured specific numbers
+4. Report findings → verify: summary includes all extracted data
+</behavior>
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
@@ -169,20 +200,30 @@ Example bad narration (too terse):
 - Only use AskUserQuestion when you genuinely need user input or decisions
 
 **TASK COMPLETION - CRITICAL:**
-You may ONLY finish a task when ONE of these conditions is met:
 
-1. **SUCCESS**: You have verified that EVERY part of the user's request is complete
-   - Review the original request and check off each requirement
-   - Provide a summary: "Task completed. Here's what I did: [list each step and result]"
-   - If the task had multiple parts, confirm each part explicitly
+You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
 
-2. **CANNOT COMPLETE**: You encountered a blocker you cannot resolve
-   - Explain clearly what you were trying to do
-   - Describe what went wrong or what's blocking you
-   - State what remains to be done: "I was unable to complete [X] because [reason]. Remaining: [list]"
+When to call \`complete_task\`:
 
-**NEVER** stop without either a completion summary or an explanation of why you couldn't finish.
-If you're unsure whether you're done, you're NOT done - keep working or ask the user.
+1. **status: "success"** - You verified EVERY part of the user's request is done
+   - Before calling, re-read the original request
+   - Check off each requirement mentally
+   - Summarize what you did for each part
+
+2. **status: "blocked"** - You hit an unresolvable blocker
+   - Explain what you were trying to do
+   - Describe what went wrong
+   - State what remains undone in \`remaining_work\`
+
+3. **status: "partial"** - You completed some parts but not all
+   - Summarize what you accomplished
+   - Explain why you couldn't finish the rest
+   - State what remains in \`remaining_work\`
+
+**NEVER** just stop working. If you find yourself about to end without calling \`complete_task\`,
+ask yourself: "Did I actually finish what was asked?" If unsure, keep working.
+
+The \`original_request_summary\` field forces you to re-read the request - use this as a checklist.
 </behavior>
 `;
 
@@ -353,6 +394,9 @@ export async function generateOpenCodeConfig(): Promise<string> {
   if (ollamaProvider?.connectionStatus === 'connected' && ollamaProvider.credentials.type === 'ollama') {
     // New provider settings: Ollama is connected
     if (ollamaProvider.selectedModelId) {
+      // OpenCode CLI splits "ollama/model" into provider="ollama" and modelID="model"
+      // So we need to register the model without the "ollama/" prefix
+      const modelId = ollamaProvider.selectedModelId.replace(/^ollama\//, '');
       providerConfig.ollama = {
         npm: '@ai-sdk/openai-compatible',
         name: 'Ollama (local)',
@@ -360,13 +404,13 @@ export async function generateOpenCodeConfig(): Promise<string> {
           baseURL: `${ollamaProvider.credentials.serverUrl}/v1`,
         },
         models: {
-          [ollamaProvider.selectedModelId]: {
-            name: ollamaProvider.selectedModelId,
+          [modelId]: {
+            name: modelId,
             tools: true,
           },
         },
       };
-      console.log('[OpenCode Config] Ollama configured from new settings:', ollamaProvider.selectedModelId);
+      console.log('[OpenCode Config] Ollama configured from new settings:', modelId);
     }
   } else {
     // Legacy fallback: use old Ollama config
@@ -570,6 +614,13 @@ export async function generateOpenCodeConfig(): Promise<string> {
         command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
         enabled: true,
         timeout: 30000,  // Longer timeout for browser operations
+      },
+      // Provides complete_task tool - agent must call to signal task completion
+      'complete-task': {
+        type: 'local',
+        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        enabled: true,
+        timeout: 5000,
       },
     },
   };

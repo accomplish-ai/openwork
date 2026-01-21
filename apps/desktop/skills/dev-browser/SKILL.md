@@ -69,6 +69,53 @@ Shell commands open the user's **default browser** (Safari, Arc, Firefox, etc.),
 3. **Interact**: `browser_click(ref="e5")` or `browser_type(ref="e3", text="search query", press_enter=true)`
 4. **Verify**: `browser_screenshot()` to see the result
 
+## CRITICAL: Tab Awareness After Clicks
+
+**ALWAYS check for new tabs after clicking links or buttons.**
+
+Many websites open content in new tabs. If you click something and the page seems unchanged, a new tab likely opened.
+
+**Workflow after clicking:**
+1. `browser_click(ref="e5")` - Click the element
+2. `browser_tabs(action="list")` - Check if new tabs opened
+3. If new tab exists: `browser_tabs(action="switch", index=N)` - Switch to it
+4. `browser_snapshot()` - Get content from correct tab
+
+**Example:**
+
+```
+# Click a link that might open new tab
+browser_click(ref="e3")
+
+# Check tabs - ALWAYS do this after clicking!
+browser_tabs(action="list")
+# Output: Open tabs (2):
+# 0: https://original.com
+# 1: https://newpage.com
+#
+# Multiple tabs detected! Use browser_tabs(action="switch", index=N) to switch to another tab.
+
+# New tab opened! Switch to it
+browser_tabs(action="switch", index=1)
+# Output: Switched to tab 1: https://newpage.com
+#
+# Now use browser_snapshot() to see the content of this tab.
+
+# Now snapshot the new tab
+browser_snapshot()
+```
+
+**Signs you might be on the wrong tab:**
+- Page content hasn't changed after clicking a link
+- Expected elements not found in snapshot
+- URL is still the old URL after navigation
+
+**When to check tabs:**
+- After clicking any link
+- After clicking "Open", "View", "Details" buttons
+- After clicking external links
+- When page content doesn't match expectations
+
 ## Examples
 
 ### Google Search
