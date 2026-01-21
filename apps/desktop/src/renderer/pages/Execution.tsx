@@ -8,6 +8,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs } from '../lib/animations';
 import type { TaskMessage } from '@accomplish/shared';
+import { hasAnyReadyProvider } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import loadingSymbol from '/assets/loading-symbol.svg';
+import SettingsDialog from '../components/layout/SettingsDialog';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -110,6 +112,8 @@ export default function ExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
 
   const {
     currentTask,
@@ -256,11 +260,53 @@ export default function ExecutionPage() {
 
   const handleFollowUp = async () => {
     if (!followUp.trim()) return;
+
+    // Check if any provider is ready before sending (skip in E2E mode)
+    const isE2EMode = await accomplish.isE2EMode();
+    if (!isE2EMode) {
+      const settings = await accomplish.getProviderSettings();
+      if (!hasAnyReadyProvider(settings)) {
+        // Store the pending message and open settings dialog
+        setPendingFollowUp(followUp);
+        setShowSettingsDialog(true);
+        return;
+      }
+    }
+
     await sendFollowUp(followUp);
     setFollowUp('');
   };
 
+  const handleSettingsDialogClose = (open: boolean) => {
+    setShowSettingsDialog(open);
+    if (!open) {
+      setPendingFollowUp(null);
+    }
+  };
+
+  const handleApiKeySaved = async () => {
+    // Provider is now ready - close dialog and send the pending message
+    setShowSettingsDialog(false);
+    if (pendingFollowUp) {
+      await sendFollowUp(pendingFollowUp);
+      setFollowUp('');
+      setPendingFollowUp(null);
+    }
+  };
+
   const handleContinue = async () => {
+    // Check if any provider is ready before sending (skip in E2E mode)
+    const isE2EMode = await accomplish.isE2EMode();
+    if (!isE2EMode) {
+      const settings = await accomplish.getProviderSettings();
+      if (!hasAnyReadyProvider(settings)) {
+        // Store the pending message and open settings dialog
+        setPendingFollowUp('continue');
+        setShowSettingsDialog(true);
+        return;
+      }
+    }
+
     // Send a simple "continue" message to resume the task
     await sendFollowUp('continue');
   };
@@ -392,6 +438,14 @@ export default function ExecutionPage() {
   };
 
   return (
+    <>
+      {/* Settings Dialog - shown when no provider is ready */}
+      <SettingsDialog
+        open={showSettingsDialog}
+        onOpenChange={handleSettingsDialogClose}
+        onApiKeySaved={handleApiKeySaved}
+      />
+
     <div className="h-full flex flex-col bg-background relative">
       {/* Task header */}
       <div className="flex-shrink-0 border-b border-border bg-card/50 px-6 py-4">
@@ -966,7 +1020,7 @@ export default function ExecutionPage() {
 
       {/* Debug Panel - Only visible when debug mode is enabled */}
       {debugModeEnabled && (
-        <div className="flex-shrink-0 border-t border-border">
+        <div className="flex-shrink-0 border-t border-border" data-testid="debug-panel">
           {/* Toggle header */}
           <button
             onClick={() => setDebugPanelOpen(!debugPanelOpen)}
@@ -1075,6 +1129,7 @@ export default function ExecutionPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

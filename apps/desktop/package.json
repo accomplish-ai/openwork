@@ -1,25 +1,27 @@
 {
   "name": "@accomplish/desktop",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Accomplish Desktop App",
   "main": "dist-electron/main/index.js",
   "scripts": {
-    "postinstall": "electron-rebuild && npm --prefix skills/dev-browser install && npm --prefix skills/file-permission install && npm --prefix skills/ask-user-question install",
-    "dev": "node scripts/patch-electron-name.cjs && rm -rf dist-electron && vite",
+    "postinstall": "electron-rebuild && npm --prefix skills/dev-browser install && npm --prefix skills/dev-browser-mcp install && npm --prefix skills/file-permission install && npm --prefix skills/ask-user-question install",
+    "dev": "node scripts/patch-electron-name.cjs && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && vite",
     "dev:clean": "CLEAN_START=1 vite",
-    "build": "tsc && vite build && npm --prefix skills/dev-browser install --omit=dev && npm --prefix skills/file-permission install --omit=dev && npm --prefix skills/ask-user-question install --omit=dev",
+    "build": "tsc && vite build && npm --prefix skills/dev-browser install --omit=dev && npm --prefix skills/dev-browser-mcp install --omit=dev && npm --prefix skills/file-permission install --omit=dev && npm --prefix skills/ask-user-question install --omit=dev",
     "build:electron": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
     "package": "pnpm build && node scripts/package.cjs --mac --publish never",
     "package:mac": "pnpm build && node scripts/package.cjs --mac --publish never",
     "release": "pnpm build && node scripts/package.cjs --mac --publish always",
     "release:mac": "pnpm build && node scripts/package.cjs --mac --publish always",
+    "package:win": "pnpm build && node scripts/package.cjs --win --x64 --publish never",
+    "release:win": "pnpm build && node scripts/package.cjs --win --x64 --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist dist-electron release",
+    "clean": "node -e \"const fs=require('fs');['dist','dist-electron','release'].forEach(d=>fs.rmSync(d,{recursive:true,force:true}))\"",
     "download:nodejs": "node scripts/download-nodejs.cjs",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
@@ -114,12 +116,12 @@
       "node_modules/debounce-fn/**",
       "!node_modules/@accomplish/**",
       "!node_modules/opencode-darwin-*/**",
-      "!node_modules/opencode-linux-*/**",
-      "!node_modules/opencode-win32-*/**"
+      "!node_modules/opencode-linux-*/**"
     ],
     "asar": true,
     "asarUnpack": [
       "node_modules/opencode-ai/bin/opencode",
+      "node_modules/opencode-ai/bin/opencode.exe",
       "node_modules/opencode-ai/package.json",
       "node_modules/node-pty/build/**/*.node",
       "node_modules/node-pty/package.json",
@@ -180,6 +182,19 @@
           "path": "/Applications"
         }
       ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Openwork"
     }
   }
 }

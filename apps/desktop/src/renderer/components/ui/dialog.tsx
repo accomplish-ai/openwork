@@ -2,17 +2,47 @@
 
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { springs } from '@/lib/animations';
 
+// Context to share animation state with content
+const DialogAnimationContext = React.createContext<{ isOpen: boolean }>({ isOpen: false });
+
+// Animation duration for exit (keep in sync with motion transitions below)
+const EXIT_ANIMATION_DURATION = 100;
+
+// Dialog with exit animation support
 function Dialog({
+  open,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  // Track if we should show the dialog (delays close for exit animation)
+  const [shouldShow, setShouldShow] = React.useState(!!open);
+
+  React.useEffect(() => {
+    if (open) {
+      setShouldShow(true);
+    } else if (shouldShow) {
+      // Only delay if we were previously showing
+      const timer = setTimeout(() => setShouldShow(false), EXIT_ANIMATION_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [open, shouldShow]);
+
+  return (
+    <DialogAnimationContext.Provider value={{ isOpen: !!open }}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        open={shouldShow}
+        onOpenChange={onOpenChange}
+        {...props}
+      />
+    </DialogAnimationContext.Provider>
+  );
 }
 
 function DialogTrigger({
@@ -39,36 +69,25 @@ function DialogClose({
   );
 }
 
-const DialogOverlay = React.forwardRef<
-  React.ComponentRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    data-slot="dialog-overlay"
-    asChild
-    {...props}
-  >
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className={cn('fixed inset-0 z-50 bg-black/60 backdrop-blur-sm', className)}
-    />
-  </DialogPrimitive.Overlay>
-));
-DialogOverlay.displayName = 'DialogOverlay';
+// DialogOverlay is handled inline in DialogContent for animation coordination
 
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   const { t } = useTranslation('common');
+  const { isOpen } = React.useContext(DialogAnimationContext);
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogPrimitive.Overlay asChild>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isOpen ? 1 : 0 }}
+          transition={{ duration: EXIT_ANIMATION_DURATION / 1000 }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        />
+      </DialogPrimitive.Overlay>
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"
@@ -76,10 +95,13 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={springs.bouncy}
+          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+          animate={{
+            opacity: isOpen ? 1 : 0,
+            scale: isOpen ? 1 : 0.95,
+            y: isOpen ? 0 : -10,
+          }}
+          transition={{ duration: EXIT_ANIMATION_DURATION / 1000, ease: 'easeOut' }}
           className={cn(
             'relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
             className
@@ -155,7 +177,6 @@ function DialogDescription({
 export {
   Dialog,
   DialogPortal,
-  DialogOverlay,
   DialogTrigger,
   DialogClose,
   DialogContent,
