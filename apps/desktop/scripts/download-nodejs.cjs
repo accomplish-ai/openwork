@@ -5,6 +5,7 @@
  * - macOS x64
  * - macOS arm64
  * - Windows x64
+ * - Windows ia32
  *
  * Usage: node scripts/download-nodejs.cjs
  */
@@ -36,6 +37,12 @@ const PLATFORMS = [
     file: `node-v${NODE_VERSION}-win-x64.zip`,
     extract: 'zip',
     sha256: '56e5aacdeee7168871721b75819ccacf2367de8761b78eaceacdecd41e04ca03',
+  },
+  {
+    name: 'win32-ia32',
+    file: `node-v${NODE_VERSION}-win-x86.zip`,
+    extract: 'zip',
+    sha256: '08987ceb478044b652ad57e15b96597e1eaf7f06502336b5a02c545f9e403ed6',
   },
 ];
 
@@ -111,7 +118,7 @@ function verifyChecksum(filePath, expectedHash) {
 
 /**
  * Extract archive to destination
- * Uses execFileSync with array arguments to avoid command injection
+ * Uses native commands with proper path handling for Windows
  */
 function extractArchive(archivePath, destDir, type) {
   console.log(`  Extracting to ${destDir}...`);
@@ -120,19 +127,21 @@ function extractArchive(archivePath, destDir, type) {
     fs.mkdirSync(destDir, { recursive: true });
   }
 
-  const { execFileSync } = require('child_process');
+  const { execFileSync, execSync } = require('child_process');
 
   if (type === 'tar') {
     // Use execFileSync with array args to avoid shell injection
     execFileSync('tar', ['-xzf', archivePath, '-C', destDir], { stdio: 'inherit' });
   } else if (type === 'zip') {
     if (process.platform === 'win32') {
-      // PowerShell requires -Command with a script block
-      execFileSync('powershell', [
-        '-NoProfile',
-        '-Command',
-        `Expand-Archive -Path "${archivePath}" -DestinationPath "${destDir}" -Force`
-      ], { stdio: 'inherit' });
+      // Use tar.exe which is available on Windows 10+ and handles zip files
+      try {
+        execFileSync('tar', ['-xf', archivePath, '-C', destDir], { stdio: 'inherit' });
+      } catch (e) {
+        // Fallback to PowerShell if tar.exe fails
+        const psCommand = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${archivePath.replace(/\\/g, '\\\\')}', '${destDir.replace(/\\/g, '\\\\')}')`;
+        execSync(`powershell -NoProfile -Command "${psCommand}"`, { stdio: 'inherit' });
+      }
     } else {
       execFileSync('unzip', ['-o', archivePath, '-d', destDir], { stdio: 'inherit' });
     }
@@ -159,7 +168,24 @@ async function main() {
     fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  for (const platform of PLATFORMS) {
+  // Filter platforms based on current OS for extraction capability
+  const platformsToDownload = PLATFORMS.filter(platform => {
+    if (process.platform === 'win32') {
+      // On Windows, download all Windows platforms and skip tar archives (macOS/Linux)
+      return platform.extract !== 'tar';
+    } else if (process.platform === 'darwin') {
+      // On macOS, download all tar archives (macOS/Linux) and skip Windows
+      return platform.extract !== 'zip';
+    } else {
+      // On Linux, download all tar archives
+      return platform.extract !== 'zip';
+    }
+  });
+
+  console.log(`Detected OS: ${process.platform}`);
+  console.log(`Will download: ${platformsToDownload.map(p => p.name).join(', ')}`);
+
+  for (const platform of platformsToDownload) {
     console.log(`\nProcessing ${platform.name}...`);
 
     const archivePath = path.join(tempDir, platform.file);
@@ -196,7 +222,7 @@ async function main() {
 
   // List what was downloaded
   console.log('\nDirectory structure:');
-  for (const platform of PLATFORMS) {
+  for (const platform of platformsToDownload) {
     const destDir = path.join(RESOURCES_DIR, platform.name);
     if (fs.existsSync(destDir)) {
       const contents = fs.readdirSync(destDir);

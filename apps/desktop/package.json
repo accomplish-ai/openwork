@@ -12,16 +12,16 @@
     "build": "tsc && vite build && npm --prefix skills/dev-browser install --omit=dev && npm --prefix skills/dev-browser-mcp install --omit=dev && npm --prefix skills/file-permission install --omit=dev && npm --prefix skills/ask-user-question install --omit=dev",
     "build:electron": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
-    "package": "pnpm build && node scripts/package.cjs --mac --publish never",
-    "package:mac": "pnpm build && node scripts/package.cjs --mac --publish never",
-    "release": "pnpm build && node scripts/package.cjs --mac --publish always",
-    "release:mac": "pnpm build && node scripts/package.cjs --mac --publish always",
-    "package:win": "pnpm build && node scripts/package.cjs --win --x64 --publish never",
-    "release:win": "pnpm build && node scripts/package.cjs --win --x64 --publish always",
+    "package": "pnpm build && electron-builder --mac --publish never",
+    "package:mac": "pnpm build && electron-builder --mac --publish never",
+    "package:win": "pnpm build && electron-builder --win --publish never",
+    "release": "pnpm build && electron-builder --mac --publish always",
+    "release:mac": "pnpm build && electron-builder --mac --publish always",
+    "release:win": "pnpm build && electron-builder --win --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "clean": "node -e \"const fs=require('fs');['dist','dist-electron','release'].forEach(d=>fs.rmSync(d,{recursive:true,force:true}))\"",
+    "clean": "rm -rf dist dist-electron release",
     "download:nodejs": "node scripts/download-nodejs.cjs",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
@@ -56,11 +56,13 @@
     "dotenv": "^17.2.3",
     "electron-store": "^8.2.0",
     "framer-motion": "^12.26.2",
+    "i18next": "^25.7.4",
     "lucide-react": "^0.454.0",
     "node-pty": "^1.1.0",
     "opencode-ai": "1.1.16",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-i18next": "^16.5.3",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^7.1.1",
     "tailwind-merge": "^3.3.1",
@@ -100,6 +102,7 @@
       "output": "release",
       "buildResources": "resources"
     },
+    "npmRebuild": false,
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -113,12 +116,12 @@
       "node_modules/debounce-fn/**",
       "!node_modules/@accomplish/**",
       "!node_modules/opencode-darwin-*/**",
-      "!node_modules/opencode-linux-*/**"
+      "!node_modules/opencode-linux-*/**",
+      "!node_modules/opencode-win32-*/**"
     ],
     "asar": true,
     "asarUnpack": [
       "node_modules/opencode-ai/bin/opencode",
-      "node_modules/opencode-ai/bin/opencode.exe",
       "node_modules/opencode-ai/package.json",
       "node_modules/node-pty/build/**/*.node",
       "node_modules/node-pty/package.json",
@@ -143,6 +146,10 @@
           "!**/*.test.ts",
           "!**/vitest.config.ts"
         ]
+      },
+      {
+        "from": "dist/locales",
+        "to": "locales"
       }
     ],
     "publish": {
@@ -178,16 +185,27 @@
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.ico",
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+      "signingHashAlgorithms": []
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Openwork"
-    }
+      "deleteAppDataOnUninstall": true,
+      "differentialPackage": false
+    },
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false
   }
 }

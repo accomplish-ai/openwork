@@ -11,14 +11,58 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { ProviderId, ConnectedProvider } from '@accomplish/shared';
-import { hasAnyReadyProvider, isProviderReady } from '@accomplish/shared';
+import { Trash2 } from 'lucide-react';
+import type { ApiKeyConfig, SelectedModel, ProviderId, ConnectedProvider } from '@accomplish/shared';
+import { DEFAULT_PROVIDERS, hasAnyReadyProvider, isProviderReady } from '@accomplish/shared';
+import logoImage from '/assets/logo.png';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage } from '@/i18n/config';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['anthropic', 'openai', 'google', 'bedrock'];
+
+// Provider configuration for legacy API key management
+const API_KEY_PROVIDERS = [
+  { id: 'anthropic', name: 'Anthropic', prefix: 'sk-ant-', placeholder: 'sk-ant-...' },
+  { id: 'openai', name: 'OpenAI', prefix: 'sk-', placeholder: 'sk-...' },
+  { id: 'openrouter', name: 'OpenRouter', prefix: 'sk-or-', placeholder: 'sk-or-...' },
+  { id: 'google', name: 'Google AI', prefix: 'AIza', placeholder: 'AIza...' },
+  { id: 'xai', name: 'xAI (Grok)', prefix: 'xai-', placeholder: 'xai-...' },
+  { id: 'deepseek', name: 'DeepSeek', prefix: 'sk-', placeholder: 'sk-...' },
+  { id: 'zai', name: 'Z.AI Coding Plan', prefix: '', placeholder: 'Your Z.AI API key...' },
+  { id: 'bedrock', name: 'Amazon Bedrock', prefix: '', placeholder: '' },
+] as const;
+
+// Priority order for OpenRouter providers (lower index = higher priority)
+const OPENROUTER_PROVIDER_PRIORITY = [
+  'anthropic',
+  'openai',
+  'google',
+  'meta-llama',
+  'mistralai',
+  'x-ai',
+  'deepseek',
+  'cohere',
+  'perplexity',
+  'amazon',
+];
+
+// Priority order for LiteLLM providers (lower index = higher priority)
+const LITELLM_PROVIDER_PRIORITY = [
+  'anthropic',
+  'openai',
+  'google',
+  'meta-llama',
+  'mistralai',
+  'x-ai',
+  'deepseek',
+  'cohere',
+  'perplexity',
+  'amazon',
+];
 
 interface SettingsDialogProps {
   open: boolean;
@@ -27,6 +71,66 @@ interface SettingsDialogProps {
 }
 
 export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
+  const { t, i18n } = useTranslation();
+  
+  // Legacy state for backward compatibility with i18n features
+  const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState<ProviderId>('anthropic');
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [savedKeys, setSavedKeys] = useState<ApiKeyConfig[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(true);
+  const [appVersion, setAppVersion] = useState('');
+  const [selectedModel, setSelectedModel] = useState<SelectedModel | null>(null);
+  const [loadingModel, setLoadingModel] = useState(true);
+  const [modelStatusMessage, setModelStatusMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'cloud' | 'local' | 'proxy'>('cloud');
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
+  const [ollamaModels, setOllamaModels] = useState<Array<{ id: string; displayName: string; size: number }>>([]);
+  const [ollamaConnected, setOllamaConnected] = useState(false);
+  const [ollamaError, setOllamaError] = useState<string | null>(null);
+  const [testingOllama, setTestingOllama] = useState(false);
+  const [selectedOllamaModel, setSelectedOllamaModel] = useState<string>('');
+  const [savingOllama, setSavingOllama] = useState(false);
+  const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
+  const [bedrockAuthTab, setBedrockAuthTab] = useState<'accessKeys' | 'profile'>('accessKeys');
+  const [bedrockAccessKeyId, setBedrockAccessKeyId] = useState('');
+  const [bedrockSecretKey, setBedrockSecretKey] = useState('');
+  const [bedrockSessionToken, setBedrockSessionToken] = useState('');
+  const [bedrockProfileName, setBedrockProfileName] = useState('default');
+  const [bedrockRegion, setBedrockRegion] = useState('us-east-1');
+  const [savingBedrock, setSavingBedrock] = useState(false);
+  const [bedrockError, setBedrockError] = useState<string | null>(null);
+  const [bedrockStatus, setBedrockStatus] = useState<string | null>(null);
+
+  // OpenRouter state
+  const [selectedProxyPlatform, setSelectedProxyPlatform] = useState<'openrouter' | 'litellm'>('openrouter');
+  const [openrouterModels, setOpenrouterModels] = useState<Array<{ id: string; name: string; provider: string; contextLength: number }>>([]);
+  const [openrouterLoading, setOpenrouterLoading] = useState(false);
+  const [openrouterError, setOpenrouterError] = useState<string | null>(null);
+  const [openrouterSearch, setOpenrouterSearch] = useState('');
+  const [selectedOpenrouterModel, setSelectedOpenrouterModel] = useState<string>('');
+  const [savingOpenrouter, setSavingOpenrouter] = useState(false);
+  // OpenRouter inline API key entry (for Proxy Platforms tab)
+  const [openrouterApiKey, setOpenrouterApiKey] = useState('');
+
+  // LiteLLM state
+  const [litellmUrl, setLitellmUrl] = useState('http://localhost:4000');
+  const [litellmApiKey, setLitellmApiKey] = useState('');
+  const [litellmModels, setLitellmModels] = useState<Array<{ id: string; name: string; provider: string; contextLength: number }>>([]);
+  const [litellmConnected, setLitellmConnected] = useState(false);
+  const [litellmError, setLitellmError] = useState<string | null>(null);
+  const [testingLitellm, setTestingLitellm] = useState(false);
+  const [selectedLitellmModel, setSelectedLitellmModel] = useState<string>('');
+  const [savingLitellm, setSavingLitellm] = useState(false);
+  const [litellmSearch, setLitellmSearch] = useState('');
+
+  // Language state
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
+  const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
+
+  // New provider settings state
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
@@ -67,14 +171,132 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     }
   }, [open, loading, settings?.activeProviderId]);
 
-  // Reset state when dialog closes
+  // Sync selectedProxyPlatform and selected model radio button with the actual selected model
   useEffect(() => {
-    if (!open) {
-      setSelectedProvider(null);
-      setGridExpanded(false);
-      setCloseWarning(false);
-      setShowModelError(false);
+    if (selectedModel?.provider === 'litellm') {
+      setSelectedProxyPlatform('litellm');
+      // Extract model ID from "litellm/anthropic/claude-haiku" -> "anthropic/claude-haiku"
+      const modelId = selectedModel.model?.replace(/^litellm\//, '') || '';
+      if (modelId) {
+        setSelectedLitellmModel(modelId);
+      }
+    } else if (selectedModel?.provider === 'openrouter') {
+      setSelectedProxyPlatform('openrouter');
+      // Extract model ID from "openrouter/anthropic/..." -> "anthropic/..."
+      const modelId = selectedModel.model?.replace(/^openrouter\//, '') || '';
+      if (modelId) {
+        setSelectedOpenrouterModel(modelId);
+      }
     }
+  }, [selectedModel]);
+
+  const fetchKeys = async () => {
+    try {
+      const keys = await accomplish.getApiKeys();
+      setSavedKeys(keys);
+    } catch (err) {
+      console.error('Failed to fetch API keys:', err);
+    } finally {
+      setLoadingKeys(false);
+    }
+  };
+
+  const fetchVersion = async () => {
+    try {
+      const version = await accomplish.getVersion();
+      setAppVersion(version);
+    } catch (err) {
+      console.error('Failed to fetch version:', err);
+    }
+  };
+
+  const fetchSelectedModel = async () => {
+    try {
+      const model = await accomplish.getSelectedModel();
+      setSelectedModel(model as SelectedModel | null);
+    } catch (err) {
+      console.error('Failed to fetch selected model:', err);
+    } finally {
+      setLoadingModel(false);
+    }
+  };
+
+  const fetchOllamaConfig = async () => {
+    try {
+      const config = await accomplish.getOllamaConfig();
+      if (config) {
+        setOllamaUrl(config.baseUrl);
+        // Auto-test connection if previously configured
+        if (config.enabled) {
+          const result = await accomplish.testOllamaConnection(config.baseUrl);
+          if (result.success && result.models) {
+            setOllamaConnected(true);
+            setOllamaModels(result.models);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch Ollama config:', err);
+    }
+  };
+
+  const fetchBedrockCredentials = async () => {
+    try {
+      const credentials = await accomplish.getBedrockCredentials();
+      if (credentials) {
+        setBedrockAuthTab(credentials.authType);
+        if (credentials.authType === 'accessKeys') {
+          setBedrockAccessKeyId(credentials.accessKeyId || '');
+          // Don't pre-fill secret key for security
+        } else {
+          setBedrockProfileName(credentials.profileName || 'default');
+        }
+        setBedrockRegion(credentials.region || 'us-east-1');
+      }
+    } catch (err) {
+      console.error('Failed to fetch Bedrock credentials:', err);
+    }
+  };
+
+  const fetchLiteLLMConfig = async () => {
+    try {
+      const config = await accomplish.getLiteLLMConfig();
+      if (config) {
+        setLitellmUrl(config.baseUrl);
+        // Auto-reconnect if previously configured - uses stored API key from secure storage
+        if (config.enabled) {
+          const result = await accomplish.fetchLiteLLMModels();
+          if (result.success && result.models) {
+            setLitellmConnected(true);
+            setLitellmModels(result.models);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch LiteLLM config:', err);
+      }
+    }
+  };
+
+  const fetchSupportedLocales = async () => {
+    try {
+      const locales = await accomplish.getSupportedLocales();
+      setSupportedLocales(locales);
+    } catch (err) {
+      console.error('Failed to fetch supported locales:', err);
+    }
+  };
+
+  // Initialize data when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    
+    fetchKeys();
+    fetchVersion();
+    fetchSelectedModel();
+    fetchOllamaConfig();
+    fetchBedrockCredentials();
+    fetchLiteLLMConfig();
+    fetchSupportedLocales();
   }, [open]);
 
   // Handle close attempt
@@ -162,6 +384,38 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     analytics.trackToggleDebugMode(newValue);
   }, [debugMode, accomplish]);
 
+  const handleLanguageChange = async (locale: string) => {
+    const accomplish = getAccomplish();
+    try {
+      await changeLanguage(locale);
+      await accomplish.setLocale(locale);
+      setCurrentLanguage(locale);
+    } catch (err) {
+      console.error('Failed to change language:', err);
+    }
+  };
+
+  const handleModelChangeLegacy = async (fullId: string) => {
+    const accomplish = getAccomplish();
+    const allModels = DEFAULT_PROVIDERS.flatMap((p) => p.models);
+    const model = allModels.find((m) => m.fullId === fullId);
+    if (model) {
+      analytics.trackSelectModel(model.displayName);
+      const newSelection: SelectedModel = {
+        provider: model.provider,
+        model: model.fullId,
+      };
+      setModelStatusMessage(null);
+      try {
+        await accomplish.setSelectedModel(newSelection);
+        setSelectedModel(newSelection);
+        setModelStatusMessage(`Model updated to ${model.displayName}`);
+      } catch (err) {
+        console.error('Failed to save model selection:', err);
+      }
+    }
+  };
+
   // Handle done button (close with validation)
   const handleDone = useCallback(() => {
     if (!settings) return;
@@ -218,7 +472,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="settings-dialog">
           <DialogHeader>
-            <DialogTitle>Set up Openwork</DialogTitle>
+            <DialogTitle>{t('settings.title')}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -232,7 +486,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="settings-dialog">
         <DialogHeader>
-          <DialogTitle>Set up Openwork</DialogTitle>
+          <DialogTitle>{t('settings.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
@@ -281,87 +535,72 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
             />
           </section>
 
-          {/* Provider Settings Panel (shown when a provider is selected) */}
-          <AnimatePresence>
-            {selectedProvider && (
-              <motion.section
-                variants={settingsVariants.slideDown}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={settingsTransitions.enter}
+          {/* Provider Settings Panel */}
+          {selectedProvider && (
+            <section>
+              <ProviderSettingsPanel
+                providerId={selectedProvider}
+                provider={settings.connectedProviders[selectedProvider]}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+                onModelChange={handleModelChange}
+                onSaveApiKey={(providerId, key) => {
+                  // Legacy API key saving functionality
+                  return accomplish.addApiKey(providerId, key);
+                }}
+                onCancel={() => setSelectedProvider(null)}
+                showModelError={showModelError}
+                onCloseModelError={() => setShowModelError(false)}
+              />
+            </section>
+          )}
+
+          {/* Debug Mode Toggle */}
+          <section className="pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Debug Mode</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enable to see detailed logs in the console
+                </p>
+              </div>
+              <button
+                onClick={handleDebugToggle}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  debugMode ? 'bg-primary' : 'bg-input'
+                }`}
               >
-                <ProviderSettingsPanel
-                  key={selectedProvider}
-                  providerId={selectedProvider}
-                  connectedProvider={settings?.connectedProviders?.[selectedProvider]}
-                  onConnect={handleConnect}
-                  onDisconnect={handleDisconnect}
-                  onModelChange={handleModelChange}
-                  showModelError={showModelError}
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    debugMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
                 />
-              </motion.section>
-            )}
-          </AnimatePresence>
+              </button>
+            </div>
+          </section>
 
-          {/* Debug Mode Section - only shown when a provider is selected */}
-          <AnimatePresence>
-            {selectedProvider && (
-              <motion.section
-                variants={settingsVariants.slideDown}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ ...settingsTransitions.enter, delay: 0.05 }}
-              >
-                <div className="rounded-lg border border-border bg-card p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">Debug Mode</div>
-                      <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                        Show detailed backend logs in the task view.
-                      </p>
-                    </div>
-                    <div className="ml-4">
-                      <button
-                        data-testid="settings-debug-toggle"
-                        onClick={handleDebugToggle}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${debugMode ? 'bg-primary' : 'bg-muted'
-                          }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${debugMode ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                  {debugMode && (
-                    <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
-                      <p className="text-sm text-warning">
-                        Debug mode is enabled. Backend logs will appear in the task view
-                        when running tasks.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
-
-          {/* Done Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleDone}
-              className="flex items-center gap-2 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              data-testid="settings-done-button"
+          {/* Language Selection */}
+          <section className="pt-4 border-t border-border">
+            <h3 className="text-sm font-medium text-foreground mb-3">Language</h3>
+            <select
+              value={currentLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Done
-            </button>
-          </div>
+              {supportedLocales.map((locale) => (
+                <option key={locale} value={locale}>
+                  {locale.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </section>
+
+          {/* Version Info */}
+          <section className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Version: {appVersion}
+            </p>
+          </section>
         </div>
       </DialogContent>
     </Dialog>

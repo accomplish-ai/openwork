@@ -44,6 +44,12 @@ import {
   setLiteLLMConfig,
 } from '../store/appSettings';
 import {
+  getInitialLocale,
+  saveLocale,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from '../utils/locale';
+import {
   getProviderSettings,
   setActiveProvider,
   getConnectedProvider,
@@ -302,12 +308,6 @@ export function registerIPCHandlers(): void {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
-
-    // Check for ready provider before starting task (skip in E2E mock mode)
-    // This is a backend safety check - the UI should also check before calling
-    if (!isMockTaskEventsEnabled() && !hasReadyProvider()) {
-      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
-    }
 
     // Initialize permission API server (once, when we have a window)
     if (!permissionApiInitialized) {
@@ -569,12 +569,6 @@ export function registerIPCHandlers(): void {
     const validatedExistingTaskId = existingTaskId
       ? sanitizeString(existingTaskId, 'taskId', 128)
       : undefined;
-
-    // Check for ready provider before resuming session (skip in E2E mock mode)
-    // This is a backend safety check - the UI should also check before calling
-    if (!isMockTaskEventsEnabled() && !hasReadyProvider()) {
-      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
-    }
 
     // Use existing task ID or create a new one
     const taskId = validatedExistingTaskId || createTaskId();
@@ -1023,51 +1017,6 @@ export function registerIPCHandlers(): void {
       }
 
       return { valid: false, error: message };
-    }
-  });
-
-  // Fetch available Bedrock models
-  handle('bedrock:fetch-models', async (_event: IpcMainInvokeEvent, credentialsJson: string) => {
-    try {
-      const credentials = JSON.parse(credentialsJson) as BedrockCredentials;
-
-      // Create Bedrock client (same pattern as validate)
-      let bedrockClient: BedrockClient;
-      if (credentials.authType === 'accessKeys') {
-        bedrockClient = new BedrockClient({
-          region: credentials.region || 'us-east-1',
-          credentials: {
-            accessKeyId: credentials.accessKeyId,
-            secretAccessKey: credentials.secretAccessKey,
-            sessionToken: credentials.sessionToken,
-          },
-        });
-      } else {
-        bedrockClient = new BedrockClient({
-          region: credentials.region || 'us-east-1',
-          credentials: fromIni({ profile: credentials.profileName }),
-        });
-      }
-
-      // Fetch all foundation models
-      const command = new ListFoundationModelsCommand({});
-      const response = await bedrockClient.send(command);
-
-      // Transform to standard format, filtering for text output models
-      // Use modelId for display name to avoid duplicates (multiple versions share the same modelName)
-      const models = (response.modelSummaries || [])
-        .filter(m => m.outputModalities?.includes('TEXT'))
-        .map(m => ({
-          id: `amazon-bedrock/${m.modelId}`,
-          name: m.modelId || 'Unknown',
-          provider: m.providerName || 'Unknown',
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      return { success: true, models };
-    } catch (error) {
-      console.error('[Bedrock] Failed to fetch models:', error);
-      return { success: false, error: normalizeIpcError(error), models: [] };
     }
   });
 
@@ -1532,6 +1481,27 @@ export function registerIPCHandlers(): void {
     setOnboardingComplete(complete);
   });
 
+  // Locale: Get initial locale (system or saved preference)
+  handle('locale:get-initial', async (_event: IpcMainInvokeEvent) => {
+    return getInitialLocale();
+  });
+
+  // Locale: Set locale preference
+  handle('locale:set', async (_event: IpcMainInvokeEvent, locale: SupportedLocale) => {
+    saveLocale(locale);
+    return locale;
+  });
+
+  // Locale: Get supported locales
+  handle('locale:get-supported', async (_event: IpcMainInvokeEvent) => {
+    return SUPPORTED_LOCALES;
+  });
+
+  // App: Get resources path (for loading translations in production)
+  handle('app:resources-path', async (_event: IpcMainInvokeEvent) => {
+    return process.resourcesPath || app.getAppPath();
+  });
+
   // Shell: Open URL in external browser
   // Only allows http/https URLs for security
   handle('shell:open-external', async (_event: IpcMainInvokeEvent, url: string) => {
@@ -1555,39 +1525,6 @@ export function registerIPCHandlers(): void {
       return { ok: true };
     }
   );
-
-  // Provider Settings
-  handle('provider-settings:get', async () => {
-    return getProviderSettings();
-  });
-
-  handle('provider-settings:set-active', async (_event: IpcMainInvokeEvent, providerId: ProviderId | null) => {
-    setActiveProvider(providerId);
-  });
-
-  handle('provider-settings:get-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-    return getConnectedProvider(providerId);
-  });
-
-  handle('provider-settings:set-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId, provider: ConnectedProvider) => {
-    setConnectedProvider(providerId, provider);
-  });
-
-  handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-    removeConnectedProvider(providerId);
-  });
-
-  handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
-    updateProviderModel(providerId, modelId);
-  });
-
-  handle('provider-settings:set-debug', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
-    setProviderDebugMode(enabled);
-  });
-
-  handle('provider-settings:get-debug', async () => {
-    return getProviderDebugMode();
-  });
 }
 
 function createTaskId(): string {
