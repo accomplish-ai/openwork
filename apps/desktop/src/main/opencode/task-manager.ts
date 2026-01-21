@@ -174,6 +174,64 @@ async function waitForDevBrowserServer(maxWaitMs = 15000, pollIntervalMs = 500):
 }
 
 /**
+ * Connect agent-browser CLI to the dev-browser CDP endpoint.
+ * This allows agent-browser commands to use our anti-detection browser.
+ */
+async function connectAgentBrowser(): Promise<void> {
+  const bundledPaths = getBundledNodePaths();
+
+  // Build environment with bundled node in PATH
+  let spawnEnv: NodeJS.ProcessEnv = { ...process.env };
+  if (bundledPaths) {
+    const delimiter = process.platform === 'win32' ? ';' : ':';
+    spawnEnv.PATH = `${bundledPaths.binDir}${delimiter}${process.env.PATH || ''}`;
+  }
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn('npx', ['agent-browser', 'connect', String(DEV_BROWSER_PORT)], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: spawnEnv,
+      shell: process.platform === 'win32',
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout?.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr?.on('data', (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        console.log('[TaskManager] agent-browser connected to CDP on port', DEV_BROWSER_PORT);
+        resolve();
+      } else {
+        console.error('[TaskManager] agent-browser connect failed:', stderr || stdout);
+        // Don't reject - let the agent handle connection errors
+        resolve();
+      }
+    });
+
+    proc.on('error', (err) => {
+      console.error('[TaskManager] agent-browser connect error:', err);
+      // Don't reject - let the agent handle connection errors
+      resolve();
+    });
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      proc.kill();
+      console.warn('[TaskManager] agent-browser connect timeout');
+      resolve();
+    }, 10000);
+  });
+}
+
+/**
  * Ensure the dev-browser server is running.
  * Called before starting tasks to pre-warm the browser.
  *
@@ -250,6 +308,10 @@ async function ensureDevBrowserServer(
       console.log('[TaskManager] Waiting for dev-browser server to be ready (Windows)...');
       await waitForDevBrowserServer();
     }
+
+    // Connect agent-browser to the dev-browser CDP endpoint
+    console.log('[TaskManager] Connecting agent-browser to dev-browser...');
+    await connectAgentBrowser();
   } catch (error) {
     console.error('[TaskManager] Failed to start dev-browser server:', error);
   }
