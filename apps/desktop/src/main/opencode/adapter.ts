@@ -904,7 +904,21 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     // Set up event handlers for new process
     this.ptyProcess.onData((data: string) => {
-      this.streamParser.feed(data);
+      // Filter out ANSI escape codes and control characters for cleaner parsing
+      // Enhanced to handle Windows PowerShell sequences (cursor visibility, window titles)
+      const cleanData = data
+        .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences (added ? for DEC modes like cursor hide)
+        .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences with BEL terminator (window titles)
+        .replace(/\x1B\][^\x1B]*\x1B\\/g, '');    // OSC sequences with ST terminator
+      if (cleanData.trim()) {
+        // Truncate for console.log to avoid flooding terminal
+        const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+        console.log('[OpenCode CLI stdout]:', truncated);
+        // Send full data to debug panel
+        this.emit('debug', { type: 'stdout', message: cleanData });
+
+        this.streamParser.feed(cleanData);
+      }
     });
 
     this.ptyProcess.onExit(({ exitCode }) => {
