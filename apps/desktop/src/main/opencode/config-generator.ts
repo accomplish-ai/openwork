@@ -584,12 +584,18 @@ export async function generateOpenCodeConfig(): Promise<string> {
   const litellmProvider = providerSettings.connectedProviders.litellm;
   if (litellmProvider?.connectionStatus === 'connected' && litellmProvider.credentials.type === 'litellm') {
     if (litellmProvider.selectedModelId) {
+      // Get API key if available
+      const litellmApiKey = getApiKey('litellm');
+      const litellmOptions: LiteLLMProviderConfig['options'] = {
+        baseURL: `${litellmProvider.credentials.serverUrl}/v1`,
+      };
+      if (litellmApiKey) {
+        litellmOptions.apiKey = litellmApiKey;
+      }
       providerConfig.litellm = {
         npm: '@ai-sdk/openai-compatible',
         name: 'LiteLLM',
-        options: {
-          baseURL: `${litellmProvider.credentials.serverUrl}/v1`,
-        },
+        options: litellmOptions,
         models: {
           [litellmProvider.selectedModelId]: {
             name: litellmProvider.selectedModelId,
@@ -597,7 +603,7 @@ export async function generateOpenCodeConfig(): Promise<string> {
           },
         },
       };
-      console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId);
+      console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId, litellmApiKey ? '(with API key)' : '(no API key)');
     }
   }
 
