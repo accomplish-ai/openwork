@@ -146,7 +146,27 @@ See the ask-user-question skill for full documentation and examples.
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
-- Use MCP tools directly - browser_navigate, browser_snapshot, browser_click, browser_type, browser_screenshot, browser_sequence
+- Use browser_* MCP tools for all web automation:
+
+  Navigation: browser_open, browser_navigate
+  Page Analysis: browser_snapshot
+  Interactions: browser_click, browser_fill, browser_press, browser_type, browser_hover,
+                browser_focus, browser_check, browser_select, browser_scroll,
+                browser_drag, browser_upload
+  Information: browser_get, browser_is
+  Capture: browser_screenshot, browser_pdf, browser_record
+  Timing: browser_wait
+  Mouse: browser_mouse
+  Semantic Locators: browser_find
+  Settings: browser_set
+  Storage: browser_cookies, browser_storage
+  Network: browser_network
+  Tabs/Windows: browser_tab, browser_switch_tab, browser_window
+  Frames: browser_frame
+  Dialogs: browser_dialog
+  JavaScript: browser_eval
+  Sessions: browser_session, browser_state
+  Debugging: browser_console, browser_errors, browser_highlight, browser_trace
 - **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
 
 **BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
@@ -164,7 +184,7 @@ Example bad narration (too terse):
 "Done." or "Navigated." or "Clicked."
 
 - After each action, evaluate the result before deciding next steps
-- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
+- CRITICAL: After clicking links or buttons, ALWAYS check for new tabs with browser_tab(action="list")
 - Don't announce server checks or startup - proceed directly to the task
 - Only use AskUserQuestion when you genuinely need user input or decisions
 
@@ -568,10 +588,13 @@ export async function generateOpenCodeConfig(): Promise<string> {
         },
         timeout: 10000,
       },
-      'dev-browser-mcp': {
+      'agent-browser-mcp': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
+        command: ['npx', 'tsx', path.join(skillsPath, 'agent-browser-mcp', 'src', 'index.ts')],
         enabled: true,
+        environment: {
+          ACCOMPLISH_TASK_ID: '${TASK_ID}',
+        },
         timeout: 30000,  // Longer timeout for browser operations
       },
     },
