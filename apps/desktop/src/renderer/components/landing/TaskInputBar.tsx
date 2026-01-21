@@ -28,6 +28,8 @@ export default function TaskInputBar({
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isComposingRef = useRef(false);
+  const enterLockRef = useRef(false);
   const accomplish = getAccomplish();
 
   // Auto-focus on mount
@@ -46,7 +48,25 @@ export default function TaskInputBar({
     }
   }, [value]);
 
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = () => {
+    isComposingRef.current = false;
+    // Block Enter key for a short grace period (50ms) to prevent specific IME confirmation Enters from triggering submit
+    // This handles the case where compositionEnd fires immediately before the KeyDown event
+    enterLockRef.current = true;
+    setTimeout(() => {
+      enterLockRef.current = false;
+    }, 100);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Ignore if composing (standard check) or if we are in the grace period (race condition check)
+    if (isComposingRef.current || e.nativeEvent.isComposing || enterLockRef.current || e.keyCode === 229) {
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSubmit();
@@ -61,6 +81,8 @@ export default function TaskInputBar({
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={isDisabled}
