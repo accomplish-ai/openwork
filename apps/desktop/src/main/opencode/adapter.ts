@@ -523,10 +523,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI] Using Ollama host from legacy settings:', selectedModel.baseUrl);
     }
 
-    // Set LiteLLM base URL if configured
+    // Set LiteLLM base URL if configured (for debugging/logging purposes)
     if (activeModel?.provider === 'litellm' && activeModel.baseUrl) {
-      env.LITELLM_BASE_URL = activeModel.baseUrl;
-      console.log('[OpenCode CLI] Using LiteLLM base URL:', activeModel.baseUrl);
+      console.log('[OpenCode CLI] LiteLLM active with base URL:', activeModel.baseUrl);
     }
 
     // Log config environment variable
@@ -578,8 +577,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         const modelId = selectedModel.model.replace(/^ollama\//, '');
         args.push('--model', `ollama/${modelId}`);
       } else if (selectedModel.provider === 'litellm') {
-        // LiteLLM models pass through directly
-        args.push('--model', selectedModel.model);
+        // LiteLLM models use format: litellm/model-name
+        const modelId = selectedModel.model.replace(/^litellm\//, '');
+        args.push('--model', `litellm/${modelId}`);
       } else {
         args.push('--model', selectedModel.model);
       }
