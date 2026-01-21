@@ -367,7 +367,44 @@ describe('OpenCode Adapter Module', () => {
         expect(toolResultEvents[0]).toBe('File contents here');
       });
 
-      it('should emit complete event on step_finish with stop reason', async () => {
+      it('should emit complete event on step_finish with stop reason when complete_task was called', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+        const completeEvents: Array<{ status: string; sessionId?: string }> = [];
+        adapter.on('complete', (result) => completeEvents.push(result));
+
+        await adapter.startTask({ prompt: 'Test' });
+
+        // Simulate complete_task tool being called first
+        const toolCallMessage: OpenCodeToolCallMessage = {
+          type: 'tool_call',
+          part: {
+            tool: 'complete_task',
+            input: { status: 'success', summary: 'Done', original_request_summary: 'Test' },
+          },
+        };
+        mockPtyInstance.simulateData(JSON.stringify(toolCallMessage) + '\n');
+
+        const stepFinishMessage: OpenCodeStepFinishMessage = {
+          type: 'step_finish',
+          part: {
+            id: 'step-1',
+            sessionID: 'session-123',
+            messageID: 'message-123',
+            type: 'step-finish',
+            reason: 'stop',
+          },
+        };
+
+        // Act
+        mockPtyInstance.simulateData(JSON.stringify(stepFinishMessage) + '\n');
+
+        // Assert
+        expect(completeEvents.length).toBe(1);
+        expect(completeEvents[0].status).toBe('success');
+      });
+
+      it('should inject continuation prompt on step_finish when complete_task was not called', async () => {
         // Arrange
         const adapter = new OpenCodeAdapter();
         const completeEvents: Array<{ status: string; sessionId?: string }> = [];
@@ -389,7 +426,39 @@ describe('OpenCode Adapter Module', () => {
         // Act
         mockPtyInstance.simulateData(JSON.stringify(stepFinishMessage) + '\n');
 
-        // Assert
+        // Assert - should NOT emit complete yet (continuation prompt injected)
+        expect(completeEvents.length).toBe(0);
+        // Should have written continuation prompt to PTY
+        expect(mockPtyInstance.write).toHaveBeenCalledWith(
+          expect.stringContaining('complete_task')
+        );
+      });
+
+      it('should emit complete after max continuation attempts without complete_task', async () => {
+        // Arrange
+        const adapter = new OpenCodeAdapter();
+        const completeEvents: Array<{ status: string; sessionId?: string }> = [];
+        adapter.on('complete', (result) => completeEvents.push(result));
+
+        await adapter.startTask({ prompt: 'Test' });
+
+        const stepFinishMessage: OpenCodeStepFinishMessage = {
+          type: 'step_finish',
+          part: {
+            id: 'step-1',
+            sessionID: 'session-123',
+            messageID: 'message-123',
+            type: 'step-finish',
+            reason: 'stop',
+          },
+        };
+
+        // Act - simulate 3 stop events (max attempts is 2)
+        mockPtyInstance.simulateData(JSON.stringify(stepFinishMessage) + '\n');
+        mockPtyInstance.simulateData(JSON.stringify(stepFinishMessage) + '\n');
+        mockPtyInstance.simulateData(JSON.stringify(stepFinishMessage) + '\n');
+
+        // Assert - should emit complete after exhausting retries
         expect(completeEvents.length).toBe(1);
         expect(completeEvents[0].status).toBe('success');
       });
