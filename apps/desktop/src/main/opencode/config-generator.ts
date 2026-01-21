@@ -5,7 +5,7 @@ import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
 import { getOllamaConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
-import type { BedrockCredentials, ProviderId } from '@accomplish/shared';
+import type { BedrockCredentials, ProviderId, ZaiCredentials } from '@accomplish/shared';
 
 /**
  * Agent name used by Accomplish
@@ -517,15 +517,22 @@ export async function generateOpenCodeConfig(): Promise<string> {
       'glm-4.5-flash': { name: 'GLM-4.5 Flash', tools: true },
     };
 
+    // Z.AI - use endpoint based on stored region
+    const zaiCredentials = providerSettings.connectedProviders.zai?.credentials as ZaiCredentials | undefined;
+    const zaiRegion = zaiCredentials?.region || 'international';
+    const zaiEndpoint = zaiRegion === 'china'
+      ? 'https://open.bigmodel.cn/api/paas/v4'
+      : 'https://api.z.ai/api/coding/paas/v4';
+
     providerConfig['zai-coding-plan'] = {
       npm: '@ai-sdk/openai-compatible',
       name: 'Z.AI Coding Plan',
       options: {
-        baseURL: 'https://open.bigmodel.cn/api/paas/v4',
+        baseURL: zaiEndpoint,
       },
       models: zaiModels,
     };
-    console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels));
+    console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels), 'region:', zaiRegion, 'endpoint:', zaiEndpoint);
   }
 
   const config: OpenCodeConfig = {
