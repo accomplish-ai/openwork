@@ -14,6 +14,11 @@
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { fileURLToPath } from 'url';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Isolated ports for agent testing (avoid conflict with pnpm dev on 9224/9225)
 const AGENT_TEST_HTTP_PORT = 9226;
@@ -169,7 +174,8 @@ export function generateAgentTestConfig(): string {
 // Export constants for use by CLI script
 export { AGENT_TEST_HTTP_PORT, AGENT_TEST_CDP_PORT, AGENT_TEST_CHROME_PROFILE };
 
-// Allow running directly
-if (require.main === module) {
+// Allow running directly (ES module check)
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
   generateAgentTestConfig();
 }

@@ -13,12 +13,17 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import {
   generateAgentTestConfig,
   AGENT_TEST_HTTP_PORT,
   AGENT_TEST_CDP_PORT,
   AGENT_TEST_CHROME_PROFILE,
-} from './agent-test-config';
+} from './agent-test-config.js';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ANSI colors for output
 const colors = {
