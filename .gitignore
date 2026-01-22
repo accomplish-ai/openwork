@@ -60,5 +60,5 @@ prisma/*.db-journal
 # Bundled Node.js binaries (downloaded via `pnpm -F @accomplish/desktop download:nodejs`)
 apps/desktop/resources/nodejs/
 
-# Agent test Chrome profile
-.accomplish-agent-test-chrome/
+# Test local agent Chrome profile
+.accomplish-test-local-agent-chrome/

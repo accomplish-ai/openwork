@@ -1,13 +1,13 @@
 #!/usr/bin/env npx tsx
 /**
- * Agent Test CLI
+ * Test Local Agent CLI
  *
- * Runs OpenCode CLI tasks for agent testing with isolated browser instance.
+ * Runs OpenCode CLI tasks with isolated browser instance.
  *
  * Usage:
- *   pnpm agent:test "Your task prompt here"
- *   pnpm agent:test --model anthropic/claude-sonnet-4-20250514 "Your prompt"
- *   pnpm agent:test --cwd /path/to/dir "Your prompt"
+ *   pnpm test:local-agent "Your task prompt here"
+ *   pnpm test:local-agent --model anthropic/claude-sonnet-4-20250514 "Your prompt"
+ *   pnpm test:local-agent --cwd /path/to/dir "Your prompt"
  */
 
 import { spawn, ChildProcess, execSync } from 'child_process';
@@ -15,11 +15,11 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import {
-  generateAgentTestConfig,
-  AGENT_TEST_HTTP_PORT,
-  AGENT_TEST_CDP_PORT,
-  AGENT_TEST_CHROME_PROFILE,
-} from './agent-test-config.js';
+  generateTestLocalAgentConfig,
+  TEST_LOCAL_AGENT_HTTP_PORT,
+  TEST_LOCAL_AGENT_CDP_PORT,
+  TEST_LOCAL_AGENT_CHROME_PROFILE,
+} from './test-local-agent-config.js';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -53,14 +53,14 @@ function parseArgs(): { prompt: string; model?: string; cwd?: string } {
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log(`
-${colors.bright}Agent Test CLI${colors.reset}
+${colors.bright}Test Local Agent CLI${colors.reset}
 
-Run OpenCode CLI tasks with isolated browser instance for testing.
+Run OpenCode CLI tasks with isolated browser instance.
 
 ${colors.yellow}Usage:${colors.reset}
-  pnpm agent:test "Your task prompt here"
-  pnpm agent:test --model anthropic/claude-sonnet-4-20250514 "Your prompt"
-  pnpm agent:test --cwd /path/to/project "Your prompt"
+  pnpm test:local-agent "Your task prompt here"
+  pnpm test:local-agent --model anthropic/claude-sonnet-4-20250514 "Your prompt"
+  pnpm test:local-agent --cwd /path/to/project "Your prompt"
 
 ${colors.yellow}Options:${colors.reset}
   --model <model>   Model to use (default: anthropic/claude-sonnet-4-20250514)
@@ -71,9 +71,9 @@ ${colors.yellow}Environment:${colors.reset}
   ANTHROPIC_API_KEY   Required. Your Anthropic API key.
 
 ${colors.yellow}Examples:${colors.reset}
-  pnpm agent:test "List files in the current directory"
-  pnpm agent:test "Navigate to google.com and search for cats"
-  pnpm agent:test --cwd ~/projects/myapp "Fix the bug in main.ts"
+  pnpm test:local-agent "List files in the current directory"
+  pnpm test:local-agent "Navigate to google.com and search for cats"
+  pnpm test:local-agent --cwd ~/projects/myapp "Fix the bug in main.ts"
 `);
     process.exit(0);
   }
@@ -152,22 +152,22 @@ function findOpenCodeCli(): string {
 }
 
 /**
- * Start the dev-browser server for agent testing
+ * Start the dev-browser server for test local agent
  */
 async function startDevBrowserServer(): Promise<ChildProcess> {
   const devBrowserDir = path.resolve(__dirname, '..', 'skills', 'dev-browser');
   const serverScript = path.join(devBrowserDir, 'scripts', 'start-server.ts');
 
-  log('agent-test', `Starting dev-browser server on port ${AGENT_TEST_HTTP_PORT}...`);
+  log('test-local-agent', `Starting dev-browser server on port ${TEST_LOCAL_AGENT_HTTP_PORT}...`);
 
   // Run from dev-browser directory so tsconfig paths resolve correctly
   const serverProcess = spawn('npx', ['tsx', serverScript], {
     cwd: devBrowserDir,
     env: {
       ...process.env,
-      DEV_BROWSER_PORT: String(AGENT_TEST_HTTP_PORT),
-      DEV_BROWSER_CDP_PORT: String(AGENT_TEST_CDP_PORT),
-      DEV_BROWSER_PROFILE: AGENT_TEST_CHROME_PROFILE,
+      DEV_BROWSER_PORT: String(TEST_LOCAL_AGENT_HTTP_PORT),
+      DEV_BROWSER_CDP_PORT: String(TEST_LOCAL_AGENT_CDP_PORT),
+      DEV_BROWSER_PROFILE: TEST_LOCAL_AGENT_CHROME_PROFILE,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
@@ -206,7 +206,7 @@ async function startDevBrowserServer(): Promise<ChildProcess> {
     }, 3000);
   });
 
-  log('agent-test', 'Dev-browser server started', colors.green);
+  log('test-local-agent', 'Dev-browser server started', colors.green);
   return serverProcess;
 }
 
@@ -228,9 +228,9 @@ async function runOpenCode(
 
   const workingDir = cwd || process.cwd();
 
-  log('agent-test', `Working directory: ${workingDir}`);
-  log('agent-test', `Model: ${model || 'default'}`);
-  log('agent-test', 'Starting task...\n');
+  log('test-local-agent', `Working directory: ${workingDir}`);
+  log('test-local-agent', `Model: ${model || 'default'}`);
+  log('test-local-agent', 'Starting task...\n');
 
   const cliProcess = spawn(cliPath, args, {
     env: {
@@ -262,10 +262,10 @@ async function runOpenCode(
   return new Promise((resolve, reject) => {
     cliProcess.on('exit', (code) => {
       if (code === 0) {
-        console.log(`\n${colors.green}[agent-test] Task completed successfully${colors.reset}`);
+        console.log(`\n${colors.green}[test-local-agent] Task completed successfully${colors.reset}`);
         resolve();
       } else {
-        console.log(`\n${colors.red}[agent-test] Task failed with exit code ${code}${colors.reset}`);
+        console.log(`\n${colors.red}[test-local-agent] Task failed with exit code ${code}${colors.reset}`);
         reject(new Error(`Exit code ${code}`));
       }
     });
@@ -318,7 +318,7 @@ function formatOutput(message: { type: string; part?: { text?: string; tool?: st
  */
 function setupCleanup(serverProcess: ChildProcess | null): void {
   const cleanup = () => {
-    log('agent-test', 'Cleaning up...');
+    log('test-local-agent', 'Cleaning up...');
     if (serverProcess && !serverProcess.killed) {
       serverProcess.kill('SIGTERM');
     }
@@ -333,18 +333,18 @@ function setupCleanup(serverProcess: ChildProcess | null): void {
  * Main entry point
  */
 async function main(): Promise<void> {
-  console.log(`${colors.bright}Agent Test CLI${colors.reset}\n`);
+  console.log(`${colors.bright}Test Local Agent CLI${colors.reset}\n`);
 
   // Parse arguments and check environment
   const { prompt, model, cwd } = parseArgs();
   checkEnvironment();
 
   // Generate isolated config
-  const configPath = generateAgentTestConfig();
+  const configPath = generateTestLocalAgentConfig();
 
   // Find OpenCode CLI
   const cliPath = findOpenCodeCli();
-  log('agent-test', `Using OpenCode CLI: ${cliPath}`);
+  log('test-local-agent', `Using OpenCode CLI: ${cliPath}`);
 
   // Start dev-browser server
   let serverProcess: ChildProcess | null = null;

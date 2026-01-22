@@ -1,14 +1,14 @@
 /**
- * Agent Test Config Generator
+ * Test Local Agent Config Generator
  *
- * Generates an isolated OpenCode config for agent testing that doesn't
+ * Generates an isolated OpenCode config for testing the local agent that doesn't
  * conflict with the main `pnpm dev` instance.
  *
  * Key differences from main config:
  * - Uses port 9226 for dev-browser HTTP (vs 9224)
  * - Uses port 9227 for Chrome CDP (vs 9225)
- * - Uses isolated Chrome profile at ~/.accomplish-agent-test-chrome
- * - Writes config to ~/.opencode/opencode-agent-test.json
+ * - Uses isolated Chrome profile at ~/.accomplish-test-local-agent-chrome
+ * - Writes config to ~/.opencode/opencode-test-local-agent.json
  */
 
 import path from 'path';
@@ -20,10 +20,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Isolated ports for agent testing (avoid conflict with pnpm dev on 9224/9225)
-const AGENT_TEST_HTTP_PORT = 9226;
-const AGENT_TEST_CDP_PORT = 9227;
-const AGENT_TEST_CHROME_PROFILE = path.join(os.homedir(), '.accomplish-agent-test-chrome');
+// Isolated ports for test local agent (avoid conflict with pnpm dev on 9224/9225)
+const TEST_LOCAL_AGENT_HTTP_PORT = 9226;
+const TEST_LOCAL_AGENT_CDP_PORT = 9227;
+const TEST_LOCAL_AGENT_CHROME_PROFILE = path.join(os.homedir(), '.accomplish-test-local-agent-chrome');
 
 // Permission API ports (same as main app - these don't conflict)
 const PERMISSION_API_PORT = 3847;
@@ -52,7 +52,7 @@ interface OpenCodeConfig {
  * Get the skills directory path relative to this script
  */
 function getSkillsPath(): string {
-  // Script is at apps/desktop/scripts/agent-test-config.ts
+  // Script is at apps/desktop/scripts/test-local-agent-config.ts
   // Skills are at apps/desktop/skills/
   return path.resolve(__dirname, '..', 'skills');
 }
@@ -90,12 +90,12 @@ When users ask about your capabilities, mention:
 }
 
 /**
- * Generate isolated OpenCode config for agent testing
+ * Generate isolated OpenCode config for test local agent
  */
-export function generateAgentTestConfig(): string {
+export function generateTestLocalAgentConfig(): string {
   const homeDir = os.homedir();
   const configDir = path.join(homeDir, '.opencode');
-  const configPath = path.join(configDir, 'opencode-agent-test.json');
+  const configPath = path.join(configDir, 'opencode-test-local-agent.json');
 
   // Ensure config directory exists
   if (!fs.existsSync(configDir)) {
@@ -103,8 +103,8 @@ export function generateAgentTestConfig(): string {
   }
 
   // Ensure isolated Chrome profile directory exists
-  if (!fs.existsSync(AGENT_TEST_CHROME_PROFILE)) {
-    fs.mkdirSync(AGENT_TEST_CHROME_PROFILE, { recursive: true });
+  if (!fs.existsSync(TEST_LOCAL_AGENT_CHROME_PROFILE)) {
+    fs.mkdirSync(TEST_LOCAL_AGENT_CHROME_PROFILE, { recursive: true });
   }
 
   const skillsPath = getSkillsPath();
@@ -116,7 +116,7 @@ export function generateAgentTestConfig(): string {
     permission: 'allow',
     agent: {
       accomplish: {
-        description: 'Browser automation assistant for agent testing',
+        description: 'Browser automation assistant for test local agent',
         prompt: getSystemPrompt(),
         mode: 'primary',
       },
@@ -146,9 +146,9 @@ export function generateAgentTestConfig(): string {
         enabled: true,
         environment: {
           // Override ports for isolation
-          DEV_BROWSER_PORT: String(AGENT_TEST_HTTP_PORT),
-          DEV_BROWSER_CDP_PORT: String(AGENT_TEST_CDP_PORT),
-          DEV_BROWSER_PROFILE: AGENT_TEST_CHROME_PROFILE,
+          DEV_BROWSER_PORT: String(TEST_LOCAL_AGENT_HTTP_PORT),
+          DEV_BROWSER_CDP_PORT: String(TEST_LOCAL_AGENT_CDP_PORT),
+          DEV_BROWSER_PROFILE: TEST_LOCAL_AGENT_CHROME_PROFILE,
         },
         timeout: 30000,
       },
@@ -164,18 +164,18 @@ export function generateAgentTestConfig(): string {
   const configJson = JSON.stringify(config, null, 2);
   fs.writeFileSync(configPath, configJson);
 
-  console.log('[agent-test] Config generated at:', configPath);
-  console.log('[agent-test] Using ports:', { http: AGENT_TEST_HTTP_PORT, cdp: AGENT_TEST_CDP_PORT });
-  console.log('[agent-test] Chrome profile:', AGENT_TEST_CHROME_PROFILE);
+  console.log('[test-local-agent] Config generated at:', configPath);
+  console.log('[test-local-agent] Using ports:', { http: TEST_LOCAL_AGENT_HTTP_PORT, cdp: TEST_LOCAL_AGENT_CDP_PORT });
+  console.log('[test-local-agent] Chrome profile:', TEST_LOCAL_AGENT_CHROME_PROFILE);
 
   return configPath;
 }
 
 // Export constants for use by CLI script
-export { AGENT_TEST_HTTP_PORT, AGENT_TEST_CDP_PORT, AGENT_TEST_CHROME_PROFILE };
+export { TEST_LOCAL_AGENT_HTTP_PORT, TEST_LOCAL_AGENT_CDP_PORT, TEST_LOCAL_AGENT_CHROME_PROFILE };
 
 // Allow running directly (ES module check)
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
-  generateAgentTestConfig();
+  generateTestLocalAgentConfig();
 }
