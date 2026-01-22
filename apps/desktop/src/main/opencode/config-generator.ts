@@ -646,9 +646,14 @@ export async function generateOpenCodeConfig(): Promise<string> {
   const configJson = JSON.stringify(config, null, 2);
   fs.writeFileSync(configPath, configJson);
 
-  // Set environment variables for OpenCode to find the config and skills
+  // Set environment variables for OpenCode to find the config
   process.env.OPENCODE_CONFIG = configPath;
-  process.env.OPENCODE_CONFIG_DIR = openCodeConfigDir;
+
+  // Set OPENCODE_CONFIG_DIR to the writable config directory, not resourcesPath
+  // resourcesPath is read-only on mounted DMGs (macOS) and protected on Windows (Program Files).
+  // This causes EROFS/EPERM errors when OpenCode tries to write package.json there.
+  // MCP servers are configured with explicit paths, so we don't need skills discovery via OPENCODE_CONFIG_DIR.
+  process.env.OPENCODE_CONFIG_DIR = configDir;
 
   console.log('[OpenCode Config] Generated config at:', configPath);
   console.log('[OpenCode Config] Full config:', configJson);
