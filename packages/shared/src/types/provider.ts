@@ -132,7 +132,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
         id: 'gpt-5.2-codex',
         displayName: 'GPT 5.2 Codex',
         provider: 'openai',
-        fullId: 'openai/gpt-5-codex',
+        fullId: 'openai/gpt-5.2-codex',
         contextWindow: 4000000,
         supportsVision: true,
       },
