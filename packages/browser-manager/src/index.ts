@@ -22,4 +22,7 @@ export { getPlatformDataDir, getProfileDir, ensureProfileDir } from './profile.j
 export { detectPackageManager, isChromiumInstalled, installChromium } from './installer.js';
 export type { PackageManager } from './installer.js';
 
+export { LaunchModeLauncher } from './launcher.js';
+export type { Launcher, LaunchOptions, LaunchResult } from './launcher.js';
+
 // BrowserManager will be added in Task 8
