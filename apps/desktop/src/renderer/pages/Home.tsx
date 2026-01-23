@@ -10,6 +10,7 @@ import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
+import { hasAnyReadyProvider } from '@accomplish/shared';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -81,7 +82,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
-  const [showExamples, setShowExamples] = useState(false);
+  const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
   const navigate = useNavigate();
@@ -116,11 +117,14 @@ export default function HomePage() {
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
 
-    // Check if user has any API key (Anthropic, OpenAI, Google, etc.) before sending
-    const hasKey = await accomplish.hasAnyApiKey();
-    if (!hasKey) {
-      setShowSettingsDialog(true);
-      return;
+    // Check if any provider is ready before sending (skip in E2E mode)
+    const isE2EMode = await accomplish.isE2EMode();
+    if (!isE2EMode) {
+      const settings = await accomplish.getProviderSettings();
+      if (!hasAnyReadyProvider(settings)) {
+        setShowSettingsDialog(true);
+        return;
+      }
     }
 
     await executeTask();

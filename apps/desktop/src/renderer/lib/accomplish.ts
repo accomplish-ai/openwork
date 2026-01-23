@@ -15,6 +15,10 @@ import type {
   TaskProgress,
   ApiKeyConfig,
   TaskMessage,
+  BedrockCredentials,
+  ProviderSettings,
+  ProviderId,
+  ConnectedProvider,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -43,7 +47,7 @@ interface AccomplishAPI {
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;
-  addApiKey(provider: 'anthropic' | 'openai' | 'google' | 'xai' | 'custom', key: string, label?: string): Promise<ApiKeyConfig>;
+  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm', key: string, label?: string): Promise<ApiKeyConfig>;
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
@@ -54,7 +58,7 @@ interface AccomplishAPI {
   setApiKey(key: string): Promise<void>;
   getApiKey(): Promise<string | null>;
   validateApiKey(key: string): Promise<{ valid: boolean; error?: string }>;
-  validateApiKeyForProvider(provider: string, key: string): Promise<{ valid: boolean; error?: string }>;
+  validateApiKeyForProvider(provider: string, key: string, options?: Record<string, any>): Promise<{ valid: boolean; error?: string }>;
   clearApiKey(): Promise<void>;
 
   // Multi-provider API keys
@@ -70,8 +74,8 @@ interface AccomplishAPI {
   getClaudeVersion(): Promise<string | null>;
 
   // Model selection
-  getSelectedModel(): Promise<{ provider: string; model: string; baseUrl?: string } | null>;
-  setSelectedModel(model: { provider: string; model: string; baseUrl?: string }): Promise<void>;
+  getSelectedModel(): Promise<{ provider: string; model: string; baseUrl?: string; deploymentName?: string } | null>;
+  setSelectedModel(model: { provider: string; model: string; baseUrl?: string; deploymentName?: string }): Promise<void>;
 
   // Ollama configuration
   testOllamaConnection(url: string): Promise<{
@@ -82,12 +86,59 @@ interface AccomplishAPI {
   getOllamaConfig(): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number }> } | null>;
   setOllamaConfig(config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number }> } | null): Promise<void>;
 
+  // Azure Foundry configuration
+  getAzureFoundryConfig(): Promise<{ baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null>;
+  setAzureFoundryConfig(config: { baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null): Promise<void>;
+  testAzureFoundryConnection(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<{ success: boolean; error?: string }>;
+  saveAzureFoundryConfig(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<void>;
+
+  // OpenRouter configuration
+  fetchOpenRouterModels(): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }>;
+
+  // LiteLLM configuration
+  testLiteLLMConnection(url: string, apiKey?: string): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }>;
+  fetchLiteLLMModels(): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    error?: string;
+  }>;
+  getLiteLLMConfig(): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null>;
+  setLiteLLMConfig(config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null): Promise<void>;
+
+  // Bedrock configuration
+  validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
+  saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
+  getBedrockCredentials(): Promise<BedrockCredentials | null>;
+  fetchBedrockModels(credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }>;
+
+  // E2E Testing
+  isE2EMode(): Promise<boolean>;
+
+  // Provider Settings API
+  getProviderSettings(): Promise<ProviderSettings>;
+  setActiveProvider(providerId: ProviderId | null): Promise<void>;
+  getConnectedProvider(providerId: ProviderId): Promise<ConnectedProvider | null>;
+  setConnectedProvider(providerId: ProviderId, provider: ConnectedProvider): Promise<void>;
+  removeConnectedProvider(providerId: ProviderId): Promise<void>;
+  updateProviderModel(providerId: ProviderId, modelId: string | null): Promise<void>;
+  setProviderDebugMode(enabled: boolean): Promise<void>;
+  getProviderDebugMode(): Promise<boolean>;
+
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
   onTaskUpdateBatch?(callback: (event: { taskId: string; messages: TaskMessage[] }) => void): () => void;
   onPermissionRequest(callback: (request: PermissionRequest) => void): () => void;
   onTaskProgress(callback: (progress: TaskProgress) => void): () => void;
   onDebugLog(callback: (log: unknown) => void): () => void;
+  onDebugModeChange?(callback: (data: { enabled: boolean }) => void): () => void;
   onTaskStatusChange?(callback: (data: { taskId: string; status: TaskStatus }) => void): () => void;
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
 
@@ -113,11 +164,27 @@ declare global {
  * Get the accomplish API
  * Throws if not running in Electron
  */
-export function getAccomplish(): AccomplishAPI {
+export function getAccomplish() {
   if (!window.accomplish) {
     throw new Error('Accomplish API not available - not running in Electron');
   }
-  return window.accomplish;
+  return {
+    ...window.accomplish,
+
+    validateBedrockCredentials: async (credentials: BedrockCredentials): Promise<{ valid: boolean; error?: string }> => {
+      return window.accomplish!.validateBedrockCredentials(JSON.stringify(credentials));
+    },
+
+    saveBedrockCredentials: async (credentials: BedrockCredentials): Promise<ApiKeyConfig> => {
+      return window.accomplish!.saveBedrockCredentials(JSON.stringify(credentials));
+    },
+
+    getBedrockCredentials: async (): Promise<BedrockCredentials | null> => {
+      return window.accomplish!.getBedrockCredentials();
+    },
+
+    fetchBedrockModels: (credentials: string) => window.accomplish!.fetchBedrockModels(credentials),
+  };
 }
 
 /**

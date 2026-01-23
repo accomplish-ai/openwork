@@ -36,6 +36,41 @@ export class ExecutionPage {
     return this.page.getByTestId('permission-deny-button');
   }
 
+  /** Get all question option buttons inside the permission modal */
+  get questionOptions() {
+    return this.permissionModal.locator('button').filter({ hasText: /Option|Other/ });
+  }
+
+  /** Get the custom response text input (visible when "Other" is selected) */
+  get customResponseInput() {
+    return this.page.getByPlaceholder('Type your response...');
+  }
+
+  /** Get the "Back to options" button (visible in custom input mode) */
+  get backToOptionsButton() {
+    return this.page.getByText('← Back to options');
+  }
+
+  /** Get the messages scroll container */
+  get messagesScrollContainer() {
+    return this.page.getByTestId('messages-scroll-container');
+  }
+
+  /** Get the scroll-to-bottom button (visible when scrolled up) */
+  get scrollToBottomButton() {
+    return this.page.getByTestId('scroll-to-bottom-button');
+  }
+
+  /** Get all copy buttons on the page */
+  get copyButtons() {
+    return this.page.getByTestId('message-copy-button');
+  }
+
+  /** Select a question option by index (0-based) */
+  async selectQuestionOption(index: number) {
+    await this.questionOptions.nth(index).click();
+  }
+
   async waitForComplete() {
     // Wait for status badge to show a completed state (not running)
     await this.page.waitForFunction(
@@ -45,7 +80,7 @@ export class ExecutionPage {
         const text = badge.textContent?.toLowerCase() || '';
         return text.includes('completed') || text.includes('failed') || text.includes('stopped') || text.includes('cancelled');
       },
-      { timeout: TEST_TIMEOUTS.PERMISSION_MODAL }
+      { timeout: TEST_TIMEOUTS.TASK_COMPLETE_WAIT }
     );
   }
 }

@@ -54,5 +54,11 @@ prisma/*.db-journal
 *.pem
 .turbo/
 
+# Git worktrees
+.worktrees/
+
 # Bundled Node.js binaries (downloaded via `pnpm -F @accomplish/desktop download:nodejs`)
 apps/desktop/resources/nodejs/
+
+# Test local agent Chrome profile
+.accomplish-test-local-agent-chrome/
