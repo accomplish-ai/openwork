@@ -7,35 +7,38 @@ export type PortStatus = 'free' | 'ours_healthy' | 'ours_stale' | 'external';
  * Check if a port pair is available or has our server running
  */
 export async function checkPortStatus(httpPort: number, cdpPort: number): Promise<PortStatus> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1000);
 
+  try {
     const res = await fetch(`http://localhost:${httpPort}`, {
       signal: controller.signal,
     });
-    clearTimeout(timeout);
 
     if (!res.ok) {
-      return 'external'; // Something responded but not OK
+      return 'external';
     }
 
-    // Check if it's our server by looking for wsEndpoint in response
-    const data = await res.json() as { wsEndpoint?: string; mode?: string };
-    if (!data.wsEndpoint) {
-      return 'external'; // Not our server format
-    }
-
-    // It's our server, now check if browser is actually healthy
-    // by verifying CDP endpoint responds
+    // Try to parse JSON - if it fails, not our server
+    let data: { wsEndpoint?: string; mode?: string };
     try {
-      const cdpController = new AbortController();
-      const cdpTimeout = setTimeout(() => cdpController.abort(), 1000);
+      data = await res.json() as { wsEndpoint?: string; mode?: string };
+    } catch {
+      return 'external';
+    }
 
+    if (!data.wsEndpoint) {
+      return 'external';
+    }
+
+    // CDP health check with proper cleanup
+    const cdpController = new AbortController();
+    const cdpTimeout = setTimeout(() => cdpController.abort(), 1000);
+
+    try {
       const cdpRes = await fetch(`http://localhost:${cdpPort}/json/version`, {
         signal: cdpController.signal,
       });
-      clearTimeout(cdpTimeout);
 
       if (cdpRes.ok) {
         return 'ours_healthy';
@@ -43,10 +46,13 @@ export async function checkPortStatus(httpPort: number, cdpPort: number): Promis
       return 'ours_stale';
     } catch {
       return 'ours_stale';
+    } finally {
+      clearTimeout(cdpTimeout);
     }
   } catch {
-    // Fetch failed - port is free
     return 'free';
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
