@@ -97,48 +97,48 @@ export default function App() {
 
   // Ready - render the app with sidebar
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Invisible drag region for window dragging (macOS hiddenInset titlebar) */}
-      <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
-      <Sidebar />
-      <main className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route
-              path="/"
-              element={
-                <motion.div
-                  className="h-full"
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={variants.fadeUp}
-                  transition={springs.gentle}
-                >
-                  <HomePage />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/execution/:id"
-              element={
-                <motion.div
-                  className="h-full"
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={variants.fadeUp}
-                  transition={springs.gentle}
-                >
-                  <ExecutionPage />
-                </motion.div>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AnimatePresence>
-      </main>
-      <TaskLauncher />
-    </div>
+      <div className="flex h-screen overflow-hidden bg-background">
+        {/* Invisible drag region for window dragging (macOS hiddenInset titlebar) */}
+        <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
+        <Sidebar />
+        <main className="flex-1 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route
+                path="/"
+                element={
+                  <motion.div
+                    className="h-full"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={variants.fadeUp}
+                    transition={springs.gentle}
+                  >
+                    <HomePage />
+                  </motion.div>
+                }
+              />
+              <Route
+                path="/execution/:id"
+                element={
+                  <motion.div
+                    className="h-full"
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    variants={variants.fadeUp}
+                    transition={springs.gentle}
+                  >
+                    <ExecutionPage />
+                  </motion.div>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AnimatePresence>
+        </main>
+        <TaskLauncher />
+      </div>
   );
 }
