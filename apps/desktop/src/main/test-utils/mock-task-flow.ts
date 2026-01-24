@@ -9,7 +9,8 @@ export type MockScenario =
   | 'permission-required'
   | 'question'
   | 'error'
-  | 'interrupted';
+  | 'interrupted'
+  | 'code-block';
 
 export interface MockTaskConfig {
   taskId: string;
@@ -32,6 +33,7 @@ const SCENARIO_KEYWORDS: Record<MockScenario, string[]> = {
   question: ['__e2e_question__'],
   error: ['__e2e_error__', 'cause error', 'trigger failure'],
   interrupted: ['__e2e_interrupt__', 'stop task', 'cancel task'],
+  'code-block': ['__e2e_code__'],
 };
 
 export function detectScenarioFromPrompt(prompt: string): MockScenario {
@@ -42,6 +44,7 @@ export function detectScenarioFromPrompt(prompt: string): MockScenario {
     'interrupted',
     'question',
     'permission-required',
+    'code-block',
     'with-tool',
     'success',
   ];
@@ -126,6 +129,10 @@ async function executeScenario(
 
     case 'interrupted':
       await executeInterruptedScenario(sendEvent, storage, taskId, delayMs);
+      break;
+
+    case 'code-block':
+      await executeCodeBlockScenario(sendEvent, storage, taskId, delayMs);
       break;
   }
 }
@@ -279,6 +286,56 @@ async function executeInterruptedScenario(
     taskId,
     type: 'complete',
     result: { status: 'interrupted', sessionId: `session_${taskId}` },
+  });
+}
+
+async function executeCodeBlockScenario(
+  sendEvent: (channel: string, data: unknown) => void,
+  storage: ReturnType<typeof getStorage>,
+  taskId: string,
+  delayMs: number
+): Promise<void> {
+  const codeContent = `Here's an example function:
+
+\`\`\`typescript
+function greet(name: string): string {
+  return \`Hello, \${name}!\`;
+}
+
+const message = greet("World");
+console.log(message);
+\`\`\`
+
+And here's another example in Python:
+
+\`\`\`python
+def calculate_sum(numbers):
+    return sum(numbers)
+
+result = calculate_sum([1, 2, 3, 4, 5])
+print(f"Sum: {result}")
+\`\`\`
+
+The code blocks above demonstrate syntax highlighting.`;
+
+  sendEvent('task:update', {
+    taskId,
+    type: 'message',
+    message: {
+      id: createMessageId(),
+      type: 'assistant',
+      content: codeContent,
+      timestamp: new Date().toISOString(),
+    },
+  });
+  await sleep(delayMs);
+
+  storage.updateTaskStatus(taskId, 'completed', new Date().toISOString());
+
+  sendEvent('task:update', {
+    taskId,
+    type: 'complete',
+    result: { status: 'success', sessionId: `session_${taskId}` },
   });
 }
 

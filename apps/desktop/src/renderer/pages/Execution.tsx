@@ -211,6 +211,7 @@ const MarkdownPre = ({ children, ...props }: any) => {
                 copied ? "text-green-500" : "text-muted-foreground hover:text-foreground opacity-0 group-hover/code:opacity-100"
               )}
               aria-label="Copy code"
+              data-testid="code-block-copy-button"
             >
               {copied ? (
                 <>
