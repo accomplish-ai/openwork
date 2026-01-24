@@ -435,6 +435,10 @@ export function registerIPCHandlers(): void {
         // Update task status in history
         updateTaskStatus(taskId, status, new Date().toISOString());
       },
+
+      onTodoUpdate: (todos: unknown) => {
+        forwardToRenderer('todo:update', { taskId, todos });
+      },
     };
 
     // Start the task via TaskManager (creates isolated adapter or queues if busy)
@@ -686,6 +690,10 @@ export function registerIPCHandlers(): void {
         });
         // Update task status in history
         updateTaskStatus(taskId, status, new Date().toISOString());
+      },
+
+      onTodoUpdate: (todos: unknown) => {
+        forwardToRenderer('todo:update', { taskId, todos });
       },
     };
 
