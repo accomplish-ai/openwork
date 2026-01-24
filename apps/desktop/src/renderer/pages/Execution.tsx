@@ -180,20 +180,54 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
 
 // Custom Markdown renderer components
 const MarkdownPre = ({ children, ...props }: any) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  }, []);
+
   if (children && typeof children === 'object' && 'type' in children && children.type === 'code') {
     const codeProps = children.props;
     const className = codeProps.className || '';
     const match = /language-(\w+)/.exec(className);
 
     if (match) {
+      const codeContent = String(codeProps.children).replace(/\n$/, '');
+
       return (
-        <div className="relative rounded-md overflow-hidden my-4 border border-border">
+        <div className="relative rounded-md overflow-hidden my-4 border border-border group/code">
           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/50 border-b border-border text-xs text-muted-foreground font-mono">
             <span>{match[1]}</span>
+            <button
+              onClick={() => handleCopy(codeContent)}
+              className={cn(
+                "flex items-center gap-1.5 transition-all duration-200",
+                copied ? "text-green-500" : "text-muted-foreground hover:text-foreground opacity-0 group-hover/code:opacity-100"
+              )}
+              aria-label="Copy code"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
           </div>
           <Highlight
             theme={themes.vsDark}
-            code={String(codeProps.children).replace(/\n$/, '')}
+            code={codeContent}
             language={match[1]}
           >
             {({ className, style, tokens, getLineProps, getTokenProps }) => (
