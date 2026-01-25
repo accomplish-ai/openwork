@@ -750,6 +750,35 @@ function collectScoredElements(root, options) {
   return elements;
 }
 
+/**
+ * Truncate elements to maxElements, keeping highest priority.
+ */
+function truncateToLimit(elements, maxElements) {
+  var totalElements = elements.length;
+
+  if (totalElements <= maxElements) {
+    return { elements: elements, totalElements: totalElements, truncated: false };
+  }
+
+  // Sort by score descending
+  var sorted = elements.slice().sort(function(a, b) { return b.score - a.score; });
+
+  return {
+    elements: sorted.slice(0, maxElements),
+    totalElements: totalElements,
+    truncated: true,
+  };
+}
+
+var CHARS_PER_TOKEN = 4;
+
+/**
+ * Estimate tokens for YAML output.
+ */
+function estimateYamlTokens(yaml) {
+  return Math.ceil(yaml.length / CHARS_PER_TOKEN);
+}
+
 function generateAriaTree(rootElement) {
   const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true };
   const visited = new Set();
@@ -908,7 +937,7 @@ function hasPointerCursor(ariaNode) { return ariaNode.box.cursor === "pointer"; 
 
 function renderAriaTree(ariaSnapshot, snapshotOptions) {
   snapshotOptions = snapshotOptions || {};
-  const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true, maxElements: snapshotOptions.maxElements, viewportOnly: snapshotOptions.viewportOnly };
+  const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true, maxElements: snapshotOptions.maxElements, viewportOnly: snapshotOptions.viewportOnly, maxTokens: snapshotOptions.maxTokens };
   const lines = [];
   let nodesToRender = ariaSnapshot.root.role === "fragment" ? ariaSnapshot.root.children : [ariaSnapshot.root];
 
