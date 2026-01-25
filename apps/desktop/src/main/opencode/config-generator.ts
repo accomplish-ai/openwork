@@ -5,7 +5,8 @@ import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
 import { getOllamaConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
-import type { BedrockCredentials, ProviderId } from '@accomplish/shared';
+import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
+import type { BedrockCredentials, ProviderId, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
  * Agent name used by Accomplish
@@ -143,6 +144,37 @@ To ask ANY question or get user input, you MUST use the AskUserQuestion MCP tool
 See the ask-user-question skill for full documentation and examples.
 </important>
 
+<behavior name="task-planning">
+**TASK PLANNING - REQUIRED FOR EVERY TASK**
+
+Before taking ANY action, you MUST first output a plan:
+
+1. **State the goal** - What the user wants accomplished
+2. **List steps with verification** - Numbered steps, each with a completion criterion
+
+Format:
+**Plan:**
+Goal: [what user asked for]
+
+Steps:
+1. [Action] → verify: [how to confirm it's done]
+2. [Action] → verify: [how to confirm it's done]
+...
+
+Then execute the steps. When calling \`complete_task\`:
+- Review each step's verification criterion
+- Only use status "success" if ALL criteria are met
+- Use "partial" if some steps incomplete, list which ones in \`remaining_work\`
+
+**Example:**
+Goal: Extract analytics data from a website
+
+Steps:
+1. Navigate to URL → verify: page title contains expected text
+2. Locate data section → verify: can see the target metrics
+3. Extract values → verify: have captured specific numbers
+4. Report findings → verify: summary includes all extracted data
+</behavior>
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
@@ -168,21 +200,44 @@ Example bad narration (too terse):
 - Don't announce server checks or startup - proceed directly to the task
 - Only use AskUserQuestion when you genuinely need user input or decisions
 
+**DO NOT ASK FOR PERMISSION TO CONTINUE:**
+If the user gave you a task with specific criteria (e.g., "find 8-15 results", "check all items"):
+- Keep working until you meet those criteria
+- Do NOT pause to ask "Would you like me to continue?" or "Should I keep going?"
+- Do NOT stop after reviewing just a few items when the task asks for more
+- Just continue working until the task requirements are met
+- Only use AskUserQuestion for genuine clarifications about requirements, NOT for progress check-ins
+
 **TASK COMPLETION - CRITICAL:**
-You may ONLY finish a task when ONE of these conditions is met:
 
-1. **SUCCESS**: You have verified that EVERY part of the user's request is complete
-   - Review the original request and check off each requirement
-   - Provide a summary: "Task completed. Here's what I did: [list each step and result]"
-   - If the task had multiple parts, confirm each part explicitly
+You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
 
-2. **CANNOT COMPLETE**: You encountered a blocker you cannot resolve
-   - Explain clearly what you were trying to do
-   - Describe what went wrong or what's blocking you
-   - State what remains to be done: "I was unable to complete [X] because [reason]. Remaining: [list]"
+When to call \`complete_task\`:
 
-**NEVER** stop without either a completion summary or an explanation of why you couldn't finish.
-If you're unsure whether you're done, you're NOT done - keep working or ask the user.
+1. **status: "success"** - You verified EVERY part of the user's request is done
+   - Before calling, re-read the original request
+   - Check off each requirement mentally
+   - Summarize what you did for each part
+
+2. **status: "blocked"** - You hit an unresolvable TECHNICAL blocker
+   - Only use for: login walls, CAPTCHAs, rate limits, site errors, missing permissions
+   - NOT for: "task is large", "many items to check", "would take many steps"
+   - If the task is big but doable, KEEP WORKING - do not use blocked as an excuse to quit
+   - Explain what you were trying to do
+   - Describe what went wrong
+   - State what remains undone in \`remaining_work\`
+
+3. **status: "partial"** - AVOID THIS STATUS
+   - Only use if you are FORCED to stop mid-task (context limit approaching, etc.)
+   - The system will automatically continue you to finish the remaining work
+   - If you use partial, you MUST fill in remaining_work with specific next steps
+   - Do NOT use partial as a way to ask "should I continue?" - just keep working
+   - If you've done some work and can keep going, KEEP GOING - don't use partial
+
+**NEVER** just stop working. If you find yourself about to end without calling \`complete_task\`,
+ask yourself: "Did I actually finish what was asked?" If unsure, keep working.
+
+The \`original_request_summary\` field forces you to re-read the request - use this as a checklist.
 </behavior>
 `;
 
@@ -201,9 +256,14 @@ interface McpServerConfig {
   timeout?: number;
 }
 
-interface OllamaProviderModelConfig {
+interface ProviderModelConfig {
   name: string;
   tools?: boolean;
+  limit?: {
+    context?: number;
+    output?: number;
+  };
+  options?: Record<string, unknown>;
 }
 
 interface OllamaProviderConfig {
@@ -212,7 +272,7 @@ interface OllamaProviderConfig {
   options: {
     baseURL: string;
   };
-  models: Record<string, OllamaProviderModelConfig>;
+  models: Record<string, ProviderModelConfig>;
 }
 
 interface BedrockProviderConfig {
@@ -220,6 +280,18 @@ interface BedrockProviderConfig {
     region: string;
     profile?: string;
   };
+}
+
+interface AzureFoundryProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    resourceName?: string;
+    baseURL?: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
+  };
+  models: Record<string, ProviderModelConfig>;
 }
 
 interface OpenRouterProviderModelConfig {
@@ -265,7 +337,7 @@ interface ZaiProviderConfig {
   models: Record<string, ZaiProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig;
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -279,11 +351,64 @@ interface OpenCodeConfig {
 }
 
 /**
+ * Build Azure Foundry provider configuration for OpenCode CLI
+ * Shared helper to avoid duplication between new settings and legacy paths
+ */
+async function buildAzureFoundryProviderConfig(
+  endpoint: string,
+  deploymentName: string,
+  authMethod: 'api-key' | 'entra-id',
+  azureFoundryToken?: string
+): Promise<AzureFoundryProviderConfig | null> {
+  const baseUrl = endpoint.replace(/\/$/, '');
+  const targetBaseUrl = `${baseUrl}/openai/v1`;
+  const proxyInfo = await ensureAzureFoundryProxy(targetBaseUrl);
+
+  // Build options for @ai-sdk/openai-compatible provider
+  // Route through local proxy to strip unsupported params for Azure Foundry
+  const azureOptions: AzureFoundryProviderConfig['options'] = {
+    baseURL: proxyInfo.baseURL,
+  };
+
+  // Set API key or Entra ID token
+  if (authMethod === 'api-key') {
+    const azureApiKey = getApiKey('azure-foundry');
+    if (azureApiKey) {
+      azureOptions.apiKey = azureApiKey;
+    }
+  } else if (authMethod === 'entra-id' && azureFoundryToken) {
+    azureOptions.apiKey = '';
+    azureOptions.headers = {
+      'Authorization': `Bearer ${azureFoundryToken}`,
+    };
+  }
+
+  return {
+    npm: '@ai-sdk/openai-compatible',
+    name: 'Azure AI Foundry',
+    options: azureOptions,
+    models: {
+      [deploymentName]: {
+        name: `Azure Foundry (${deploymentName})`,
+        tools: true,
+        // Set conservative output token limit - can be overridden per-deployment
+        // This prevents errors from models with lower limits (e.g., 16384 for some GPT-5 deployments)
+        limit: {
+          context: 128000,
+          output: 16384,
+        },
+      },
+    },
+  };
+}
+
+/**
  * Generate OpenCode configuration file
  * OpenCode reads config from .opencode.json in the working directory or
  * from ~/.config/opencode/opencode.json
+ * @param azureFoundryToken - Optional Entra ID token for Azure Foundry authentication
  */
-export async function generateOpenCodeConfig(): Promise<string> {
+export async function generateOpenCodeConfig(azureFoundryToken?: string): Promise<string> {
   const configDir = path.join(app.getPath('userData'), 'opencode');
   const configPath = path.join(configDir, 'opencode.json');
 
@@ -322,6 +447,7 @@ export async function generateOpenCodeConfig(): Promise<string> {
     deepseek: 'deepseek',
     zai: 'zai-coding-plan',
     bedrock: 'amazon-bedrock',
+    'azure-foundry': 'azure-foundry',
     ollama: 'ollama',
     openrouter: 'openrouter',
     litellm: 'litellm',
@@ -353,6 +479,9 @@ export async function generateOpenCodeConfig(): Promise<string> {
   if (ollamaProvider?.connectionStatus === 'connected' && ollamaProvider.credentials.type === 'ollama') {
     // New provider settings: Ollama is connected
     if (ollamaProvider.selectedModelId) {
+      // OpenCode CLI splits "ollama/model" into provider="ollama" and modelID="model"
+      // So we need to register the model without the "ollama/" prefix
+      const modelId = ollamaProvider.selectedModelId.replace(/^ollama\//, '');
       providerConfig.ollama = {
         npm: '@ai-sdk/openai-compatible',
         name: 'Ollama (local)',
@@ -360,19 +489,19 @@ export async function generateOpenCodeConfig(): Promise<string> {
           baseURL: `${ollamaProvider.credentials.serverUrl}/v1`,
         },
         models: {
-          [ollamaProvider.selectedModelId]: {
-            name: ollamaProvider.selectedModelId,
+          [modelId]: {
+            name: modelId,
             tools: true,
           },
         },
       };
-      console.log('[OpenCode Config] Ollama configured from new settings:', ollamaProvider.selectedModelId);
+      console.log('[OpenCode Config] Ollama configured from new settings:', modelId);
     }
   } else {
     // Legacy fallback: use old Ollama config
     const ollamaConfig = getOllamaConfig();
     if (ollamaConfig?.enabled && ollamaConfig.models && ollamaConfig.models.length > 0) {
-      const ollamaModels: Record<string, OllamaProviderModelConfig> = {};
+      const ollamaModels: Record<string, ProviderModelConfig> = {};
       for (const model of ollamaConfig.models) {
         ollamaModels[model.id] = {
           name: model.displayName,
@@ -488,12 +617,18 @@ export async function generateOpenCodeConfig(): Promise<string> {
   const litellmProvider = providerSettings.connectedProviders.litellm;
   if (litellmProvider?.connectionStatus === 'connected' && litellmProvider.credentials.type === 'litellm') {
     if (litellmProvider.selectedModelId) {
+      // Get API key if available
+      const litellmApiKey = getApiKey('litellm');
+      const litellmOptions: LiteLLMProviderConfig['options'] = {
+        baseURL: `${litellmProvider.credentials.serverUrl}/v1`,
+      };
+      if (litellmApiKey) {
+        litellmOptions.apiKey = litellmApiKey;
+      }
       providerConfig.litellm = {
         npm: '@ai-sdk/openai-compatible',
         name: 'LiteLLM',
-        options: {
-          baseURL: `${litellmProvider.credentials.serverUrl}/v1`,
-        },
+        options: litellmOptions,
         models: {
           [litellmProvider.selectedModelId]: {
             name: litellmProvider.selectedModelId,
@@ -501,7 +636,58 @@ export async function generateOpenCodeConfig(): Promise<string> {
           },
         },
       };
-      console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId);
+      console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId, litellmApiKey ? '(with API key)' : '(no API key)');
+    }
+  }
+
+  // Configure Azure Foundry if connected (check new settings first, then legacy)
+  const azureFoundryProvider = providerSettings.connectedProviders['azure-foundry'];
+  if (azureFoundryProvider?.connectionStatus === 'connected' && azureFoundryProvider.credentials.type === 'azure-foundry') {
+    const creds = azureFoundryProvider.credentials;
+    const config = await buildAzureFoundryProviderConfig(
+      creds.endpoint,
+      creds.deploymentName,
+      creds.authMethod,
+      azureFoundryToken
+    );
+
+    if (config) {
+      providerConfig['azure-foundry'] = config;
+
+      if (!enabledProviders.includes('azure-foundry')) {
+        enabledProviders.push('azure-foundry');
+      }
+
+      console.log('[OpenCode Config] Azure Foundry configured from new settings:', {
+        deployment: creds.deploymentName,
+        authMethod: creds.authMethod,
+      });
+    }
+  } else {
+    // TODO: Remove legacy Azure Foundry config support in v0.4.0
+    // Legacy fallback: use old Azure Foundry config
+    const { getAzureFoundryConfig } = await import('../store/appSettings');
+    const azureFoundryConfig = getAzureFoundryConfig();
+    if (azureFoundryConfig?.enabled && activeModel?.provider === 'azure-foundry') {
+      const config = await buildAzureFoundryProviderConfig(
+        azureFoundryConfig.baseUrl,
+        azureFoundryConfig.deploymentName || 'default',
+        azureFoundryConfig.authType,
+        azureFoundryToken
+      );
+
+      if (config) {
+        providerConfig['azure-foundry'] = config;
+
+        if (!enabledProviders.includes('azure-foundry')) {
+          enabledProviders.push('azure-foundry');
+        }
+
+        console.log('[OpenCode Config] Azure Foundry configured from legacy settings:', {
+          deployment: azureFoundryConfig.deploymentName,
+          authType: azureFoundryConfig.authType,
+        });
+      }
     }
   }
 
@@ -571,6 +757,13 @@ export async function generateOpenCodeConfig(): Promise<string> {
         enabled: true,
         timeout: 30000,  // Longer timeout for browser operations
       },
+      // Provides complete_task tool - agent must call to signal task completion
+      'complete-task': {
+        type: 'local',
+        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        enabled: true,
+        timeout: 5000,
+      },
     },
   };
 
@@ -578,9 +771,14 @@ export async function generateOpenCodeConfig(): Promise<string> {
   const configJson = JSON.stringify(config, null, 2);
   fs.writeFileSync(configPath, configJson);
 
-  // Set environment variables for OpenCode to find the config and skills
+  // Set environment variables for OpenCode to find the config
   process.env.OPENCODE_CONFIG = configPath;
-  process.env.OPENCODE_CONFIG_DIR = openCodeConfigDir;
+
+  // Set OPENCODE_CONFIG_DIR to the writable config directory, not resourcesPath
+  // resourcesPath is read-only on mounted DMGs (macOS) and protected on Windows (Program Files).
+  // This causes EROFS/EPERM errors when OpenCode tries to write package.json there.
+  // MCP servers are configured with explicit paths, so we don't need skills discovery via OPENCODE_CONFIG_DIR.
+  process.env.OPENCODE_CONFIG_DIR = configDir;
 
   console.log('[OpenCode Config] Generated config at:', configPath);
   console.log('[OpenCode Config] Full config:', configJson);
