@@ -146,6 +146,7 @@ interface AccomplishAPI {
 
   // Logging
   logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;
+  exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
 }
 
 interface AccomplishShell {
