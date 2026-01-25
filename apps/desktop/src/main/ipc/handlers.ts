@@ -1,10 +1,12 @@
-import { ipcMain, BrowserWindow, shell, app } from 'electron';
+import { ipcMain, BrowserWindow, shell, app, dialog } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
+import fs from 'fs';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
 } from '../opencode/adapter';
+import { getLogCollector } from '../logging';
 import { getAzureEntraToken } from '../opencode/azure-token-manager';
 import {
   getTaskManager,
@@ -1887,6 +1889,55 @@ export function registerIPCHandlers(): void {
 
   handle('provider-settings:get-debug', async () => {
     return getProviderDebugMode();
+  });
+
+  // Logs: Export application logs
+  handle('logs:export', async (event: IpcMainInvokeEvent) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) throw new Error('No window found');
+
+    // Flush pending logs before export
+    const collector = getLogCollector();
+    collector.flush();
+
+    const logPath = collector.getCurrentLogPath();
+    const logDir = collector.getLogDir();
+
+    // Generate default filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const defaultFilename = `openwork-logs-${timestamp}.txt`;
+
+    // Show save dialog
+    const result = await dialog.showSaveDialog(window, {
+      title: 'Export Application Logs',
+      defaultPath: defaultFilename,
+      filters: [
+        { name: 'Text Files', extensions: ['txt'] },
+        { name: 'Log Files', extensions: ['log'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, reason: 'cancelled' };
+    }
+
+    try {
+      // Check if current log file exists
+      if (fs.existsSync(logPath)) {
+        // Copy the log file to the selected location
+        fs.copyFileSync(logPath, result.filePath);
+      } else {
+        // No logs yet - create empty file with header
+        const header = `Openwork Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
+        fs.writeFileSync(result.filePath, header);
+      }
+
+      return { success: true, path: result.filePath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
+    }
   });
 }
 

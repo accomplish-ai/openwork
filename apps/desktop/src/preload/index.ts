@@ -237,6 +237,10 @@ const accomplishAPI = {
 
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>
     ipcRenderer.invoke('log:event', payload),
+
+  // Export application logs
+  exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
+    ipcRenderer.invoke('logs:export'),
 };
 
 // Expose the API to the renderer
