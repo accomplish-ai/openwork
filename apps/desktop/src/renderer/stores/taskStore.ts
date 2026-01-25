@@ -410,10 +410,21 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         );
       }
 
+      // Determine if we should clear todos
+      // Only clear todos if:
+      // 1. They belong to this task
+      // 2. Task is fully completed (not interrupted - user can still continue)
+      let shouldClearTodos = false;
+      if ((event.type === 'complete' || event.type === 'error') && state.todosTaskId === event.taskId) {
+        const isInterrupted = event.type === 'complete' && event.result?.status === 'interrupted';
+        shouldClearTodos = !isInterrupted;
+      }
+
       return {
         currentTask: updatedCurrentTask,
         tasks: updatedTasks,
         isLoading: false,
+        ...(shouldClearTodos ? { todos: [], todosTaskId: null } : {}),
       };
     });
   },
@@ -592,7 +603,7 @@ if (typeof window !== 'undefined' && window.accomplish) {
         state.setSetupProgress(null, null);
       }
       state.clearStartupStage(updateEvent.taskId);
-      state.clearTodos();
+      // Note: todos are cleared in addTaskUpdate() based on interrupt status
     }
   });
 
