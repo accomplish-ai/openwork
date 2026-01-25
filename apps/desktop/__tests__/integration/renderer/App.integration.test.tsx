@@ -34,6 +34,7 @@ const mockAccomplish = {
   onTaskStatusChange: mockOnTaskStatusChange.mockReturnValue(() => {}),
   onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
   getTask: mockGetTask.mockResolvedValue(null),
+  getAppearance: vi.fn().mockResolvedValue('system'),
   getSelectedModel: vi.fn().mockResolvedValue({ provider: 'anthropic', id: 'claude-3-opus' }),
   getOllamaConfig: vi.fn().mockResolvedValue(null),
   isE2EMode: vi.fn().mockResolvedValue(false),
