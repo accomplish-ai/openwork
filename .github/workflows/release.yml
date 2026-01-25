@@ -51,6 +51,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # In dry_run mode, checkout the branch that triggered the workflow
+          # Otherwise, checkout main for production releases
+          ref: ${{ inputs.dry_run == true && github.ref || 'main' }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
