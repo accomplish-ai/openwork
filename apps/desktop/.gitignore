@@ -1,0 +1,5 @@
+# Sanity test outputs
+sanity-tests/test-results/
+sanity-tests/html-report/
+sanity-tests/sanity-report.json
+.env.sanity
