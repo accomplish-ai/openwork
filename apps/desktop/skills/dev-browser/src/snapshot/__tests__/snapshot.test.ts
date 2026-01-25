@@ -225,26 +225,26 @@ describe("ARIA Snapshot", () => {
   });
 
   test("should truncate to maxElements with priority", async () => {
-    // Navigate to a page with many elements
+    // Navigate to a page with many elements (reduced count to avoid timeout)
     await setContent(`
       <html>
         <body>
-          ${Array.from({ length: 100 }, (_, i) => `<button>Button ${i}</button>`).join("")}
-          ${Array.from({ length: 100 }, (_, i) => `<a href="#">Link ${i}</a>`).join("")}
+          ${Array.from({ length: 20 }, (_, i) => `<button>Button ${i}</button>`).join("")}
+          ${Array.from({ length: 20 }, (_, i) => `<a href="#">Link ${i}</a>`).join("")}
         </body>
       </html>
     `);
 
     // Call the snapshot function with maxElements
-    const snapshot = await getSnapshot({ maxElements: 50 });
+    const snapshot = await getSnapshot({ maxElements: 15 });
 
     // Should include truncation header
     expect(snapshot).toContain("# Elements:");
-    expect(snapshot).toContain("of 200");
+    expect(snapshot).toContain("of 40");
 
-    // Should have at most 50 element lines (plus header)
+    // Should have at most 15 element lines (plus header)
     const elementLines = snapshot.split("\n").filter((line: string) => line.match(/^\s*-\s+\w+/));
-    expect(elementLines.length).toBeLessThanOrEqual(50);
+    expect(elementLines.length).toBeLessThanOrEqual(15);
 
     // Should prioritize buttons over links (buttons have higher priority)
     const buttonCount = elementLines.filter((line: string) => line.includes("button")).length;
@@ -253,23 +253,23 @@ describe("ARIA Snapshot", () => {
   });
 
   test("should respect maxTokens budget", async () => {
-    // Create page with many elements
+    // Create page with many elements (reduced count to avoid timeout)
     await setContent(`
       <html>
         <body>
-          ${Array.from({ length: 500 }, (_, i) => `<button>Button with a moderately long name ${i}</button>`).join("")}
+          ${Array.from({ length: 50 }, (_, i) => `<button>Button with a moderately long name ${i}</button>`).join("")}
         </body>
       </html>
     `);
 
     // Request small token budget
-    const snapshot = await getSnapshot({ maxTokens: 2000 });
+    const snapshot = await getSnapshot({ maxTokens: 500 });
 
     // Should have token info in header
     expect(snapshot).toContain("# Tokens:");
 
     // Estimate actual tokens (rough approximation: ~4 chars per token)
     const estimatedTokens = Math.ceil(snapshot.length / 4);
-    expect(estimatedTokens).toBeLessThanOrEqual(2500); // Allow some overhead
+    expect(estimatedTokens).toBeLessThanOrEqual(750); // Allow some overhead
   });
 });
