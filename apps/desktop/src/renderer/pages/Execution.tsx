@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
+import { Highlight, themes } from 'prism-react-renderer';
 import { StreamingText } from '../components/ui/streaming-text';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import { BrowserScriptCard } from '../components/BrowserScriptCard';
@@ -176,6 +177,45 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
   }
   return [];
 }
+
+// Custom Markdown renderer components
+const MarkdownPre = ({ children, ...props }: any) => {
+  if (children && typeof children === 'object' && 'type' in children && children.type === 'code') {
+    const codeProps = children.props;
+    const className = codeProps.className || '';
+    const match = /language-(\w+)/.exec(className);
+
+    if (match) {
+      return (
+        <div className="relative rounded-md overflow-hidden my-4 border border-border">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/50 border-b border-border text-xs text-muted-foreground font-mono">
+            <span>{match[1]}</span>
+          </div>
+          <Highlight
+            theme={themes.vsDark}
+            code={String(codeProps.children).replace(/\n$/, '')}
+            language={match[1]}
+          >
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre style={{ ...style, margin: 0 }} className="p-4 overflow-x-auto text-sm font-mono leading-relaxed">
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
+        </div>
+      );
+    }
+  }
+  return <pre {...props}>{children}</pre>;
+};
+
+const markdownComponents = { pre: MarkdownPre };
 
 export default function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
@@ -1772,13 +1812,13 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
               >
                 {(streamedText) => (
                   <div className={proseClasses}>
-                    <ReactMarkdown>{streamedText}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{streamedText}</ReactMarkdown>
                   </div>
                 )}
               </StreamingText>
             ) : (
               <div className={proseClasses}>
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
               </div>
             )}
             <p
