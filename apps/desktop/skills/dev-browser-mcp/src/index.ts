@@ -1287,6 +1287,9 @@ const SNAPSHOT_SCRIPT = `
 
 interface SnapshotOptions {
   interactiveOnly?: boolean;
+  maxElements?: number;
+  viewportOnly?: boolean;
+  maxTokens?: number;
 }
 
 /**
@@ -1312,7 +1315,12 @@ async function getAISnapshot(page: Page, options: SnapshotOptions = {}): Promise
   const snapshot = await page.evaluate((opts) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (globalThis as any).__devBrowser_getAISnapshot(opts);
-  }, { interactiveOnly: options.interactiveOnly || false });
+  }, {
+    interactiveOnly: options.interactiveOnly || false,
+    maxElements: options.maxElements,
+    viewportOnly: options.viewportOnly || false,
+    maxTokens: options.maxTokens,
+  });
   return snapshot;
 }
 
@@ -1355,7 +1363,10 @@ interface BrowserSnapshotInput {
   page_name?: string;
   interactive_only?: boolean;
   full_snapshot?: boolean;
+  max_elements?: number;
+  viewport_only?: boolean;
   include_history?: boolean;
+  max_tokens?: number;
 }
 
 interface BrowserClickInput {
@@ -1618,6 +1629,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           include_history: {
             type: 'boolean',
             description: 'Include navigation history in output. Default: true',
+          },
+          max_tokens: {
+            type: 'number',
+            description: 'Maximum estimated tokens (1000-50000). Default: 8000',
           },
         },
       },
@@ -2344,9 +2359,29 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
       }
 
       case 'browser_snapshot': {
-        const { page_name, interactive_only, full_snapshot, include_history } = args as BrowserSnapshotInput;
+        const { page_name, interactive_only, full_snapshot, max_elements, viewport_only, include_history, max_tokens } = args as BrowserSnapshotInput;
         const page = await getPage(page_name);
-        const rawSnapshot = await getAISnapshot(page, { interactiveOnly: interactive_only ?? true });
+
+        // Parse and validate max_elements (1-1000, default 300)
+        // If full_snapshot is true, bypass element limits
+        const validatedMaxElements = full_snapshot
+          ? undefined
+          : Math.min(Math.max(max_elements ?? 300, 1), 1000);
+
+        // Parse and validate max_tokens (1000-50000, default 8000)
+        // If full_snapshot is true, bypass token limits
+        const validatedMaxTokens = full_snapshot
+          ? undefined
+          : Math.min(Math.max(max_tokens ?? 8000, 1000), 50000);
+
+        const snapshotOptions: SnapshotOptions = {
+          interactiveOnly: interactive_only ?? true,
+          maxElements: validatedMaxElements,
+          viewportOnly: viewport_only ?? false,
+          maxTokens: validatedMaxTokens,
+        };
+
+        const rawSnapshot = await getAISnapshot(page, snapshotOptions);
         const viewport = page.viewportSize();
         const url = page.url();
         const title = await page.title();
