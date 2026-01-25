@@ -47,6 +47,52 @@ vi.mock('@main/permission-api', () => ({
   QUESTION_API_PORT: 9227,
 }));
 
+// Mock providerSettings (now uses SQLite which requires native module)
+vi.mock('@main/store/providerSettings', () => ({
+  getProviderSettings: vi.fn(() => ({
+    activeProviderId: null,
+    connectedProviders: {},
+    debugMode: false,
+  })),
+  setActiveProvider: vi.fn(),
+  getActiveProviderId: vi.fn(() => null),
+  getConnectedProvider: vi.fn(() => null),
+  setConnectedProvider: vi.fn(),
+  removeConnectedProvider: vi.fn(),
+  updateProviderModel: vi.fn(),
+  setProviderDebugMode: vi.fn(),
+  getProviderDebugMode: vi.fn(() => false),
+  clearProviderSettings: vi.fn(),
+  getActiveProviderModel: vi.fn(() => null),
+  hasReadyProvider: vi.fn(() => false),
+  getConnectedProviderIds: vi.fn(() => []),
+}));
+
+// Mock appSettings (now uses SQLite which requires native module)
+vi.mock('@main/store/appSettings', () => ({
+  getDebugMode: vi.fn(() => false),
+  setDebugMode: vi.fn(),
+  getOnboardingComplete: vi.fn(() => false),
+  setOnboardingComplete: vi.fn(),
+  getSelectedModel: vi.fn(() => null),
+  setSelectedModel: vi.fn(),
+  getOllamaConfig: vi.fn(() => null),
+  setOllamaConfig: vi.fn(),
+  getLiteLLMConfig: vi.fn(() => null),
+  setLiteLLMConfig: vi.fn(),
+  getAzureFoundryConfig: vi.fn(() => null),
+  setAzureFoundryConfig: vi.fn(),
+  getAppSettings: vi.fn(() => ({
+    debugMode: false,
+    onboardingComplete: false,
+    selectedModel: null,
+    ollamaConfig: null,
+    litellmConfig: null,
+    azureFoundryConfig: null,
+  })),
+  clearAppSettings: vi.fn(),
+}));
+
 describe('OpenCode Config Generator Integration', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
