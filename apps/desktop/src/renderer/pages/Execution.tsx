@@ -939,7 +939,7 @@ export default function ExecutionPage() {
                               placeholder="Type your response..."
                               onKeyDown={(e) => {
                                 // Ignore Enter during IME composition (Chinese/Japanese input)
-                                if (e.nativeEvent.isComposing || e.code === '229') return;
+                                if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                                 if (e.key === 'Enter' && customResponse.trim()) {
                                   handlePermissionResponse(true);
                                 }
@@ -1051,7 +1051,7 @@ export default function ExecutionPage() {
                 onChange={(e) => setFollowUp(e.target.value)}
                 onKeyDown={(e) => {
                   // Ignore Enter during IME composition (Chinese/Japanese input)
-                  if (e.nativeEvent.isComposing || e.code === '229') return;
+                  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleFollowUp();
