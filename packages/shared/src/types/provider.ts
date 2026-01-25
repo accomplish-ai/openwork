@@ -9,7 +9,7 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm';
 
 export interface ProviderConfig {
   id: ProviderType;
@@ -33,7 +33,8 @@ export interface ModelConfig {
 export interface SelectedModel {
   provider: ProviderType;
   model: string; // Full ID: "anthropic/claude-sonnet-4-5"
-  baseUrl?: string;  // For Ollama: the server URL
+  baseUrl?: string;  // For Ollama: the server URL, for Azure Foundry: the endpoint URL
+  deploymentName?: string;  // For Azure Foundry: the deployment name
 }
 
 /**
@@ -53,6 +54,18 @@ export interface OllamaConfig {
   enabled: boolean;
   lastValidated?: number;
   models?: OllamaModelInfo[];  // Discovered models from Ollama API
+}
+
+/**
+/**
+ * Azure Foundry configuration
+ */
+export interface AzureFoundryConfig {
+  baseUrl: string;  // Azure Foundry endpoint URL
+  deploymentName: string;  // Deployment name
+  authType: 'api-key' | 'entra-id';  // Authentication type
+  enabled: boolean;
+  lastValidated?: number;
 }
 
 /**

@@ -23,7 +23,8 @@ function getDataDir(): string {
 
 const dataDir = getDataDir();
 const tmpDir = join(dataDir, "tmp");
-const profileDir = join(dataDir, "profiles");
+// Profile can be overridden via environment variable for isolated testing
+const profileDir = process.env.DEV_BROWSER_PROFILE || join(dataDir, "profiles");
 
 // Create data directories if they don't exist
 console.log(`Creating data directory: ${dataDir}`);
@@ -31,8 +32,17 @@ mkdirSync(tmpDir, { recursive: true });
 mkdirSync(profileDir, { recursive: true });
 
 // Accomplish uses ports 9224/9225 to avoid conflicts with Claude Code's dev-browser (9222/9223)
-const ACCOMPLISH_HTTP_PORT = 9224;
-const ACCOMPLISH_CDP_PORT = 9225;
+// Ports can be overridden via environment variable for isolated agent testing
+const ACCOMPLISH_HTTP_PORT = parseInt(process.env.DEV_BROWSER_PORT || '9224', 10);
+const ACCOMPLISH_CDP_PORT = parseInt(process.env.DEV_BROWSER_CDP_PORT || '9225', 10);
+
+// Validate port numbers (catch NaN from invalid env var values)
+if (!Number.isFinite(ACCOMPLISH_HTTP_PORT) || ACCOMPLISH_HTTP_PORT < 1 || ACCOMPLISH_HTTP_PORT > 65535) {
+  throw new Error(`Invalid DEV_BROWSER_PORT: ${process.env.DEV_BROWSER_PORT}. Must be a number between 1 and 65535`);
+}
+if (!Number.isFinite(ACCOMPLISH_CDP_PORT) || ACCOMPLISH_CDP_PORT < 1 || ACCOMPLISH_CDP_PORT > 65535) {
+  throw new Error(`Invalid DEV_BROWSER_CDP_PORT: ${process.env.DEV_BROWSER_CDP_PORT}. Must be a number between 1 and 65535`);
+}
 
 // Check if server is already running
 console.log("Checking for existing servers...");

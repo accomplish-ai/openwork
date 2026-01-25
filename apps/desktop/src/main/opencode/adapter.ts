@@ -4,18 +4,24 @@ import { app } from 'electron';
 import fs from 'fs';
 import { StreamParser } from './stream-parser';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './log-watcher';
+import { CompletionEnforcer, CompletionEnforcerCallbacks } from './completion';
 import {
   getOpenCodeCliPath,
   isOpenCodeBundled,
   getBundledOpenCodeVersion,
 } from './cli-path';
 import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
-import { getSelectedModel } from '../store/appSettings';
-import { getActiveProviderModel } from '../store/providerSettings';
+// TODO: Remove getAzureFoundryConfig import in v0.4.0 when legacy support is dropped
+import { getSelectedModel, getAzureFoundryConfig } from '../store/appSettings';
+import { getActiveProviderModel, getConnectedProvider } from '../store/providerSettings';
+import type { AzureFoundryCredentials } from '@accomplish/shared';
 import { generateOpenCodeConfig, ACCOMPLISH_AGENT_NAME, syncApiKeysToOpenCodeAuth } from './config-generator';
+import { getAzureEntraToken } from './azure-token-manager';
 import { getExtendedNodePath } from '../utils/system-path';
-import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+import { getBundledNodePaths, logBundledNodeInfo, getNpxPath } from '../utils/bundled-node';
+import { getModelDisplayName } from '../utils/model-display';
 import path from 'path';
+import { spawn } from 'child_process';
 import type {
   TaskConfig,
   Task,
@@ -56,7 +62,7 @@ export interface OpenCodeAdapterEvents {
   'tool-use': [string, unknown];
   'tool-result': [string];
   'permission-request': [PermissionRequest];
-  progress: [{ stage: string; message?: string }];
+  progress: [{ stage: string; message?: string; modelName?: string }];
   complete: [TaskResult];
   error: [Error];
   debug: [{ type: string; message: string; data?: unknown }];
@@ -72,6 +78,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private hasCompleted: boolean = false;
   private isDisposed: boolean = false;
   private wasInterrupted: boolean = false;
+  private completionEnforcer: CompletionEnforcer;
+  private lastWorkingDirectory: string | undefined;
+  /** Current model ID for display name */
+  private currentModelId: string | null = null;
+  /** Timer for transitioning from 'connecting' to 'waiting' stage */
+  private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Whether the first tool has been received (to stop showing startup stages) */
+  private hasReceivedFirstTool: boolean = false;
 
   /**
    * Create a new OpenCodeAdapter instance
@@ -81,8 +95,34 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     super();
     this.currentTaskId = taskId || null;
     this.streamParser = new StreamParser();
+    this.completionEnforcer = this.createCompletionEnforcer();
     this.setupStreamParsing();
     this.setupLogWatcher();
+  }
+
+  /**
+   * Create the CompletionEnforcer with callbacks that delegate to adapter methods.
+   */
+  private createCompletionEnforcer(): CompletionEnforcer {
+    const callbacks: CompletionEnforcerCallbacks = {
+      onStartVerification: async (prompt: string) => {
+        await this.spawnSessionResumption(prompt);
+      },
+      onStartContinuation: async (prompt: string) => {
+        await this.spawnSessionResumption(prompt);
+      },
+      onComplete: () => {
+        this.hasCompleted = true;
+        this.emit('complete', {
+          status: 'success',
+          sessionId: this.currentSessionId || undefined,
+        });
+      },
+      onDebug: (type: string, message: string, data?: unknown) => {
+        this.emit('debug', { type, message, data });
+      },
+    };
+    return new CompletionEnforcer(callbacks);
   }
 
   /**
@@ -155,18 +195,56 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.streamParser.reset();
     this.hasCompleted = false;
     this.wasInterrupted = false;
+    this.completionEnforcer.reset();
+    this.lastWorkingDirectory = config.workingDirectory;
+    this.hasReceivedFirstTool = false;
+    // Clear any existing waiting transition timer
+    if (this.waitingTransitionTimer) {
+      clearTimeout(this.waitingTransitionTimer);
+      this.waitingTransitionTimer = null;
+    }
 
     // Start the log watcher to detect errors that aren't output as JSON
     if (this.logWatcher) {
       await this.logWatcher.start();
     }
 
+    // Run Node.js diagnostics to help troubleshoot MCP server issues
+    // This is non-blocking and just logs information
+    await this.runNodeDiagnostics();
+
     // Sync API keys to OpenCode CLI's auth.json (for DeepSeek, Z.AI support)
     await syncApiKeysToOpenCodeAuth();
 
+    // For Azure Foundry with Entra ID auth, get the token first so we can include it in config
+    let azureFoundryToken: string | undefined;
+    const activeModel = getActiveProviderModel();
+    const selectedModel = activeModel || getSelectedModel();
+    // TODO: Remove legacy azureFoundryConfig check in v0.4.0
+    const azureFoundryConfig = getAzureFoundryConfig();
+
+    // Check if Azure Foundry is configured via new provider settings
+    const azureFoundryProvider = getConnectedProvider('azure-foundry');
+    const azureFoundryCredentials = azureFoundryProvider?.credentials as AzureFoundryCredentials | undefined;
+
+    // Determine auth type from new settings or legacy config
+    const isAzureFoundryEntraId =
+      (selectedModel?.provider === 'azure-foundry' && azureFoundryCredentials?.authMethod === 'entra-id') ||
+      (selectedModel?.provider === 'azure-foundry' && azureFoundryConfig?.authType === 'entra-id');
+
+    if (isAzureFoundryEntraId) {
+      const tokenResult = await getAzureEntraToken();
+      if (!tokenResult.success) {
+        console.error('[OpenCode CLI] Failed to get Azure Entra ID token:', tokenResult.error);
+        throw new Error(tokenResult.error);
+      }
+      azureFoundryToken = tokenResult.token;
+      console.log('[OpenCode CLI] Obtained Azure Entra ID token for config');
+    }
+
     // Generate OpenCode config file with MCP settings and agent
     console.log('[OpenCode CLI] Generating OpenCode config with MCP settings and agent...');
-    const configPath = await generateOpenCodeConfig();
+    const configPath = await generateOpenCodeConfig(azureFoundryToken);
     console.log('[OpenCode CLI] Config generated at:', configPath);
 
     const cliArgs = await this.buildCliArgs(config);
@@ -189,6 +267,22 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const safeCwd = config.workingDirectory || app.getPath('temp');
     const cwdMsg = `Working directory: ${safeCwd}`;
 
+    // Create a minimal package.json in the working directory so OpenCode finds it there
+    // and stops searching upward. This prevents EPERM errors when OpenCode traverses
+    // up to protected directories like C:\Program Files\Openwork\resources\
+    // This is Windows-specific since the EPERM issue occurs with protected Program Files directories.
+    if (app.isPackaged && process.platform === 'win32') {
+      const dummyPackageJson = path.join(safeCwd, 'package.json');
+      if (!fs.existsSync(dummyPackageJson)) {
+        try {
+          fs.writeFileSync(dummyPackageJson, JSON.stringify({ name: 'opencode-workspace', private: true }, null, 2));
+          console.log('[OpenCode CLI] Created workspace package.json at:', dummyPackageJson);
+        } catch (err) {
+          console.warn('[OpenCode CLI] Could not create workspace package.json:', err);
+        }
+      }
+    }
+
     console.log('[OpenCode CLI]', cmdMsg);
     console.log('[OpenCode CLI]', argsMsg);
     console.log('[OpenCode CLI]', cwdMsg);
@@ -200,24 +294,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Always use PTY for proper terminal emulation
     // We spawn via shell because posix_spawnp doesn't interpret shebangs
     {
-      const fullCommand = [command, ...allArgs].map(arg => {
-        // Escape single quotes in arguments for shell (Unix) or handle Windows quoting
-        if (process.platform === 'win32') {
-          // Windows/PowerShell: use double quotes for arguments with spaces
-          // PowerShell uses doubled quotes ("") to escape quotes inside double-quoted strings
-          // (backslash escaping does NOT work in PowerShell)
-          if (arg.includes(' ') || arg.includes('"')) {
-            return `"${arg.replace(/"/g, '""')}"`;
-          }
-          return arg;
-        } else {
-          // Unix: use single quotes
-          if (arg.includes("'") || arg.includes(' ') || arg.includes('"')) {
-            return `'${arg.replace(/'/g, "'\\''")}'`;
-          }
-          return arg;
-        }
-      }).join(' ');
+      const fullCommand = this.buildShellCommand(command, allArgs);
 
       const shellCmdMsg = `Full shell command: ${fullCommand}`;
       console.log('[OpenCode CLI]', shellCmdMsg);
@@ -240,6 +317,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       const pidMsg = `PTY Process PID: ${this.ptyProcess.pid}`;
       console.log('[OpenCode CLI]', pidMsg);
       this.emit('debug', { type: 'info', message: pidMsg });
+
+      // Emit 'loading' stage after PTY spawn
+      this.emit('progress', { stage: 'loading', message: 'Loading agent...' });
 
       // Handle PTY data (combines stdout/stderr)
       this.ptyProcess.onData((data: string) => {
@@ -398,6 +478,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.currentTaskId = null;
     this.messages = [];
     this.hasCompleted = true;
+    this.currentModelId = null;
+    this.hasReceivedFirstTool = false;
+
+    // Clear waiting transition timer
+    if (this.waitingTransitionTimer) {
+      clearTimeout(this.waitingTransitionTimer);
+      this.waitingTransitionTimer = null;
+    }
 
     // Reset stream parser
     this.streamParser.reset();
@@ -406,6 +494,96 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.removeAllListeners();
 
     console.log('[OpenCode Adapter] Adapter disposed');
+  }
+
+  /**
+   * Run diagnostic checks on bundled Node.js to help troubleshoot MCP server failures.
+   * This logs detailed information about the Node.js setup without blocking task execution.
+   */
+  private async runNodeDiagnostics(): Promise<void> {
+    const bundledPaths = getBundledNodePaths();
+
+    console.log('[OpenCode Diagnostics] === Node.js Environment Check ===');
+
+    if (!bundledPaths) {
+      console.log('[OpenCode Diagnostics] Development mode - using system Node.js');
+      return;
+    }
+
+    // Check if bundled files exist
+    const fs = await import('fs');
+    const nodeExists = fs.existsSync(bundledPaths.nodePath);
+    const npxExists = fs.existsSync(bundledPaths.npxPath);
+    const npmExists = fs.existsSync(bundledPaths.npmPath);
+
+    console.log('[OpenCode Diagnostics] Bundled Node.js paths:');
+    console.log(`  node: ${bundledPaths.nodePath} (exists: ${nodeExists})`);
+    console.log(`  npx:  ${bundledPaths.npxPath} (exists: ${npxExists})`);
+    console.log(`  npm:  ${bundledPaths.npmPath} (exists: ${npmExists})`);
+    console.log(`  binDir: ${bundledPaths.binDir}`);
+
+    // Try to run node --version to verify bundled Node.js works
+    // We test node.exe directly because on Windows, .cmd files require shell execution
+    // and MCP servers now use node.exe + cli.mjs to bypass .cmd issues
+    if (nodeExists) {
+      console.log(`[OpenCode Diagnostics] Testing node execution: ${bundledPaths.nodePath} --version`);
+
+      try {
+        const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+          const child = spawn(bundledPaths.nodePath, ['--version'], {
+            env: process.env,
+            timeout: 10000,
+            shell: false, // node.exe is a real executable, no shell needed
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          child.stdout?.on('data', (data) => { stdout += data.toString(); });
+          child.stderr?.on('data', (data) => { stderr += data.toString(); });
+
+          child.on('error', reject);
+          child.on('close', (code) => {
+            if (code === 0) {
+              resolve({ stdout, stderr });
+            } else {
+              reject(new Error(`Process exited with code ${code}`));
+            }
+          });
+        });
+        console.log(`[OpenCode Diagnostics] node --version SUCCESS: ${result.stdout.trim()}`);
+      } catch (error) {
+        const err = error as Error & { code?: string; killed?: boolean };
+        console.error('[OpenCode Diagnostics] node --version FAILED:', err.message);
+        console.error(`[OpenCode Diagnostics]   Error code: ${err.code || 'none'}`);
+        console.error(`[OpenCode Diagnostics]   This WILL cause MCP server startup failures!`);
+
+        // Emit debug event so it shows in UI
+        this.emit('debug', {
+          type: 'error',
+          message: `Bundled node test failed: ${err.message}. MCP servers will not start correctly.`,
+          data: { error: err.message, nodePath: bundledPaths.nodePath }
+        });
+      }
+    } else {
+      console.error('[OpenCode Diagnostics] Bundled node not found - MCP servers will likely fail!');
+      this.emit('debug', {
+        type: 'error',
+        message: 'Bundled node.exe not found. MCP servers will not start.',
+        data: { expectedPath: bundledPaths.nodePath }
+      });
+    }
+
+    // Check for system Node.js as fallback info
+    try {
+      const { execSync } = await import('child_process');
+      const systemNode = execSync('where node', { encoding: 'utf8', timeout: 5000 }).trim();
+      console.log(`[OpenCode Diagnostics] System Node.js found: ${systemNode.split('\n')[0]}`);
+    } catch {
+      console.log('[OpenCode Diagnostics] System Node.js: NOT FOUND (this is OK if bundled Node works)');
+    }
+
+    console.log('[OpenCode Diagnostics] === End Environment Check ===');
   }
 
   /**
@@ -432,6 +610,10 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         // Also expose as NODE_BIN_PATH so agent can use it in bash commands
         env.NODE_BIN_PATH = bundledNode.binDir;
         console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
+
+        // Log the full PATH for debugging (truncated to avoid excessive log size)
+        const pathPreview = env.PATH.substring(0, 500) + (env.PATH.length > 500 ? '...' : '');
+        console.log('[OpenCode CLI] Full PATH (first 500 chars):', pathPreview);
       }
 
       // For packaged apps on macOS, also extend PATH to include common Node.js locations as fallback.
@@ -509,10 +691,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI] Using Ollama host from legacy settings:', selectedModel.baseUrl);
     }
 
-    // Set LiteLLM base URL if configured
+    // Set LiteLLM base URL if configured (for debugging/logging purposes)
     if (activeModel?.provider === 'litellm' && activeModel.baseUrl) {
-      env.LITELLM_BASE_URL = activeModel.baseUrl;
-      console.log('[OpenCode CLI] Using LiteLLM base URL:', activeModel.baseUrl);
+      console.log('[OpenCode CLI] LiteLLM active with base URL:', activeModel.baseUrl);
     }
 
     // Log config environment variable
@@ -538,6 +719,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const activeModel = getActiveProviderModel();
     const selectedModel = activeModel || getSelectedModel();
 
+    // Store the model ID for display name in progress events
+    this.currentModelId = selectedModel?.model || null;
+
     // OpenCode CLI uses: opencode run "message" --format json
     const args = [
       'run',
@@ -561,10 +745,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         args.push('--model', selectedModel.model);
       } else if (selectedModel.provider === 'ollama') {
         // Ollama models use format: ollama/model-name
-        args.push('--model', selectedModel.model);
+        const modelId = selectedModel.model.replace(/^ollama\//, '');
+        args.push('--model', `ollama/${modelId}`);
       } else if (selectedModel.provider === 'litellm') {
-        // LiteLLM models pass through directly
-        args.push('--model', selectedModel.model);
+        // LiteLLM models use format: litellm/model-name
+        const modelId = selectedModel.model.replace(/^litellm\//, '');
+        args.push('--model', `litellm/${modelId}`);
       } else {
         args.push('--model', selectedModel.model);
       }
@@ -602,7 +788,24 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       // Step start event
       case 'step_start':
         this.currentSessionId = message.part.sessionID;
-        this.emit('progress', { stage: 'init', message: 'Task started' });
+        // Emit 'connecting' stage with model display name
+        const modelDisplayName = this.currentModelId
+          ? getModelDisplayName(this.currentModelId)
+          : 'AI';
+        this.emit('progress', {
+          stage: 'connecting',
+          message: `Connecting to ${modelDisplayName}...`,
+          modelName: modelDisplayName,
+        });
+        // Start timer to transition to 'waiting' stage after 500ms if no tool received
+        if (this.waitingTransitionTimer) {
+          clearTimeout(this.waitingTransitionTimer);
+        }
+        this.waitingTransitionTimer = setTimeout(() => {
+          if (!this.hasReceivedFirstTool && !this.hasCompleted) {
+            this.emit('progress', { stage: 'waiting', message: 'Waiting for response...' });
+          }
+        }, 500);
         break;
 
       // Text content event
@@ -630,6 +833,22 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
         console.log('[OpenCode Adapter] Tool call:', toolName);
 
+        // Mark first tool received and cancel waiting transition timer
+        if (!this.hasReceivedFirstTool) {
+          this.hasReceivedFirstTool = true;
+          if (this.waitingTransitionTimer) {
+            clearTimeout(this.waitingTransitionTimer);
+            this.waitingTransitionTimer = null;
+          }
+        }
+
+        // COMPLETION ENFORCEMENT: Track complete_task tool calls
+        // Tool name may be prefixed with MCP server name (e.g., "complete-task_complete_task")
+        // so we use endsWith() for fuzzy matching
+        if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
+          this.completionEnforcer.handleCompleteTaskDetection(toolInput);
+        }
+
         this.emit('tool-use', toolName, toolInput);
         this.emit('progress', {
           stage: 'tool-use',
@@ -648,6 +867,20 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         const toolUseName = toolUseMessage.part.tool || 'unknown';
         const toolUseInput = toolUseMessage.part.state?.input;
         const toolUseOutput = toolUseMessage.part.state?.output || '';
+
+        // Mark first tool received and cancel waiting transition timer
+        if (!this.hasReceivedFirstTool) {
+          this.hasReceivedFirstTool = true;
+          if (this.waitingTransitionTimer) {
+            clearTimeout(this.waitingTransitionTimer);
+            this.waitingTransitionTimer = null;
+          }
+        }
+
+        // Track if complete_task was called (tool name may be prefixed with MCP server name)
+        if (toolUseName === 'complete_task' || toolUseName.endsWith('_complete_task')) {
+          this.completionEnforcer.handleCompleteTaskDetection(toolUseInput);
+        }
 
         // For models that don't emit text messages (like Gemini), emit the tool description
         // as a thinking message so users can see what the AI is doing
@@ -701,24 +934,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         break;
 
       // Step finish event
+      // COMPLETION ENFORCEMENT: Previously emitted 'complete' immediately on stop/end_turn.
+      // Now we delegate to CompletionEnforcer which may:
+      // - Return 'complete' if complete_task was called and verified
+      // - Return 'pending' if verification or continuation is needed (handled on process exit)
+      // - Return 'continue' if more tool calls are expected (reason='tool_use')
       case 'step_finish':
-        // Only complete if reason is 'stop' or 'end_turn' (final completion)
-        // 'tool_use' means there are more steps coming
-        if (message.part.reason === 'stop' || message.part.reason === 'end_turn') {
+        if (message.part.reason === 'error') {
+          if (!this.hasCompleted) {
+            this.hasCompleted = true;
+            this.emit('complete', {
+              status: 'error',
+              sessionId: this.currentSessionId || undefined,
+              error: 'Task failed',
+            });
+          }
+          break;
+        }
+
+        // Delegate to completion enforcer for stop/end_turn handling
+        const action = this.completionEnforcer.handleStepFinish(message.part.reason);
+        console.log(`[OpenCode Adapter] step_finish action: ${action}`);
+
+        if (action === 'complete' && !this.hasCompleted) {
           this.hasCompleted = true;
           this.emit('complete', {
             status: 'success',
             sessionId: this.currentSessionId || undefined,
           });
-        } else if (message.part.reason === 'error') {
-          this.hasCompleted = true;
-          this.emit('complete', {
-            status: 'error',
-            sessionId: this.currentSessionId || undefined,
-            error: 'Task failed',
-          });
         }
-        // 'tool_use' reason means agent is continuing, don't emit complete
+        // 'pending' and 'continue' - don't emit complete, let handleProcessExit handle it
         break;
 
       // Error event
@@ -758,30 +1003,175 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.emit('permission-request', permissionRequest);
   }
 
+  /**
+   * Escape a shell argument for safe execution.
+   */
+  private escapeShellArg(arg: string): string {
+    if (process.platform === 'win32') {
+      if (arg.includes(' ') || arg.includes('"')) {
+        return `"${arg.replace(/"/g, '""')}"`;
+      }
+      return arg;
+    } else {
+      const needsEscaping = ["'", ' ', '$', '`', '\\', '"', '\n'].some(c => arg.includes(c));
+      if (needsEscaping) {
+        return `'${arg.replace(/'/g, "'\\''")}'`;
+      }
+      return arg;
+    }
+  }
+
+  /**
+   * Build a shell command string with properly escaped arguments.
+   * On Windows, prepends & call operator for paths with spaces.
+   */
+  private buildShellCommand(command: string, args: string[]): string {
+    const escapedCommand = this.escapeShellArg(command);
+    const escapedArgs = args.map(arg => this.escapeShellArg(arg));
+
+    // On Windows, if the command path contains spaces (and is thus quoted),
+    // we need to prepend & call operator so PowerShell executes it as a command
+    // Without &, PowerShell treats "path with spaces" as a string literal
+    if (process.platform === 'win32' && escapedCommand.startsWith('"')) {
+      return ['&', escapedCommand, ...escapedArgs].join(' ');
+    }
+
+    return [escapedCommand, ...escapedArgs].join(' ');
+  }
+
+  /**
+   * COMPLETION ENFORCEMENT: Process exit handler
+   *
+   * When the CLI process exits with code 0 and we haven't already completed:
+   * 1. Delegate to CompletionEnforcer.handleProcessExit()
+   * 2. Enforcer checks if verification or continuation is pending
+   * 3. If so, it spawns a session resumption via callbacks
+   * 4. If not, it calls onComplete() to emit the 'complete' event
+   *
+   * This allows the enforcer to chain multiple CLI invocations (verification,
+   * continuation retries) while maintaining the same session context.
+   */
   private handleProcessExit(code: number | null): void {
+    // Clean up PTY process reference
+    this.ptyProcess = null;
+
+    // Handle interrupted tasks immediately (before completion enforcer)
+    // This ensures user interrupts are respected regardless of completion state
+    if (this.wasInterrupted && code === 0 && !this.hasCompleted) {
+      console.log('[OpenCode CLI] Task was interrupted by user');
+      this.hasCompleted = true;
+      this.emit('complete', {
+        status: 'interrupted',
+        sessionId: this.currentSessionId || undefined,
+      });
+      this.currentTaskId = null;
+      return;
+    }
+
+    // Delegate to completion enforcer for verification/continuation handling
+    if (code === 0 && !this.hasCompleted) {
+      this.completionEnforcer.handleProcessExit(code).catch((error) => {
+        console.error('[OpenCode Adapter] Completion enforcer error:', error);
+        this.hasCompleted = true;
+        this.emit('complete', {
+          status: 'error',
+          sessionId: this.currentSessionId || undefined,
+          error: `Failed to complete: ${error.message}`,
+        });
+      });
+      return; // Let completion enforcer handle next steps
+    }
+
     // Only emit complete/error if we haven't already received a result message
     if (!this.hasCompleted) {
-      if (this.wasInterrupted && code === 0) {
-        // User interrupted the task - emit interrupted status so they can continue
-        console.log('[OpenCode CLI] Task was interrupted by user');
-        this.emit('complete', {
-          status: 'interrupted',
-          sessionId: this.currentSessionId || undefined,
-        });
-      } else if (code === 0) {
-        // Normal exit without result message
-        this.emit('complete', {
-          status: 'success',
-          sessionId: this.currentSessionId || undefined,
-        });
-      } else if (code !== null) {
+      if (code !== null && code !== 0) {
         // Error exit
         this.emit('error', new Error(`OpenCode CLI exited with code ${code}`));
       }
     }
 
-    this.ptyProcess = null;
     this.currentTaskId = null;
+  }
+
+  /**
+   * Spawn a session resumption task with the given prompt.
+   * Used by CompletionEnforcer callbacks for continuation and verification.
+   *
+   * WHY SESSION RESUMPTION (not PTY write):
+   * - OpenCode CLI supports --session-id to continue an existing conversation
+   * - This preserves full context (previous messages, tool results, etc.)
+   * - PTY write would just inject text without proper message framing
+   * - Session resumption creates a clean new API call with the prompt as a user message
+   *
+   * The same session ID is reused, so verification/continuation prompts appear
+   * as natural follow-up messages in the conversation.
+   */
+  private async spawnSessionResumption(prompt: string): Promise<void> {
+    const sessionId = this.currentSessionId;
+    if (!sessionId) {
+      throw new Error('No session ID available for session resumption');
+    }
+
+    console.log(`[OpenCode Adapter] Starting session resumption with session ${sessionId}`);
+
+    // Reset stream parser for new process but preserve other state
+    this.streamParser.reset();
+
+    // Build args for resumption - reuse same model/settings
+    const config: TaskConfig = {
+      prompt,
+      sessionId: sessionId,
+      workingDirectory: this.lastWorkingDirectory,
+    };
+
+    const cliArgs = await this.buildCliArgs(config);
+
+    // Get the bundled CLI path
+    const { command, args: baseArgs } = getOpenCodeCliPath();
+    console.log('[OpenCode Adapter] Session resumption command:', command, [...baseArgs, ...cliArgs].join(' '));
+
+    // Build environment
+    const env = await this.buildEnvironment();
+
+    const allArgs = [...baseArgs, ...cliArgs];
+    const safeCwd = config.workingDirectory || app.getPath('temp');
+
+    // Start new PTY process for session resumption
+    const fullCommand = this.buildShellCommand(command, allArgs);
+
+    const shellCmd = this.getPlatformShell();
+    const shellArgs = this.getShellArgs(fullCommand);
+
+    this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
+      name: 'xterm-256color',
+      cols: 200,
+      rows: 30,
+      cwd: safeCwd,
+      env: env as { [key: string]: string },
+    });
+
+    // Set up event handlers for new process
+    this.ptyProcess.onData((data: string) => {
+      // Filter out ANSI escape codes and control characters for cleaner parsing
+      // Enhanced to handle Windows PowerShell sequences (cursor visibility, window titles)
+      const cleanData = data
+        .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences (added ? for DEC modes like cursor hide)
+        .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences with BEL terminator (window titles)
+        .replace(/\x1B\][^\x1B]*\x1B\\/g, '');    // OSC sequences with ST terminator
+      if (cleanData.trim()) {
+        // Truncate for console.log to avoid flooding terminal
+        const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+        console.log('[OpenCode CLI stdout]:', truncated);
+        // Send full data to debug panel
+        this.emit('debug', { type: 'stdout', message: cleanData });
+
+        this.streamParser.feed(cleanData);
+      }
+    });
+
+    this.ptyProcess.onExit(({ exitCode }) => {
+      this.handleProcessExit(exitCode);
+    });
   }
 
   private generateTaskId(): string {
