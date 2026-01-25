@@ -108,3 +108,22 @@ export interface SnapshotDiff {
 export type SnapshotResult =
   | { type: 'full'; content: string }
   | { type: 'diff'; content: string; unchangedRefs: string[] };
+
+/**
+ * Entry in session navigation history.
+ */
+export interface SessionHistoryEntry {
+  url: string;
+  title: string;
+  timestamp: number;
+  actionsTaken: string[];
+}
+
+/**
+ * Compact session summary for context.
+ */
+export interface SessionSummary {
+  history: string;  // "Page A → Page B → Page C"
+  pagesVisited: number;
+  navigationPatternHash?: string;
+}
