@@ -45,6 +45,8 @@ import {
   setAzureFoundryConfig,
   getLiteLLMConfig,
   setLiteLLMConfig,
+  getAppearance,
+  setAppearance,
 } from '../store/appSettings';
 import {
   getProviderSettings,
@@ -79,6 +81,7 @@ import type {
   OllamaConfig,
   AzureFoundryConfig,
   LiteLLMConfig,
+  Appearance,
 } from '@accomplish/shared';
 import { DEFAULT_PROVIDERS } from '@accomplish/shared';
 import {
@@ -100,6 +103,7 @@ import {
 const MAX_TEXT_LENGTH = 8000;
 const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai', 'azure-foundry', 'custom', 'bedrock', 'litellm']);
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
+const ALLOWED_APPEARANCES = new Set<Appearance>(['system', 'dark', 'light']);
 
 interface OllamaModel {
   id: string;
@@ -1786,6 +1790,22 @@ export function registerIPCHandlers(): void {
     // Broadcast the change to all renderer windows
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:debug-mode-changed', { enabled });
+    }
+  });
+
+  // Settings: Get appearance setting
+  handle('settings:appearance', async (_event: IpcMainInvokeEvent) => {
+    return getAppearance();
+  });
+
+  // Settings: Set appearance setting
+  handle('settings:set-appearance', async (_event: IpcMainInvokeEvent, appearance: Appearance) => {
+    if (typeof appearance !== 'string' || !ALLOWED_APPEARANCES.has(appearance)) {
+      throw new Error('Invalid appearance value');
+    }
+    setAppearance(appearance);
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('settings:appearance-changed', { appearance });
     }
   });
 

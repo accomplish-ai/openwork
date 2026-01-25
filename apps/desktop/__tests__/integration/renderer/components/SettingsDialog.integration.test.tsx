@@ -31,9 +31,11 @@ vi.mock('@/lib/analytics', () => ({
 // Create mock functions for accomplish API
 const mockGetApiKeys = vi.fn();
 const mockGetDebugMode = vi.fn();
+const mockGetAppearance = vi.fn();
 const mockGetVersion = vi.fn();
 const mockGetSelectedModel = vi.fn();
 const mockSetDebugMode = vi.fn();
+const mockSetAppearance = vi.fn();
 const mockSetSelectedModel = vi.fn();
 const mockAddApiKey = vi.fn();
 const mockRemoveApiKey = vi.fn();
@@ -43,10 +45,12 @@ const mockValidateApiKeyForProvider = vi.fn();
 const mockAccomplish = {
   getApiKeys: mockGetApiKeys,
   getDebugMode: mockGetDebugMode,
+  getAppearance: mockGetAppearance,
   getVersion: mockGetVersion,
   getSelectedModel: mockGetSelectedModel,
   getOllamaConfig: vi.fn().mockResolvedValue(null),
   setDebugMode: mockSetDebugMode,
+  setAppearance: mockSetAppearance,
   setSelectedModel: mockSetSelectedModel,
   addApiKey: mockAddApiKey,
   removeApiKey: mockRemoveApiKey,
@@ -133,9 +137,11 @@ describe('SettingsDialog Integration', () => {
     // Default mock implementations
     mockGetApiKeys.mockResolvedValue([]);
     mockGetDebugMode.mockResolvedValue(false);
+    mockGetAppearance.mockResolvedValue('system');
     mockGetVersion.mockResolvedValue('1.0.0');
     mockGetSelectedModel.mockResolvedValue({ provider: 'anthropic', model: 'anthropic/claude-opus-4-5' });
     mockSetDebugMode.mockResolvedValue(undefined);
+    mockSetAppearance.mockResolvedValue(undefined);
     mockSetSelectedModel.mockResolvedValue(undefined);
     mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
     mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
@@ -165,9 +171,9 @@ describe('SettingsDialog Integration', () => {
       // Arrange & Act
       render(<SettingsDialog {...defaultProps} />);
 
-      // Assert - new SettingsDialog uses "Set up Openwork" as title
+      // Assert - new SettingsDialog opens on Providers
       await waitFor(() => {
-        expect(screen.getByText('Set up Openwork')).toBeInTheDocument();
+        expect(screen.getByText('Providers')).toBeInTheDocument();
       });
     });
 

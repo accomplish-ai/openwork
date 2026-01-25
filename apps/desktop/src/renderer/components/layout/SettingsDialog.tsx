@@ -5,19 +5,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { analytics } from '@/lib/analytics';
 import { getAccomplish } from '@/lib/accomplish';
+import { applyTheme } from '@/lib/appearance';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { ProviderId, ConnectedProvider } from '@accomplish/shared';
+import type { ProviderId, ConnectedProvider, Appearance } from '@accomplish/shared';
 import { hasAnyReadyProvider, isProviderReady } from '@accomplish/shared';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
 import { GeneralSettings } from '@/components/settings/GeneralSettings';
 import { ProvidersSettings } from '@/components/settings/ProvidersSettings';
 import { SettingsNav } from '@/components/settings/SettingsNav';
-import {Check, InfoIcon} from "lucide-react";
+import {InfoIcon} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 
@@ -46,6 +47,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
 
   // Debug mode state - stored in appSettings, not providerSettings
   const [debugMode, setDebugModeState] = useState(false);
+  const [appearance, setAppearanceState] = useState<Appearance>('system');
   const accomplish = getAccomplish();
 
   // Refetch settings and debug mode when dialog opens
@@ -54,6 +56,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     refetch();
     // Load debug mode from appSettings (correct store)
     accomplish.getDebugMode().then(setDebugModeState);
+    accomplish.getAppearance().then(setAppearanceState);
   }, [open, refetch, accomplish]);
 
   // Auto-select active provider and expand grid if needed when dialog opens
@@ -78,20 +81,6 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       return () => clearTimeout(cleanUp);
     }
   }, [open]);
-
-  // Handle close attempt
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (!newOpen && settings) {
-      // Check if user is trying to close
-      if (!hasAnyReadyProvider(settings)) {
-        // No ready provider - show warning
-        setCloseWarning(true);
-        return;
-      }
-    }
-    setCloseWarning(false);
-    onOpenChange(newOpen);
-  }, [settings, onOpenChange]);
 
   // Handle provider selection
   const handleSelectProvider = useCallback(async (providerId: ProviderId) => {
@@ -164,6 +153,12 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     analytics.trackToggleDebugMode(newValue);
   }, [debugMode, accomplish]);
 
+  const handleAppearanceChange = useCallback(async (mode: Appearance) => {
+    await accomplish.setAppearance(mode);
+    setAppearanceState(mode);
+    applyTheme(mode);
+  }, [accomplish]);
+
   // Handle done button (close with validation)
   const handleDone = useCallback(() => {
     if (!settings) return;
@@ -206,8 +201,23 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     }
 
+    setCloseWarning(false);
     onOpenChange(false);
-  }, [settings, selectedProvider, onOpenChange, setActiveProvider]);
+  }, [settings, selectedProvider, onOpenChange, setActiveProvider, setCloseWarning]);
+
+  // Handle close attempt
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {
+      if (closeWarning) {
+        // User tried to close once, we can consider that as `Close anyway`
+        setCloseWarning(false);
+        onOpenChange(false);
+        return
+      }
+
+      handleDone()
+    }
+  }, [settings, onOpenChange, handleDone]);
 
   // Force close (dismiss warning)
   const handleForceClose = useCallback(() => {
@@ -219,7 +229,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     <AnimatePresence>
       {closeWarning && (
         <motion.div
-          className="rounded-lg border border-warning bg-warning/10 p-4 mb-4"
+          className="rounded-lg border border-warning bg-warning/10 p-4 mb-4 "
           variants={settingsVariants.fadeSlide}
           initial="initial"
           animate="animate"
@@ -252,7 +262,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
             <SettingsNav activeTab={activeTab} onTabChange={setActiveTab} />
             <div className="flex flex-1 flex-col h-[70vh]">
               <DialogHeader className="border-b border-border px-6 py-5">
-                <DialogTitle>Set up Openwork</DialogTitle>
+                <DialogTitle>Settings</DialogTitle>
               </DialogHeader>
               <div className="flex flex-1 items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -270,15 +280,16 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
         <div className="flex">
           <SettingsNav activeTab={activeTab} onTabChange={setActiveTab} />
           <div className="flex flex-1 flex-col h-[70vh]">
-            <DialogHeader className="border-b border-border px-6 py-5">
-              <DialogTitle>Settings</DialogTitle>
-            </DialogHeader>
-
-            <div className="flex-1 min-h-0 px-6 py-5 overflow-y-auto">
+            <div className="flex-1 min-h-0 px-8 py-5 overflow-y-scroll">
                 {activeTab === 'general' ? (
                   <>
                     {closeWarningContent}
-                    <GeneralSettings debugMode={debugMode} onToggleDebugMode={handleDebugToggle} />
+                    <GeneralSettings
+                      debugMode={debugMode}
+                      onToggleDebugMode={handleDebugToggle}
+                      appearance={appearance}
+                      onAppearanceChange={handleAppearanceChange}
+                    />
                   </>
                 ) : activeTab === 'providers' ? (
                   <>
@@ -295,15 +306,6 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   </>
                 ) : null}
               </div>
-
-            <div className="flex items-center justify-end border-t border-border px-6 py-4">
-              <Button
-                onClick={handleDone}
-                data-testid="settings-done-button">
-                <Check className='size-4' />
-                Done
-              </Button>
-            </div>
           </div>
         </div>
       </DialogContent>

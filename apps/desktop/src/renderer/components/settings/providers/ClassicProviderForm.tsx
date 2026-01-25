@@ -8,28 +8,10 @@ import {
   ModelSelector,
   ConnectButton,
   ConnectedControls,
-  ProviderFormHeader,
-  FormError,
 } from '../shared';
-
-// Import provider logos
-import anthropicLogo from '/assets/ai-logos/anthropic.svg';
-import openaiLogo from '/assets/ai-logos/openai.svg';
-import googleLogo from '/assets/ai-logos/google.svg';
-import xaiLogo from '/assets/ai-logos/xai.svg';
-import deepseekLogo from '/assets/ai-logos/deepseek.svg';
-import zaiLogo from '/assets/ai-logos/zai.svg';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
-const PROVIDER_LOGOS: Record<string, string> = {
-  anthropic: anthropicLogo,
-  openai: openaiLogo,
-  google: googleLogo,
-  xai: xaiLogo,
-  deepseek: deepseekLogo,
-  zai: zaiLogo,
-};
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/components/ui/field";
 
 interface ClassicProviderFormProps {
   providerId: ProviderId;
@@ -56,7 +38,6 @@ export function ClassicProviderForm({
   const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
   const models = providerConfig?.models.map(m => ({ id: m.fullId, name: m.displayName })) || [];
   const isConnected = connectedProvider?.connectionStatus === 'connected';
-  const logoSrc = PROVIDER_LOGOS[providerId];
 
   const handleConnect = async () => {
     if (!apiKey.trim()) {
@@ -108,66 +89,78 @@ export function ClassicProviderForm({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={logoSrc} providerName={meta.name} />
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-sm'>
+            Provider settings
+          </CardTitle>
+          <CardDescription>
+            Connect and select provider model
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {!isConnected ? (
+              <FieldGroup>
+                <FieldSet>
+                  <Field>
+                    <FieldLabel className='justify-between'>
+                      API Key
+                      {meta.helpUrl && (
+                          <a
+                              href={meta.helpUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-muted-foreground"
+                          >
+                            How can I find it?
+                          </a>
+                      )}
+                    </FieldLabel>
+                    <Input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="Enter API Key"
+                        disabled={connecting}
+                        data-testid="api-key-input"
+                    />
+                    <FieldError>{error}</FieldError>
+                  </Field>
 
-      {/* API Key Section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label>API Key</Label>
-          {meta.helpUrl && (
-            <a
-              href={meta.helpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-primary underline"
-            >
-              How can I find it?
-            </a>
-          )}
-        </div>
+                  <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
 
-          {!isConnected ? (
-            <div className='grid gap-2'>
-              <Input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter API Key"
-                disabled={connecting}
-                data-testid="api-key-input"
-              />
+                  </FieldSet>
+                </FieldGroup>
+            ) : (
+                <FieldGroup>
+                  <FieldSet>
+                    <Field>
+                      {/* Connected: Show masked key + Connected button + Model */}
+                      <Input
+                          type="text"
+                          value={(() => {
+                            const creds = connectedProvider?.credentials as ApiKeyCredentials | undefined;
+                            if (creds?.keyPrefix) return creds.keyPrefix;
+                            return 'API key saved (reconnect to see prefix)';
+                          })()}
+                          disabled
+                          data-testid="api-key-display"
+                      />
+                      </Field>
+                      {/* Model Selector */}
+                      <ModelSelector
+                          models={models}
+                          value={connectedProvider?.selectedModelId || null}
+                          onChange={onModelChange}
+                          error={showModelError && !connectedProvider?.selectedModelId}
+                      />
 
-              <FormError error={error} />
+                      <ConnectedControls onDisconnect={onDisconnect} />
+                  </FieldSet>
+                </FieldGroup>
 
-              <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
-            </div>
-          ) : (
-            <div className='grid gap-2'>
-              {/* Connected: Show masked key + Connected button + Model */}
-              <Input
-                type="text"
-                value={(() => {
-                  const creds = connectedProvider?.credentials as ApiKeyCredentials | undefined;
-                  if (creds?.keyPrefix) return creds.keyPrefix;
-                  return 'API key saved (reconnect to see prefix)';
-                })()}
-                disabled
-                data-testid="api-key-display"
-              />
-
-              {/* Model Selector */}
-              <ModelSelector
-                models={models}
-                value={connectedProvider?.selectedModelId || null}
-                onChange={onModelChange}
-                error={showModelError && !connectedProvider?.selectedModelId}
-              />
-
-              <ConnectedControls onDisconnect={onDisconnect} />
-            </div>
-          )}
-      </div>
-    </div>
+            )}
+        </CardContent>
+      </Card>
   );
 }

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { isRunningInElectron, getAccomplish } from './lib/accomplish';
 import { springs, variants } from './lib/animations';
 import { analytics } from './lib/analytics';
+import { initializeTheme } from './lib/appearance';
 
 // Pages
 import HomePage from './pages/Home';
@@ -44,6 +45,24 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [openLauncher]);
+
+  useEffect(() => {
+    if (!isRunningInElectron()) {
+      return undefined;
+    }
+
+    let cleanup: (() => void) | undefined;
+
+    const initialize = async () => {
+      cleanup = await initializeTheme();
+    };
+
+    void initialize();
+
+    return () => {
+      cleanup?.();
+    };
+  }, []);
 
   useEffect(() => {
     const checkStatus = async () => {

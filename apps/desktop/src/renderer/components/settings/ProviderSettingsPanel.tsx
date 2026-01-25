@@ -32,7 +32,7 @@ export function ProviderSettingsPanel({
 }: ProviderSettingsPanelProps) {
   const meta = PROVIDER_META[providerId];
 
-  // Render form content based on provider category
+  // Render form content based on the provider category
   const renderForm = () => {
     switch (meta.category) {
       case 'classic':

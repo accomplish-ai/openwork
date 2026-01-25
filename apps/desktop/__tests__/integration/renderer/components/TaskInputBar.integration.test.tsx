@@ -500,7 +500,7 @@ describe('TaskInputBar Integration', () => {
 
       // Assert
       const textarea = screen.getByRole('textbox');
-      expect(textarea.className).toContain('text-[20px]');
+      expect(textarea.className).toContain('text-xl');
     });
 
     it('should apply default text size when large prop is false', () => {

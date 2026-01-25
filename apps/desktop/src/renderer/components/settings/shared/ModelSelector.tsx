@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {FieldError} from "@/components/ui/field";
 
 interface Model {
   id: string;
@@ -107,10 +108,11 @@ export function ModelSelector({
             ))}
           </SelectContent>
         </Select>
+
         {error && !value && (
-          <p className="text-sm text-destructive" data-testid="model-selector-error">
-            {errorMessage}
-          </p>
+            <FieldError>
+              {errorMessage}
+            </FieldError>
         )}
       </div>
     );

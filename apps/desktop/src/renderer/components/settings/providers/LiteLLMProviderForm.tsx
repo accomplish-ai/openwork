@@ -6,15 +6,11 @@ import {
   ModelSelector,
   ConnectButton,
   ConnectedControls,
-  ProviderFormHeader,
-  FormError,
 } from '../shared';
 import { getAccomplish } from '@/lib/accomplish';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
-// Import LiteLLM logo
-import litellmLogo from '/assets/ai-logos/litellm.svg';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from '@/components/ui/field';
 
 interface LiteLLMProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -94,75 +90,84 @@ export function LiteLLMProviderForm({
   const models = connectedProvider?.availableModels || [];
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={litellmLogo} providerName="LiteLLM" />
-
-      <div className="space-y-3">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Provider settings
+        </CardTitle>
+        <CardDescription>
+          Connect and select provider model
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         {!isConnected ? (
-          <div className="space-y-3">
-            <div className="grid gap-2">
-              <Label>Server URL</Label>
-              <Input
-                type="text"
-                value={serverUrl}
-                onChange={(e) => setServerUrl(e.target.value)}
-                placeholder="http://localhost:4000"
-                data-testid="litellm-server-url"
-              />
-            </div>
+          <FieldGroup>
+            <FieldSet>
+              <Field>
+                <FieldLabel>Server URL</FieldLabel>
+                <Input
+                  type="text"
+                  value={serverUrl}
+                  onChange={(e) => setServerUrl(e.target.value)}
+                  placeholder="http://localhost:4000"
+                  data-testid="litellm-server-url"
+                />
+              </Field>
 
-            <div className="grid gap-2">
-              <Label>
-                API Key <span className="text-muted-foreground">(Optional)</span>
-              </Label>
-              <Input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Optional API key"
-                data-testid="litellm-api-key"
-              />
-            </div>
+              <Field>
+                <FieldLabel>
+                  API Key <span className="text-muted-foreground">(Optional)</span>
+                </FieldLabel>
+                <Input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Optional API key"
+                  data-testid="litellm-api-key"
+                />
+              </Field>
 
-            <FormError error={error} />
-            <ConnectButton onClick={handleConnect} connecting={connecting} />
-          </div>
+              <Field>
+              <FieldError>{error}</FieldError>
+              <ConnectButton onClick={handleConnect} connecting={connecting} />
+            </Field>
+            </FieldSet>
+          </FieldGroup>
         ) : (
-          <div className="space-y-3">
-            {/* Display saved connection details */}
-            <div className="space-y-3">
-              <div className="grid gap-2">
-                <Label>Server URL</Label>
+          <FieldGroup>
+            <FieldSet>
+              <Field>
+                <FieldLabel>Server URL</FieldLabel>
                 <Input
                   type="text"
                   value={(connectedProvider?.credentials as LiteLLMCredentials)?.serverUrl || 'http://localhost:4000'}
                   disabled
                 />
-              </div>
+              </Field>
               {(connectedProvider?.credentials as LiteLLMCredentials)?.hasApiKey && (
-                <div className="grid gap-2">
-                  <Label>API Key</Label>
+                <Field>
+                  <FieldLabel>API Key</FieldLabel>
                   <Input
                     type="text"
                     value={(connectedProvider?.credentials as LiteLLMCredentials)?.keyPrefix || 'API key saved'}
                     disabled
                   />
-                </div>
+                </Field>
               )}
-            </div>
 
-            {/* Model Selector */}
-            <ModelSelector
-              models={models}
-              value={connectedProvider?.selectedModelId || null}
-              onChange={onModelChange}
-              error={showModelError && !connectedProvider?.selectedModelId}
-            />
-
-            <ConnectedControls onDisconnect={onDisconnect} />
-          </div>
+              <Field>
+              <ModelSelector
+                models={models}
+                value={connectedProvider?.selectedModelId || null}
+                onChange={onModelChange}
+                error={showModelError && !connectedProvider?.selectedModelId}
+              />
+              <ConnectedControls onDisconnect={onDisconnect} />
+            </Field>
+            </FieldSet>
+          </FieldGroup>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

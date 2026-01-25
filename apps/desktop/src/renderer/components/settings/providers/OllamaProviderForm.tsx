@@ -7,14 +7,10 @@ import {
   ModelSelector,
   ConnectButton,
   ConnectedControls,
-  ProviderFormHeader,
-  FormError,
 } from '../shared';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
-// Import Ollama logo
-import ollamaLogo from '/assets/ai-logos/ollama.svg';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from '@/components/ui/field';
 
 interface OllamaProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -81,50 +77,61 @@ export function OllamaProviderForm({
   const models = connectedProvider?.availableModels || availableModels;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={ollamaLogo} providerName="Ollama" />
-
-      <div className="space-y-3">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Provider settings
+        </CardTitle>
+        <CardDescription>
+          Connect and select provider model
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         {!isConnected ? (
-          <div className="space-y-3">
-            <div className="grid gap-2">
-              <Label>Ollama Server URL</Label>
-              <Input
-                type="text"
-                value={serverUrl}
-                onChange={(e) => setServerUrl(e.target.value)}
-                placeholder="http://localhost:11434"
-                data-testid="ollama-server-url"
-              />
-            </div>
+          <FieldGroup>
+            <FieldSet>
+              <Field>
+                <FieldLabel>Ollama Server URL</FieldLabel>
+                <Input
+                  type="text"
+                  value={serverUrl}
+                  onChange={(e) => setServerUrl(e.target.value)}
+                  placeholder="http://localhost:11434"
+                  data-testid="ollama-server-url"
+                />
+              </Field>
 
-            <FormError error={error} />
-            <ConnectButton onClick={handleConnect} connecting={connecting} />
-          </div>
+              <Field>
+                <FieldError>{error}</FieldError>
+                <ConnectButton onClick={handleConnect} connecting={connecting} />
+              </Field>
+            </FieldSet>
+          </FieldGroup>
         ) : (
-          <div className="space-y-3">
-            {/* Display saved server URL */}
-            <div className="grid gap-2">
-              <Label>Ollama Server URL</Label>
-              <Input
-                type="text"
-                value={(connectedProvider?.credentials as OllamaCredentials)?.serverUrl || 'http://localhost:11434'}
-                disabled
+          <FieldGroup>
+            <FieldSet>
+              <Field>
+                <FieldLabel>Ollama Server URL</FieldLabel>
+                <Input
+                  type="text"
+                  value={(connectedProvider?.credentials as OllamaCredentials)?.serverUrl || 'http://localhost:11434'}
+                  disabled
+                />
+              </Field>
+
+              <Field>
+              <ModelSelector
+                models={models}
+                value={connectedProvider?.selectedModelId || null}
+                onChange={onModelChange}
+                error={showModelError && !connectedProvider?.selectedModelId}
               />
-            </div>
-
-            {/* Model Selector */}
-            <ModelSelector
-              models={models}
-              value={connectedProvider?.selectedModelId || null}
-              onChange={onModelChange}
-              error={showModelError && !connectedProvider?.selectedModelId}
-            />
-
-            <ConnectedControls onDisconnect={onDisconnect} />
-          </div>
+              <ConnectedControls onDisconnect={onDisconnect} />
+            </Field>
+            </FieldSet>
+          </FieldGroup>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -8,14 +8,10 @@ import {
   ModelSelector,
   ConnectButton,
   ConnectedControls,
-  ProviderFormHeader,
-  FormError,
 } from '../shared';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
-// Import OpenRouter logo
-import openrouterLogo from '/assets/ai-logos/openrouter.svg';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 
 interface OpenRouterProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -105,64 +101,70 @@ export function OpenRouterProviderForm({
   const models = connectedProvider?.availableModels || availableModels;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={openrouterLogo} providerName="OpenRouter" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Provider settings
+        </CardTitle>
+        <CardDescription>
+          Connect and select provider model
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Field>
+          <FieldLabel className="justify-between">
+            API Key
+            {meta.helpUrl && (
+              <a
+                href={meta.helpUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground"
+              >
+                How can I find it?
+              </a>
+            )}
+          </FieldLabel>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label>API Key</Label>
-          {meta.helpUrl && (
-            <a
-              href={meta.helpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-primary underline"
-            >
-              How can I find it?
-            </a>
+          {!isConnected ? (
+            <Field>
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-or-..."
+                disabled={connecting}
+                data-testid="api-key-input"
+              />
+
+              <FieldError>{error}</FieldError>
+              <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
+            </Field>
+          ) : (
+            <Field>
+              <Input
+                type="text"
+                value={(() => {
+                  const creds = connectedProvider?.credentials as OpenRouterCredentials | undefined;
+                  if (creds?.keyPrefix) return creds.keyPrefix;
+                  return 'API key saved (reconnect to see prefix)';
+                })()}
+                disabled
+                data-testid="api-key-display"
+              />
+
+              <ModelSelector
+                models={models}
+                value={connectedProvider?.selectedModelId || null}
+                onChange={onModelChange}
+                error={showModelError && !connectedProvider?.selectedModelId}
+              />
+
+              <ConnectedControls onDisconnect={onDisconnect} />
+            </Field>
           )}
-        </div>
-
-        {!isConnected ? (
-          <div className="grid gap-2">
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-or-..."
-              disabled={connecting}
-              data-testid="api-key-input"
-            />
-
-            <FormError error={error} />
-            <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
-          </div>
-        ) : (
-          <div className="grid gap-2">
-            {/* Connected: Show masked key + Connected button + Model */}
-            <Input
-              type="text"
-              value={(() => {
-                const creds = connectedProvider?.credentials as OpenRouterCredentials | undefined;
-                if (creds?.keyPrefix) return creds.keyPrefix;
-                return 'API key saved (reconnect to see prefix)';
-              })()}
-              disabled
-              data-testid="api-key-display"
-            />
-
-            {/* Model Selector */}
-            <ModelSelector
-              models={models}
-              value={connectedProvider?.selectedModelId || null}
-              onChange={onModelChange}
-              error={showModelError && !connectedProvider?.selectedModelId}
-            />
-
-            <ConnectedControls onDisconnect={onDisconnect} />
-          </div>
-        )}
-      </div>
-    </div>
+        </Field>
+      </CardContent>
+    </Card>
   );
 }

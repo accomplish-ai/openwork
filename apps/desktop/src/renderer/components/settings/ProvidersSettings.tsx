@@ -3,6 +3,8 @@
 import type { ProviderId, ConnectedProvider, ProviderSettings } from '@accomplish/shared';
 import { ProviderList } from './ProviderList';
 import { ProviderSettingsPanel } from './ProviderSettingsPanel';
+import {Card, CardContent} from "@/components/ui/card";
+import {FieldDescription, FieldGroup, FieldLegend, FieldSet} from "@/components/ui/field";
 
 interface ProvidersSettingsProps {
   settings: ProviderSettings;
@@ -24,12 +26,19 @@ export function ProvidersSettings({
   showModelError,
 }: ProvidersSettingsProps) {
   return (
-    <div className="space-y-6">
-      <ProviderList
-        settings={settings}
-        selectedProvider={selectedProvider}
-        onSelectProvider={onSelectProvider}
-      />
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Providers</FieldLegend>
+          <FieldDescription>
+            Manage providers selection and configuration
+          </FieldDescription>
+        </FieldSet>
+
+        <ProviderList
+          settings={settings}
+          selectedProvider={selectedProvider}
+          onSelectProvider={onSelectProvider}
+        />
 
         {selectedProvider ? (
             <ProviderSettingsPanel
@@ -41,10 +50,12 @@ export function ProvidersSettings({
               showModelError={showModelError}
             />
         ) : (
-            <div className="rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-              Select a provider to view and manage its settings.
-            </div>
+            <Card>
+              <CardContent className='text-muted-foreground text-center'>
+                Select a provider to view and manage its settings.
+              </CardContent>
+            </Card>
         )}
-    </div>
+      </FieldGroup>
   );
 }

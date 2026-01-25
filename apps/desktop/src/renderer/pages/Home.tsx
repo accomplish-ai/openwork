@@ -174,8 +174,8 @@ export default function HomePage() {
           transition={{ ...springs.gentle, delay: 0.1 }}
           className="w-full"
         >
-          <Card className="w-full bg-card backdrop-blur-md gap-0 py-0 flex flex-col max-h-[calc(100vh-3rem)]">
-            <CardContent className="p-6 pb-4 shrink-0">
+          <Card className="w-full bg-card rounded-lg backdrop-blur-md gap-0 py-0 flex flex-col max-h-[calc(100vh-3rem)]">
+            <CardContent className="px-4 py-4 pb-4 shrink-0">
               {/* Input Section */}
               <TaskInputBar
                 value={prompt}
