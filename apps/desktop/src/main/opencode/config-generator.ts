@@ -330,6 +330,7 @@ interface OpenCodeConfig {
   default_agent?: string;
   enabled_providers?: string[];
   permission?: string | Record<string, string | Record<string, string>>;
+  plugin?: string[];
   agent?: Record<string, AgentConfig>;
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, ProviderConfig>;
@@ -712,6 +713,11 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       '*': 'allow',
       todowrite: 'allow',
     },
+    // Load native plugin for todo enforcement - prevents premature task completion
+    // when todos are still pending or in_progress
+    plugin: [
+      path.join(skillsPath, 'todo-enforcer', 'src', 'index.ts'),
+    ],
     provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
