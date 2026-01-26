@@ -242,7 +242,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="settings-dialog">
           <DialogHeader>
-            <DialogTitle>Set up Openwork</DialogTitle>
+            <DialogTitle>Set up Openwork -</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -256,7 +256,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="settings-dialog">
         <DialogHeader>
-          <DialogTitle>Set up Openwork</DialogTitle>
+          <DialogTitle>Set up Openwork -</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
