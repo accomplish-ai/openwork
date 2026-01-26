@@ -57,7 +57,7 @@ function getBundledTsxPath(): string {
   return path.join(app.getAppPath(), tsxRelativePath);
 }
 
-function getMcpEnvironment(): NodeJS.ProcessEnv {
+function getMcpEnvironment(): Record<string, string> {
   const bundledPaths = getBundledNodePaths();
   if (!bundledPaths) {
     return {};
