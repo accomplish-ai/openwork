@@ -1,6 +1,7 @@
 // apps/desktop/src/renderer/components/settings/providers/OllamaProviderForm.tsx
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -31,6 +32,7 @@ export function OllamaProviderForm({
   onModelChange,
   showModelError,
 }: OllamaProviderFormProps) {
+  const { t } = useTranslation('settings');
   const [serverUrl, setServerUrl] = useState('http://localhost:11434');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function OllamaProviderForm({
       const result = await accomplish.testOllamaConnection(serverUrl);
 
       if (!result.success) {
-        setError(result.error || 'Connection failed');
+        setError(result.error || t('status.connectionFailed'));
         setConnecting(false);
         return;
       }
@@ -72,7 +74,7 @@ export function OllamaProviderForm({
 
       onConnect(provider);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      setError(err instanceof Error ? err.message : t('status.connectionFailed'));
     } finally {
       setConnecting(false);
     }
@@ -82,7 +84,7 @@ export function OllamaProviderForm({
 
   return (
     <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={ollamaLogo} providerName="Ollama" />
+      <ProviderFormHeader logoSrc={ollamaLogo} providerName={t('providers.ollama')} />
 
       <div className="space-y-3">
         <AnimatePresence mode="wait">
@@ -97,7 +99,7 @@ export function OllamaProviderForm({
               className="space-y-3"
             >
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Ollama Server URL</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">{t('ollama.serverUrl')}</label>
                 <input
                   type="text"
                   value={serverUrl}
@@ -123,7 +125,7 @@ export function OllamaProviderForm({
             >
               {/* Display saved server URL */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Ollama Server URL</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">{t('ollama.serverUrl')}</label>
                 <input
                   type="text"
                   value={(connectedProvider?.credentials as OllamaCredentials)?.serverUrl || 'http://localhost:11434'}

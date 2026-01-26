@@ -3,6 +3,9 @@
 import type { SelectedModel, OllamaConfig, LiteLLMConfig, AzureFoundryConfig } from '@accomplish/shared';
 import { getDatabase } from '../db';
 
+/** Supported UI languages */
+export type UILanguage = 'en' | 'zh-CN' | 'auto';
+
 interface AppSettingsRow {
   id: number;
   debug_mode: number;
@@ -11,6 +14,7 @@ interface AppSettingsRow {
   ollama_config: string | null;
   litellm_config: string | null;
   azure_foundry_config: string | null;
+  language: string;
 }
 
 interface AppSettings {
@@ -20,6 +24,7 @@ interface AppSettings {
   ollamaConfig: OllamaConfig | null;
   litellmConfig: LiteLLMConfig | null;
   azureFoundryConfig: AzureFoundryConfig | null;
+  language: UILanguage;
 }
 
 function getRow(): AppSettingsRow {
@@ -115,6 +120,21 @@ export function setAzureFoundryConfig(config: AzureFoundryConfig | null): void {
   );
 }
 
+export function getLanguage(): UILanguage {
+  const row = getRow();
+  const lang = row.language;
+  // Validate that it's a valid UILanguage
+  if (lang === 'en' || lang === 'zh-CN' || lang === 'auto') {
+    return lang;
+  }
+  return 'auto';
+}
+
+export function setLanguage(language: UILanguage): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET language = ? WHERE id = 1').run(language);
+}
+
 function safeParseJson<T>(json: string | null): T | null {
   if (!json) return null;
   try {
@@ -126,6 +146,8 @@ function safeParseJson<T>(json: string | null): T | null {
 
 export function getAppSettings(): AppSettings {
   const row = getRow();
+  const lang = row.language;
+  const validLang: UILanguage = (lang === 'en' || lang === 'zh-CN' || lang === 'auto') ? lang : 'auto';
   return {
     debugMode: row.debug_mode === 1,
     onboardingComplete: row.onboarding_complete === 1,
@@ -133,6 +155,7 @@ export function getAppSettings(): AppSettings {
     ollamaConfig: safeParseJson<OllamaConfig>(row.ollama_config),
     litellmConfig: safeParseJson<LiteLLMConfig>(row.litellm_config),
     azureFoundryConfig: safeParseJson<AzureFoundryConfig>(row.azure_foundry_config),
+    language: validLang,
   };
 }
 
@@ -145,7 +168,8 @@ export function clearAppSettings(): void {
       selected_model = NULL,
       ollama_config = NULL,
       litellm_config = NULL,
-      azure_foundry_config = NULL
+      azure_foundry_config = NULL,
+      language = 'auto'
     WHERE id = 1`
   ).run();
 }
