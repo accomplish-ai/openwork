@@ -1,6 +1,6 @@
 // apps/desktop/src/main/store/repositories/taskHistory.ts
 
-import type { Task, TaskMessage, TaskStatus, TaskAttachment } from '@accomplish/shared';
+import type { Task, TaskMessage, TaskResult, TaskStatus, TaskAttachment } from '@accomplish/shared';
 import { getDatabase } from '../db';
 
 export interface StoredTask {
@@ -13,6 +13,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  result?: TaskResult;
 }
 
 interface TaskRow {
@@ -24,6 +25,7 @@ interface TaskRow {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  result: string | null;
 }
 
 interface MessageRow {
@@ -97,6 +99,7 @@ function rowToTask(row: TaskRow): StoredTask {
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
     messages: getMessagesForTask(row.id),
+    result: row.result ? JSON.parse(row.result) : undefined,
   };
 }
 
@@ -125,8 +128,8 @@ export function saveTask(task: Task): void {
     // Upsert task
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        (id, prompt, summary, status, session_id, created_at, started_at, completed_at, result)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       task.id,
       task.prompt,
@@ -135,7 +138,8 @@ export function saveTask(task: Task): void {
       task.sessionId || null,
       task.createdAt,
       task.startedAt || null,
-      task.completedAt || null
+      task.completedAt || null,
+      task.result ? JSON.stringify(task.result) : null
     );
 
     // Delete existing messages and attachments (cascade handles attachments)

@@ -208,6 +208,8 @@ export default function ExecutionPage() {
     startupStageTaskId,
     todos,
     todosTaskId,
+    openSettings,
+    retryTask,
   } = useTaskStore();
 
   // Debounced scroll function
@@ -1178,12 +1180,54 @@ export default function ExecutionPage() {
       {/* Completed/Failed state (no session to continue) */}
       {isComplete && !canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
-          </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          {currentTask.result?.errorCode === 'MODEL_NO_TOOLS' ? (
+            <>
+              <div className="flex items-center justify-center gap-2 text-amber-500 mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">Model Not Compatible</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                The selected model doesn't support tool use. Please switch to a compatible model like llama3.2, qwen2.5, or mistral.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => openSettings()}>
+                  Change Model
+                </Button>
+                <Button onClick={() => retryTask()}>
+                  <Play className="h-4 w-4 mr-1" />
+                  Retry Task
+                </Button>
+              </div>
+            </>
+          ) : currentTask.result?.errorCode === 'INSUFFICIENT_CREDITS' ? (
+            <>
+              <div className="flex items-center justify-center gap-2 text-amber-500 mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">Insufficient Credits</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                You don't have enough credits for this request. Add credits to your provider account or try a different model.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => openSettings()}>
+                  Change Model
+                </Button>
+                <Button onClick={() => retryTask()}>
+                  <Play className="h-4 w-4 mr-1" />
+                  Retry Task
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-3">
+                Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
+              </p>
+              <Button onClick={() => navigate('/')}>
+                Start New Task
+              </Button>
+            </>
+          )}
         </div>
       )}
 
@@ -1191,9 +1235,22 @@ export default function ExecutionPage() {
       {debugModeEnabled && (
         <div className="flex-shrink-0 border-t border-border" data-testid="debug-panel">
           {/* Toggle header */}
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => setDebugPanelOpen(!debugPanelOpen)}
-            className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors"
+            onKeyDown={(e) => {
+              // Only handle if the event originated from this element, not child buttons
+              // This prevents hijacking key events from Export/Clear buttons
+              if (e.currentTarget !== e.target) {
+                return;
+              }
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setDebugPanelOpen(!debugPanelOpen);
+              }
+            }}
+            className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Bug className="h-4 w-4" />
@@ -1243,7 +1300,7 @@ export default function ExecutionPage() {
                 <ChevronUp className="h-4 w-4 text-zinc-500" />
               )}
             </div>
-          </button>
+          </div>
 
           {/* Collapsible panel content */}
           <AnimatePresence>

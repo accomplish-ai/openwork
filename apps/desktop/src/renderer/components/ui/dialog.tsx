@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -89,6 +89,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"
+        aria-describedby={undefined}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         {...props}
       >

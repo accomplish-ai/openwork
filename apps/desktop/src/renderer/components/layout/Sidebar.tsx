@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/taskStore';
@@ -16,8 +16,7 @@ import logoImage from '/assets/logo-1.png';
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const [showSettings, setShowSettings] = useState(false);
-  const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher } = useTaskStore();
+  const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher, isSettingsOpen, openSettings, closeSettings } = useTaskStore();
   const accomplish = getAccomplish();
 
   useEffect(() => {
@@ -122,7 +121,7 @@ export default function Sidebar() {
             size="icon"
             onClick={() => {
               analytics.trackOpenSettings();
-              setShowSettings(true);
+              openSettings();
             }}
             title="Settings"
           >
@@ -131,7 +130,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={(open) => open ? openSettings() : closeSettings()} />
     </>
   );
 }

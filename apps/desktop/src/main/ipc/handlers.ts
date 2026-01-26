@@ -58,6 +58,7 @@ import {
   setProviderDebugMode,
   getProviderDebugMode,
   hasReadyProvider,
+  getActiveProviderModel,
 } from '../store/providerSettings';
 import type { ProviderId, ConnectedProvider, BedrockCredentials } from '@accomplish/shared';
 import { getDesktopConfig } from '../config';
@@ -71,6 +72,7 @@ import {
   isQuestionRequest,
 } from '../permission-api';
 import type {
+  Task,
   TaskConfig,
   PermissionResponse,
   OpenCodeMessage,
@@ -126,6 +128,59 @@ async function fetchWithTimeout(
     return response;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+// Timeout for quick tool support validation (should be fast)
+const TOOL_VALIDATION_TIMEOUT_MS = 5000;
+
+/**
+ * Validate that an Ollama model supports tool use by making a minimal API call.
+ * This is a pre-flight check to fail fast before spawning OpenCode CLI.
+ * Returns null if valid, or an error object if the model doesn't support tools.
+ */
+async function validateOllamaToolSupport(
+  baseUrl: string,
+  modelId: string
+): Promise<{ error: string; code: string } | null> {
+  try {
+    const response = await fetchWithTimeout(
+      `${baseUrl}/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [{ role: 'user', content: 'test' }],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'test_tool',
+              description: 'Test tool for validation',
+              parameters: { type: 'object', properties: {} },
+            },
+          }],
+          max_tokens: 1,
+        }),
+      },
+      TOOL_VALIDATION_TIMEOUT_MS
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      if (text.includes('does not support tools')) {
+        return {
+          error: `The selected model (${modelId}) does not support tool use. Please switch to a compatible model like llama3.2, qwen2.5, or mistral.`,
+          code: 'MODEL_NO_TOOLS',
+        };
+      }
+    }
+
+    return null; // Model supports tools
+  } catch (err) {
+    // Network errors or timeouts - let the task proceed and fail later with more context
+    console.warn('[ToolValidation] Pre-flight check failed, proceeding anyway:', err);
+    return null;
   }
 }
 
@@ -324,7 +379,42 @@ export function registerIPCHandlers(): void {
       permissionApiInitialized = true;
     }
 
-    const taskId = createTaskId();
+    const taskId = validatedConfig.taskId || createTaskId();
+
+    // Pre-flight validation for Ollama models: check tool support before spawning OpenCode
+    // This creates a failed task immediately so users can see the error and retry
+    if (!isMockTaskEventsEnabled()) {
+      const activeModel = getActiveProviderModel();
+      if (activeModel?.provider === 'ollama' && activeModel.baseUrl) {
+        const modelId = activeModel.model.replace(/^ollama\//, '');
+        const validationError = await validateOllamaToolSupport(activeModel.baseUrl, modelId);
+        if (validationError) {
+          // Create a failed task so user navigates to Execution page and sees the error
+          const now = new Date().toISOString();
+          const failedTask: Task = {
+            id: taskId,
+            prompt: validatedConfig.prompt,
+            status: 'failed',
+            messages: [{
+              id: createMessageId(),
+              type: 'user',
+              content: validatedConfig.prompt,
+              timestamp: now,
+            }],
+            createdAt: now,
+            startedAt: now,
+            completedAt: now,
+            result: {
+              status: 'error',
+              error: validationError.error,
+              errorCode: validationError.code,
+            },
+          };
+          saveTask(failedTask);
+          return failedTask;
+        }
+      }
+    }
 
     // E2E Mock Mode: Return mock task and emit simulated events
     if (isMockTaskEventsEnabled()) {

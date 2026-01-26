@@ -999,10 +999,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       // Error event
       case 'error':
         this.hasCompleted = true;
+        const errorInfo = this.extractErrorInfo(message.error);
         this.emit('complete', {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
-          error: message.error,
+          error: errorInfo.message,
+          errorCode: errorInfo.code,
         });
         break;
 
@@ -1214,6 +1216,57 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private generateRequestId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  }
+
+  /**
+   * Extract error message and code from various error formats
+   */
+  private extractErrorInfo(error: unknown): { message: string; code?: string } {
+    // Handle string errors
+    if (typeof error === 'string') {
+      if (error.includes('does not support tools')) {
+        return {
+          message: error,
+          code: 'MODEL_NO_TOOLS',
+        };
+      }
+      if (error.includes('requires more credits') || error.includes('can only afford')) {
+        return {
+          message: error,
+          code: 'INSUFFICIENT_CREDITS',
+        };
+      }
+      return { message: error };
+    }
+
+    // Handle API error objects from OpenCode CLI
+    if (typeof error === 'object' && error !== null) {
+      const apiError = error as {
+        name?: string;
+        data?: { message?: string; statusCode?: number };
+      };
+      const errorMessage = apiError.data?.message || apiError.name || 'Unknown error';
+      const statusCode = apiError.data?.statusCode;
+
+      if (errorMessage.includes('does not support tools')) {
+        return {
+          message: `The selected model does not support tool use. Please switch to a model that supports function calling (e.g., llama3.2, qwen2.5, mistral).`,
+          code: 'MODEL_NO_TOOLS',
+        };
+      }
+
+      // 402 Payment Required - insufficient credits
+      if (statusCode === 402 || errorMessage.includes('requires more credits') || errorMessage.includes('can only afford')) {
+        return {
+          message: `Insufficient credits for this request. Please add credits to your account or try a different model.`,
+          code: 'INSUFFICIENT_CREDITS',
+        };
+      }
+
+      return { message: errorMessage };
+    }
+
+    return { message: 'Unknown error occurred' };
   }
 
   /**
