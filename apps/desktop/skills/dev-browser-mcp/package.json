@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "playwright": "npm:rebrowser-playwright@^1.52.0"
+    "playwright": "npm:rebrowser-playwright@^1.52.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.0.0"
   },
   "devDependencies": {
     "vitest": "^1.0.0"

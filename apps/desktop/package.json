@@ -151,7 +151,8 @@
           "!**/.browser-data/**",
           "!**/bun.lock",
           "!**/*.test.ts",
-          "!**/vitest.config.ts"
+          "!**/vitest.config.ts",
+          "!dev-browser/node_modules/**"
         ]
       }
     ],

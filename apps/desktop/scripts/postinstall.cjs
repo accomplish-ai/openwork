@@ -83,8 +83,21 @@ if (isWindows) {
   runCommand('npx electron-rebuild', 'Running electron-rebuild');
 }
 
-// Skills are now part of the pnpm workspace, so no need to install separately
-// They are handled by the main pnpm install command
+// Install MCP server skill dependencies with npm to ensure proper node_modules (not pnpm symlinks).
+// This is critical for packaging - pnpm workspace creates symlinks to the pnpm store,
+// which break when electron-builder copies skills via extraResources.
+// Using npm creates real node_modules directories that work in the packaged app.
+//
+// Only install skills that are MCP servers AND don't have workspace:* dependencies.
+// Skills with workspace deps (like dev-browser) are handled by pnpm and use the shared workspace.
+const mcpSkills = ['dev-browser-mcp', 'file-permission', 'ask-user-question', 'complete-task'];
+console.log('\n> Installing MCP server skill dependencies (npm, not pnpm symlinks)...');
+for (const skill of mcpSkills) {
+  const skillPath = path.join(__dirname, '..', 'skills', skill);
+  if (fs.existsSync(path.join(skillPath, 'package.json'))) {
+    runCommand(`npm --prefix skills/${skill} install`, `Installing ${skill} dependencies`);
+  }
+}
 
 console.log('\n> Postinstall complete!');
 
