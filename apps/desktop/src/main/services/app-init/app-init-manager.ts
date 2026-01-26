@@ -24,6 +24,7 @@ export class AppInitManager extends EventEmitter {
   private health: SystemHealth;
   private autoRetryCount = 0;
   private focusListener: (() => void) | null = null;
+  private focusWindow: BrowserWindow | null = null;
 
   constructor() {
     super();
@@ -51,10 +52,8 @@ export class AppInitManager extends EventEmitter {
   }
 
   private getMCPEntryPath(mcpName: string): string {
-    if (app.isPackaged) {
-      return path.join(this.getSkillsDir(), mcpName, 'dist', 'index.mjs');
-    }
-    // Development: skills run from TypeScript source via tsx
+    // Skills are always TypeScript source files, run via `npx tsx` by OpenCode
+    // There is no build step that creates compiled JavaScript
     return path.join(this.getSkillsDir(), mcpName, 'src', 'index.ts');
   }
 
@@ -80,6 +79,8 @@ export class AppInitManager extends EventEmitter {
       this.health.overall = 'checking';
     } else {
       this.health.overall = 'healthy';
+      // Reset auto-retry counter when all checks pass
+      this.autoRetryCount = 0;
     }
   }
 
@@ -190,6 +191,7 @@ export class AppInitManager extends EventEmitter {
   setupAutoRetryOnFocus(window: BrowserWindow): void {
     if (this.focusListener) return;
 
+    this.focusWindow = window;
     this.focusListener = () => {
       const hasFailures = this.health.components.some(c => c.status === 'failed');
       if (hasFailures && this.autoRetryCount < MAX_AUTO_RETRIES && !this.health.isChecking) {
@@ -203,9 +205,12 @@ export class AppInitManager extends EventEmitter {
   }
 
   dispose(): void {
-    if (this.focusListener) {
-      this.focusListener = null;
+    // Remove focus listener from window to prevent memory leak
+    if (this.focusListener && this.focusWindow && !this.focusWindow.isDestroyed()) {
+      this.focusWindow.off('focus', this.focusListener);
     }
+    this.focusListener = null;
+    this.focusWindow = null;
     this.removeAllListeners();
   }
 }

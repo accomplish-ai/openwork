@@ -232,7 +232,30 @@ jobs:
               exit 1
             }
 
-            $appPath = $extractDir
+            # NSIS installer extracts to $INSTDIR or similar subdirectory
+            # Find the actual app directory by looking for the resources folder
+            Write-Host "Extracted contents:"
+            Get-ChildItem $extractDir -Recurse -Depth 2 | ForEach-Object { Write-Host "  $($_.FullName)" }
+
+            # Look for resources directory which indicates the app root
+            $resourcesDir = Get-ChildItem -Path $extractDir -Filter "resources" -Directory -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+
+            if ($resourcesDir) {
+              # App root is the parent of resources
+              $appPath = $resourcesDir.Parent.FullName
+              Write-Host "Found app directory via resources: $appPath"
+            } else {
+              # Fallback: look for `$INSTDIR` directory (common NSIS extraction pattern)
+              $instDir = Get-ChildItem -Path $extractDir -Filter '$INSTDIR' -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($instDir) {
+                $appPath = $instDir.FullName
+                Write-Host "Found app directory via INSTDIR: $appPath"
+              } else {
+                # Last resort: use extracted directory itself
+                $appPath = $extractDir
+                Write-Host "Using extraction root as app path: $appPath"
+              }
+            }
           }
 
           Write-Host "Validating: $appPath"
