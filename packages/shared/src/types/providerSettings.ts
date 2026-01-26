@@ -87,6 +87,11 @@ export interface AzureFoundryCredentials {
   keyPrefix?: string; // Only for api-key auth
 }
 
+export interface OAuthCredentials {
+  type: 'oauth';
+  oauthProvider: 'chatgpt';
+}
+
 export type ProviderCredentials =
   | ApiKeyCredentials
   | BedrockProviderCredentials
@@ -94,7 +99,8 @@ export type ProviderCredentials =
   | OpenRouterCredentials
   | LiteLLMCredentials
   | AzureFoundryCredentials
-  | LMStudioCredentials;
+  | LMStudioCredentials
+  | OAuthCredentials;
 
 /** Tool support status for a model */
 export type ToolSupportStatus = 'supported' | 'unsupported' | 'unknown';
