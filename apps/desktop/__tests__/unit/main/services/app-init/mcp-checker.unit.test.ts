@@ -8,6 +8,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock electron app
+const mockApp = {
+  isPackaged: true, // Default to packaged mode for testing spawn logic
+};
+
+vi.mock('electron', () => ({
+  app: mockApp,
+}));
+
 vi.mock('child_process', () => ({
   spawn: vi.fn(),
 }));
@@ -26,6 +35,7 @@ vi.mock('@main/utils/bundled-node', () => ({
 describe('MCPChecker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockApp.isPackaged = true; // Default to packaged mode for spawn tests
   });
 
   describe('checkMCPServer', () => {
@@ -75,6 +85,23 @@ describe('MCPChecker', () => {
       expect(result.status).toBe('failed');
       expect(result.error?.code).toBe('MCP_ENTRY_NOT_FOUND');
       expect(result.error?.debugInfo.expectedPath).toBe('/fake/missing.mjs');
+    });
+
+    it('returns healthy in dev mode when file exists (skips spawn)', async () => {
+      const fs = await import('fs');
+      const cp = await import('child_process');
+
+      mockApp.isPackaged = false; // Development mode
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      vi.resetModules();
+      const { checkMCPServer } = await import('@main/services/app-init/checkers/mcp-checker');
+      const result = await checkMCPServer('dev-browser-mcp', '/fake/src/index.ts');
+
+      expect(result.status).toBe('healthy');
+      expect(result.error).toBeNull();
+      // spawn should NOT be called in dev mode
+      expect(cp.spawn).not.toHaveBeenCalled();
     });
 
     it('returns failed with stderr when MCP crashes on startup', async () => {
