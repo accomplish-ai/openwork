@@ -241,6 +241,24 @@ const accomplishAPI = {
   // Export application logs
   exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
     ipcRenderer.invoke('logs:export'),
+
+  // System health
+  getSystemHealth: (): Promise<unknown> =>
+    ipcRenderer.invoke('system:health'),
+  retrySystemHealth: (): Promise<unknown> =>
+    ipcRenderer.invoke('system:health-retry'),
+
+  // Health status events
+  onHealthChanged: (callback: (health: unknown) => void) => {
+    const listener = (_: unknown, health: unknown) => callback(health);
+    ipcRenderer.on('system:health-changed', listener);
+    return () => ipcRenderer.removeListener('system:health-changed', listener);
+  },
+  onHealthProgress: (callback: (message: string) => void) => {
+    const listener = (_: unknown, message: string) => callback(message);
+    ipcRenderer.on('system:health-progress', listener);
+    return () => ipcRenderer.removeListener('system:health-progress', listener);
+  },
 };
 
 // Expose the API to the renderer

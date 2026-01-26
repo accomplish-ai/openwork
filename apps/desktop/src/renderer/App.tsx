@@ -14,6 +14,7 @@ import ExecutionPage from './pages/Execution';
 // Components
 import Sidebar from './components/layout/Sidebar';
 import { TaskLauncher } from './components/TaskLauncher';
+import { StatusBar } from './components/StatusBar';
 import { useTaskStore } from './stores/taskStore';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
@@ -139,6 +140,7 @@ export default function App() {
         </AnimatePresence>
       </main>
       <TaskLauncher />
+      {location.pathname === '/' && <StatusBar />}
     </div>
   );
 }

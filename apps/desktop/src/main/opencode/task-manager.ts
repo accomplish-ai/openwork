@@ -6,6 +6,7 @@
  * isolated PTY process, state, and event handling.
  */
 
+import { app } from 'electron';
 import { OpenCodeAdapter, isOpenCodeCliInstalled, OpenCodeCliNotFoundError } from './adapter';
 import { getSkillsPath } from './config-generator';
 import { getNpxPath, getBundledNodePaths } from '../utils/bundled-node';
@@ -220,7 +221,6 @@ async function ensureDevBrowserServer(
   // Now start the server
   try {
     const skillsPath = getSkillsPath();
-    const serverScript = path.join(skillsPath, 'dev-browser', 'server.cjs');
     const serverCwd = path.join(skillsPath, 'dev-browser');
 
     // Build environment with bundled Node.js in PATH
@@ -235,7 +235,24 @@ async function ensureDevBrowserServer(
     // Get node executable path
     const nodeExe = bundledPaths?.nodePath || 'node';
 
+    // Choose server script based on environment:
+    // - Packaged app: use pre-bundled server-launcher.cjs
+    // - Development: use server.cjs which runs tsx
+    let serverScript: string;
+    let serverArgs: string[];
+
+    if (app.isPackaged) {
+      // In packaged app, use the bundled launcher that runs pre-compiled JavaScript
+      serverScript = path.join(skillsPath, 'dev-browser', 'dist', 'server-launcher.cjs');
+      serverArgs = [serverScript];
+    } else {
+      // In development, use the original server.cjs that runs tsx
+      serverScript = path.join(skillsPath, 'dev-browser', 'server.cjs');
+      serverArgs = [serverScript];
+    }
+
     console.log('[TaskManager] ========== DEV-BROWSER SERVER STARTUP ==========');
+    console.log('[TaskManager] Is packaged:', app.isPackaged);
     console.log('[TaskManager] Node executable:', nodeExe);
     console.log('[TaskManager] Server script:', serverScript);
     console.log('[TaskManager] Working directory:', serverCwd);
@@ -243,14 +260,10 @@ async function ensureDevBrowserServer(
     console.log('[TaskManager] Script exists:', fs.existsSync(serverScript));
     console.log('[TaskManager] CWD exists:', fs.existsSync(serverCwd));
 
-    // Check if local tsx exists (for debugging)
-    const localTsxBin = path.join(serverCwd, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
-    console.log('[TaskManager] Local tsx.cmd exists:', fs.existsSync(localTsxBin));
-
     // Spawn server in background (detached, unref to not block)
     // windowsHide: true prevents a console window from appearing on Windows
     // Use 'pipe' for stdio to capture startup errors
-    const child = spawn(nodeExe, [serverScript], {
+    const child = spawn(nodeExe, serverArgs, {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: serverCwd,

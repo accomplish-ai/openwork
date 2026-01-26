@@ -442,9 +442,24 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 
   console.log('[OpenCode Config] Skills path:', skillsPath);
   console.log('[OpenCode Config] OpenCode config dir:', openCodeConfigDir);
+  console.log('[OpenCode Config] Is packaged:', app.isPackaged);
 
-  // Build file-permission MCP server command
-  const filePermissionServerPath = path.join(skillsPath, 'file-permission', 'src', 'index.ts');
+  /**
+   * Get MCP server command based on environment.
+   * - In development: use npx tsx to run TypeScript directly
+   * - In packaged app: use node to run pre-bundled CommonJS
+   */
+  function getMcpCommand(skillName: string): string[] {
+    if (app.isPackaged) {
+      // In packaged app, use pre-bundled CommonJS with node
+      const bundledPath = path.join(skillsPath, skillName, 'dist', 'index.cjs');
+      return ['node', bundledPath];
+    } else {
+      // In development, use npx tsx to run TypeScript
+      const srcPath = path.join(skillsPath, skillName, 'src', 'index.ts');
+      return ['npx', 'tsx', srcPath];
+    }
+  }
 
   // Get connected providers from new settings (with legacy fallback)
   const providerSettings = getProviderSettings();
@@ -750,11 +765,12 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
     },
     // MCP servers for additional tools
-    // Timeout set to 30000ms to handle slow npx startup on Windows
+    // In development: uses npx tsx (slower startup)
+    // In packaged app: uses pre-bundled JavaScript with node (fast startup)
     mcp: {
       'file-permission': {
         type: 'local',
-        command: ['npx', 'tsx', filePermissionServerPath],
+        command: getMcpCommand('file-permission'),
         enabled: true,
         environment: {
           PERMISSION_API_PORT: String(PERMISSION_API_PORT),
@@ -763,7 +779,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'ask-user-question': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'ask-user-question', 'src', 'index.ts')],
+        command: getMcpCommand('ask-user-question'),
         enabled: true,
         environment: {
           QUESTION_API_PORT: String(QUESTION_API_PORT),
@@ -772,14 +788,14 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'dev-browser-mcp': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
+        command: getMcpCommand('dev-browser-mcp'),
         enabled: true,
         timeout: 30000,
       },
       // Provides complete_task tool - agent must call to signal task completion
       'complete-task': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        command: getMcpCommand('complete-task'),
         enabled: true,
         timeout: 30000,
       },

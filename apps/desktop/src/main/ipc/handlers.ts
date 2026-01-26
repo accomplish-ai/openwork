@@ -8,6 +8,7 @@ import {
 } from '../opencode/adapter';
 import { getLogCollector } from '../logging';
 import { getAzureEntraToken } from '../opencode/azure-token-manager';
+import { getAppInitManager } from '../services/app-init';
 import {
   getTaskManager,
   disposeTaskManager,
@@ -1959,6 +1960,36 @@ export function registerIPCHandlers(): void {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, error: message };
     }
+  });
+
+  // System health
+  handle('system:health', async () => {
+    const manager = getAppInitManager();
+    return manager.getHealth();
+  });
+
+  handle('system:health-retry', async () => {
+    const manager = getAppInitManager();
+    return manager.retryFailed();
+  });
+
+  // Setup health event forwarding
+  const initManager = getAppInitManager();
+
+  initManager.on('health:changed', (health) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) {
+        win.webContents.send('system:health-changed', health);
+      }
+    });
+  });
+
+  initManager.on('health:progress', (message) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) {
+        win.webContents.send('system:health-progress', message);
+      }
+    });
   });
 }
 

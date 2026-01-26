@@ -321,49 +321,172 @@ jobs:
           path: apps/desktop/release/*.exe
           retention-days: 30
 
+  validate-mac-arm64:
+    name: Validate macOS (Apple Silicon)
+    needs: [version-bump, build-mac-arm64]
+    if: needs.build-mac-arm64.result == 'success'
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Openwork-macOS-arm64
+          path: ./build
+
+      - name: Extract and validate
+        run: |
+          set -e
+          DMG_PATH=$(find ./build -name "*-arm64.dmg" | head -1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "Error: No DMG found"
+            ls -la ./build/
+            exit 1
+          fi
+          echo "Mounting DMG: $DMG_PATH"
+          hdiutil attach "$DMG_PATH" -mountpoint /tmp/app-mount -nobrowse -quiet
+          APP_PATH=$(find /tmp/app-mount -name "*.app" -type d | head -1)
+          echo "Validating: $APP_PATH"
+          chmod +x ./apps/desktop/scripts/validate-package.sh
+          ./apps/desktop/scripts/validate-package.sh "$APP_PATH"
+          hdiutil detach /tmp/app-mount -quiet || true
+
+  validate-mac-x64:
+    name: Validate macOS (Intel)
+    needs: [version-bump, build-mac-x64]
+    if: needs.build-mac-x64.result == 'success'
+    runs-on: macos-15-large
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Openwork-macOS-x64
+          path: ./build
+
+      - name: Extract and validate
+        run: |
+          set -e
+          DMG_PATH=$(find ./build -name "*-x64.dmg" | head -1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "Error: No DMG found"
+            ls -la ./build/
+            exit 1
+          fi
+          echo "Mounting DMG: $DMG_PATH"
+          hdiutil attach "$DMG_PATH" -mountpoint /tmp/app-mount -nobrowse -quiet
+          APP_PATH=$(find /tmp/app-mount -name "*.app" -type d | head -1)
+          echo "Validating: $APP_PATH"
+          chmod +x ./apps/desktop/scripts/validate-package.sh
+          ./apps/desktop/scripts/validate-package.sh "$APP_PATH"
+          hdiutil detach /tmp/app-mount -quiet || true
+
+  validate-windows-x64:
+    name: Validate Windows (x64)
+    needs: [version-bump, build-windows-x64]
+    if: needs.build-windows-x64.result == 'success'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Openwork-Windows-x64
+          path: ./build
+
+      - name: Install and validate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installer = Get-ChildItem -Path ./build -Filter "*.exe" -File | Select-Object -First 1
+          if (-not $installer) {
+            Write-Host "Error: No installer found"
+            Get-ChildItem ./build
+            exit 1
+          }
+
+          # Run NSIS installer silently (7-Zip can't extract NSIS app files)
+          Write-Host "Running installer silently: $($installer.FullName)"
+          $installDir = "$env:TEMP\openwork-validation"
+          if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force }
+
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$installDir" -Wait -PassThru -NoNewWindow
+          if ($process.ExitCode -ne 0) {
+            Write-Host "Error: Installer failed with exit code $($process.ExitCode)"
+            exit 1
+          }
+
+          Write-Host "Installed to: $installDir"
+          Get-ChildItem $installDir | ForEach-Object { Write-Host "  $($_.Name)" }
+
+          Write-Host "Validating: $installDir"
+          & ./apps/desktop/scripts/validate-package.ps1 -AppPath $installDir
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
   create-release:
     name: Create GitHub Release
-    needs: [version-bump, build-mac-arm64, build-mac-x64, build-windows-x64]
+    needs: [version-bump, build-mac-arm64, build-mac-x64, build-windows-x64, validate-mac-arm64, validate-mac-x64, validate-windows-x64]
     if: always() && needs.version-bump.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Check build results
+      - name: Check build and validation results
         run: |
           PLATFORMS="${{ needs.version-bump.outputs.platforms }}"
-          MAC_ARM64="${{ needs.build-mac-arm64.result }}"
-          MAC_X64="${{ needs.build-mac-x64.result }}"
-          WIN_X64="${{ needs.build-windows-x64.result }}"
+          MAC_ARM64_BUILD="${{ needs.build-mac-arm64.result }}"
+          MAC_X64_BUILD="${{ needs.build-mac-x64.result }}"
+          WIN_X64_BUILD="${{ needs.build-windows-x64.result }}"
+          MAC_ARM64_VALIDATE="${{ needs.validate-mac-arm64.result }}"
+          MAC_X64_VALIDATE="${{ needs.validate-mac-x64.result }}"
+          WIN_X64_VALIDATE="${{ needs.validate-windows-x64.result }}"
 
           echo "Requested platforms: $PLATFORMS"
-          echo "Build results: macOS-arm64=$MAC_ARM64, macOS-x64=$MAC_X64, Windows-x64=$WIN_X64"
+          echo "Build results: macOS-arm64=$MAC_ARM64_BUILD, macOS-x64=$MAC_X64_BUILD, Windows-x64=$WIN_X64_BUILD"
+          echo "Validation results: macOS-arm64=$MAC_ARM64_VALIDATE, macOS-x64=$MAC_X64_VALIDATE, Windows-x64=$WIN_X64_VALIDATE"
 
-          # Validate all requested platform builds succeeded
           FAILED=0
 
           if [ "$PLATFORMS" == "all" ] || [ "$PLATFORMS" == "macos-only" ]; then
-            if [ "$MAC_ARM64" != "success" ]; then
-              echo "Error: macOS ARM64 build failed (result: $MAC_ARM64)"
+            if [ "$MAC_ARM64_BUILD" != "success" ]; then
+              echo "Error: macOS ARM64 build failed (result: $MAC_ARM64_BUILD)"
               FAILED=1
             fi
-            if [ "$MAC_X64" != "success" ]; then
-              echo "Error: macOS x64 build failed (result: $MAC_X64)"
+            if [ "$MAC_ARM64_VALIDATE" != "success" ]; then
+              echo "Error: macOS ARM64 validation failed (result: $MAC_ARM64_VALIDATE)"
+              FAILED=1
+            fi
+            if [ "$MAC_X64_BUILD" != "success" ]; then
+              echo "Error: macOS x64 build failed (result: $MAC_X64_BUILD)"
+              FAILED=1
+            fi
+            if [ "$MAC_X64_VALIDATE" != "success" ]; then
+              echo "Error: macOS x64 validation failed (result: $MAC_X64_VALIDATE)"
               FAILED=1
             fi
           fi
 
           if [ "$PLATFORMS" == "all" ] || [ "$PLATFORMS" == "windows-only" ]; then
-            if [ "$WIN_X64" != "success" ]; then
-              echo "Error: Windows x64 build failed (result: $WIN_X64)"
+            if [ "$WIN_X64_BUILD" != "success" ]; then
+              echo "Error: Windows x64 build failed (result: $WIN_X64_BUILD)"
+              FAILED=1
+            fi
+            if [ "$WIN_X64_VALIDATE" != "success" ]; then
+              echo "Error: Windows x64 validation failed (result: $WIN_X64_VALIDATE)"
               FAILED=1
             fi
           fi
 
           if [ $FAILED -eq 1 ]; then
-            echo "Error: One or more requested platform builds failed"
+            echo "Error: One or more builds or validations failed"
             exit 1
           fi
 
-          echo "All requested platform builds succeeded"
+          echo "All requested platform builds and validations succeeded"
 
       - name: Checkout code
         uses: actions/checkout@v4

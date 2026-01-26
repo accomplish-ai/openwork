@@ -144,6 +144,12 @@ interface AccomplishAPI {
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
 
+  // Health monitoring
+  getSystemHealth(): Promise<unknown>;
+  retrySystemHealth(): Promise<unknown>;
+  onHealthChanged?(callback: (health: unknown) => void): () => void;
+  onHealthProgress?(callback: (message: string) => void): () => void;
+
   // Logging
   logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;

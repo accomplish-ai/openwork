@@ -11,6 +11,7 @@ import { initializeDatabase, closeDatabase } from './store/db';
 import { FutureSchemaError } from './store/migrations/errors';
 import { stopAzureFoundryProxy } from './opencode/azure-foundry-proxy';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
+import { getAppInitManager, disposeAppInitManager } from './services/app-init';
 
 // Local UI - no longer uses remote URL
 
@@ -203,6 +204,13 @@ if (!gotTheLock) {
 
     createWindow();
 
+    // Initialize health checks (non-blocking background check)
+    const initManager = getAppInitManager();
+    initManager.runChecks();
+    if (mainWindow) {
+      initManager.setupAutoRetryOnFocus(mainWindow);
+    }
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
@@ -225,6 +233,8 @@ app.on('before-quit', () => {
   flushPendingTasks();
   // Dispose all active tasks and cleanup PTY processes
   disposeTaskManager();
+  // Dispose AppInitManager
+  disposeAppInitManager();
   // Stop Azure Foundry proxy server if running
   stopAzureFoundryProxy().catch((err) => {
     console.error('[Main] Failed to stop Azure Foundry proxy:', err);

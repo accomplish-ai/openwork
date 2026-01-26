@@ -1,0 +1,263 @@
+name: Validate Package
+
+on:
+  # Can be triggered manually for testing
+  workflow_dispatch:
+    inputs:
+      artifact_name:
+        description: 'Artifact name to validate'
+        required: false
+        type: choice
+        options:
+          - Openwork-macOS-arm64
+          - Openwork-macOS-x64
+          - Openwork-Windows-x64
+      run_id:
+        description: 'Run ID to download artifacts from (leave empty for latest release)'
+        required: false
+        type: string
+
+  # Can be called from other workflows
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version tag to validate'
+        required: true
+        type: string
+
+jobs:
+  validate-mac-arm64:
+    name: Validate macOS (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.ref }}
+
+      - name: Download artifact
+        if: inputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name || 'Openwork-macOS-arm64' }}
+          path: ./build
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download from latest release
+        if: inputs.run_id == '' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest release
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "Downloading from release: $LATEST_TAG"
+
+          # Download ARM64 assets
+          gh release download "$LATEST_TAG" --pattern '*-arm64.*' --dir ./build
+
+      - name: Extract and validate
+        run: |
+          set -e
+
+          # Find the app bundle or DMG
+          APP_PATH=""
+
+          # Check for .app directly
+          APP_PATH=$(find ./build -name "*.app" -type d | head -1)
+
+          # If not found, look for DMG and mount it
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found, looking for DMG..."
+            DMG_PATH=$(find ./build -name "*-arm64.dmg" | head -1)
+
+            if [ -z "$DMG_PATH" ]; then
+              echo "Error: No .app or DMG found in build directory"
+              ls -la ./build/
+              exit 1
+            fi
+
+            echo "Mounting DMG: $DMG_PATH"
+            hdiutil attach "$DMG_PATH" -mountpoint /tmp/app-mount -nobrowse -quiet
+            APP_PATH=$(find /tmp/app-mount -name "*.app" -type d | head -1)
+          fi
+
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Could not find .app bundle"
+            exit 1
+          fi
+
+          echo "Validating: $APP_PATH"
+          chmod +x ./apps/desktop/scripts/validate-package.sh
+          ./apps/desktop/scripts/validate-package.sh "$APP_PATH"
+
+          # Cleanup
+          if mountpoint -q /tmp/app-mount; then
+            hdiutil detach /tmp/app-mount -quiet || true
+          fi
+
+  validate-mac-x64:
+    name: Validate macOS (Intel)
+    runs-on: macos-15-large
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.ref }}
+
+      - name: Download artifact
+        if: inputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name || 'Openwork-macOS-x64' }}
+          path: ./build
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download from latest release
+        if: inputs.run_id == '' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest release
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "Downloading from release: $LATEST_TAG"
+
+          # Download x64 assets
+          gh release download "$LATEST_TAG" --pattern '*-x64.dmg' --dir ./build
+
+      - name: Extract and validate
+        run: |
+          set -e
+
+          # Find the app bundle or DMG
+          APP_PATH=""
+
+          # Check for .app directly
+          APP_PATH=$(find ./build -name "*.app" -type d | head -1)
+
+          # If not found, look for DMG and mount it
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found, looking for DMG..."
+            DMG_PATH=$(find ./build -name "*-x64.dmg" | head -1)
+
+            if [ -z "$DMG_PATH" ]; then
+              echo "Error: No .app or DMG found in build directory"
+              ls -la ./build/
+              exit 1
+            fi
+
+            echo "Mounting DMG: $DMG_PATH"
+            hdiutil attach "$DMG_PATH" -mountpoint /tmp/app-mount -nobrowse -quiet
+            APP_PATH=$(find /tmp/app-mount -name "*.app" -type d | head -1)
+          fi
+
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Could not find .app bundle"
+            exit 1
+          fi
+
+          echo "Validating: $APP_PATH"
+          chmod +x ./apps/desktop/scripts/validate-package.sh
+          ./apps/desktop/scripts/validate-package.sh "$APP_PATH"
+
+          # Cleanup
+          if mountpoint -q /tmp/app-mount; then
+            hdiutil detach /tmp/app-mount -quiet || true
+          fi
+
+  validate-windows-x64:
+    name: Validate Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.ref }}
+
+      - name: Download artifact
+        if: inputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name || 'Openwork-Windows-x64' }}
+          path: ./build
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download from latest release
+        if: inputs.run_id == '' && github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest release
+          $latestTag = gh release list --limit 1 --json tagName --jq '.[0].tagName'
+          Write-Host "Downloading from release: $latestTag"
+
+          # Download Windows assets
+          gh release download $latestTag --pattern '*.exe' --dir ./build
+
+      - name: Extract and validate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          # Find installer or unpacked directory
+          $unpackedDir = Get-ChildItem -Path ./build -Filter "*-unpacked" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          if ($unpackedDir) {
+            $appPath = $unpackedDir.FullName
+            Write-Host "Found unpacked directory: $appPath"
+          } else {
+            # Run NSIS installer silently to extract the app
+            # Note: 7-Zip cannot fully extract NSIS installers - it only gets metadata,
+            # not the actual app files which are embedded in compressed form.
+            $installer = Get-ChildItem -Path ./build -Filter "*.exe" -File | Select-Object -First 1
+
+            if (-not $installer) {
+              Write-Host "Error: No installer or unpacked directory found in build/"
+              Get-ChildItem ./build
+              exit 1
+            }
+
+            Write-Host "Running installer silently: $($installer.FullName)"
+
+            # Create installation directory
+            $installDir = "$env:TEMP\openwork-validation"
+            if (Test-Path $installDir) {
+              Remove-Item $installDir -Recurse -Force
+            }
+
+            # Run NSIS installer with:
+            # /S = Silent mode
+            # /D = Installation directory (must be last parameter, no quotes around path)
+            $process = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$installDir" -Wait -PassThru -NoNewWindow
+
+            if ($process.ExitCode -ne 0) {
+              Write-Host "Error: Installer failed with exit code $($process.ExitCode)"
+              exit 1
+            }
+
+            # Verify installation directory exists
+            if (-not (Test-Path $installDir)) {
+              Write-Host "Error: Installation directory not created"
+              Write-Host "Expected: $installDir"
+              exit 1
+            }
+
+            Write-Host "Installed to: $installDir"
+            Write-Host "Contents:"
+            Get-ChildItem $installDir | ForEach-Object { Write-Host "  $($_.Name)" }
+
+            $appPath = $installDir
+          }
+
+          Write-Host "Validating: $appPath"
+
+          # Run validation script
+          & ./apps/desktop/scripts/validate-package.ps1 -AppPath $appPath
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Error: Validation failed"
+            exit 1
+          }

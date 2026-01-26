@@ -57,6 +57,23 @@ const mockAccomplish = {
   validateApiKeyForProvider: vi.fn().mockResolvedValue({ valid: true }),
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
+  // System health methods
+  getSystemHealth: vi.fn().mockResolvedValue({
+    overall: 'healthy',
+    components: [],
+    lastFullCheck: Date.now(),
+    isChecking: false,
+    checkingComponent: null,
+  }),
+  retrySystemHealth: vi.fn().mockResolvedValue({
+    overall: 'healthy',
+    components: [],
+    lastFullCheck: Date.now(),
+    isChecking: false,
+    checkingComponent: null,
+  }),
+  onHealthChanged: vi.fn().mockReturnValue(() => {}),
+  onHealthProgress: vi.fn().mockReturnValue(() => {}),
 };
 
 // Mock the accomplish module - always return true for isRunningInElectron for most tests

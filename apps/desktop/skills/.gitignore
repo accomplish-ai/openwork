@@ -1,0 +1,7 @@
+# Dependencies (managed by pnpm)
+**/node_modules/
+
+# Browser profile data
+**/profiles/
+**/tmp/
+**/.browser-data/

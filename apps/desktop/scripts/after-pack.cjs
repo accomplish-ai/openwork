@@ -90,11 +90,72 @@ exports.default = async function afterPack(context) {
     await copyNodePtyPrebuilds(context, archName);
   }
 
+  // Copy playwright modules for dev-browser skill (symlinks aren't followed by extraResources)
+  await copyPlaywrightModules(context);
+
   // Re-sign macOS apps after modifying the bundle
   if (platformName === 'mac') {
     await resignMacApp(context);
   }
 };
+
+/**
+ * Copy playwright modules to the packaged app.
+ *
+ * pnpm uses symlinks to the central store, which aren't followed by electron-builder's
+ * extraResources. We need to dereference and copy the actual modules.
+ */
+async function copyPlaywrightModules(context) {
+  const { packager, appOutDir } = context;
+  const platformName = packager.platform.name;
+
+  // Determine destination path based on platform
+  let resourcesDir;
+  if (platformName === 'mac') {
+    const appName = packager.appInfo.productFilename;
+    resourcesDir = path.join(appOutDir, `${appName}.app`, 'Contents', 'Resources');
+  } else {
+    resourcesDir = path.join(appOutDir, 'resources');
+  }
+
+  const skillsNodeModules = path.join(resourcesDir, 'skills', 'dev-browser', 'node_modules');
+
+  // Source playwright from the dev-browser skill (follows symlinks)
+  const sourcePlaywright = path.join(__dirname, '..', 'skills', 'dev-browser', 'node_modules', 'playwright');
+
+  if (!fs.existsSync(sourcePlaywright)) {
+    console.log('[after-pack] Playwright not found in dev-browser skill, skipping');
+    return;
+  }
+
+  console.log('[after-pack] Copying playwright modules to packaged app...');
+
+  // Create node_modules directory in packaged skills
+  if (!fs.existsSync(skillsNodeModules)) {
+    fs.mkdirSync(skillsNodeModules, { recursive: true });
+  }
+
+  // Copy playwright (dereferencing symlinks with cp -RL)
+  const destPlaywright = path.join(skillsNodeModules, 'playwright');
+  try {
+    // Use cp -RL to dereference symlinks and copy actual files
+    execSync(`cp -RL "${sourcePlaywright}" "${destPlaywright}"`, { stdio: 'pipe' });
+    console.log('[after-pack]   Copied: playwright');
+
+    // Also need playwright-core which playwright depends on
+    const sourcePlaywrightCore = path.join(__dirname, '..', 'skills', 'dev-browser', 'node_modules', 'playwright-core');
+    if (fs.existsSync(sourcePlaywrightCore)) {
+      const destPlaywrightCore = path.join(skillsNodeModules, 'playwright-core');
+      execSync(`cp -RL "${sourcePlaywrightCore}" "${destPlaywrightCore}"`, { stdio: 'pipe' });
+      console.log('[after-pack]   Copied: playwright-core');
+    }
+
+    console.log('[after-pack] Successfully copied playwright modules');
+  } catch (err) {
+    console.error('[after-pack] Failed to copy playwright modules:', err.message);
+    throw err;
+  }
+}
 
 /**
  * Copy node-pty prebuilds to build/Release folder on Windows.
