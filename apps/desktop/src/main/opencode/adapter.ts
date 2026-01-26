@@ -68,6 +68,7 @@ export interface OpenCodeAdapterEvents {
   error: [Error];
   debug: [{ type: string; message: string; data?: unknown }];
   'todo:update': [TodoItem[]];
+  'auth-error': [{ providerId: string; message: string }];
 }
 
 export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
@@ -154,6 +155,15 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
             message: error.message,
           },
         });
+
+        // Emit auth-error event if this is an authentication error
+        if (error.isAuthError && error.providerID) {
+          console.log('[OpenCode Adapter] Emitting auth-error for provider:', error.providerID);
+          this.emit('auth-error', {
+            providerId: error.providerID,
+            message: errorMessage,
+          });
+        }
 
         this.hasCompleted = true;
         this.emit('complete', {

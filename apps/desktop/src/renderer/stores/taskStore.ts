@@ -60,6 +60,9 @@ interface TaskState {
   todos: TodoItem[];
   todosTaskId: string | null;
 
+  // Auth error (e.g., OAuth token expired)
+  authError: { providerId: string; message: string } | null;
+
   // Task launcher
   isLauncherOpen: boolean;
   openLauncher: () => void;
@@ -86,6 +89,8 @@ interface TaskState {
   reset: () => void;
   setTodos: (taskId: string, todos: TodoItem[]) => void;
   clearTodos: () => void;
+  setAuthError: (error: { providerId: string; message: string }) => void;
+  clearAuthError: () => void;
 }
 
 function createMessageId(): string {
@@ -105,6 +110,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   startupStageTaskId: null,
   todos: [],
   todosTaskId: null,
+  authError: null,
   isLauncherOpen: false,
 
   setSetupProgress: (taskId: string | null, message: string | null) => {
@@ -535,6 +541,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       startupStageTaskId: null,
       todos: [],
       todosTaskId: null,
+      authError: null,
       isLauncherOpen: false,
     });
   },
@@ -545,6 +552,14 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   clearTodos: () => {
     set({ todos: [], todosTaskId: null });
+  },
+
+  setAuthError: (error: { providerId: string; message: string }) => {
+    set({ authError: error });
+  },
+
+  clearAuthError: () => {
+    set({ authError: null });
   },
 
   openLauncher: () => set({ isLauncherOpen: true }),
@@ -615,5 +630,10 @@ if (typeof window !== 'undefined' && window.accomplish) {
   // Subscribe to todo updates
   window.accomplish.onTodoUpdate?.((data: { taskId: string; todos: TodoItem[] }) => {
     useTaskStore.getState().setTodos(data.taskId, data.todos);
+  });
+
+  // Subscribe to auth error events (e.g., OAuth token expired)
+  window.accomplish.onAuthError?.((data: { providerId: string; message: string }) => {
+    useTaskStore.getState().setAuthError(data);
   });
 }

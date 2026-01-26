@@ -269,6 +269,12 @@ const accomplishAPI = {
     ipcRenderer.on('todo:update', listener);
     return () => ipcRenderer.removeListener('todo:update', listener);
   },
+  // Auth error events (e.g., OAuth token expired)
+  onAuthError: (callback: (data: { providerId: string; message: string }) => void) => {
+    const listener = (_: unknown, data: { providerId: string; message: string }) => callback(data);
+    ipcRenderer.on('auth:error', listener);
+    return () => ipcRenderer.removeListener('auth:error', listener);
+  },
 
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>
     ipcRenderer.invoke('log:event', payload),

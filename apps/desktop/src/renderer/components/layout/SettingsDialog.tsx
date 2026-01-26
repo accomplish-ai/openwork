@@ -24,9 +24,10 @@ interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApiKeySaved?: () => void;
+  initialProvider?: ProviderId;
 }
 
-export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: SettingsDialogProps) {
+export default function SettingsDialog({ open, onOpenChange, onApiKeySaved, initialProvider }: SettingsDialogProps) {
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
@@ -55,18 +56,22 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     accomplish.getDebugMode().then(setDebugModeState);
   }, [open, refetch, accomplish]);
 
-  // Auto-select active provider and expand grid if needed when dialog opens
+  // Auto-select active provider (or initialProvider) and expand grid if needed when dialog opens
   useEffect(() => {
-    if (!open || loading || !settings?.activeProviderId) return;
+    if (!open || loading) return;
 
-    // Auto-select the active provider to show its connection details immediately
-    setSelectedProvider(settings.activeProviderId);
+    // Use initialProvider if provided, otherwise fall back to activeProviderId
+    const providerToSelect = initialProvider || settings?.activeProviderId;
+    if (!providerToSelect) return;
 
-    // Auto-expand grid if active provider is not in the first 4 visible providers
-    if (!FIRST_FOUR_PROVIDERS.includes(settings.activeProviderId)) {
+    // Auto-select the provider to show its connection details immediately
+    setSelectedProvider(providerToSelect);
+
+    // Auto-expand grid if selected provider is not in the first 4 visible providers
+    if (!FIRST_FOUR_PROVIDERS.includes(providerToSelect)) {
       setGridExpanded(true);
     }
-  }, [open, loading, settings?.activeProviderId]);
+  }, [open, loading, initialProvider, settings?.activeProviderId]);
 
   // Reset state when dialog closes
   useEffect(() => {

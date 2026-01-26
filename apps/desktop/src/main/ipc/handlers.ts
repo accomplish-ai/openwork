@@ -450,6 +450,11 @@ export function registerIPCHandlers(): void {
       onTodoUpdate: (todos: TodoItem[]) => {
         forwardToRenderer('todo:update', { taskId, todos });
       },
+
+      onAuthError: (error: { providerId: string; message: string }) => {
+        // Forward auth error to renderer so it can show re-login toast
+        forwardToRenderer('auth:error', error);
+      },
     };
 
     // Start the task via TaskManager (creates isolated adapter or queues if busy)
