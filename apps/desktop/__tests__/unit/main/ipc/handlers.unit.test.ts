@@ -81,8 +81,8 @@ vi.mock('electron', () => {
   };
 });
 
-// Mock opencode adapter
-vi.mock('@main/opencode/adapter', () => ({
+// Mock opencode CLI path utilities
+vi.mock('@main/opencode/cli-path', () => ({
   isOpenCodeCliInstalled: vi.fn(() => Promise.resolve(true)),
   getOpenCodeCliVersion: vi.fn(() => Promise.resolve('1.0.0')),
 }));
@@ -239,28 +239,6 @@ vi.mock('@main/config', () => ({
   getDesktopConfig: vi.fn(() => ({})),
 }));
 
-// Mock permission API
-let mockPendingPermissions = new Map<string, { resolve: Function }>();
-
-vi.mock('@main/permission-api', () => ({
-  startPermissionApiServer: vi.fn(),
-  startQuestionApiServer: vi.fn(),
-  initPermissionApi: vi.fn(),
-  resolvePermission: vi.fn((requestId: string, allowed: boolean) => {
-    const pending = mockPendingPermissions.get(requestId);
-    if (pending) {
-      pending.resolve(allowed);
-      mockPendingPermissions.delete(requestId);
-      return true;
-    }
-    return false;
-  }),
-  resolveQuestion: vi.fn(() => true),
-  isFilePermissionRequest: vi.fn((requestId: string) => requestId.startsWith('filereq_')),
-  isQuestionRequest: vi.fn((requestId: string) => requestId.startsWith('question_')),
-  QUESTION_API_PORT: 9227,
-}));
-
 // Import after mocks are set up
 import { registerIPCHandlers } from '@main/ipc/handlers';
 import { ipcMain, BrowserWindow, shell } from 'electron';
@@ -305,8 +283,6 @@ describe('IPC Handlers Integration', () => {
     mockDebugMode = false;
     mockOnboardingComplete = false;
     mockSelectedModel = null;
-    mockPendingPermissions.clear();
-
     // Reset task manager mocks
     mockTaskManager.startTask.mockReset();
     mockTaskManager.cancelTask.mockReset();
@@ -882,26 +858,6 @@ describe('IPC Handlers Integration', () => {
       expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(taskId, 'no');
     });
 
-    it('permission:respond should resolve file permission requests', async () => {
-      // Arrange
-      const requestId = 'filereq_123_abc';
-      const taskId = 'task_active';
-
-      // Simulate pending file permission
-      mockPendingPermissions.set(requestId, { resolve: vi.fn() });
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId,
-        taskId,
-        decision: 'allow',
-      });
-
-      // Assert
-      const { resolvePermission } = await import('@main/permission-api');
-      expect(resolvePermission).toHaveBeenCalledWith(requestId, true);
-    });
-
     it('permission:respond should skip response for inactive task', async () => {
       // Arrange
       const taskId = 'task_inactive';
@@ -1215,46 +1171,6 @@ describe('IPC Handlers Integration', () => {
       vi.useRealTimers();
     });
 
-    it('task:start should initialize permission API on first call', async () => {
-      // Arrange
-      const config = { prompt: 'Test task prompt' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_123',
-        prompt: 'Test task prompt',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('task:start', config);
-
-      // Assert
-      const { initPermissionApi, startPermissionApiServer } = await import('@main/permission-api');
-      expect(initPermissionApi).toHaveBeenCalled();
-      expect(startPermissionApiServer).toHaveBeenCalled();
-    });
-
-    it('task:start should only initialize permission API once', async () => {
-      // Arrange
-      const config = { prompt: 'Test task' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_1',
-        prompt: 'Test task',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act - start two tasks
-      await invokeHandler('task:start', config);
-      await invokeHandler('task:start', { prompt: 'Second task' });
-
-      // Assert - should only be called once
-      const { initPermissionApi } = await import('@main/permission-api');
-      expect(initPermissionApi).toHaveBeenCalledTimes(1);
-    });
-
     it('task:start should create initial user message', async () => {
       // Arrange
       const config = { prompt: 'My test prompt' };
@@ -1504,26 +1420,6 @@ describe('IPC Handlers Integration', () => {
       );
     });
 
-    it('permission:respond should log when file permission not found', async () => {
-      // Arrange
-      const taskId = 'task_notfound';
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-      // File permission request that is not in pending
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId: 'filereq_notfound',
-        taskId,
-        decision: 'allow',
-      });
-
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File permission request')
-      );
-      consoleSpy.mockRestore();
-    });
   });
 
   describe('Window Trust Validation', () => {

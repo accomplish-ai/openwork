@@ -41,12 +41,6 @@ vi.mock('electron', () => ({
   app: mockApp,
 }));
 
-// Mock permission-api module (internal but exports constants we need)
-vi.mock('@main/permission-api', () => ({
-  PERMISSION_API_PORT: 9999,
-  QUESTION_API_PORT: 9227,
-}));
-
 // Mock providerSettings (now uses SQLite which requires native module)
 vi.mock('@main/store/providerSettings', () => ({
   getProviderSettings: vi.fn(() => ({

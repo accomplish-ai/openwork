@@ -1,11 +1,7 @@
 /**
- * Custom postinstall script that handles Windows-specific node-pty build issues.
+ * Custom postinstall script that rebuilds native modules for Electron.
  *
- * On Windows, we skip electron-rebuild because:
- * 1. node-pty has prebuilt binaries that work with Electron's ABI
- * 2. Building from source has issues with batch file path handling and Spectre mitigation
- * 3. The pnpm patch creates paths that exceed Windows' 260 character limit
- *
+ * On Windows, we install Electron-compatible prebuilt binaries for better-sqlite3.
  * On macOS/Linux, we run electron-rebuild normally.
  */
 
@@ -31,7 +27,6 @@ function runCommand(command, description) {
 
 if (isWindows) {
   // On Windows, we need to install Electron-compatible prebuilt binaries for better-sqlite3
-  // node-pty has working prebuilt binaries, so we skip it
   console.log('\n> Windows: Installing Electron-compatible better-sqlite3 prebuild...');
 
   // Get the Electron version from package.json
@@ -65,21 +60,8 @@ if (isWindows) {
   } else {
     console.warn('> Warning: better-sqlite3 not found, skipping prebuild installation');
   }
-
-  // Verify node-pty prebuilds exist
-  const pnpmNodePty = findNodePty();
-  if (pnpmNodePty) {
-    const prebuildsPath = path.join(pnpmNodePty, 'prebuilds', 'win32-x64');
-    if (fs.existsSync(prebuildsPath)) {
-      console.log('> node-pty prebuilds found, setup complete');
-    } else {
-      console.error('> Error: node-pty prebuilds not found at', prebuildsPath);
-      console.error('> The app will not work correctly without prebuilds on Windows.');
-      process.exit(1);
-    }
-  }
 } else {
-  // On macOS/Linux, run electron-rebuild first (matches original behavior)
+  // On macOS/Linux, run electron-rebuild normally
   runCommand('npx electron-rebuild', 'Running electron-rebuild');
 }
 
@@ -87,10 +69,6 @@ if (isWindows) {
 // They are handled by the main pnpm install command
 
 console.log('\n> Postinstall complete!');
-
-function findNodePty() {
-  return findPackage('node-pty');
-}
 
 function findBetterSqlite3() {
   return findPackage('better-sqlite3');

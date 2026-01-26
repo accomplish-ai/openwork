@@ -40,7 +40,6 @@ try {
   const args = process.argv.slice(2).join(' ');
 
   // On Windows, skip native module rebuild (use prebuilt binaries)
-  // This avoids issues with node-pty's winpty.gyp batch file handling
   const npmRebuildFlag = isWindows ? ' --config.npmRebuild=false' : '';
 
   // Use npx to run electron-builder to ensure it's found in node_modules
