@@ -321,6 +321,7 @@ describe('appSettings Integration', () => {
         ollamaConfig: null,
         litellmConfig: null,
         azureFoundryConfig: null,
+        lmstudioConfig: null,
       });
     });
 
@@ -374,6 +375,7 @@ describe('appSettings Integration', () => {
         ollamaConfig: null,
         litellmConfig: null,
         azureFoundryConfig: null,
+        lmstudioConfig: null,
       });
     });
   });
