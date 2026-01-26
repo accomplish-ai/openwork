@@ -97,6 +97,7 @@
     "vitest": "^4.0.17"
   },
   "build": {
+    "npmRebuild": false,
     "appId": "ai.accomplish.desktop",
     "productName": "Openwork",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
