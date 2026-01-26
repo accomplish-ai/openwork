@@ -129,6 +129,33 @@ export function getNpxPath(): string {
 }
 
 /**
+ * Build environment variables with bundled Node.js in PATH.
+ *
+ * This ensures spawned processes (MCP servers, CLI tools) find the
+ * bundled Node.js instead of relying on system Node.js.
+ *
+ * @param baseEnv - Base environment to extend (defaults to process.env)
+ * @returns Environment with bundled Node in PATH and NODE_BIN_PATH set
+ */
+export function buildNodeEnv(baseEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+  const bundled = getBundledNodePaths();
+
+  if (!bundled) {
+    // Development mode - return env unchanged
+    return { ...baseEnv };
+  }
+
+  const delimiter = process.platform === 'win32' ? ';' : ':';
+  const currentPath = baseEnv.PATH || process.env.PATH || '';
+
+  return {
+    ...baseEnv,
+    PATH: `${bundled.binDir}${delimiter}${currentPath}`,
+    NODE_BIN_PATH: bundled.binDir,
+  };
+}
+
+/**
  * Log information about the bundled Node.js for debugging.
  */
 export function logBundledNodeInfo(): void {

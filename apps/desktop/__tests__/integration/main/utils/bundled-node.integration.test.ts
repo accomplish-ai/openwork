@@ -40,6 +40,7 @@ describe('Bundled Node.js Utilities', () => {
   let getNpmPath: typeof import('@main/utils/bundled-node').getNpmPath;
   let getNpxPath: typeof import('@main/utils/bundled-node').getNpxPath;
   let logBundledNodeInfo: typeof import('@main/utils/bundled-node').logBundledNodeInfo;
+  let buildNodeEnv: typeof import('@main/utils/bundled-node').buildNodeEnv;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -54,6 +55,7 @@ describe('Bundled Node.js Utilities', () => {
     getNpmPath = module.getNpmPath;
     getNpxPath = module.getNpxPath;
     logBundledNodeInfo = module.logBundledNodeInfo;
+    buildNodeEnv = module.buildNodeEnv;
   });
 
   afterEach(() => {
@@ -444,6 +446,66 @@ describe('Bundled Node.js Utilities', () => {
       expect(typeof paths!.npxPath).toBe('string');
       expect(typeof paths!.binDir).toBe('string');
       expect(typeof paths!.nodeDir).toBe('string');
+    });
+  });
+
+  describe('buildNodeEnv()', () => {
+    it('prepends bundled bin dir to PATH on unix', async () => {
+      mockApp.isPackaged = true;
+      Object.defineProperty(process, 'platform', { value: 'darwin' });
+      const resourcesPath = '/fake/resources';
+      (process as any).resourcesPath = resourcesPath;
+
+      vi.resetModules();
+      const module = await import('@main/utils/bundled-node');
+
+      const env = module.buildNodeEnv({ PATH: '/usr/bin:/bin' });
+
+      expect(env.PATH).toMatch(/^\/fake\/resources\/nodejs\/[^:]+\/bin:/);
+      expect(env.PATH).toContain('/usr/bin:/bin');
+    });
+
+    it('uses semicolon delimiter on Windows', async () => {
+      mockApp.isPackaged = true;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      Object.defineProperty(process, 'arch', { value: 'x64' });
+      const resourcesPath = 'C:\\fake\\resources';
+      (process as any).resourcesPath = resourcesPath;
+
+      vi.resetModules();
+      const module = await import('@main/utils/bundled-node');
+
+      const env = module.buildNodeEnv({ PATH: 'C:\\Windows\\System32' });
+
+      expect(env.PATH).toContain(';');
+      expect(env.PATH).not.toContain(':C:'); // No unix-style colons before drive letters
+    });
+
+    it('sets NODE_BIN_PATH env var', async () => {
+      mockApp.isPackaged = true;
+      const resourcesPath = '/fake/resources';
+      (process as any).resourcesPath = resourcesPath;
+
+      vi.resetModules();
+      const module = await import('@main/utils/bundled-node');
+
+      const env = module.buildNodeEnv({});
+
+      expect(env.NODE_BIN_PATH).toBeDefined();
+      expect(env.NODE_BIN_PATH).toContain('nodejs');
+    });
+
+    it('returns unmodified env in development mode', async () => {
+      mockApp.isPackaged = false;
+
+      vi.resetModules();
+      const module = await import('@main/utils/bundled-node');
+
+      const env = module.buildNodeEnv({ PATH: '/usr/bin', CUSTOM: 'value' });
+
+      expect(env.PATH).toBe('/usr/bin');
+      expect(env.CUSTOM).toBe('value');
+      expect(env.NODE_BIN_PATH).toBeUndefined();
     });
   });
 });
