@@ -21,7 +21,7 @@ import googleLogo from '/assets/ai-logos/google.svg';
 import xaiLogo from '/assets/ai-logos/xai.svg';
 import deepseekLogo from '/assets/ai-logos/deepseek.svg';
 import zaiLogo from '/assets/ai-logos/zai.svg';
-import minimaxLogo from '/assets/ai-logos/minimax.svg'
+import minimaxLogo from '/assets/ai-logos/minimax.svg';
 
 const PROVIDER_LOGOS: Record<string, string> = {
   anthropic: anthropicLogo,
@@ -58,7 +58,6 @@ export function ClassicProviderForm({
   const [openAiBaseUrl, setOpenAiBaseUrl] = useState('');
   const [savingBaseUrl, setSavingBaseUrl] = useState(false);
   const [baseUrlSaved, setBaseUrlSaved] = useState(false);
-  const [oauthStatus, setOauthStatus] = useState<{ connected: boolean; expires?: number } | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [authTab, setAuthTab] = useState<'oauth' | 'apikey'>('oauth');
 
@@ -75,7 +74,6 @@ export function ClassicProviderForm({
 
     const accomplish = getAccomplish();
     accomplish.getOpenAiBaseUrl().then(setOpenAiBaseUrl).catch(console.error);
-    accomplish.getOpenAiOauthStatus().then(setOauthStatus).catch(console.error);
   }, [isOpenAI]);
 
   const handleConnect = async () => {
@@ -150,7 +148,6 @@ export function ClassicProviderForm({
       const accomplish = getAccomplish();
       await accomplish.loginOpenAiWithChatGpt();
       const status = await accomplish.getOpenAiOauthStatus();
-      setOauthStatus(status);
 
       if (status.connected) {
         // Create connected provider with OAuth credentials
@@ -186,6 +183,7 @@ export function ClassicProviderForm({
             <button
               type="button"
               onClick={() => setAuthTab('oauth')}
+              data-testid="openai-oauth-tab"
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
                 authTab === 'oauth'
                   ? 'bg-[#e9f7e7] text-foreground'
@@ -197,6 +195,7 @@ export function ClassicProviderForm({
             <button
               type="button"
               onClick={() => setAuthTab('apikey')}
+              data-testid="openai-apikey-tab"
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
                 authTab === 'apikey'
                   ? 'bg-[#e9f7e7] text-foreground'
@@ -214,6 +213,7 @@ export function ClassicProviderForm({
                 type="button"
                 onClick={handleChatGptSignIn}
                 disabled={signingIn}
+                data-testid="openai-oauth-signin"
                 className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 <img src={openaiLogo} alt="" className="h-5 w-5" />
