@@ -380,4 +380,59 @@ describe('OpenCode Config Generator Integration', () => {
       expect(content).toContain('\n');
     });
   });
+
+  describe('Default Model Configuration', () => {
+    it('should include model field when active provider model is set', async () => {
+      // Arrange - mock active provider model
+      const { getActiveProviderModel } = await import('@main/store/providerSettings');
+      vi.mocked(getActiveProviderModel).mockReturnValue({
+        provider: 'ollama',
+        model: 'ollama/qwen3:4b',
+        displayName: 'Qwen 3 4B',
+      });
+
+      // Act
+      vi.resetModules();
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      const configPath = await generateOpenCodeConfig();
+
+      // Assert
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      expect(config.model).toBe('ollama/qwen3:4b');
+    });
+
+    it('should not include model field when no active provider model', async () => {
+      // Arrange - no active model
+      const { getActiveProviderModel } = await import('@main/store/providerSettings');
+      vi.mocked(getActiveProviderModel).mockReturnValue(null);
+
+      // Act
+      vi.resetModules();
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      const configPath = await generateOpenCodeConfig();
+
+      // Assert
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      expect(config.model).toBeUndefined();
+    });
+
+    it('should handle anthropic provider model', async () => {
+      // Arrange
+      const { getActiveProviderModel } = await import('@main/store/providerSettings');
+      vi.mocked(getActiveProviderModel).mockReturnValue({
+        provider: 'anthropic',
+        model: 'anthropic/claude-sonnet-4-5',
+        displayName: 'Claude Sonnet 4.5',
+      });
+
+      // Act
+      vi.resetModules();
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      const configPath = await generateOpenCodeConfig();
+
+      // Assert
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      expect(config.model).toBe('anthropic/claude-sonnet-4-5');
+    });
+  });
 });
