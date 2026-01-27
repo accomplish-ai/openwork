@@ -208,15 +208,11 @@ Example good narration:
 Example bad narration (too terse):
 "Done." or "Navigated." or "Clicked."
 
-- After each action, evaluate the result before deciding next steps
+- After each action batch, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
-- When browser_script supports it, prefer text/role-based actions over snapshots:
-  - findAndClickText (visible text)
-  - findAndClickRole (aria role + name)
-  - findAndFillLabel (label text to input)
-  - findAndSelectOption (label + option text)
-  - findAndClickNth (selector + index)
-- Use browser_snapshot only when these actions fail or the UI is ambiguous
+- For multi-step flows, batch 2-6 actions in browser_script or browser_sequence before taking a snapshot
+- Avoid click → snapshot → click loops unless the UI is ambiguous
+- Use browser_snapshot only when you need to inspect the page state to choose the next action
 - Do NOT use full_snapshot unless explicitly requested by the user
 - Don't announce server checks or startup - proceed directly to the task
 - Only use AskUserQuestion when you genuinely need user input or decisions
