@@ -1398,12 +1398,14 @@ interface SnapshotOptions {
 
 /**
  * Default snapshot options for token optimization.
- * Used by browser_script and other internal snapshot calls.
+ * Used by browser_script auto-snapshots and internal snapshot calls.
+ * Kept compact to avoid context window overflow on element-heavy pages
+ * (e.g. Zillow listings have hundreds of interactive elements).
  */
 const DEFAULT_SNAPSHOT_OPTIONS: SnapshotOptions = {
   interactiveOnly: true,
-  maxElements: 300,
-  maxTokens: 8000,
+  maxElements: 150,
+  maxTokens: 4000,
 };
 
 /**
@@ -1768,7 +1770,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           max_elements: {
             type: 'number',
-            description: 'Maximum elements to include (1-1000). Default: 300',
+            description: 'Maximum elements to include (1-1000). Default: 150',
           },
           viewport_only: {
             type: 'boolean',
@@ -1780,7 +1782,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           max_tokens: {
             type: 'number',
-            description: 'Maximum estimated tokens (1000-50000). Default: 8000',
+            description: 'Maximum estimated tokens (1000-50000). Default: 4000',
           },
         },
       },
@@ -2510,17 +2512,17 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         const { page_name, interactive_only, full_snapshot, max_elements, viewport_only, include_history, max_tokens } = args as BrowserSnapshotInput;
         const page = await getPage(page_name);
 
-        // Parse and validate max_elements (1-1000, default 300)
+        // Parse and validate max_elements (1-1000, default 150)
         // If full_snapshot is true, use Infinity to bypass element limits
         const validatedMaxElements = full_snapshot
           ? Infinity
-          : Math.min(Math.max(max_elements ?? 300, 1), 1000);
+          : Math.min(Math.max(max_elements ?? 150, 1), 1000);
 
-        // Parse and validate max_tokens (1000-50000, default 8000)
+        // Parse and validate max_tokens (1000-50000, default 4000)
         // If full_snapshot is true, use Infinity to bypass token limits
         const validatedMaxTokens = full_snapshot
           ? Infinity
-          : Math.min(Math.max(max_tokens ?? 8000, 1000), 50000);
+          : Math.min(Math.max(max_tokens ?? 4000, 1000), 50000);
 
         const snapshotOptions: SnapshotOptions = {
           interactiveOnly: interactive_only ?? true,
