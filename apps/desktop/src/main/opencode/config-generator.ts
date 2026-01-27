@@ -375,6 +375,7 @@ interface OpenCodeConfig {
   agent?: Record<string, AgentConfig>;
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, ProviderConfig>;
+  plugin?: string[];
 }
 
 /**
@@ -811,6 +812,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       todowrite: 'allow',
     },
     provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
+    // Dynamic Context Pruning plugin - prunes obsolete tool outputs from conversation
+    // history to reduce token usage (deduplication, supersede writes, purge errors)
+    plugin: ['@tarquinen/opencode-dcp@latest'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
