@@ -98,6 +98,7 @@
   },
   "build": {
     "npmRebuild": false,
+    "compression": "normal",
     "appId": "ai.accomplish.desktop",
     "productName": "Openwork",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
@@ -191,8 +192,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "resources/icon.ico",
-      "compression": "normal"
+      "icon": "resources/icon.ico"
     },
     "nsis": {
       "oneClick": false,
