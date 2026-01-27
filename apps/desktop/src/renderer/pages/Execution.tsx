@@ -9,6 +9,7 @@ import { springs } from '../lib/animations';
 import type { TaskMessage } from '@accomplish/shared';
 import { hasAnyReadyProvider } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -22,6 +23,8 @@ import { BrowserScriptCard } from '../components/BrowserScriptCard';
 import loadingSymbol from '/assets/loading-symbol.svg';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
+import { useSpeechInput } from '../hooks/useSpeechInput';
+import { SpeechInputButton } from '../components/ui/SpeechInputButton';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -179,7 +182,9 @@ export default function ExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice'>('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
+  const pendingSpeechFollowUpRef = useRef<string | null>(null);
 
   // Scroll behavior state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -210,6 +215,24 @@ export default function ExecutionPage() {
     todosTaskId,
   } = useTaskStore();
 
+  const speechInput = useSpeechInput({
+    onTranscriptionComplete: (text) => {
+      setFollowUp((prev) => {
+        const newValue = prev.trim() ? `${prev} ${text}` : text;
+        pendingSpeechFollowUpRef.current = newValue.trim() ? newValue : null;
+        return newValue;
+      });
+
+      // Auto-focus input
+      setTimeout(() => {
+        followUpInputRef.current?.focus();
+      }, 0);
+    },
+    onError: (error) => {
+      console.error('[Speech] Error:', error.message);
+    },
+  });
+
   // Debounced scroll function
   const scrollToBottom = useMemo(
     () =>
@@ -227,7 +250,7 @@ export default function ExecutionPage() {
     const threshold = 150; // pixels from bottom to consider "at bottom" - larger value means button only appears after scrolling up more
     const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
     setIsAtBottom(atBottom);
-  }, []);
+  }, [setIsAtBottom]);
 
   // Load debug mode setting on mount and subscribe to changes
   useEffect(() => {
@@ -379,6 +402,7 @@ export default function ExecutionPage() {
       if (!hasAnyReadyProvider(settings)) {
         // Store the pending message and open settings dialog
         setPendingFollowUp(followUp);
+        setSettingsInitialTab('providers');
         setShowSettingsDialog(true);
         return;
       }
@@ -392,6 +416,7 @@ export default function ExecutionPage() {
     setShowSettingsDialog(open);
     if (!open) {
       setPendingFollowUp(null);
+      setSettingsInitialTab('providers');
     }
   };
 
@@ -413,6 +438,7 @@ export default function ExecutionPage() {
       if (!hasAnyReadyProvider(settings)) {
         // Store the pending message and open settings dialog
         setPendingFollowUp('continue');
+        setSettingsInitialTab('providers');
         setShowSettingsDialog(true);
         return;
       }
@@ -421,6 +447,26 @@ export default function ExecutionPage() {
     // Send a simple "continue" message to resume the task
     await sendFollowUp('continue');
   };
+
+  const handleOpenSpeechSettings = useCallback(() => {
+    setSettingsInitialTab('voice');
+    setShowSettingsDialog(true);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingSpeechFollowUpRef.current) {
+      return;
+    }
+    if (!canFollowUp || isLoading) {
+      return;
+    }
+    if (followUp !== pendingSpeechFollowUpRef.current) {
+      return;
+    }
+
+    pendingSpeechFollowUpRef.current = null;
+    void handleFollowUp();
+  }, [canFollowUp, followUp, handleFollowUp, isLoading]);
 
   const handleExportDebugLogs = useCallback(() => {
     const text = debugLogs
@@ -554,6 +600,7 @@ export default function ExecutionPage() {
         open={showSettingsDialog}
         onOpenChange={handleSettingsDialogClose}
         onApiKeySaved={handleApiKeySaved}
+        initialTab={settingsInitialTab}
       />
 
     <div className="h-full flex flex-col bg-background relative">
@@ -1137,6 +1184,26 @@ export default function ExecutionPage() {
       {canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
           <div className="max-w-4xl mx-auto">
+            {speechInput.error && (
+              <Alert
+                variant="destructive"
+                className="mb-2 py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs leading-tight">
+                  {speechInput.error.message}
+                  {speechInput.error.code === 'EMPTY_RESULT' && (
+                    <button
+                      onClick={() => speechInput.retry()}
+                      className="ml-2 underline hover:no-underline"
+                      type="button"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
             {/* Input field with Send button */}
             <div className="flex gap-3">
               <Input
@@ -1158,13 +1225,26 @@ export default function ExecutionPage() {
                       ? "Give new instructions..."
                       : "Ask for something..."
                 }
-                disabled={isLoading}
+                disabled={isLoading || speechInput.isRecording}
                 className="flex-1"
                 data-testid="execution-follow-up-input"
               />
+              <SpeechInputButton
+                isRecording={speechInput.isRecording}
+                isTranscribing={speechInput.isTranscribing}
+                recordingDuration={speechInput.recordingDuration}
+                error={speechInput.error}
+                isConfigured={speechInput.isConfigured}
+                disabled={isLoading}
+                onStartRecording={() => speechInput.startRecording()}
+                onStopRecording={() => speechInput.stopRecording()}
+                onRetry={() => speechInput.retry()}
+                onOpenSettings={handleOpenSpeechSettings}
+                size="md"
+              />
               <Button
                 onClick={handleFollowUp}
-                disabled={!followUp.trim() || isLoading}
+                disabled={!followUp.trim() || isLoading || speechInput.isRecording}
                 variant="outline"
               >
                 <CornerDownLeft className="h-4 w-4 mr-1.5" />
@@ -1191,9 +1271,17 @@ export default function ExecutionPage() {
       {debugModeEnabled && (
         <div className="flex-shrink-0 border-t border-border" data-testid="debug-panel">
           {/* Toggle header */}
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => setDebugPanelOpen(!debugPanelOpen)}
-            className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setDebugPanelOpen(!debugPanelOpen);
+              }
+            }}
+            className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Bug className="h-4 w-4" />
@@ -1243,7 +1331,7 @@ export default function ExecutionPage() {
                 <ChevronUp className="h-4 w-4 text-zinc-500" />
               )}
             </div>
-          </button>
+          </div>
 
           {/* Collapsible panel content */}
           <AnimatePresence>

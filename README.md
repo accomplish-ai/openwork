@@ -1,3 +1,7 @@
+<p align="right">
+  <strong>English</strong> | <a href="README.zh-CN.md">中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <a href="README.tr.md">Türkçe</a> | <a href="README.ar.md">العربية</a> | <a href="README.id.md">Bahasa Indonesia</a>
+</p>
+
 <p align="center">
   <img src="docs/banner.svg" alt="Openwork - Open source AI desktop agent that automates file management, document creation, and browser tasks with your own AI API keys" width="100%" />
 </p>
@@ -127,17 +131,20 @@ Openwork is an open source AI desktop agent that automates file management, docu
 
 ## Supported models and providers
 
-- OpenAI
-- Anthropic
-- Google
-- xAI
+- Anthropic (Claude)
+- OpenAI (GPT)
+- Google AI (Gemini)
+- xAI (Grok)
+- DeepSeek
+- Moonshot AI (Kimi)
+- Z.AI (GLM)
+- MiniMax
+- Amazon Bedrock
+- Azure Foundry
 - OpenRouter
 - LiteLLM
-- DeepSeek
-- Z.ai
-- Amazon Bedrock
 - Ollama (local models)
-- MiniMax (via international coding plan)
+- LM Studio (local models)
 
 <br />
 
@@ -165,9 +172,12 @@ Openwork runs locally on your machine. Your files stay on your device, and you c
 | Step | Action | Details |
 |:----:|--------|---------|
 | **1** | **Install the App** | Download the DMG and drag it into Applications |
-| **2** | **Connect Your AI** | Use your own Google, OpenAI, Anthropic (or other) API key. No subscriptions. |
+| **2** | **Connect Your AI** | Use your own Google, OpenAI, Anthropic (or other) API key — or sign in with ChatGPT (Plus/Pro). No subscriptions. |
 | **3** | **Give It Access** | Choose which folders it can see. You stay in control. |
 | **4** | **Start Working** | Ask it to summarize a doc, clean a folder, or create a report. You approve everything. |
+
+<br />
+
 
 <br />
 

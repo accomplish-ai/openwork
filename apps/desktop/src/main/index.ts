@@ -10,6 +10,7 @@ import { checkAndCleanupFreshInstall } from './store/freshInstallCleanup';
 import { initializeDatabase, closeDatabase } from './store/db';
 import { FutureSchemaError } from './store/migrations/errors';
 import { stopAzureFoundryProxy } from './opencode/azure-foundry-proxy';
+import { stopMoonshotProxy } from './opencode/moonshot-proxy';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 
 // Local UI - no longer uses remote URL
@@ -130,6 +131,30 @@ function createWindow() {
   }
 }
 
+// Global error handlers to prevent crashes from uncaught errors
+// These commonly occur when stdout is unavailable (terminal closed, app shutdown)
+process.on('uncaughtException', (error) => {
+  // Only log to file (not console) to avoid recursive EIO errors
+  try {
+    const collector = getLogCollector();
+    collector.log('ERROR', 'main', `Uncaught exception: ${error.message}`, {
+      name: error.name,
+      stack: error.stack,
+    });
+  } catch {
+    // Ignore errors during error handling
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  try {
+    const collector = getLogCollector();
+    collector.log('ERROR', 'main', 'Unhandled promise rejection', { reason });
+  } catch {
+    // Ignore errors during error handling
+  }
+});
+
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -228,6 +253,10 @@ app.on('before-quit', () => {
   // Stop Azure Foundry proxy server if running
   stopAzureFoundryProxy().catch((err) => {
     console.error('[Main] Failed to stop Azure Foundry proxy:', err);
+  });
+  // Stop Moonshot proxy server if running
+  stopMoonshotProxy().catch((err) => {
+    console.error('[Main] Failed to stop Moonshot proxy:', err);
   });
   // Close database connection
   closeDatabase();

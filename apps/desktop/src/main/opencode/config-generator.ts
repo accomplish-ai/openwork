@@ -2,12 +2,13 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
-import { getOllamaConfig } from '../store/appSettings';
+import { getOllamaConfig, getLMStudioConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
+import { ensureMoonshotProxy } from './moonshot-proxy';
 import { getNodePath } from '../utils/bundled-node';
-import type { BedrockCredentials, ProviderId, AzureFoundryCredentials } from '@accomplish/shared';
+import type { BedrockCredentials, ProviderId, ZaiCredentials, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
  * Agent name used by Accomplish
@@ -363,6 +364,20 @@ interface OpenRouterProviderConfig {
   models: Record<string, OpenRouterProviderModelConfig>;
 }
 
+interface MoonshotProviderModelConfig {
+  name: string;
+  tools?: boolean;
+}
+
+interface MoonshotProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    baseURL: string;
+  };
+  models: Record<string, MoonshotProviderModelConfig>;
+}
+
 interface LiteLLMProviderModelConfig {
   name: string;
   tools?: boolean;
@@ -392,7 +407,21 @@ interface ZaiProviderConfig {
   models: Record<string, ZaiProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig;
+interface LMStudioProviderModelConfig {
+  name: string;
+  tools?: boolean;
+}
+
+interface LMStudioProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    baseURL: string;
+  };
+  models: Record<string, LMStudioProviderModelConfig>;
+}
+
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | MoonshotProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -499,6 +528,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     google: 'google',
     xai: 'xai',
     deepseek: 'deepseek',
+    moonshot: 'moonshot',
     zai: 'zai-coding-plan',
     bedrock: 'amazon-bedrock',
     'azure-foundry': 'azure-foundry',
@@ -506,10 +536,11 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     openrouter: 'openrouter',
     litellm: 'litellm',
     minimax: 'minimax',
+    lmstudio: 'lmstudio',
   };
 
   // Build enabled providers list from new settings or fall back to base providers
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
   let enabledProviders = baseProviders;
 
   // If we have connected providers in the new settings, use those
@@ -627,6 +658,31 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     }
   }
 
+  // Configure Moonshot if connected
+  const moonshotProvider = providerSettings.connectedProviders.moonshot;
+  if (moonshotProvider?.connectionStatus === 'connected') {
+    if (moonshotProvider.selectedModelId) {
+      const modelId = moonshotProvider.selectedModelId.replace(/^moonshot\//, '');
+      const moonshotApiKey = getApiKey('moonshot');
+      const proxyInfo = await ensureMoonshotProxy('https://api.moonshot.ai/v1');
+      providerConfig.moonshot = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'Moonshot AI',
+        options: {
+          baseURL: proxyInfo.baseURL,
+          ...(moonshotApiKey ? { apiKey: moonshotApiKey } : {}),
+        },
+        models: {
+          [modelId]: {
+            name: modelId,
+            tools: true,
+          },
+        },
+      };
+      console.log('[OpenCode Config] Moonshot AI configured:', modelId);
+    }
+  }
+
   // Configure Bedrock if connected (check new settings first, then legacy)
   const bedrockProvider = providerSettings.connectedProviders.bedrock;
   if (bedrockProvider?.connectionStatus === 'connected' && bedrockProvider.credentials.type === 'bedrock') {
@@ -695,6 +751,60 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     }
   }
 
+  // Configure LM Studio if connected
+  const lmstudioProvider = providerSettings.connectedProviders.lmstudio;
+  if (lmstudioProvider?.connectionStatus === 'connected' && lmstudioProvider.credentials.type === 'lmstudio') {
+    if (lmstudioProvider.selectedModelId) {
+      // OpenCode CLI splits "lmstudio/model" into provider="lmstudio" and modelID="model"
+      // So we need to register the model without the "lmstudio/" prefix
+      const modelId = lmstudioProvider.selectedModelId.replace(/^lmstudio\//, '');
+
+      // Check if the model supports tools from the availableModels metadata
+      const modelInfo = lmstudioProvider.availableModels?.find(
+        m => m.id === lmstudioProvider.selectedModelId || m.id === modelId
+      );
+      const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
+
+      providerConfig.lmstudio = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'LM Studio',
+        options: {
+          baseURL: `${lmstudioProvider.credentials.serverUrl}/v1`,
+        },
+        models: {
+          [modelId]: {
+            name: modelId,
+            tools: supportsTools,
+          },
+        },
+      };
+      console.log(`[OpenCode Config] LM Studio configured: ${modelId} (tools: ${supportsTools})`);
+    }
+  } else {
+    // Legacy fallback: use old LM Studio config if it exists
+    const lmstudioConfig = getLMStudioConfig();
+    if (lmstudioConfig?.enabled && lmstudioConfig.models && lmstudioConfig.models.length > 0) {
+      const lmstudioModels: Record<string, LMStudioProviderModelConfig> = {};
+      for (const model of lmstudioConfig.models) {
+        lmstudioModels[model.id] = {
+          name: model.name,
+          tools: model.toolSupport === 'supported',
+        };
+      }
+
+      providerConfig.lmstudio = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'LM Studio',
+        options: {
+          baseURL: `${lmstudioConfig.baseUrl}/v1`,
+        },
+        models: lmstudioModels,
+      };
+
+      console.log('[OpenCode Config] LM Studio configured from legacy settings:', Object.keys(lmstudioModels));
+    }
+  }
+
   // Configure Azure Foundry if connected (check new settings first, then legacy)
   const azureFoundryProvider = providerSettings.connectedProviders['azure-foundry'];
   if (azureFoundryProvider?.connectionStatus === 'connected' && azureFoundryProvider.credentials.type === 'azure-foundry') {
@@ -758,15 +868,22 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       'glm-4.5-flash': { name: 'GLM-4.5 Flash', tools: true },
     };
 
+    // Z.AI - use endpoint based on stored region
+    const zaiCredentials = providerSettings.connectedProviders.zai?.credentials as ZaiCredentials | undefined;
+    const zaiRegion = zaiCredentials?.region || 'international';
+    const zaiEndpoint = zaiRegion === 'china'
+      ? 'https://open.bigmodel.cn/api/paas/v4'
+      : 'https://api.z.ai/api/coding/paas/v4';
+
     providerConfig['zai-coding-plan'] = {
       npm: '@ai-sdk/openai-compatible',
       name: 'Z.AI Coding Plan',
       options: {
-        baseURL: 'https://open.bigmodel.cn/api/paas/v4',
+        baseURL: zaiEndpoint,
       },
       models: zaiModels,
     };
-    console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels));
+    console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels), 'region:', zaiRegion, 'endpoint:', zaiEndpoint);
   }
 
   const tsxCommand = resolveBundledTsxCommand(skillsPath);
