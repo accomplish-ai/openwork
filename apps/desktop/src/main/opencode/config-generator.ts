@@ -6,6 +6,7 @@ import { getOllamaConfig, getLMStudioConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
+import { getBundledNodePaths, getNodePath } from '../utils/bundled-node';
 import type { BedrockCredentials, ProviderId, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
@@ -46,6 +47,46 @@ export function getOpenCodeConfigDir(): string {
   } else {
     return app.getAppPath();
   }
+}
+
+function getBundledTsxPath(): string {
+  const tsxRelativePath = path.join('node_modules', 'tsx', 'dist', 'cli.mjs');
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app.asar.unpacked', tsxRelativePath);
+  }
+  return path.join(app.getAppPath(), tsxRelativePath);
+}
+
+function getMcpEnvironment(): Record<string, string> {
+  const bundledPaths = getBundledNodePaths();
+  if (!bundledPaths) {
+    return {};
+  }
+
+  const delimiter = process.platform === 'win32' ? ';' : ':';
+  return {
+    NODE_BIN_PATH: bundledPaths.binDir,
+    PATH: `${bundledPaths.binDir}${delimiter}${process.env.PATH || ''}`,
+  };
+}
+
+function getMcpCommand(scriptPath: string): string[] {
+  if (!app.isPackaged) {
+    return ['npx', 'tsx', scriptPath];
+  }
+
+  const nodePath = getNodePath();
+  const tsxPath = getBundledTsxPath();
+
+  if (fs.existsSync(nodePath) && fs.existsSync(tsxPath)) {
+    return [nodePath, tsxPath, scriptPath];
+  }
+
+  console.warn('[OpenCode Config] Bundled tsx not found; falling back to npx tsx.', {
+    nodePath,
+    tsxPath,
+  });
+  return ['npx', 'tsx', scriptPath];
 }
 
 /**
@@ -823,33 +864,41 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     mcp: {
       'file-permission': {
         type: 'local',
-        command: ['npx', 'tsx', filePermissionServerPath],
+        command: getMcpCommand(filePermissionServerPath),
         enabled: true,
         environment: {
+          ...getMcpEnvironment(),
           PERMISSION_API_PORT: String(PERMISSION_API_PORT),
         },
         timeout: 30000,
       },
       'ask-user-question': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'ask-user-question', 'src', 'index.ts')],
+        command: getMcpCommand(path.join(skillsPath, 'ask-user-question', 'src', 'index.ts')),
         enabled: true,
         environment: {
+          ...getMcpEnvironment(),
           QUESTION_API_PORT: String(QUESTION_API_PORT),
         },
         timeout: 30000,
       },
       'dev-browser-mcp': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
+        command: getMcpCommand(path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')),
         enabled: true,
+        environment: {
+          ...getMcpEnvironment(),
+        },
         timeout: 30000,
       },
       // Provides complete_task tool - agent must call to signal task completion
       'complete-task': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        command: getMcpCommand(path.join(skillsPath, 'complete-task', 'src', 'index.ts')),
         enabled: true,
+        environment: {
+          ...getMcpEnvironment(),
+        },
         timeout: 30000,
       },
     },

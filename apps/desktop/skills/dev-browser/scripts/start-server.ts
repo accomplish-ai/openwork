@@ -1,4 +1,4 @@
-import { serve } from "@/index.js";
+import { serve } from "../src/index.ts";
 import { execSync } from "child_process";
 import { mkdirSync, existsSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
