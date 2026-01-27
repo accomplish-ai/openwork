@@ -34,6 +34,7 @@ pnpm lint         # Run linting
    - What the change does
    - Why it's needed
    - How to test it
+5. Use a conventional commit-style PR title (e.g. `fix: handle schema downgrades`).
 
 ## Commit Messages
 
