@@ -2,7 +2,7 @@
  * Provider and model configuration types for multi-provider support
  */
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'requesty';
 
 export interface ProviderConfig {
   id: ProviderType;
@@ -116,6 +116,26 @@ export interface LMStudioConfig {
   enabled: boolean;
   lastValidated?: number;
   models?: LMStudioModel[];
+}
+
+/**
+ * Requesty model info from API
+ */
+export interface RequestyModel {
+  id: string;           // e.g., "openai/gpt-4"
+  name: string;         // Display name (same as id for Requesty)
+  provider: string;     // Extracted from model ID
+  contextLength: number;
+}
+
+/**
+ * Requesty configuration
+ */
+export interface RequestyConfig {
+  baseUrl: string;      // e.g., "https://router.requesty.ai"
+  enabled: boolean;
+  lastValidated?: number;
+  models?: RequestyModel[];
 }
 
 /**

@@ -38,6 +38,7 @@ const PROVIDER_LOGOS: Record<ProviderId, string> = {
   litellm: litellmLogo,
   minimax: minimaxLogo,
   lmstudio: lmstudioLogo,
+  requesty: litellmLogo, // Placeholder logo (both are hybrid/gateway providers)
 };
 
 interface ProviderCardProps {

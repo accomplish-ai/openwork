@@ -364,7 +364,22 @@ interface LMStudioProviderConfig {
   models: Record<string, LMStudioProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig;
+interface RequestyProviderModelConfig {
+  name: string;
+  tools?: boolean;
+}
+
+interface RequestyProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    baseURL: string;
+    apiKey?: string;
+  };
+  models: Record<string, RequestyProviderModelConfig>;
+}
+
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig | RequestyProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -480,6 +495,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     litellm: 'litellm',
     minimax: 'minimax',
     lmstudio: 'lmstudio',
+    requesty: 'requesty',
   };
 
   // Build enabled providers list from new settings or fall back to base providers
@@ -666,6 +682,33 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
         },
       };
       console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId, litellmApiKey ? '(with API key)' : '(no API key)');
+    }
+  }
+
+  // Configure Requesty if connected
+  const requestyProvider = providerSettings.connectedProviders.requesty;
+  if (requestyProvider?.connectionStatus === 'connected' && requestyProvider.credentials.type === 'requesty') {
+    if (requestyProvider.selectedModelId) {
+      // Get API key if available
+      const requestyApiKey = getApiKey('requesty');
+      const requestyOptions: RequestyProviderConfig['options'] = {
+        baseURL: `${requestyProvider.credentials.serverUrl}/v1`,
+      };
+      if (requestyApiKey) {
+        requestyOptions.apiKey = requestyApiKey;
+      }
+      providerConfig.requesty = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'Requesty',
+        options: requestyOptions,
+        models: {
+          [requestyProvider.selectedModelId]: {
+            name: requestyProvider.selectedModelId,
+            tools: true,
+          },
+        },
+      };
+      console.log('[OpenCode Config] Requesty configured:', requestyProvider.selectedModelId, requestyApiKey ? '(with API key)' : '(no API key)');
     }
   }
 

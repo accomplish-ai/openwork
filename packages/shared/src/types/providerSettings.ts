@@ -13,7 +13,8 @@ export type ProviderId =
   | 'openrouter'
   | 'litellm'
   | 'minimax'
-  | 'lmstudio';
+  | 'lmstudio'
+  | 'requesty';
 
 export type ProviderCategory = 'classic' | 'aws' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -40,6 +41,7 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
   minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
   lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  requesty: { id: 'requesty', name: 'Requesty', category: 'hybrid', label: 'Service', logoKey: 'requesty', helpUrl: 'https://www.requesty.ai/' },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -79,6 +81,13 @@ export interface LMStudioCredentials {
   serverUrl: string;
 }
 
+export interface RequestyCredentials {
+  type: 'requesty';
+  serverUrl: string;
+  hasApiKey: boolean;
+  keyPrefix?: string;
+}
+
 export interface AzureFoundryCredentials {
   type: 'azure-foundry';
   authMethod: 'api-key' | 'entra-id';
@@ -98,6 +107,7 @@ export type ProviderCredentials =
   | OllamaCredentials
   | OpenRouterCredentials
   | LiteLLMCredentials
+  | RequestyCredentials
   | AzureFoundryCredentials
   | LMStudioCredentials
   | OAuthCredentials;
