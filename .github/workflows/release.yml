@@ -310,7 +310,28 @@ jobs:
         run: pnpm -F @accomplish/desktop build
 
       - name: Package (unsigned)
-        run: node scripts/package.cjs --win --x64 --publish never
+        shell: pwsh
+        run: |
+          $job = Start-Job -ScriptBlock {
+            while ($true) {
+              $file = Get-ChildItem release -Filter "*.nsis.7z" -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+              if ($file) {
+                Write-Host ("[heartbeat] {0} {1} MB" -f $file.Name, [math]::Round($file.Length/1MB,2))
+              }
+              $p = Get-Process 7za -ErrorAction SilentlyContinue
+              if ($p) {
+                Write-Host ("[heartbeat] 7za cpu={0}s mem={1}MB" -f [math]::Round($p.CPU,1), [math]::Round($p.WorkingSet/1MB,1))
+              }
+              Start-Sleep -Seconds 60
+            }
+          }
+          try {
+            node scripts/package.cjs --win --x64 --publish never
+          } finally {
+            Stop-Job $job | Out-Null
+            Remove-Job $job | Out-Null
+          }
         working-directory: apps/desktop
         env:
           DEBUG: electron-builder,electron-builder:*
