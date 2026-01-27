@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '../permission-api';
-import { getOllamaConfig, getLMStudioConfig } from '../store/appSettings';
+import { getOllamaConfig, getLMStudioConfig, getSelectedModel } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
@@ -797,9 +797,24 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels));
   }
 
+  // Determine the model to use (needed by some OpenCode plugins like oh-my-opencode)
+  // Priority: activeModel (from new provider settings) > selectedModel (legacy settings)
+  let modelString: string | undefined;
+  if (activeModel?.model) {
+    modelString = activeModel.model;
+  } else {
+    const selectedModel = getSelectedModel();
+    if (selectedModel?.model) {
+      modelString = selectedModel.model;
+    }
+  }
+
   const config: OpenCodeConfig = {
     $schema: 'https://opencode.ai/config.json',
     default_agent: ACCOMPLISH_AGENT_NAME,
+    // Set root-level model for plugin compatibility (e.g., oh-my-opencode)
+    // Some OpenCode plugins expect this field to be present
+    ...(modelString && { model: modelString }),
     // Enable all supported providers - providers auto-configure when API keys are set via env vars
     enabled_providers: enabledProviders,
     // Auto-allow all tool permissions - the system prompt instructs the agent to use
