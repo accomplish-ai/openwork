@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import TaskInputBar from '../components/landing/TaskInputBar';
+import TaskInputBar, { type FileAttachment } from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
@@ -82,6 +82,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
@@ -108,11 +109,29 @@ export default function HomePage() {
     if (!prompt.trim() || isLoading) return;
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+
+    // Build prompt with attachment references
+    let enhancedPrompt = prompt.trim();
+    if (attachments.length > 0) {
+      enhancedPrompt += '\n\nAttached files:\n';
+      enhancedPrompt += attachments.map(att => `- ${att.path}`).join('\n');
+    }
+
+    const task = await startTask({
+      prompt: enhancedPrompt,
+      taskId,
+      attachments: attachments.map(att => ({
+        type: att.type === 'image' ? 'screenshot' : 'json',
+        data: att.preview || att.path,
+        label: att.name,
+      })),
+    });
     if (task) {
+      // Clear attachments after successful submission
+      setAttachments([]);
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, attachments, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -185,6 +204,8 @@ export default function HomePage() {
                 placeholder="Describe a task and let AI handle the rest"
                 large={true}
                 autoFocus={true}
+                attachments={attachments}
+                onAttachmentsChange={setAttachments}
               />
             </CardContent>
 

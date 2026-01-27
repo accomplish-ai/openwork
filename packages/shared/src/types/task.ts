@@ -27,6 +27,8 @@ export interface TaskConfig {
   outputSchema?: object;
   /** Session ID for resuming */
   sessionId?: string;
+  /** User-provided attachments (files, images) */
+  attachments?: TaskAttachment[];
 }
 
 export interface Task {
