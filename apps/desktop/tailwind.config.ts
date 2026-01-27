@@ -106,6 +106,12 @@ const config: Config = {
           'Roboto',
           'Helvetica Neue',
           'Arial',
+          // Chinese font support
+          'PingFang SC',
+          'Microsoft YaHei',
+          'Hiragino Sans GB',
+          'Noto Sans CJK SC',
+          'Source Han Sans SC',
           'sans-serif',
         ],
       },

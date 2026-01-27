@@ -13,6 +13,7 @@ interface AppSettingsRow {
   azure_foundry_config: string | null;
   lmstudio_config: string | null;
   openai_base_url: string | null;
+  language: string;
 }
 
 interface AppSettings {
@@ -24,6 +25,7 @@ interface AppSettings {
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
+  language: string;
 }
 
 function getRow(): AppSettingsRow {
@@ -152,6 +154,22 @@ export function setOpenAiBaseUrl(baseUrl: string): void {
   db.prepare('UPDATE app_settings SET openai_base_url = ? WHERE id = 1').run(baseUrl || '');
 }
 
+/**
+ * Get the current language setting.
+ */
+export function getLanguage(): string {
+  const row = getRow();
+  return row.language || 'en';
+}
+
+/**
+ * Set the language setting.
+ */
+export function setLanguage(language: string): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET language = ? WHERE id = 1').run(language);
+}
+
 function safeParseJson<T>(json: string | null): T | null {
   if (!json) return null;
   try {
@@ -172,6 +190,7 @@ export function getAppSettings(): AppSettings {
     azureFoundryConfig: safeParseJson<AzureFoundryConfig>(row.azure_foundry_config),
     lmstudioConfig: safeParseJson<LMStudioConfig>(row.lmstudio_config),
     openaiBaseUrl: row.openai_base_url || '',
+    language: row.language || 'en',
   };
 }
 
@@ -186,7 +205,8 @@ export function clearAppSettings(): void {
       litellm_config = NULL,
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
-      openai_base_url = ''
+      openai_base_url = '',
+      language = 'en'
     WHERE id = 1`
   ).run();
 }

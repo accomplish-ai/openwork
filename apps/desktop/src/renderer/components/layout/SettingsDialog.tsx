@@ -16,6 +16,7 @@ import { hasAnyReadyProvider, isProviderReady } from '@accomplish/shared';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
+import { LanguageSettings } from '@/components/settings/LanguageSettings';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -329,6 +330,21 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved, init
                   onModelChange={handleModelChange}
                   showModelError={showModelError}
                 />
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          {/* Language Settings Section - only shown when a provider is selected */}
+          <AnimatePresence>
+            {selectedProvider && (
+              <motion.section
+                variants={settingsVariants.slideDown}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ ...settingsTransitions.enter, delay: 0.04 }}
+              >
+                <LanguageSettings />
               </motion.section>
             )}
           </AnimatePresence>

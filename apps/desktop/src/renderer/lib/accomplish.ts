@@ -53,7 +53,9 @@ interface AccomplishAPI {
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
-  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean }>;
+  getLanguage(): Promise<string>;
+  setLanguage(language: string): Promise<void>;
+  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; language: string }>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;
   getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;
@@ -169,6 +171,7 @@ interface AccomplishAPI {
   onTaskProgress(callback: (progress: TaskProgress) => void): () => void;
   onDebugLog(callback: (log: unknown) => void): () => void;
   onDebugModeChange?(callback: (data: { enabled: boolean }) => void): () => void;
+  onLanguageChange?(callback: (data: { language: string }) => void): () => void;
   onTaskStatusChange?(callback: (data: { taskId: string; status: TaskStatus }) => void): () => void;
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;

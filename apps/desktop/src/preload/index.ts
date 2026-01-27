@@ -53,7 +53,11 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:debug-mode'),
   setDebugMode: (enabled: boolean): Promise<void> =>
     ipcRenderer.invoke('settings:set-debug-mode', enabled),
-  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean }> =>
+  getLanguage: (): Promise<string> =>
+    ipcRenderer.invoke('settings:language'),
+  setLanguage: (language: string): Promise<void> =>
+    ipcRenderer.invoke('settings:set-language', language),
+  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean; language: string }> =>
     ipcRenderer.invoke('settings:app-settings'),
   getOpenAiBaseUrl: (): Promise<string> =>
     ipcRenderer.invoke('settings:openai-base-url:get'),
@@ -250,6 +254,12 @@ const accomplishAPI = {
     const listener = (_: unknown, data: { enabled: boolean }) => callback(data);
     ipcRenderer.on('settings:debug-mode-changed', listener);
     return () => ipcRenderer.removeListener('settings:debug-mode-changed', listener);
+  },
+  // Language setting changes
+  onLanguageChange: (callback: (data: { language: string }) => void) => {
+    const listener = (_: unknown, data: { language: string }) => callback(data);
+    ipcRenderer.on('settings:language-changed', listener);
+    return () => ipcRenderer.removeListener('settings:language-changed', listener);
   },
   // Task status changes (e.g., queued -> running)
   onTaskStatusChange: (callback: (data: { taskId: string; status: string }) => void) => {

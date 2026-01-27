@@ -51,6 +51,8 @@ import {
   setLiteLLMConfig,
   getLMStudioConfig,
   setLMStudioConfig,
+  getLanguage,
+  setLanguage,
 } from '../store/appSettings';
 import {
   getProviderSettings,
@@ -2232,6 +2234,23 @@ export function registerIPCHandlers(): void {
     // Broadcast the change to all renderer windows
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:debug-mode-changed', { enabled });
+    }
+  });
+
+  // Settings: Get language setting
+  handle('settings:language', async (_event: IpcMainInvokeEvent) => {
+    return getLanguage();
+  });
+
+  // Settings: Set language setting
+  handle('settings:set-language', async (_event: IpcMainInvokeEvent, language: string) => {
+    if (typeof language !== 'string') {
+      throw new Error('Invalid language code');
+    }
+    setLanguage(language);
+    // Broadcast the change to all renderer windows
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('settings:language-changed', { language });
     }
   });
 
