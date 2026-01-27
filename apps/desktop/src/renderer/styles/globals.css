@@ -67,6 +67,28 @@
   --radius: 0.5rem;
 }
 
+.dark {
+  --background: 0 0% 9%; /* #171717 */
+  --foreground: 0 0% 92%; /* #ebebeb */
+  --card: 0 0% 12%; /* #1f1f1f */
+  --card-foreground: 0 0% 92%; /* #ebebeb */
+  --popover: 0 0% 12%; /* #1f1f1f */
+  --popover-foreground: 0 0% 92%; /* #ebebeb */
+  --primary: 123 22% 70%; /* #9bc499 */
+  --primary-foreground: 0 0% 9%; /* #171717 */
+  --secondary: 120 8% 25%; /* #383d37 */
+  --secondary-foreground: 120 14% 85%; /* #d8dfd7 */
+  --muted: 0 0% 15%; /* #262626 */
+  --muted-foreground: 0 0% 60%; /* #999999 */
+  --accent: 0 0% 20%; /* #333333 */
+  --accent-foreground: 0 0% 92%; /* #ebebeb */
+  --destructive: 8 78% 54%; /* #e54d2e */
+  --destructive-foreground: 0 0% 100%; /* #ffffff */
+  --border: 0 0% 20%; /* #333333 */
+  --input: 0 0% 25%; /* #404040 */
+  --ring: 123 22% 70%; /* #9bc499 */
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

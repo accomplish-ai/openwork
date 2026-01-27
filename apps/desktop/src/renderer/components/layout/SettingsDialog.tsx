@@ -16,6 +16,7 @@ import { hasAnyReadyProvider, isProviderReady } from '@accomplish/shared';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -47,6 +48,9 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved, init
   const [debugMode, setDebugModeState] = useState(false);
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
   const accomplish = getAccomplish();
+
+  // Theme state from context
+  const { theme, setTheme } = useTheme();
 
   // Refetch settings and debug mode when dialog opens
   useEffect(() => {
@@ -167,6 +171,12 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved, init
     setDebugModeState(newValue);
     analytics.trackToggleDebugMode(newValue);
   }, [debugMode, accomplish]);
+
+  // Handle theme toggle
+  const handleThemeToggle = useCallback(() => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+  }, [theme, setTheme]);
 
   // Handle log export
   const handleExportLogs = useCallback(async () => {
@@ -402,6 +412,56 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved, init
                       </p>
                     </div>
                   )}
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          {/* Theme Section - only shown when a provider is selected */}
+          <AnimatePresence>
+            {selectedProvider && (
+              <motion.section
+                variants={settingsVariants.slideDown}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ ...settingsTransitions.enter, delay: 0.06 }}
+              >
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">Theme</div>
+                      <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                        Switch between light and dark theme.
+                      </p>
+                    </div>
+                    <div className="ml-4 flex items-center gap-3">
+                      {/* Theme Toggle */}
+                      <button
+                        data-testid="settings-theme-toggle"
+                        onClick={handleThemeToggle}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${theme === 'dark' ? 'bg-primary' : 'bg-muted'
+                          }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                      {/* Theme Icon */}
+                      <div className="text-muted-foreground">
+                        {theme === 'dark' ? (
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.section>
             )}

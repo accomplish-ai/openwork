@@ -53,6 +53,8 @@ interface AccomplishAPI {
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
+  getTheme(): Promise<string>;
+  setTheme(theme: string): Promise<void>;
   getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean }>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;

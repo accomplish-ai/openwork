@@ -36,6 +36,8 @@ import {
 import {
   getDebugMode,
   setDebugMode,
+  getTheme,
+  setTheme,
   getAppSettings,
   getOnboardingComplete,
   setOnboardingComplete,
@@ -2233,6 +2235,19 @@ export function registerIPCHandlers(): void {
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:debug-mode-changed', { enabled });
     }
+  });
+
+  // Settings: Get theme
+  handle('settings:theme', async (_event: IpcMainInvokeEvent) => {
+    return getTheme();
+  });
+
+  // Settings: Set theme
+  handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
+    if (typeof theme !== 'string' || (theme !== 'light' && theme !== 'dark')) {
+      throw new Error('Invalid theme value');
+    }
+    setTheme(theme);
   });
 
   // Settings: Get all app settings

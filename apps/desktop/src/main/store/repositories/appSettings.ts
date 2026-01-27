@@ -13,6 +13,7 @@ interface AppSettingsRow {
   azure_foundry_config: string | null;
   lmstudio_config: string | null;
   openai_base_url: string | null;
+  theme: string | null;
 }
 
 interface AppSettings {
@@ -150,6 +151,22 @@ export function getOpenAiBaseUrl(): string {
 export function setOpenAiBaseUrl(baseUrl: string): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET openai_base_url = ? WHERE id = 1').run(baseUrl || '');
+}
+
+/**
+ * Get theme ('light' or 'dark', defaults to 'light').
+ */
+export function getTheme(): string {
+  const row = getRow();
+  return row.theme || 'light';
+}
+
+/**
+ * Set theme ('light' or 'dark').
+ */
+export function setTheme(theme: string): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET theme = ? WHERE id = 1').run(theme);
 }
 
 function safeParseJson<T>(json: string | null): T | null {
