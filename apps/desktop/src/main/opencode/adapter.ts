@@ -89,6 +89,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
   /** Whether the first tool has been received (to stop showing startup stages) */
   private hasReceivedFirstTool: boolean = false;
+  /** Buffer of recent PTY output for error reporting (last 50 lines) */
+  private outputBuffer: string[] = [];
+  private readonly MAX_OUTPUT_BUFFER_LINES = 50;
 
   /**
    * Create a new OpenCodeAdapter instance
@@ -210,6 +213,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.completionEnforcer.reset();
     this.lastWorkingDirectory = config.workingDirectory;
     this.hasReceivedFirstTool = false;
+    this.outputBuffer = []; // Clear output buffer for new task
     // Clear any existing waiting transition timer
     if (this.waitingTransitionTimer) {
       clearTimeout(this.waitingTransitionTimer);
@@ -342,6 +346,18 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences with BEL terminator (window titles)
           .replace(/\x1B\][^\x1B]*\x1B\\/g, '');    // OSC sequences with ST terminator
         if (cleanData.trim()) {
+          // Buffer output for error reporting (keep last N lines)
+          const lines = cleanData.split('\n');
+          for (const line of lines) {
+            if (line.trim()) {
+              this.outputBuffer.push(line);
+              // Keep only the last MAX_OUTPUT_BUFFER_LINES lines
+              if (this.outputBuffer.length > this.MAX_OUTPUT_BUFFER_LINES) {
+                this.outputBuffer.shift();
+              }
+            }
+          }
+
           // Truncate for console.log to avoid flooding terminal
           const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
           console.log('[OpenCode CLI stdout]:', truncated);
@@ -1131,8 +1147,24 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Only emit complete/error if we haven't already received a result message
     if (!this.hasCompleted) {
       if (code !== null && code !== 0) {
-        // Error exit
-        this.emit('error', new Error(`OpenCode CLI exited with code ${code}`));
+        // Error exit - build detailed error message with buffered output
+        let errorMessage = `OpenCode CLI exited with code ${code}`;
+
+        // Include buffered output to help diagnose the issue
+        if (this.outputBuffer.length > 0) {
+          const recentOutput = this.outputBuffer.slice(-10).join('\n'); // Last 10 lines
+          errorMessage += `\n\nRecent output:\n${recentOutput}`;
+
+          // Emit buffered output as debug info (always, even if debug mode is off)
+          // This ensures critical errors are visible to users
+          this.emit('debug', {
+            type: 'error',
+            message: 'Task failed with recent output',
+            data: { exitCode: code, output: recentOutput }
+          });
+        }
+
+        this.emit('error', new Error(errorMessage));
       }
     }
 

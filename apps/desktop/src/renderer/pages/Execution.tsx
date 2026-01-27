@@ -176,6 +176,14 @@ export default function ExecutionPage() {
   const [debugModeEnabled, setDebugModeEnabled] = useState(false);
   const [debugExported, setDebugExported] = useState(false);
   const debugPanelRef = useRef<HTMLDivElement>(null);
+
+  // Check if there are any error-type debug logs
+  const hasErrorLogs = useMemo(() => {
+    return debugLogs.some(log => log.type === 'error' || log.message.toLowerCase().includes('error'));
+  }, [debugLogs]);
+
+  // Show debug panel if debug mode is enabled OR if there are error logs
+  const shouldShowDebugPanel = debugModeEnabled || hasErrorLogs;
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -243,6 +251,13 @@ export default function ExecutionPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - accomplish is a stable singleton wrapper
+
+  // Auto-open debug panel when error logs appear
+  useEffect(() => {
+    if (hasErrorLogs && !debugPanelOpen) {
+      setDebugPanelOpen(true);
+    }
+  }, [hasErrorLogs, debugPanelOpen]);
 
   // Elapsed time timer for startup indicator
   useEffect(() => {
@@ -1187,8 +1202,8 @@ export default function ExecutionPage() {
         </div>
       )}
 
-      {/* Debug Panel - Only visible when debug mode is enabled */}
-      {debugModeEnabled && (
+      {/* Debug Panel - Visible when debug mode is enabled OR when there are error logs */}
+      {shouldShowDebugPanel && (
         <div className="flex-shrink-0 border-t border-border" data-testid="debug-panel">
           {/* Toggle header */}
           <button
@@ -1196,10 +1211,15 @@ export default function ExecutionPage() {
             className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors"
           >
             <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <Bug className="h-4 w-4" />
-              <span className="font-medium">Debug Logs</span>
+              <Bug className={cn("h-4 w-4", hasErrorLogs && "text-red-400")} />
+              <span className={cn("font-medium", hasErrorLogs && "text-red-400")}>
+                {hasErrorLogs ? "Error Details" : "Debug Logs"}
+              </span>
               {debugLogs.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-zinc-700 text-zinc-300 text-xs">
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded-full text-xs",
+                  hasErrorLogs ? "bg-red-900/30 text-red-400" : "bg-zinc-700 text-zinc-300"
+                )}>
                   {debugLogs.length}
                 </span>
               )}

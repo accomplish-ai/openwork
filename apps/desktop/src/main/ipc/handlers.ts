@@ -428,7 +428,10 @@ export function registerIPCHandlers(): void {
       },
 
       onDebug: (log: { type: string; message: string; data?: unknown }) => {
-        if (getDebugMode()) {
+        // Always forward error-type debug logs, even if debug mode is off
+        // This ensures users see critical error information when tasks fail
+        const isErrorLog = log.type === 'error' || log.message.toLowerCase().includes('error') || log.message.toLowerCase().includes('failed');
+        if (getDebugMode() || isErrorLog) {
           forwardToRenderer('debug:log', {
             taskId,
             timestamp: new Date().toISOString(),
@@ -689,7 +692,10 @@ export function registerIPCHandlers(): void {
       },
 
       onDebug: (log: { type: string; message: string; data?: unknown }) => {
-        if (getDebugMode()) {
+        // Always forward error-type debug logs, even if debug mode is off
+        // This ensures users see critical error information when tasks fail
+        const isErrorLog = log.type === 'error' || log.message.toLowerCase().includes('error') || log.message.toLowerCase().includes('failed');
+        if (getDebugMode() || isErrorLog) {
           forwardToRenderer('debug:log', {
             taskId,
             timestamp: new Date().toISOString(),
