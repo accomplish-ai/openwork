@@ -480,10 +480,14 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     litellm: 'litellm',
     minimax: 'minimax',
     lmstudio: 'lmstudio',
+    nebius: 'nebius',
+    together: 'together',
+    fireworks: 'fireworks',
+    groq: 'groq',
   };
 
   // Build enabled providers list from new settings or fall back to base providers
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'minimax', 'nebius', 'together', 'fireworks', 'groq'];
   let enabledProviders = baseProviders;
 
   // If we have connected providers in the new settings, use those
@@ -948,6 +952,42 @@ export async function syncApiKeysToOpenCodeAuth(): Promise<void> {
       auth.minimax = { type: 'api', key: apiKeys.minimax };
       updated = true;
       console.log('[OpenCode Auth] Synced MiniMax API key');
+    }
+  }
+
+  // Sync Nebius API key
+  if (apiKeys.nebius) {
+    if (!auth.nebius || auth.nebius.key !== apiKeys.nebius) {
+      auth.nebius = { type: 'api', key: apiKeys.nebius };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Nebius API key');
+    }
+  }
+
+  // Sync Together AI API key
+  if (apiKeys.together) {
+    if (!auth.together || auth.together.key !== apiKeys.together) {
+      auth.together = { type: 'api', key: apiKeys.together };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Together AI API key');
+    }
+  }
+
+  // Sync Fireworks AI API key
+  if (apiKeys.fireworks) {
+    if (!auth.fireworks || auth.fireworks.key !== apiKeys.fireworks) {
+      auth.fireworks = { type: 'api', key: apiKeys.fireworks };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Fireworks AI API key');
+    }
+  }
+
+  // Sync Groq API key
+  if (apiKeys.groq) {
+    if (!auth.groq || auth.groq.key !== apiKeys.groq) {
+      auth.groq = { type: 'api', key: apiKeys.groq };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Groq API key');
     }
   }
 
