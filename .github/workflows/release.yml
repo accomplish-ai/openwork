@@ -232,7 +232,7 @@ jobs:
             git checkout main
             git pull origin main
             git tag "v${VERSION}"
-            git push origin "v${VERSION}" --force
+            git push origin "v${VERSION}"
           fi
 
   build-mac-arm64:
