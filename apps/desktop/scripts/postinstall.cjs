@@ -25,6 +25,9 @@ const isWindows = process.platform === 'win32';
 
 function runCommand(command, description, extraEnv = {}) {
   console.log(`\n> ${description}...`);
+  console.log(`> Command: ${command}`);
+  console.log(`> Working directory: ${path.join(__dirname, '..')}`);
+  const startTime = Date.now();
   try {
     execSync(command, {
       stdio: 'inherit',
@@ -36,7 +39,11 @@ function runCommand(command, description, extraEnv = {}) {
         ...extraEnv,
       }
     });
+    const endTime = Date.now();
+    console.log(`> Completed: ${description} in ${Math.round((endTime - startTime) / 1000)}s`);
   } catch (error) {
+    const endTime = Date.now();
+    console.log(`> Failed after ${Math.round((endTime - startTime) / 1000)}s`);
     console.error(`Failed: ${description}`);
     process.exit(1);
   }
@@ -56,6 +63,7 @@ if (isWindows) {
   const betterSqlite3Path = findBetterSqlite3();
   if (betterSqlite3Path) {
     console.log(`> Found better-sqlite3 at: ${betterSqlite3Path}`);
+    const prebuildStartTime = Date.now();
     try {
       // Remove existing build to force prebuild-install to run
       const buildPath = path.join(betterSqlite3Path, 'build');
@@ -69,8 +77,12 @@ if (isWindows) {
         cwd: betterSqlite3Path,
         shell: true
       });
+      const prebuildEndTime = Date.now();
+      console.log(`> better-sqlite3 prebuild install completed in ${Math.round((prebuildEndTime - prebuildStartTime) / 1000)}s`);
       console.log('> better-sqlite3 Electron prebuild installed successfully');
     } catch (error) {
+      const prebuildEndTime = Date.now();
+      console.log(`> better-sqlite3 prebuild install failed after ${Math.round((prebuildEndTime - prebuildStartTime) / 1000)}s`);
       console.error('> Failed to install better-sqlite3 prebuild:', error.message);
       console.error('> The app may not work correctly in packaged mode.');
       // Don't exit - the app might still work in development

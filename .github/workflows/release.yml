@@ -202,7 +202,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --reporter=append-only
 
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
@@ -253,7 +253,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --reporter=append-only
 
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
@@ -299,7 +299,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --reporter=append-only
 
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
