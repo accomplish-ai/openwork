@@ -168,12 +168,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Clean up stale release branch if it exists from a previous failed run
-          if git ls-remote --heads origin | grep -q "refs/heads/${BRANCH}$"; then
-            echo "Deleting stale branch ${BRANCH} from previous run"
-            git push origin --delete "$BRANCH"
-          fi
-
           # Create release branch
           git checkout -b "$BRANCH"
           git add apps/desktop/package.json
