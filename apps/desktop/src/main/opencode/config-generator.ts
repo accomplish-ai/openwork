@@ -862,6 +862,47 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     },
   };
 
+  // ==========================================================================
+  // EVAL MODE: Configure provider to use API key from environment variable
+  // This enables running in containers/CI without interactive auth setup
+  // ==========================================================================
+  if (process.env.OPENWORK_PREFER_ENV_KEYS === '1' && process.env.OPENWORK_PROVIDER) {
+    const evalProvider = process.env.OPENWORK_PROVIDER.toLowerCase();
+
+    // Map provider names to OpenCode provider IDs
+    const providerNameMap: Record<string, string> = {
+      anthropic: 'anthropic',
+      openai: 'openai',
+      google: 'google',
+      xai: 'xai',
+      deepseek: 'deepseek',
+      zai: 'zai-coding-plan',
+      openrouter: 'openrouter',
+      litellm: 'litellm',
+      minimax: 'minimax',
+    };
+
+    const openCodeProviderId = providerNameMap[evalProvider] || evalProvider;
+
+    // Initialize provider config if not exists
+    if (!config.provider) {
+      config.provider = {};
+    }
+
+    // Add apiKey reference to PROVIDER_API_KEY environment variable
+    const existingProvider = config.provider[openCodeProviderId] as unknown as Record<string, unknown> | undefined;
+    const existingOptions = existingProvider?.options as Record<string, unknown> | undefined;
+    config.provider[openCodeProviderId] = {
+      ...existingProvider,
+      options: {
+        ...existingOptions,
+        apiKey: '{env:PROVIDER_API_KEY}',
+      },
+    } as unknown as ProviderConfig;
+
+    console.log(`[OpenCode Config] Eval mode: ${openCodeProviderId} configured with {env:PROVIDER_API_KEY}`);
+  }
+
   // Write config file
   const configJson = JSON.stringify(config, null, 2);
   fs.writeFileSync(configPath, configJson);
