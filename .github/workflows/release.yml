@@ -108,107 +108,104 @@ jobs:
           cd apps/desktop
           npm version ${{ steps.bump.outputs.new_version }} --no-git-tag-version
 
-      - name: Validate no previous release artifacts
+      - name: Validate no existing GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.bump.outputs.new_version }}"
-          echo "=== Validating no stale artifacts exist for v${VERSION} ==="
 
-          CONFLICTS=""
-
-          # Check for existing tag
-          if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
-            CONFLICTS="${CONFLICTS}\n  - Tag: v${VERSION} (delete with: git push origin --delete v${VERSION})"
-          fi
-
-          # Check for existing branch
-          if git ls-remote --heads origin | grep -q "refs/heads/release/v${VERSION}$"; then
-            CONFLICTS="${CONFLICTS}\n  - Branch: release/v${VERSION} (delete with: git push origin --delete release/v${VERSION})"
-          fi
-
-          # Check for existing GitHub release
           if gh release view "v${VERSION}" &>/dev/null; then
-            CONFLICTS="${CONFLICTS}\n  - GitHub Release: v${VERSION} (delete with: gh release delete v${VERSION} --yes --cleanup-tag)"
-          fi
-
-          if [ -n "$CONFLICTS" ]; then
-            echo ""
             echo "============================================"
-            echo "ERROR: Found existing release artifacts for v${VERSION}"
+            echo "ERROR: GitHub Release v${VERSION} already exists"
             echo "============================================"
             echo ""
-            echo "The following resources must be manually deleted before re-running:"
-            echo -e "$CONFLICTS"
-            echo ""
-            echo "This usually happens when a previous release attempt or dry run"
-            echo "partially completed. Clean up the resources above and re-run."
+            echo "Delete it before re-running:"
+            echo "  gh release delete v${VERSION} --yes --cleanup-tag"
             echo "============================================"
             exit 1
           fi
 
-          echo "No conflicts found, safe to proceed"
+          echo "No existing release found, safe to proceed"
 
       - name: Create release PR and merge
+        if: steps.inputs.outputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.bump.outputs.new_version }}"
           BRANCH="release/v${VERSION}"
-          DRY_RUN="${{ steps.inputs.outputs.dry_run }}"
+
+          # Check if version bump is already on main (PR merged in a previous run)
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:apps/desktop/package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+          if [ "$MAIN_VERSION" == "$VERSION" ]; then
+            echo "Version ${VERSION} already on main — PR was merged in a previous run, skipping"
+            exit 0
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clean up stale release branch if it exists from a previous failed run
+          if git ls-remote --heads origin | grep -q "refs/heads/${BRANCH}$"; then
+            echo "Deleting stale branch ${BRANCH} from previous run"
+            git push origin --delete "$BRANCH"
+          fi
 
           # Create release branch
           git checkout -b "$BRANCH"
           git add apps/desktop/package.json
           git commit -m "chore(release): bump version to ${VERSION}"
+          git push origin "$BRANCH"
+
+          # Create PR
+          PR_URL=$(gh pr create \
+            --title "chore(release): bump version to ${VERSION}" \
+            --body "Automated release PR for v${VERSION}" \
+            --base main \
+            --head "$BRANCH")
+          echo "Created PR: $PR_URL"
+
+          # PR will be approved by Cloudflare Worker (private infrastructure)
+          # Enable auto-merge (squash)
+          gh pr merge "$BRANCH" --squash --auto --delete-branch
+
+          # Wait for PR to be merged (max 3 minutes)
+          echo "Waiting for auto-merge..."
+          for i in {1..36}; do
+            sleep 5
+            STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
+            echo "PR state: $STATE"
+            if [ "$STATE" == "MERGED" ]; then
+              echo "PR merged successfully"
+              break
+            fi
+            if [ "$STATE" == "CLOSED" ]; then
+              echo "Error: PR was closed without merging"
+              exit 1
+            fi
+          done
+
+          # Verify merge happened
+          FINAL_STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
+          if [ "$FINAL_STATE" != "MERGED" ]; then
+            echo "Error: PR did not merge within timeout"
+            exit 1
+          fi
+
+      - name: Create and push release tag
+        run: |
+          VERSION="${{ steps.bump.outputs.new_version }}"
+          DRY_RUN="${{ steps.inputs.outputs.dry_run }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if [ "$DRY_RUN" == "true" ]; then
             echo "DRY RUN: Creating test tag without PR"
             git tag "v${VERSION}"
             git push origin "v${VERSION}" --force
           else
-            # Push branch
-            git push origin "$BRANCH"
-
-            # Create PR
-            PR_URL=$(gh pr create \
-              --title "chore(release): bump version to ${VERSION}" \
-              --body "Automated release PR for v${VERSION}" \
-              --base main \
-              --head "$BRANCH")
-            echo "Created PR: $PR_URL"
-
-            # PR will be approved by Cloudflare Worker (private infrastructure)
-            # Enable auto-merge (squash)
-            gh pr merge "$BRANCH" --squash --auto --delete-branch
-
-            # Wait for PR to be merged (max 3 minutes)
-            echo "Waiting for auto-merge..."
-            for i in {1..36}; do
-              sleep 5
-              STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
-              echo "PR state: $STATE"
-              if [ "$STATE" == "MERGED" ]; then
-                echo "PR merged successfully"
-                break
-              fi
-              if [ "$STATE" == "CLOSED" ]; then
-                echo "Error: PR was closed without merging"
-                exit 1
-              fi
-            done
-
-            # Verify merge happened
-            FINAL_STATE=$(gh pr view "$BRANCH" --json state --jq '.state')
-            if [ "$FINAL_STATE" != "MERGED" ]; then
-              echo "Error: PR did not merge within timeout"
-              exit 1
-            fi
-
-            # Fetch latest main and create tag
             git fetch origin main
             git checkout main
             git pull origin main
