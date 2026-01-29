@@ -84,6 +84,21 @@ export class DeepSeekEnvProvider implements EnvProvider {
 }
 
 /**
+ * Moonshot environment provider.
+ * Sets MOONSHOT_API_KEY.
+ */
+export class MoonshotEnvProvider implements EnvProvider {
+  readonly providerId = 'moonshot' as const;
+
+  setEnv(env: NodeJS.ProcessEnv, context: EnvContext): void {
+    if (context.apiKeys.moonshot) {
+      env.MOONSHOT_API_KEY = context.apiKeys.moonshot;
+      console.log('[OpenCode CLI] Using Moonshot API key from settings');
+    }
+  }
+}
+
+/**
  * Z.AI environment provider.
  * Sets ZAI_API_KEY.
  */

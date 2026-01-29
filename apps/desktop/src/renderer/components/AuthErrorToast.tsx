@@ -16,6 +16,7 @@ const PROVIDER_NAMES: Record<string, string> = {
   openrouter: 'OpenRouter',
   xai: 'xAI',
   deepseek: 'DeepSeek',
+  moonshot: 'Moonshot AI',
   ollama: 'Ollama',
   litellm: 'LiteLLM',
 };

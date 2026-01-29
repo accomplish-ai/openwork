@@ -1177,6 +1177,16 @@ export function registerIPCHandlers(): void {
           region: parsed.region || 'us-east-1',
           credentials: fromIni({ profile: parsed.profileName || 'default' }),
         });
+      } else if (parsed.authType === 'apiKey') {
+        // API Key (Bearer token) authentication
+        // AWS SDK doesn't directly support bearer tokens for Bedrock validation,
+        // but we can accept it and let OpenCode CLI handle the actual API calls.
+        // For validation, we just check that the apiKey is provided.
+        if (!parsed.apiKey) {
+          return { valid: false, error: 'API Key is required' };
+        }
+        console.log('[Bedrock] API Key validation - accepting without SDK verification');
+        return { valid: true };
       } else {
         return { valid: false, error: 'Invalid authentication type' };
       }
@@ -1222,11 +1232,15 @@ export function registerIPCHandlers(): void {
             sessionToken: credentials.sessionToken,
           },
         });
-      } else {
+      } else if (credentials.authType === 'profile') {
         bedrockClient = new BedrockClient({
           region: credentials.region || 'us-east-1',
           credentials: fromIni({ profile: credentials.profileName }),
         });
+      } else {
+        // apiKey auth type - AWS SDK doesn't directly support bearer tokens for ListFoundationModels
+        // Return empty models list; user can still use Bedrock via the CLI with bearer token auth
+        return { success: true, models: [] };
       }
 
       // Fetch all foundation models
@@ -1255,15 +1269,28 @@ export function registerIPCHandlers(): void {
   handle('bedrock:save', async (_event: IpcMainInvokeEvent, credentials: string) => {
     const parsed = JSON.parse(credentials);
 
-    // Validate structure
+    // Validate structure and determine label/keyPrefix
+    let label: string;
+    let keyPrefix: string;
+
     if (parsed.authType === 'accessKeys') {
       if (!parsed.accessKeyId || !parsed.secretAccessKey) {
         throw new Error('Access Key ID and Secret Access Key are required');
       }
+      label = 'AWS Access Keys';
+      keyPrefix = `${parsed.accessKeyId.substring(0, 8)}...`;
     } else if (parsed.authType === 'profile') {
       if (!parsed.profileName) {
         throw new Error('Profile name is required');
       }
+      label = `AWS Profile: ${parsed.profileName}`;
+      keyPrefix = parsed.profileName;
+    } else if (parsed.authType === 'apiKey') {
+      if (!parsed.apiKey) {
+        throw new Error('API Key is required');
+      }
+      label = 'Bedrock API Key';
+      keyPrefix = `${parsed.apiKey.substring(0, 8)}...`;
     } else {
       throw new Error('Invalid authentication type');
     }
@@ -1274,8 +1301,8 @@ export function registerIPCHandlers(): void {
     return {
       id: 'local-bedrock',
       provider: 'bedrock',
-      label: parsed.authType === 'accessKeys' ? 'AWS Access Keys' : `AWS Profile: ${parsed.profileName}`,
-      keyPrefix: parsed.authType === 'accessKeys' ? `${parsed.accessKeyId.substring(0, 8)}...` : parsed.profileName,
+      label,
+      keyPrefix,
       isActive: true,
       createdAt: new Date().toISOString(),
     };

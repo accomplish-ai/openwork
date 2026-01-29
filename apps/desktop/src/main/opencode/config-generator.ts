@@ -6,6 +6,8 @@ import { getOllamaConfig, getLMStudioConfig } from '../store/appSettings';
 import { getApiKey } from '../store/secureStorage';
 import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } from '../store/providerSettings';
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
+import { ensureMoonshotProxy } from './moonshot-proxy';
+import { getNodePath } from '../utils/bundled-node';
 import type { BedrockCredentials, ProviderId, ZaiCredentials, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
@@ -46,6 +48,47 @@ export function getOpenCodeConfigDir(): string {
   } else {
     return app.getAppPath();
   }
+}
+
+function resolveBundledTsxCommand(skillsPath: string): string[] {
+  const tsxBin = process.platform === 'win32' ? 'tsx.cmd' : 'tsx';
+  const candidates = [
+    path.join(skillsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
+    path.join(skillsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
+    path.join(skillsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
+    path.join(skillsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      console.log('[OpenCode Config] Using bundled tsx:', candidate);
+      return [candidate];
+    }
+  }
+
+  console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
+  return ['npx', 'tsx'];
+}
+
+function resolveSkillCommand(
+  tsxCommand: string[],
+  skillsPath: string,
+  skillName: string,
+  sourceRelPath: string,
+  distRelPath: string
+): string[] {
+  const skillDir = path.join(skillsPath, skillName);
+  const distPath = path.join(skillDir, distRelPath);
+
+  if ((app.isPackaged || process.env.OPENWORK_BUNDLED_SKILLS === '1') && fs.existsSync(distPath)) {
+    const nodePath = getNodePath();
+    console.log('[OpenCode Config] Using bundled skill entry:', distPath);
+    return [nodePath, distPath];
+  }
+
+  const sourcePath = path.join(skillDir, sourceRelPath);
+  console.log('[OpenCode Config] Using tsx skill entry:', sourcePath);
+  return [...tsxCommand, sourcePath];
 }
 
 /**
@@ -193,6 +236,7 @@ CORRECT: Output plan FIRST, call todowrite SECOND, then start working
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
 - **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
 - For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
+- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
 
 **BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
 - Before each browser action, briefly explain what you're about to do in user terms
@@ -322,6 +366,20 @@ interface OpenRouterProviderConfig {
   models: Record<string, OpenRouterProviderModelConfig>;
 }
 
+interface MoonshotProviderModelConfig {
+  name: string;
+  tools?: boolean;
+}
+
+interface MoonshotProviderConfig {
+  npm: string;
+  name: string;
+  options: {
+    baseURL: string;
+  };
+  models: Record<string, MoonshotProviderModelConfig>;
+}
+
 interface LiteLLMProviderModelConfig {
   name: string;
   tools?: boolean;
@@ -365,7 +423,7 @@ interface LMStudioProviderConfig {
   models: Record<string, LMStudioProviderModelConfig>;
 }
 
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig;
+type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | MoonshotProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig;
 
 interface OpenCodeConfig {
   $schema?: string;
@@ -377,6 +435,7 @@ interface OpenCodeConfig {
   agent?: Record<string, AgentConfig>;
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, ProviderConfig>;
+  plugin?: string[];
 }
 
 /**
@@ -460,7 +519,6 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   console.log('[OpenCode Config] OpenCode config dir:', openCodeConfigDir);
 
   // Build file-permission MCP server command
-  const filePermissionServerPath = path.join(skillsPath, 'file-permission', 'src', 'index.ts');
 
   // Get connected providers from new settings (with legacy fallback)
   const providerSettings = getProviderSettings();
@@ -474,6 +532,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     google: 'google',
     xai: 'xai',
     deepseek: 'deepseek',
+    moonshot: 'moonshot',
     zai: 'zai-coding-plan',
     bedrock: 'amazon-bedrock',
     'azure-foundry': 'azure-foundry',
@@ -485,7 +544,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   };
 
   // Build enabled providers list from new settings or fall back to base providers
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
   let enabledProviders = baseProviders;
 
   // If we have connected providers in the new settings, use those
@@ -600,6 +659,31 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
         };
         console.log('[OpenCode Config] OpenRouter configured from legacy settings:', Object.keys(openrouterModels));
       }
+    }
+  }
+
+  // Configure Moonshot if connected
+  const moonshotProvider = providerSettings.connectedProviders.moonshot;
+  if (moonshotProvider?.connectionStatus === 'connected') {
+    if (moonshotProvider.selectedModelId) {
+      const modelId = moonshotProvider.selectedModelId.replace(/^moonshot\//, '');
+      const moonshotApiKey = getApiKey('moonshot');
+      const proxyInfo = await ensureMoonshotProxy('https://api.moonshot.ai/v1');
+      providerConfig.moonshot = {
+        npm: '@ai-sdk/openai-compatible',
+        name: 'Moonshot AI',
+        options: {
+          baseURL: proxyInfo.baseURL,
+          ...(moonshotApiKey ? { apiKey: moonshotApiKey } : {}),
+        },
+        models: {
+          [modelId]: {
+            name: modelId,
+            tools: true,
+          },
+        },
+      };
+      console.log('[OpenCode Config] Moonshot AI configured:', modelId);
     }
   }
 
@@ -859,6 +943,8 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     console.log('[OpenCode Config] Setting model in config:', configModel);
   }
 
+  const tsxCommand = resolveBundledTsxCommand(skillsPath);
+  console.log('[OpenCode Config] MCP build marker: edited by codex');
   const config: OpenCodeConfig = {
     $schema: 'https://opencode.ai/config.json',
     model: configModel,
@@ -866,8 +952,8 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     default_agent: ACCOMPLISH_AGENT_NAME,
     // Enable all supported providers - providers auto-configure when API keys are set via env vars
     enabled_providers: enabledProviders,
-    // Auto-allow all tool permissions - the system prompt instructs the agent to use
-    // AskUserQuestion for user confirmations, which shows in the UI as an interactive modal.
+  // Auto-allow all tool permissions - the system prompt instructs the agent to use
+  // AskUserQuestion for user confirmations, which shows in the UI as an interactive modal.
     // CLI-level permission prompts don't show in the UI and would block task execution.
     // Note: todowrite is disabled by default and must be explicitly enabled.
     permission: {
@@ -875,6 +961,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       todowrite: 'allow',
     },
     provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
+    // Dynamic Context Pruning plugin - prunes obsolete tool outputs from conversation
+    // history to reduce token usage (deduplication, supersede writes, purge errors)
+    plugin: ['@tarquinen/opencode-dcp@^1.2.7'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
@@ -887,7 +976,13 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     mcp: {
       'file-permission': {
         type: 'local',
-        command: ['npx', 'tsx', filePermissionServerPath],
+        command: resolveSkillCommand(
+          tsxCommand,
+          skillsPath,
+          'file-permission',
+          'src/index.ts',
+          'dist/index.mjs'
+        ),
         enabled: true,
         environment: {
           PERMISSION_API_PORT: String(PERMISSION_API_PORT),
@@ -896,7 +991,13 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'ask-user-question': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'ask-user-question', 'src', 'index.ts')],
+        command: resolveSkillCommand(
+          tsxCommand,
+          skillsPath,
+          'ask-user-question',
+          'src/index.ts',
+          'dist/index.mjs'
+        ),
         enabled: true,
         environment: {
           QUESTION_API_PORT: String(QUESTION_API_PORT),
@@ -905,14 +1006,26 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'dev-browser-mcp': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
+        command: resolveSkillCommand(
+          tsxCommand,
+          skillsPath,
+          'dev-browser-mcp',
+          'src/index.ts',
+          'dist/index.mjs'
+        ),
         enabled: true,
         timeout: 30000,
       },
       // Provides complete_task tool - agent must call to signal task completion
       'complete-task': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        command: resolveSkillCommand(
+          tsxCommand,
+          skillsPath,
+          'complete-task',
+          'src/index.ts',
+          'dist/index.mjs'
+        ),
         enabled: true,
         timeout: 30000,
       },

@@ -42,7 +42,7 @@ const accomplishAPI = {
   // Settings
   getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke('settings:api-keys'),
   addApiKey: (
-    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'lmstudio',
+    provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'lmstudio' | 'elevenlabs',
     key: string,
     label?: string
   ): Promise<unknown> =>
@@ -282,6 +282,21 @@ const accomplishAPI = {
   // Export application logs
   exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
     ipcRenderer.invoke('logs:export'),
+
+  // Speech-to-Text API
+  speechIsConfigured: (): Promise<boolean> =>
+    ipcRenderer.invoke('speech:is-configured'),
+  speechGetConfig: (): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }> =>
+    ipcRenderer.invoke('speech:get-config'),
+  speechValidate: (apiKey?: string): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke('speech:validate', apiKey),
+  speechTranscribe: (audioData: ArrayBuffer, mimeType?: string): Promise<{
+    success: true;
+    result: { text: string; confidence?: number; duration: number; timestamp: number };
+  } | {
+    success: false;
+    error: { code: string; message: string };
+  }> => ipcRenderer.invoke('speech:transcribe', audioData, mimeType),
 };
 
 // Expose the API to the renderer

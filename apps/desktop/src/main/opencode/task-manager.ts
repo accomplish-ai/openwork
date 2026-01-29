@@ -95,7 +95,14 @@ async function installPlaywrightChromium(
     let spawnEnv: NodeJS.ProcessEnv = { ...process.env };
     if (bundledPaths) {
       const delimiter = process.platform === 'win32' ? ';' : ':';
-      spawnEnv.PATH = `${bundledPaths.binDir}${delimiter}${process.env.PATH || ''}`;
+      const existingPath = process.env.PATH ?? process.env.Path ?? '';
+      const combinedPath = existingPath
+        ? `${bundledPaths.binDir}${delimiter}${existingPath}`
+        : bundledPaths.binDir;
+      spawnEnv.PATH = combinedPath;
+      if (process.platform === 'win32') {
+        spawnEnv.Path = combinedPath;
+      }
     }
 
     const child = spawn(npxPath, ['playwright', 'install', 'chromium'], {
@@ -228,7 +235,14 @@ async function ensureDevBrowserServer(
     let spawnEnv: NodeJS.ProcessEnv = { ...process.env };
     if (bundledPaths) {
       const delimiter = process.platform === 'win32' ? ';' : ':';
-      spawnEnv.PATH = `${bundledPaths.binDir}${delimiter}${process.env.PATH || ''}`;
+      const existingPath = process.env.PATH ?? process.env.Path ?? '';
+      const combinedPath = existingPath
+        ? `${bundledPaths.binDir}${delimiter}${existingPath}`
+        : bundledPaths.binDir;
+      spawnEnv.PATH = combinedPath;
+      if (process.platform === 'win32') {
+        spawnEnv.Path = combinedPath;
+      }
       spawnEnv.NODE_BIN_PATH = bundledPaths.binDir;
     }
 

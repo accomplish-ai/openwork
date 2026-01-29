@@ -9,7 +9,7 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio';
 
 export interface ProviderConfig {
   id: ProviderType;
@@ -272,6 +272,36 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
         fullId: 'deepseek/deepseek-reasoner',
         contextWindow: 64000,
         supportsVision: false,
+      },
+    ],
+  },
+  {
+    id: 'moonshot',
+    name: 'Moonshot AI',
+    requiresApiKey: true,
+    apiKeyEnvVar: 'MOONSHOT_API_KEY',
+    baseUrl: 'https://api.moonshot.ai/v1',
+    models: [
+      {
+        id: 'kimi-k2.5',
+        displayName: 'Kimi K2.5',
+        provider: 'moonshot',
+        fullId: 'moonshot/kimi-k2.5',
+        contextWindow: 256000,
+        supportsVision: true,
+      },
+      {
+        id: 'kimi-k2-turbo-preview',
+        displayName: 'Kimi K2 Turbo (Preview)',
+        provider: 'moonshot',
+        fullId: 'moonshot/kimi-k2-turbo-preview',
+        contextWindow: 256000,
+      },
+      {
+        id: 'kimi-latest',
+        displayName: 'Kimi Latest',
+        provider: 'moonshot',
+        fullId: 'moonshot/kimi-latest',
       },
     ],
   },

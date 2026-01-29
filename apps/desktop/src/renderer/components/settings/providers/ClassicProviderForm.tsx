@@ -20,6 +20,7 @@ import openaiLogo from '/assets/ai-logos/openai.svg';
 import googleLogo from '/assets/ai-logos/google.svg';
 import xaiLogo from '/assets/ai-logos/xai.svg';
 import deepseekLogo from '/assets/ai-logos/deepseek.svg';
+import moonshotLogo from '/assets/ai-logos/moonshot.svg';
 import zaiLogo from '/assets/ai-logos/zai.svg';
 import minimaxLogo from '/assets/ai-logos/minimax.svg';
 
@@ -29,6 +30,7 @@ const PROVIDER_LOGOS: Record<string, string> = {
   google: googleLogo,
   xai: xaiLogo,
   deepseek: deepseekLogo,
+  moonshot: moonshotLogo,
   zai: zaiLogo,
   minimax: minimaxLogo,
 };

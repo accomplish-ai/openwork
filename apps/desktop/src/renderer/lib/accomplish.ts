@@ -49,7 +49,7 @@ interface AccomplishAPI {
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;
-  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'lmstudio', key: string, label?: string): Promise<ApiKeyConfig>;
+  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'lmstudio' | 'elevenlabs', key: string, label?: string): Promise<ApiKeyConfig>;
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
@@ -173,6 +173,18 @@ interface AccomplishAPI {
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
+
+  // Speech-to-Text
+  speechIsConfigured(): Promise<boolean>;
+  speechGetConfig(): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }>;
+  speechValidate(apiKey?: string): Promise<{ valid: boolean; error?: string }>;
+  speechTranscribe(audioData: ArrayBuffer, mimeType?: string): Promise<{
+    success: true;
+    result: { text: string; confidence?: number; duration: number; timestamp: number };
+  } | {
+    success: false;
+    error: { code: string; message: string };
+  }>;
 
   // Logging
   logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;

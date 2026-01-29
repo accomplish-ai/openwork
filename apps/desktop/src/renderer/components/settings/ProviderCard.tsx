@@ -12,6 +12,7 @@ import openaiLogo from '/assets/ai-logos/openai.svg';
 import googleLogo from '/assets/ai-logos/google.svg';
 import xaiLogo from '/assets/ai-logos/xai.svg';
 import deepseekLogo from '/assets/ai-logos/deepseek.svg';
+import moonshotLogo from '/assets/ai-logos/moonshot.svg';
 import zaiLogo from '/assets/ai-logos/zai.svg';
 import bedrockLogo from '/assets/ai-logos/bedrock.svg';
 import azureLogo from '/assets/ai-logos/azure.svg';
@@ -30,6 +31,7 @@ const PROVIDER_LOGOS: Record<ProviderId, string> = {
   google: googleLogo,
   xai: xaiLogo,
   deepseek: deepseekLogo,
+  moonshot: moonshotLogo,
   zai: zaiLogo,
   bedrock: bedrockLogo,
   'azure-foundry': azureLogo,

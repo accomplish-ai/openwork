@@ -29,7 +29,7 @@ export default function App() {
   const location = useLocation();
 
   // Get store state and actions
-  const { openLauncher, authError, clearAuthError } = useTaskStore();
+const { openLauncher, authError, clearAuthError } = useTaskStore();
 
   // Handle re-login from auth error toast
   const handleAuthReLogin = useCallback(() => {

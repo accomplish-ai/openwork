@@ -8,6 +8,7 @@ export {
   GoogleEnvProvider,
   XaiEnvProvider,
   DeepSeekEnvProvider,
+  MoonshotEnvProvider,
   ZaiEnvProvider,
   OpenRouterEnvProvider,
   LiteLLMEnvProvider,
