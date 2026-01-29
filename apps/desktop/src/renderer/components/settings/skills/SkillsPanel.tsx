@@ -27,7 +27,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
   const [isAtBottom, setIsAtBottom] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Filter, search, and sort skills (enabled first, hide hidden skills)
+  // Filter and search skills (hide hidden skills)
   const filteredSkills = useMemo(() => {
     // First, filter out hidden skills - they should never appear in the UI
     let result = skills.filter((s) => !s.isHidden);
@@ -52,11 +52,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
       );
     }
 
-    // Sort: enabled skills first
-    return [...result].sort((a, b) => {
-      if (a.isEnabled === b.isEnabled) return 0;
-      return a.isEnabled ? -1 : 1;
-    });
+    return result;
   }, [skills, filter, searchQuery]);
 
   // Check if scrolled to bottom
