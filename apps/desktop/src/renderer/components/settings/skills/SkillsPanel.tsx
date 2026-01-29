@@ -221,23 +221,26 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
         </div>
 
         {/* Refresh Button */}
-        <button
+        <motion.button
           onClick={handleResync}
           disabled={isResyncing}
           className="flex items-center justify-center rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           title="Refresh skills"
+          whileTap={{ scale: 0.92 }}
         >
-          <svg
-            className={`h-4 w-4 ${isResyncing ? 'animate-spin' : ''}`}
+          <motion.svg
+            className="h-4 w-4"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            animate={isResyncing ? { rotate: 360 } : { rotate: 0 }}
+            transition={isResyncing ? { duration: 0.8, repeat: Infinity, ease: 'linear' } : { duration: 0.3 }}
           >
             <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
             <path d="M21 3v5h-5" />
-          </svg>
-        </button>
+          </motion.svg>
+        </motion.button>
       </div>
 
       {/* Scrollable Skills Grid */}
