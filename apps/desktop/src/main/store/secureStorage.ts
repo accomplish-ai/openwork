@@ -187,26 +187,28 @@ export function deleteApiKey(provider: string): boolean {
 /**
  * Supported API key providers
  */
-export type ApiKeyProvider = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'zai' | 'custom' | 'bedrock' | 'litellm';
+export type ApiKeyProvider = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'moonshot' | 'zai' | 'custom' | 'bedrock' | 'litellm' | 'minimax';
 
 /**
  * Get all API keys for all providers
  */
 export async function getAllApiKeys(): Promise<Record<ApiKeyProvider, string | null>> {
-  const [anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock, litellm] = await Promise.all([
+  const [anthropic, openai, openrouter, google, xai, deepseek, moonshot, zai, custom, bedrock, litellm, minimax] = await Promise.all([
     getApiKey('anthropic'),
     getApiKey('openai'),
     getApiKey('openrouter'),
     getApiKey('google'),
     getApiKey('xai'),
     getApiKey('deepseek'),
+    getApiKey('moonshot'),
     getApiKey('zai'),
     getApiKey('custom'),
     getApiKey('bedrock'),
     getApiKey('litellm'),
+    getApiKey('minimax'),
   ]);
 
-  return { anthropic, openai, openrouter, google, xai, deepseek, zai, custom, bedrock, litellm };
+  return { anthropic, openai, openrouter, google, xai, deepseek, moonshot, zai, custom, bedrock, litellm, minimax };
 }
 
 /**

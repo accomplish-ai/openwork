@@ -60,7 +60,7 @@ export interface FileAttachment {
   id: string;
   name: string;
   path: string;
-  type: 'image' | 'text' | 'code' | 'pdf' | 'other';
+  type: 'image' | 'text' | 'document' | 'other';
   preview?: string; // base64 data URL for images, text content for text files
   size: number;
   mimeType: string;

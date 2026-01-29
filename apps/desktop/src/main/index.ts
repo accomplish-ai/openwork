@@ -8,8 +8,12 @@ import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
 import { checkAndCleanupFreshInstall } from './store/freshInstallCleanup';
 import { initializeDatabase, closeDatabase } from './store/db';
+import { getProviderSettings, clearProviderSettings } from './store/repositories/providerSettings';
+import { getApiKey } from './store/secureStorage';
 import { FutureSchemaError } from './store/migrations/errors';
 import { stopAzureFoundryProxy } from './opencode/azure-foundry-proxy';
+import { stopMoonshotProxy } from './opencode/moonshot-proxy';
+import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 
 // Local UI - no longer uses remote URL
 
@@ -129,6 +133,30 @@ function createWindow() {
   }
 }
 
+// Global error handlers to prevent crashes from uncaught errors
+// These commonly occur when stdout is unavailable (terminal closed, app shutdown)
+process.on('uncaughtException', (error) => {
+  // Only log to file (not console) to avoid recursive EIO errors
+  try {
+    const collector = getLogCollector();
+    collector.log('ERROR', 'main', `Uncaught exception: ${error.message}`, {
+      name: error.name,
+      stack: error.stack,
+    });
+  } catch {
+    // Ignore errors during error handling
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  try {
+    const collector = getLogCollector();
+    collector.log('ERROR', 'main', 'Unhandled promise rejection', { reason });
+  } catch {
+    // Ignore errors during error handling
+  }
+});
+
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -136,6 +164,15 @@ if (!gotTheLock) {
   console.log('[Main] Second instance attempted; quitting');
   app.quit();
 } else {
+  // Initialize logging FIRST - before anything else
+  initializeLogCollector();
+  getLogCollector().logEnv('INFO', 'App starting', {
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    nodeVersion: process.version,
+  });
+
   app.on('second-instance', () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -174,6 +211,25 @@ if (!gotTheLock) {
         return;
       }
       throw err;
+    }
+
+    // Validate provider settings - if DB says a provider is connected with api_key
+    // but the key doesn't exist in secure storage, clear provider settings
+    try {
+      const settings = getProviderSettings();
+      for (const [providerId, provider] of Object.entries(settings.connectedProviders)) {
+        if (provider?.credentials?.type === 'api_key') {
+          const key = getApiKey(providerId);
+          if (!key) {
+            console.warn(`[Main] Provider ${providerId} has api_key auth but key not found in secure storage`);
+            clearProviderSettings();
+            console.log('[Main] Cleared provider settings due to missing API keys');
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Main] Provider validation failed:', err);
     }
 
     // Set dock icon on macOS
@@ -219,8 +275,14 @@ app.on('before-quit', () => {
   stopAzureFoundryProxy().catch((err) => {
     console.error('[Main] Failed to stop Azure Foundry proxy:', err);
   });
+  // Stop Moonshot proxy server if running
+  stopMoonshotProxy().catch((err) => {
+    console.error('[Main] Failed to stop Moonshot proxy:', err);
+  });
   // Close database connection
   closeDatabase();
+  // Flush and shutdown logging LAST to capture all shutdown logs
+  shutdownLogCollector();
 });
 
 // Handle custom protocol (accomplish://)

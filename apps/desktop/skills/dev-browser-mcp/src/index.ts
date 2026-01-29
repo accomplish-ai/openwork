@@ -1180,11 +1180,105 @@ const SNAPSHOT_SCRIPT = `
   // Interactive ARIA roles that agents typically want to interact with
   const INTERACTIVE_ROLES = ['button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox', 'option', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'searchbox', 'slider', 'spinbutton', 'switch', 'dialog', 'alertdialog', 'menu', 'navigation', 'form'];
 
+  // === Token optimization: Priority scoring and truncation ===
+  const ROLE_PRIORITIES = {
+    button: 100, textbox: 95, searchbox: 95,
+    checkbox: 90, radio: 90, switch: 90,
+    combobox: 85, listbox: 85, slider: 85, spinbutton: 85,
+    link: 80, tab: 75,
+    menuitem: 70, menuitemcheckbox: 70, menuitemradio: 70, option: 70,
+    navigation: 60, menu: 60, tablist: 55,
+    form: 50, dialog: 50, alertdialog: 50
+  };
+  const VIEWPORT_BONUS = 50;
+  const DEFAULT_PRIORITY = 50;
+
+  function isInViewport(box) {
+    if (!box || !box.rect) return false;
+    const rect = box.rect;
+    if (rect.width === 0 || rect.height === 0) return false;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    return rect.x < vw && rect.y < vh && rect.x + rect.width > 0 && rect.y + rect.height > 0;
+  }
+
+  function getElementPriority(role, inViewport) {
+    const base = ROLE_PRIORITIES[role] || DEFAULT_PRIORITY;
+    return inViewport ? base + VIEWPORT_BONUS : base;
+  }
+
+  function collectScoredElements(root, opts) {
+    const elements = [];
+    const interactiveOnly = opts.interactiveOnly !== false;
+    const viewportOnlyOpt = opts.viewportOnly === true;
+
+    function visit(node) {
+      const isInteractive = INTERACTIVE_ROLES.includes(node.role);
+      if (interactiveOnly && !isInteractive) {
+        if (node.children) node.children.forEach(c => typeof c !== 'string' && visit(c));
+        return;
+      }
+      const inVp = isInViewport(node.box);
+      if (viewportOnlyOpt && !inVp) {
+        if (node.children) node.children.forEach(c => typeof c !== 'string' && visit(c));
+        return;
+      }
+      elements.push({ node, score: getElementPriority(node.role, inVp), inViewport: inVp });
+      if (node.children) node.children.forEach(c => typeof c !== 'string' && visit(c));
+    }
+    visit(root);
+    return elements;
+  }
+
+  function truncateWithBudget(elements, maxElements, maxTokens) {
+    const sorted = elements.slice().sort((a, b) => b.score - a.score);
+    const included = [];
+    let tokenCount = 0;
+    let truncationReason = null;
+
+    for (const el of sorted) {
+      if (included.length >= maxElements) { truncationReason = 'maxElements'; break; }
+      const elementTokens = 15; // Estimate per element
+      if (maxTokens && tokenCount + elementTokens > maxTokens) { truncationReason = 'maxTokens'; break; }
+      included.push(el);
+      tokenCount += elementTokens;
+    }
+
+    return {
+      elements: included,
+      totalElements: elements.length,
+      estimatedTokens: tokenCount,
+      truncated: included.length < elements.length,
+      truncationReason
+    };
+  }
+
   function renderAriaTree(ariaSnapshot, snapshotOptions) {
     snapshotOptions = snapshotOptions || {};
+    const maxElements = snapshotOptions.maxElements || 300;
+    const maxTokens = snapshotOptions.maxTokens || 8000;
     const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true };
     const lines = [];
     let nodesToRender = ariaSnapshot.root.role === "fragment" ? ariaSnapshot.root.children : [ariaSnapshot.root];
+
+    // Collect and score all elements
+    const scoredElements = collectScoredElements(ariaSnapshot.root, snapshotOptions);
+
+    // Truncate with token budget
+    const truncateResult = truncateWithBudget(scoredElements, maxElements, maxTokens);
+
+    // Build set of refs to include
+    const includedRefs = {};
+    for (const el of truncateResult.elements) {
+      if (el.node.ref) includedRefs[el.node.ref] = true;
+    }
+
+    // Add header with truncation info
+    if (truncateResult.truncated) {
+      const reason = truncateResult.truncationReason === 'maxTokens' ? 'token budget' : 'element limit';
+      lines.push("# Elements: " + truncateResult.elements.length + " of " + truncateResult.totalElements + " (truncated: " + reason + ")");
+      lines.push("# Tokens: ~" + truncateResult.estimatedTokens);
+    }
 
     const isInteractiveRole = (role) => INTERACTIVE_ROLES.includes(role);
 
@@ -1233,6 +1327,15 @@ const SNAPSHOT_SCRIPT = `
         for (const child of ariaNode.children) {
           if (typeof child === "string") continue; // Skip text in interactive_only mode
           else visit(child, childIndent, renderCursorPointer);
+        }
+        return;
+      }
+
+      // Skip elements not in included refs (truncation), but still visit children
+      if (ariaNode.ref && !includedRefs[ariaNode.ref]) {
+        for (const child of ariaNode.children) {
+          if (typeof child === "string") continue;
+          else visit(child, indent, renderCursorPointer);
         }
         return;
       }
@@ -1287,6 +1390,54 @@ const SNAPSHOT_SCRIPT = `
 
 interface SnapshotOptions {
   interactiveOnly?: boolean;
+  maxElements?: number;
+  viewportOnly?: boolean;
+  maxTokens?: number;
+  fullSnapshot?: boolean;
+}
+
+/**
+ * Default snapshot options for token optimization.
+ * Used by browser_script and other internal snapshot calls.
+ */
+const DEFAULT_SNAPSHOT_OPTIONS: SnapshotOptions = {
+  interactiveOnly: true,
+  maxElements: 300,
+  maxTokens: 8000,
+};
+
+/**
+ * Get a snapshot with session history header and diff support.
+ * Used by browser_script to include Tier 3 context management.
+ * Behaves like browser_snapshot - returns diff when on same page with few changes.
+ */
+async function getSnapshotWithHistory(page: Page, options: SnapshotOptions = {}): Promise<string> {
+  const rawSnapshot = await getAISnapshot(page, options);
+  const url = page.url();
+  const title = await page.title();
+
+  // Process through snapshot manager for diffing (same as browser_snapshot)
+  const manager = getSnapshotManager();
+  const result = manager.processSnapshot(rawSnapshot, url, title, {
+    fullSnapshot: options.fullSnapshot ?? false,
+    interactiveOnly: options.interactiveOnly ?? true,
+  });
+
+  // Build output with session history
+  let output = '';
+  const sessionSummary = manager.getSessionSummary();
+  if (sessionSummary.history) {
+    output += `# ${sessionSummary.history}\n\n`;
+  }
+
+  // Use diff result when available, otherwise full snapshot
+  if (result.type === 'diff') {
+    output += `# Changes Since Last Snapshot\n${result.content}`;
+  } else {
+    output += result.content;
+  }
+
+  return output;
 }
 
 /**
@@ -1312,7 +1463,12 @@ async function getAISnapshot(page: Page, options: SnapshotOptions = {}): Promise
   const snapshot = await page.evaluate((opts) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (globalThis as any).__devBrowser_getAISnapshot(opts);
-  }, { interactiveOnly: options.interactiveOnly || false });
+  }, {
+    interactiveOnly: options.interactiveOnly || false,
+    maxElements: options.maxElements,
+    viewportOnly: options.viewportOnly || false,
+    maxTokens: options.maxTokens,
+  });
   return snapshot;
 }
 
@@ -1355,6 +1511,10 @@ interface BrowserSnapshotInput {
   page_name?: string;
   interactive_only?: boolean;
   full_snapshot?: boolean;
+  max_elements?: number;
+  viewport_only?: boolean;
+  include_history?: boolean;
+  max_tokens?: number;
 }
 
 interface BrowserClickInput {
@@ -1605,6 +1765,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           full_snapshot: {
             type: 'boolean',
             description: 'Force a complete snapshot instead of a diff. Use after major page changes (modal opened, dynamic content loaded) or when element refs seem incorrect. Default: false.',
+          },
+          max_elements: {
+            type: 'number',
+            description: 'Maximum elements to include (1-1000). Default: 300',
+          },
+          viewport_only: {
+            type: 'boolean',
+            description: 'Only include elements visible in viewport. Default: false',
+          },
+          include_history: {
+            type: 'boolean',
+            description: 'Include navigation history in output. Default: true',
+          },
+          max_tokens: {
+            type: 'number',
+            description: 'Maximum estimated tokens (1000-50000). Default: 8000',
           },
         },
       },
@@ -2265,6 +2441,42 @@ Actions: goto, waitForLoad, waitForSelector, waitForNavigation, findAndFill, fin
       },
     },
     {
+      name: 'browser_batch_actions',
+      description: `Extract data from multiple URLs in ONE call. Visits each URL, runs your JS extraction script, returns compact JSON results.
+
+Use this when you need to collect data from many pages (e.g. scrape listings, compare products, gather info from search results). Instead of clicking into each page individually, provide all URLs upfront and get structured data back.
+
+Example - extract price and address from 10 Zillow listings:
+{"urls": ["https://zillow.com/homedetails/.../1_zpid/", "https://zillow.com/homedetails/.../2_zpid/"], "extractScript": "return { price: document.querySelector('[data-testid=\\"price\\"]')?.textContent, address: document.querySelector('h1')?.textContent }", "waitForSelector": "[data-testid='price']"}
+
+Returns JSON only (no snapshots/screenshots) to minimize token usage. Max 20 URLs per call.`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          urls: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Array of URLs to visit and extract data from (1-20 URLs)',
+            maxItems: 20,
+            minItems: 1,
+          },
+          extractScript: {
+            type: 'string',
+            description: 'JavaScript code that extracts data from each page. Must return an object. Runs via page.evaluate(). Example: "return { title: document.title, price: document.querySelector(\'.price\')?.textContent }"',
+          },
+          waitForSelector: {
+            type: 'string',
+            description: 'Optional CSS selector to wait for before running extractScript (e.g. "[data-testid=\'price\']"). Ensures page content has loaded.',
+          },
+          page_name: {
+            type: 'string',
+            description: 'Optional page name (default: "main")',
+          },
+        },
+        required: ['urls', 'extractScript'],
+      },
+    },
+    {
       name: 'browser_highlight',
       description: 'Toggle the visual highlight glow on the current tab. Use to indicate when automation is active on a tab, and turn off when done.',
       inputSchema: {
@@ -2331,9 +2543,29 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
       }
 
       case 'browser_snapshot': {
-        const { page_name, interactive_only, full_snapshot } = args as BrowserSnapshotInput;
+        const { page_name, interactive_only, full_snapshot, max_elements, viewport_only, include_history, max_tokens } = args as BrowserSnapshotInput;
         const page = await getPage(page_name);
-        const rawSnapshot = await getAISnapshot(page, { interactiveOnly: interactive_only ?? true });
+
+        // Parse and validate max_elements (1-1000, default 300)
+        // If full_snapshot is true, use Infinity to bypass element limits
+        const validatedMaxElements = full_snapshot
+          ? Infinity
+          : Math.min(Math.max(max_elements ?? 300, 1), 1000);
+
+        // Parse and validate max_tokens (1000-50000, default 8000)
+        // If full_snapshot is true, use Infinity to bypass token limits
+        const validatedMaxTokens = full_snapshot
+          ? Infinity
+          : Math.min(Math.max(max_tokens ?? 8000, 1000), 50000);
+
+        const snapshotOptions: SnapshotOptions = {
+          interactiveOnly: interactive_only ?? true,
+          maxElements: validatedMaxElements,
+          viewportOnly: viewport_only ?? false,
+          maxTokens: validatedMaxTokens,
+        };
+
+        const rawSnapshot = await getAISnapshot(page, snapshotOptions);
         const viewport = page.viewportSize();
         const url = page.url();
         const title = await page.title();
@@ -2356,8 +2588,19 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
           interactiveOnly: interactive_only ?? true,
         });
 
-        // Build output with metadata header
-        let output = `# Page Info\n`;
+        // Build output with optional session history
+        let output = '';
+
+        // Include session history if requested (default: true)
+        const includeHistory = include_history !== false;
+        if (includeHistory) {
+          const sessionSummary = manager.getSessionSummary();
+          if (sessionSummary.history) {
+            output += `# ${sessionSummary.history}\n\n`;
+          }
+        }
+
+        output += `# Page Info\n`;
         output += `URL: ${url}\n`;
         output += `Viewport: ${viewport?.width || 1280}x${viewport?.height || 720} (center: ${Math.round((viewport?.width || 1280) / 2)}, ${Math.round((viewport?.height || 720) / 2)})\n`;
 
@@ -2684,7 +2927,7 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
               }
 
               case 'snapshot': {
-                await getAISnapshot(page);
+                await getSnapshotWithHistory(page, DEFAULT_SNAPSHOT_OPTIONS);
                 results.push(`${stepNum}. Snapshot taken (refs updated)`);
                 break;
               }
@@ -2834,7 +3077,7 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
               }
 
               case 'snapshot': {
-                snapshotResult = await getAISnapshot(page);
+                snapshotResult = await getSnapshotWithHistory(page, DEFAULT_SNAPSHOT_OPTIONS);
                 results.push(`${stepNum}. Snapshot taken`);
                 break;
               }
@@ -2884,9 +3127,9 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
             const errMsg = err instanceof Error ? err.message : String(err);
             results.push(`${stepNum}. FAILED: ${errMsg}`);
 
-            // Try to capture page state on failure for debugging
+            // Try to capture page state on failure for debugging (with session history)
             try {
-              snapshotResult = await getAISnapshot(page);
+              snapshotResult = await getSnapshotWithHistory(page, DEFAULT_SNAPSHOT_OPTIONS);
               results.push(`→ Captured page state at failure`);
             } catch {
               // Ignore - page might be in bad state
@@ -2912,7 +3155,7 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
           try {
             // Wait for page to stabilize before capturing final state
             await waitForPageLoad(page, 2000);
-            snapshotResult = await getAISnapshot(page);
+            snapshotResult = await getSnapshotWithHistory(page, DEFAULT_SNAPSHOT_OPTIONS);
             results.push(`→ Auto-captured final page state`);
           } catch {
             // Ignore snapshot errors - page might be navigating
@@ -2930,67 +3173,6 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
           content.push(screenshotData);
         }
         return { content };
-      }
-
-      case 'browser_keyboard': {
-        const { action, key, text, typing_delay, page_name } = args as BrowserKeyboardInput;
-        const page = await getPage(page_name);
-
-        switch (action) {
-          case 'press': {
-            if (!key) {
-              return {
-                content: [{ type: 'text', text: 'Error: "key" is required for press action' }],
-                isError: true,
-              };
-            }
-            await page.keyboard.press(key);
-            return {
-              content: [{ type: 'text', text: `Pressed key: ${key}` }],
-            };
-          }
-          case 'type': {
-            if (!text) {
-              return {
-                content: [{ type: 'text', text: 'Error: "text" is required for type action' }],
-                isError: true,
-              };
-            }
-            await page.keyboard.type(text, { delay: typing_delay ?? 20 });
-            return {
-              content: [{ type: 'text', text: `Typed text: "${text}"` }],
-            };
-          }
-          case 'down': {
-            if (!key) {
-              return {
-                content: [{ type: 'text', text: 'Error: "key" is required for down action' }],
-                isError: true,
-              };
-            }
-            await page.keyboard.down(key);
-            return {
-              content: [{ type: 'text', text: `Key down: ${key}` }],
-            };
-          }
-          case 'up': {
-            if (!key) {
-              return {
-                content: [{ type: 'text', text: 'Error: "key" is required for up action' }],
-                isError: true,
-              };
-            }
-            await page.keyboard.up(key);
-            return {
-              content: [{ type: 'text', text: `Key up: ${key}` }],
-            };
-          }
-          default:
-            return {
-              content: [{ type: 'text', text: `Error: Unknown keyboard action "${action}"` }],
-              isError: true,
-            };
-        }
       }
 
       case 'browser_scroll': {
@@ -3790,6 +3972,118 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
             content: [{ type: 'text', text: 'Highlight disabled - glow removed from tab' }],
           };
         }
+      }
+
+      case 'browser_batch_actions': {
+        const { urls, extractScript, waitForSelector, page_name } = args as {
+          urls: string[];
+          extractScript: string;
+          waitForSelector?: string;
+          page_name?: string;
+        };
+
+        // Validate inputs
+        if (!urls || urls.length === 0) {
+          return {
+            content: [{ type: 'text', text: 'Error: urls array is required and must not be empty' }],
+            isError: true,
+          };
+        }
+        if (urls.length > 20) {
+          return {
+            content: [{ type: 'text', text: 'Error: Maximum 20 URLs per batch call' }],
+            isError: true,
+          };
+        }
+        if (!extractScript) {
+          return {
+            content: [{ type: 'text', text: 'Error: extractScript is required' }],
+            isError: true,
+          };
+        }
+
+        const BATCH_TIMEOUT_MS = 120_000; // 2-minute aggregate timeout for entire batch
+        const MAX_RESULT_SIZE_BYTES = 1_048_576; // 1MB per result
+
+        const page = await getPage(page_name);
+        const batchResults: Array<{
+          url: string;
+          status: 'success' | 'failed';
+          data?: Record<string, unknown>;
+          error?: string;
+        }> = [];
+
+        const batchStart = Date.now();
+
+        for (const url of urls) {
+          // Check aggregate timeout
+          if (Date.now() - batchStart > BATCH_TIMEOUT_MS) {
+            batchResults.push({ url, status: 'failed', error: 'Batch timeout exceeded (2 min limit)' });
+            continue;
+          }
+
+          let fullUrl = url;
+          if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+            fullUrl = 'https://' + fullUrl;
+          }
+
+          const remainingTime = BATCH_TIMEOUT_MS - (Date.now() - batchStart);
+          const effectiveTimeout = Math.min(30000, remainingTime);
+
+          try {
+            // Navigate to the URL
+            await page.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: effectiveTimeout });
+
+            // Wait for specific selector if provided
+            if (waitForSelector) {
+              await page.waitForSelector(waitForSelector, { timeout: Math.min(10000, remainingTime) }).catch(() => {
+                // Continue even if selector not found — extractScript may still work
+              });
+            }
+
+            // Run extraction script
+            const data = await page.evaluate((script: string) => {
+              // Wrap in function body so 'return' works
+              const fn = new Function(script);
+              return fn();
+            }, extractScript);
+
+            // Guard against oversized results
+            const serialized = JSON.stringify(data);
+            if (serialized.length > MAX_RESULT_SIZE_BYTES) {
+              batchResults.push({
+                url: fullUrl,
+                status: 'failed',
+                error: `Result too large: ${serialized.length} bytes (max ${MAX_RESULT_SIZE_BYTES})`,
+              });
+              continue;
+            }
+
+            batchResults.push({ url: fullUrl, status: 'success', data });
+          } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            batchResults.push({ url: fullUrl, status: 'failed', error: errMsg });
+          }
+        }
+
+        // Reset snapshot manager since we navigated through multiple pages
+        resetSnapshotManager();
+
+        const succeeded = batchResults.filter(r => r.status === 'success').length;
+        const failed = batchResults.filter(r => r.status === 'failed').length;
+
+        const output = {
+          results: batchResults,
+          summary: {
+            total: urls.length,
+            succeeded,
+            failed,
+          },
+        };
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        };
       }
 
       default:

@@ -2,9 +2,11 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
-import { analytics } from '../../lib/analytics';
-import { CornerDownLeft, Loader2, X, FileText, FileCode, FileImage, File } from 'lucide-react';
+import { CornerDownLeft, Loader2, X, FileText, FileCode, FileImage, File, AlertCircle } from 'lucide-react';
 import type { FileAttachment } from '@accomplish/shared';
+import { useSpeechInput } from '../../hooks/useSpeechInput';
+import { SpeechInputButton } from '../ui/SpeechInputButton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TaskInputBarProps {
   value: string;
@@ -16,6 +18,15 @@ interface TaskInputBarProps {
   large?: boolean;
   autoFocus?: boolean;
   onAttachmentsChange?: (attachments: FileAttachment[]) => void;
+  /**
+   * Called when user clicks mic button while voice input is not configured
+   * (to open settings dialog)
+   */
+  onOpenSpeechSettings?: () => void;
+  /**
+   * Automatically submit after a successful transcription.
+   */
+  autoSubmitOnTranscription?: boolean;
 }
 
 export default function TaskInputBar({
@@ -28,14 +39,39 @@ export default function TaskInputBar({
   large = false,
   autoFocus = false,
   onAttachmentsChange,
+  onOpenSpeechSettings,
+  autoSubmitOnTranscription = true,
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
   
   const [dragOver, setDragOver] = useState(false);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Speech input hook
+  const speechInput = useSpeechInput({
+    onTranscriptionComplete: (text) => {
+      // Append transcribed text to existing input
+      const newValue = value.trim() ? `${value} ${text}` : text;
+      onChange(newValue);
+
+      if (autoSubmitOnTranscription && newValue.trim()) {
+        pendingAutoSubmitRef.current = newValue;
+      }
+
+      // Auto-focus textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    },
+    onError: (error) => {
+      console.error('[Speech] Error:', error.message);
+      // Error is stored in speechInput.error state
+    },
+  });
 
   // Auto-focus on mount
   useEffect(() => {
@@ -43,6 +79,17 @@ export default function TaskInputBar({
       textareaRef.current.focus();
     }
   }, [autoFocus]);
+
+  // Auto-submit once the parent value reflects the transcription.
+  useEffect(() => {
+    if (!autoSubmitOnTranscription || isDisabled) {
+      return;
+    }
+    if (pendingAutoSubmitRef.current && value === pendingAutoSubmitRef.current) {
+      pendingAutoSubmitRef.current = null;
+      onSubmit();
+    }
+  }, [autoSubmitOnTranscription, isDisabled, onSubmit, value]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -69,22 +116,23 @@ export default function TaskInputBar({
     }
   };
 
-  // File type detection
+  // File type detection based on issue #190 spec
   const getFileType = (fileName: string): FileAttachment['type'] => {
     const ext = fileName.toLowerCase().split('.').pop() || '';
     
+    // Images (.png, .jpg, .gif) -> Send to vision model
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) {
       return 'image';
     }
-    if (['txt', 'md', 'markdown'].includes(ext)) {
+    // Text (.txt, .md, .json) and Code (.js, .py, .ts) -> Include in prompt
+    if (['txt', 'md', 'markdown', 'json', 'js', 'ts', 'tsx', 'jsx', 'py', 'java', 'cpp', 'c', 'h', 'cs', 'rb', 'go', 'rs', 'php', 'swift', 'kt'].includes(ext)) {
       return 'text';
     }
-    if (['js', 'ts', 'tsx', 'jsx', 'py', 'java', 'cpp', 'c', 'h', 'cs', 'rb', 'go', 'rs', 'php', 'swift', 'kt'].includes(ext)) {
-      return 'code';
-    }
+    // PDF -> Extract text
     if (ext === 'pdf') {
-      return 'pdf';
+      return 'document';
     }
+    // Other -> Pass file path
     return 'other';
   };
 
@@ -102,7 +150,12 @@ export default function TaskInputBar({
     const newAttachments: FileAttachment[] = [];
 
     for (const file of files) {
-      // Validate file size (10MB)
+      // Skip folders/directories (they have size 0 and empty type)
+      if (file.size === 0 && file.type === '') {
+        continue;
+      }
+
+      // Validate file size (10MB per file)
       if (file.size > 10 * 1024 * 1024) {
         setError(`File "${file.name}" exceeds 10MB limit`);
         continue;
@@ -125,8 +178,8 @@ export default function TaskInputBar({
         }
       }
 
-      // Generate preview for text files
-      if (fileType === 'text' || fileType === 'code') {
+      // Generate preview for text files (includes code files per spec)
+      if (fileType === 'text') {
         try {
           preview = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -190,7 +243,37 @@ export default function TaskInputBar({
     e.stopPropagation();
     setDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
+    // Filter out directories using webkitGetAsEntry
+    const items = Array.from(e.dataTransfer.items);
+    const files: File[] = [];
+    let hasFolder = false;
+    
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry?.();
+        // Check if it's a directory
+        if (entry?.isDirectory) {
+          hasFolder = true;
+          continue;
+        }
+        // Only add files, not directories
+        if (!entry || entry.isFile) {
+          const file = item.getAsFile();
+          if (file) {
+            files.push(file);
+          }
+        }
+      }
+    }
+
+    // Show error if user tried to drop folders
+    if (hasFolder && files.length === 0) {
+      setError('Folders are not supported, please drop files only');
+      return;
+    } else if (hasFolder) {
+      setError('Folders were skipped, only files are supported');
+    }
+    
     if (files.length > 0) {
       processFiles(files);
     }
@@ -207,10 +290,9 @@ export default function TaskInputBar({
     switch (type) {
       case 'image':
         return <FileImage className="h-4 w-4" />;
-      case 'code':
-        return <FileCode className="h-4 w-4" />;
       case 'text':
-      case 'pdf':
+        return <FileCode className="h-4 w-4" />;
+      case 'document':
         return <FileText className="h-4 w-4" />;
       default:
         return <File className="h-4 w-4" />;
@@ -218,7 +300,30 @@ export default function TaskInputBar({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="w-full space-y-2">
+      {/* Speech error message */}
+      {speechInput.error && (
+        <Alert
+          variant="destructive"
+          className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
+        >
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs leading-tight">
+            {speechInput.error.message}
+            {speechInput.error.code === 'EMPTY_RESULT' && (
+              <button
+                onClick={() => speechInput.retry()}
+                className="ml-2 underline hover:no-underline"
+                type="button"
+              >
+                Retry
+              </button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Input container */}
       <div
         className={`relative flex flex-col gap-2 rounded-xl border bg-background px-3 py-2.5 shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring ${
           dragOver
@@ -230,7 +335,7 @@ export default function TaskInputBar({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Text input and submit button row */}
+        {/* Text input and buttons row */}
         <div className="flex items-center gap-2">
           {/* Text input */}
           <textarea
@@ -240,9 +345,25 @@ export default function TaskInputBar({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            disabled={isDisabled}
+            disabled={isDisabled || speechInput.isRecording}
             rows={1}
             className={`max-h-[200px] flex-1 resize-none bg-transparent text-foreground placeholder:text-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${large ? 'text-[20px]' : 'text-sm'}`}
+          />
+
+          {/* Speech Input Button */}
+          <SpeechInputButton
+            isRecording={speechInput.isRecording}
+            isTranscribing={speechInput.isTranscribing}
+            recordingDuration={speechInput.recordingDuration}
+            error={speechInput.error}
+            isConfigured={speechInput.isConfigured}
+            disabled={isDisabled}
+            onStartRecording={() => speechInput.startRecording()}
+            onStopRecording={() => speechInput.stopRecording()}
+            onCancel={() => speechInput.cancelRecording()}
+            onRetry={() => speechInput.retry()}
+            onOpenSettings={onOpenSpeechSettings}
+            size="md"
           />
 
           {/* Submit button */}
@@ -250,7 +371,6 @@ export default function TaskInputBar({
             data-testid="task-input-submit"
             type="button"
             onClick={() => {
-              analytics.trackSubmitTask();
               accomplish.logEvent({
                 level: 'info',
                 message: 'Task input submit clicked',
@@ -258,7 +378,7 @@ export default function TaskInputBar({
               });
               onSubmit();
             }}
-            disabled={!value.trim() || isDisabled}
+            disabled={!value.trim() || isDisabled || speechInput.isRecording}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             title="Submit"
           >
@@ -297,7 +417,7 @@ export default function TaskInputBar({
         )}
       </div>
 
-      {/* Error message */}
+      {/* File error message */}
       {error && (
         <div className="text-sm text-destructive">
           {error}

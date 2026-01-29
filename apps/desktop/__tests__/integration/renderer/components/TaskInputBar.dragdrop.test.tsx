@@ -11,13 +11,6 @@ import '@testing-library/jest-dom/vitest';
 import TaskInputBar from '@/components/landing/TaskInputBar';
 import type { FileAttachment } from '@accomplish/shared';
 
-// Mock analytics to prevent tracking calls
-vi.mock('@/lib/analytics', () => ({
-  analytics: {
-    trackSubmitTask: vi.fn(),
-  },
-}));
-
 // Mock accomplish API
 const mockAccomplish = {
   logEvent: vi.fn().mockResolvedValue(undefined),
@@ -43,6 +36,9 @@ const mockAccomplish = {
   validateApiKeyForProvider: vi.fn().mockResolvedValue({ valid: true }),
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
+  // Speech input mocks (required by useSpeechInput hook from upstream)
+  speechIsConfigured: vi.fn().mockResolvedValue(false),
+  speechTranscribe: vi.fn().mockResolvedValue({ success: true, result: { text: '' } }),
 };
 
 vi.mock('@/lib/accomplish', () => ({
@@ -469,7 +465,7 @@ describe('TaskInputBar Drag and Drop', () => {
       });
     });
 
-    it('should detect code files correctly', async () => {
+    it('should detect code files correctly (as text per spec)', async () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
       const onAttachmentsChange = vi.fn();
@@ -496,11 +492,12 @@ describe('TaskInputBar Drag and Drop', () => {
         const lastCall = calls[calls.length - 1];
         const attachments: FileAttachment[] = lastCall[0];
         expect(attachments.length).toBeGreaterThan(0);
-        expect(attachments[0].type).toBe('code');
+        // Per spec, code files are treated as 'text' (include in prompt)
+        expect(attachments[0].type).toBe('text');
       });
     });
 
-    it('should detect PDF files correctly', async () => {
+    it('should detect PDF files correctly (as document per spec)', async () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
       const onAttachmentsChange = vi.fn();
@@ -527,7 +524,8 @@ describe('TaskInputBar Drag and Drop', () => {
         const lastCall = calls[calls.length - 1];
         const attachments: FileAttachment[] = lastCall[0];
         expect(attachments.length).toBeGreaterThan(0);
-        expect(attachments[0].type).toBe('pdf');
+        // Per spec, PDF is 'document' type (extract text)
+        expect(attachments[0].type).toBe('document');
       });
     });
 

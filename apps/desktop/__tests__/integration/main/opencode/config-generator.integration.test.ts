@@ -82,6 +82,8 @@ vi.mock('@main/store/appSettings', () => ({
   setLiteLLMConfig: vi.fn(),
   getAzureFoundryConfig: vi.fn(() => null),
   setAzureFoundryConfig: vi.fn(),
+  getLMStudioConfig: vi.fn(() => null),
+  setLMStudioConfig: vi.fn(),
   getAppSettings: vi.fn(() => ({
     debugMode: false,
     onboardingComplete: false,
@@ -89,6 +91,7 @@ vi.mock('@main/store/appSettings', () => ({
     ollamaConfig: null,
     litellmConfig: null,
     azureFoundryConfig: null,
+    lmstudioConfig: null,
   })),
   clearAppSettings: vi.fn(),
 }));
@@ -205,7 +208,7 @@ describe('OpenCode Config Generator Integration', () => {
 
       expect(config.$schema).toBe('https://opencode.ai/config.json');
       expect(config.default_agent).toBe('accomplish');
-      expect(config.permission).toBe('allow');
+      expect(config.permission).toEqual({ '*': 'allow', todowrite: 'allow' });
       expect(config.enabled_providers).toContain('anthropic');
       expect(config.enabled_providers).toContain('openai');
       expect(config.enabled_providers).toContain('google');
