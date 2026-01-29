@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: Review code for bugs, security issues, performance problems, and best practices. Provide actionable feedback.
-command: /review
+command: /code-review
 verified: true
 ---
 

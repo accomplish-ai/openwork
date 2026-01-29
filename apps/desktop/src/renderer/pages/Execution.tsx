@@ -25,6 +25,7 @@ import SettingsDialog from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
+import { PlusMenu } from '../components/landing/PlusMenu';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -182,7 +183,7 @@ export default function ExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice'>('providers');
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
 
@@ -1205,7 +1206,19 @@ export default function ExecutionPage() {
               </Alert>
             )}
             {/* Input field with Send button */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <PlusMenu
+                onSkillSelect={(command) => {
+                  const newValue = `${command} ${followUp}`.trim();
+                  setFollowUp(newValue);
+                  setTimeout(() => followUpInputRef.current?.focus(), 0);
+                }}
+                onOpenSettings={(tab) => {
+                  setSettingsInitialTab(tab);
+                  setShowSettingsDialog(true);
+                }}
+                disabled={isLoading || speechInput.isRecording}
+              />
               <Input
                 ref={followUpInputRef}
                 value={followUp}

@@ -1,7 +1,7 @@
 ---
 name: web-research
 description: Research topics on the web, gather information from multiple sources, and summarize findings.
-command: /research
+command: /web-research
 verified: true
 ---
 

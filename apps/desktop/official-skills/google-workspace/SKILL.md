@@ -1,7 +1,7 @@
 ---
 name: google-workspace
 description: Interact with Google Workspace - create documents, spreadsheets, send emails via Gmail, and manage Google Drive files.
-command: /google
+command: /google-workspace
 verified: true
 ---
 

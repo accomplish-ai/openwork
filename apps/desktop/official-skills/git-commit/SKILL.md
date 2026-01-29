@@ -1,7 +1,7 @@
 ---
 name: git-commit
 description: Create well-structured git commits with conventional commit messages, proper staging, and commit best practices.
-command: /commit
+command: /git-commit
 verified: true
 ---
 

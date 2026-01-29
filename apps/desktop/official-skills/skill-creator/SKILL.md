@@ -1,7 +1,7 @@
 ---
 name: skill-creator
 description: Guide for creating effective skills. Use when users want to create a new skill (or update an existing skill) that extends the AI's capabilities with specialized knowledge, workflows, or tool integrations.
-command: /create-skills
+command: /skill-creator
 verified: true
 hidden: true
 ---
