@@ -203,6 +203,9 @@ interface AccomplishAPI {
   resyncSkills(): Promise<Skill[]>;
   openSkillInEditor(filePath: string): Promise<void>;
   showSkillInFolder(filePath: string): Promise<void>;
+
+  // File picker
+  openFilePicker(): Promise<string[]>;
 }
 
 interface AccomplishShell {

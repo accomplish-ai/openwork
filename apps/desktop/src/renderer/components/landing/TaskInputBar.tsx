@@ -1,12 +1,15 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
 import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusMenu } from './PlusMenu';
+import { FileChipsRow } from '../ui/file-attachments';
+import type { AttachedFile } from '../ui/file-attachments';
+import { getFileType, generateFileId } from '../../lib/file-utils';
 
 interface TaskInputBarProps {
   value: string;
@@ -30,6 +33,14 @@ interface TaskInputBarProps {
    * Automatically submit after a successful transcription.
    */
   autoSubmitOnTranscription?: boolean;
+  /**
+   * Currently attached files
+   */
+  attachedFiles?: AttachedFile[];
+  /**
+   * Called when attached files change (add/remove)
+   */
+  onFilesChange?: (files: AttachedFile[]) => void;
 }
 
 export default function TaskInputBar({
@@ -44,6 +55,8 @@ export default function TaskInputBar({
   onOpenSpeechSettings,
   onOpenSettings,
   autoSubmitOnTranscription = true,
+  attachedFiles = [],
+  onFilesChange,
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -118,6 +131,37 @@ export default function TaskInputBar({
     }, 0);
   };
 
+  const MAX_FILES = 10;
+
+  const handleFilesSelected = useCallback(
+    (paths: string[]) => {
+      if (!onFilesChange) return;
+
+      const newFiles: AttachedFile[] = paths
+        .filter((p) => !attachedFiles.some((f) => f.path === p)) // no duplicates
+        .slice(0, MAX_FILES - attachedFiles.length) // respect limit
+        .map((p) => ({
+          id: generateFileId(),
+          path: p,
+          name: p.split('/').pop() || p.split('\\').pop() || p,
+          type: getFileType(p),
+        }));
+
+      if (newFiles.length > 0) {
+        onFilesChange([...attachedFiles, ...newFiles]);
+      }
+    },
+    [attachedFiles, onFilesChange]
+  );
+
+  const handleRemoveFile = useCallback(
+    (id: string) => {
+      if (!onFilesChange) return;
+      onFilesChange(attachedFiles.filter((f) => f.id !== id));
+    },
+    [attachedFiles, onFilesChange]
+  );
+
   return (
     <div className="w-full space-y-2">
       {/* Error message */}
@@ -143,65 +187,74 @@ export default function TaskInputBar({
       )}
 
       {/* Input container */}
-      <div className="relative flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-        {/* Plus Menu */}
-        <PlusMenu
-          onSkillSelect={handleSkillSelect}
-          onOpenSettings={(tab) => onOpenSettings?.(tab)}
-          disabled={isDisabled || speechInput.isRecording}
-        />
+      <div className="relative flex flex-col gap-2 rounded-xl border border-border bg-background px-3 py-2.5 shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+        {/* File chips row - show above input when files attached */}
+        {attachedFiles.length > 0 && (
+          <FileChipsRow files={attachedFiles} onRemove={handleRemoveFile} />
+        )}
 
-        {/* Text input */}
-        <textarea
-          data-testid="task-input-textarea"
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={isDisabled || speechInput.isRecording}
-          rows={1}
-          className={`max-h-[200px] flex-1 resize-none bg-transparent text-foreground placeholder:text-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${large ? 'text-[20px]' : 'text-sm'}`}
-        />
+        {/* Input row */}
+        <div className="flex items-center gap-2">
+          {/* Plus Menu */}
+          <PlusMenu
+            onSkillSelect={handleSkillSelect}
+            onOpenSettings={(tab) => onOpenSettings?.(tab)}
+            onFilesSelected={handleFilesSelected}
+            disabled={isDisabled || speechInput.isRecording}
+          />
 
-        {/* Speech Input Button */}
-        <SpeechInputButton
-          isRecording={speechInput.isRecording}
-          isTranscribing={speechInput.isTranscribing}
-          recordingDuration={speechInput.recordingDuration}
-          error={speechInput.error}
-          isConfigured={speechInput.isConfigured}
-          disabled={isDisabled}
-          onStartRecording={() => speechInput.startRecording()}
-          onStopRecording={() => speechInput.stopRecording()}
-          onCancel={() => speechInput.cancelRecording()}
-          onRetry={() => speechInput.retry()}
-          onOpenSettings={onOpenSpeechSettings}
-          size="md"
-        />
+          {/* Text input */}
+          <textarea
+            data-testid="task-input-textarea"
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={isDisabled || speechInput.isRecording}
+            rows={1}
+            className={`max-h-[200px] flex-1 resize-none bg-transparent text-foreground placeholder:text-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${large ? 'text-[20px]' : 'text-sm'}`}
+          />
 
-        {/* Submit button */}
-        <button
-          data-testid="task-input-submit"
-          type="button"
-          onClick={() => {
-            accomplish.logEvent({
-              level: 'info',
-              message: 'Task input submit clicked',
-              context: { prompt: value },
-            });
-            onSubmit();
-          }}
-          disabled={!value.trim() || isDisabled || speechInput.isRecording}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-          title="Submit"
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <CornerDownLeft className="h-4 w-4" />
-          )}
-        </button>
+          {/* Speech Input Button */}
+          <SpeechInputButton
+            isRecording={speechInput.isRecording}
+            isTranscribing={speechInput.isTranscribing}
+            recordingDuration={speechInput.recordingDuration}
+            error={speechInput.error}
+            isConfigured={speechInput.isConfigured}
+            disabled={isDisabled}
+            onStartRecording={() => speechInput.startRecording()}
+            onStopRecording={() => speechInput.stopRecording()}
+            onCancel={() => speechInput.cancelRecording()}
+            onRetry={() => speechInput.retry()}
+            onOpenSettings={onOpenSpeechSettings}
+            size="md"
+          />
+
+          {/* Submit button */}
+          <button
+            data-testid="task-input-submit"
+            type="button"
+            onClick={() => {
+              accomplish.logEvent({
+                level: 'info',
+                message: 'Task input submit clicked',
+                context: { prompt: value },
+              });
+              onSubmit();
+            }}
+            disabled={!value.trim() || isDisabled || speechInput.isRecording}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Submit"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CornerDownLeft className="h-4 w-4" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

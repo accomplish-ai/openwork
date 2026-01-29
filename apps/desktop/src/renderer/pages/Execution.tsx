@@ -26,6 +26,9 @@ import { TodoSidebar } from '../components/TodoSidebar';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
 import { PlusMenu } from '../components/landing/PlusMenu';
+import { FileChipsRow } from '../components/ui/file-attachments';
+import type { AttachedFile } from '../components/ui/file-attachments';
+import { getFileType, generateFileId, formatFilesForPrompt } from '../lib/file-utils';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -186,6 +189,7 @@ export default function ExecutionPage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
+  const [followUpFiles, setFollowUpFiles] = useState<AttachedFile[]>([]);
 
   // Scroll behavior state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -393,8 +397,25 @@ export default function ExecutionPage() {
     }
   }, [canFollowUp]);
 
+  const handleFollowUpFilesSelected = useCallback((paths: string[]) => {
+    const MAX_FILES = 10;
+    const newFiles: AttachedFile[] = paths
+      .filter((p) => !followUpFiles.some((f) => f.path === p))
+      .slice(0, MAX_FILES - followUpFiles.length)
+      .map((p) => ({
+        id: generateFileId(),
+        path: p,
+        name: p.split('/').pop() || p.split('\\').pop() || p,
+        type: getFileType(p),
+      }));
+
+    if (newFiles.length > 0) {
+      setFollowUpFiles([...followUpFiles, ...newFiles]);
+    }
+  }, [followUpFiles]);
+
   const handleFollowUp = async () => {
-    if (!followUp.trim()) return;
+    if (!followUp.trim() && followUpFiles.length === 0) return;
 
     // Check if any provider is ready before sending (skip in E2E mode)
     const isE2EMode = await accomplish.isE2EMode();
@@ -409,8 +430,13 @@ export default function ExecutionPage() {
       }
     }
 
-    await sendFollowUp(followUp);
+    // Prepend file paths to the message
+    const filesPrefix = formatFilesForPrompt(followUpFiles);
+    const fullMessage = filesPrefix + followUp.trim();
+
+    await sendFollowUp(fullMessage);
     setFollowUp('');
+    setFollowUpFiles([]);
   };
 
   const handleSettingsDialogClose = (open: boolean) => {
@@ -1205,6 +1231,14 @@ export default function ExecutionPage() {
                 </AlertDescription>
               </Alert>
             )}
+            {/* File chips row - show above input when files attached */}
+            {followUpFiles.length > 0 && (
+              <FileChipsRow
+                files={followUpFiles}
+                onRemove={(id) => setFollowUpFiles((prev) => prev.filter((f) => f.id !== id))}
+                className="mb-2"
+              />
+            )}
             {/* Input field with Send button */}
             <div className="flex gap-3 items-center">
               <PlusMenu
@@ -1217,6 +1251,7 @@ export default function ExecutionPage() {
                   setSettingsInitialTab(tab);
                   setShowSettingsDialog(true);
                 }}
+                onFilesSelected={handleFollowUpFilesSelected}
                 disabled={isLoading || speechInput.isRecording}
               />
               <Input
@@ -1257,7 +1292,7 @@ export default function ExecutionPage() {
               />
               <Button
                 onClick={handleFollowUp}
-                disabled={!followUp.trim() || isLoading || speechInput.isRecording}
+                disabled={(!followUp.trim() && followUpFiles.length === 0) || isLoading || speechInput.isRecording}
                 variant="outline"
               >
                 <CornerDownLeft className="h-4 w-4 mr-1.5" />

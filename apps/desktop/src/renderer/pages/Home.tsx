@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
+import type { AttachedFile } from '../components/ui/file-attachments';
+import { formatFilesForPrompt } from '../lib/file-utils';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
@@ -82,6 +84,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
@@ -108,12 +111,18 @@ export default function HomePage() {
   const executeTask = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;
 
+    // Prepend file paths to prompt
+    const filesPrefix = formatFilesForPrompt(attachedFiles);
+    const fullPrompt = filesPrefix + prompt.trim();
+
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const task = await startTask({ prompt: fullPrompt, taskId });
     if (task) {
+      // Clear files after submit
+      setAttachedFiles([]);
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, attachedFiles, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -202,6 +211,8 @@ export default function HomePage() {
                   setSettingsInitialTab(tab);
                   setShowSettingsDialog(true);
                 }}
+                attachedFiles={attachedFiles}
+                onFilesChange={setAttachedFiles}
               />
             </CardContent>
 

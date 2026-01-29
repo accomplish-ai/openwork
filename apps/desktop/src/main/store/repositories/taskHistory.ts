@@ -1,6 +1,7 @@
 // apps/desktop/src/main/store/repositories/taskHistory.ts
 
-import type { Task, TaskMessage, TaskStatus, TaskAttachment } from '@accomplish/shared';
+import type { Task, TaskMessage, TaskStatus, TaskAttachment, FileAttachment } from '@accomplish/shared';
+import { isFileAttachment } from '@accomplish/shared';
 import { getDatabase } from '../db';
 
 export interface StoredTask {
@@ -167,7 +168,11 @@ export function saveTask(task: Task): void {
 
       if (msg.attachments) {
         for (const att of msg.attachments) {
-          insertAttachment.run(msg.id, att.type, att.data, att.label || null);
+          // Only store TaskAttachment types (screenshot/json with data) in DB
+          // FileAttachment types are path references and don't need to be persisted
+          if (!isFileAttachment(att)) {
+            insertAttachment.run(msg.id, att.type, att.data, att.label || null);
+          }
         }
       }
     }
@@ -231,7 +236,11 @@ export function addTaskMessage(taskId: string, message: TaskMessage): void {
       );
 
       for (const att of message.attachments) {
-        insertAttachment.run(message.id, att.type, att.data, att.label || null);
+        // Only store TaskAttachment types (screenshot/json with data) in DB
+        // FileAttachment types are path references and don't need to be persisted
+        if (!isFileAttachment(att)) {
+          insertAttachment.run(message.id, att.type, att.data, att.label || null);
+        }
       }
     }
   })();

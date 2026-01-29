@@ -49,6 +49,14 @@ export interface TaskAttachment {
   label?: string; // e.g., "Screenshot after clicking Submit"
 }
 
+export type FileType = 'pdf' | 'image' | 'csv' | 'code' | 'text' | 'other';
+
+export interface FileAttachment {
+  type: FileType;
+  path: string;
+  name: string;
+}
+
 export interface TaskMessage {
   id: string;
   type: 'assistant' | 'user' | 'tool' | 'system';
@@ -57,7 +65,7 @@ export interface TaskMessage {
   toolInput?: unknown;
   timestamp: string;
   /** Attachments like screenshots captured during browser automation */
-  attachments?: TaskAttachment[];
+  attachments?: (TaskAttachment | FileAttachment)[];
 }
 
 export interface TaskResult {
@@ -98,4 +106,8 @@ export interface TaskUpdateEvent {
   progress?: TaskProgress;
   result?: TaskResult;
   error?: string;
+}
+
+export function isFileAttachment(attachment: TaskAttachment | FileAttachment): attachment is FileAttachment {
+  return 'path' in attachment && 'name' in attachment;
 }
