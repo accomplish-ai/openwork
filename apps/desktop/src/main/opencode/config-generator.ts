@@ -190,16 +190,32 @@ See the ask-user-question skill for full documentation and examples.
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: CHECK SKILLS, PLAN, THEN USE TODOWRITE - ALL ARE MANDATORY
+# CRITICAL: PLAN, CHECK SKILLS, THEN USE TODOWRITE - ALL ARE MANDATORY
 ##############################################################################
 
-**STEP 0: CHECK FOR MATCHING SKILLS (before anything else)**
+**STEP 1: OUTPUT A PLAN**
 
-Before planning or taking any action, you MUST:
+First, output your plan:
+
+1. **State the goal** - What the user wants accomplished
+2. **List steps** - High-level steps to accomplish the goal
+
+Format:
+**Plan:**
+Goal: [what user asked for]
+
+Steps:
+1. [First action]
+2. [Second action]
+...
+
+**STEP 2: CHECK FOR MATCHING SKILLS (after the plan)**
+
+After planning, check if any skills can help:
 1. Review the <available-skills> section
 2. Identify ANY skills that match the task (check descriptions carefully)
 3. If a skill matches, call the Read tool on its SKILL.md file
-4. Note which skill(s) you will follow
+4. Adjust your plan based on the skill's instructions
 
 Output format:
 **Skill Check:**
@@ -207,29 +223,11 @@ Output format:
   OR
 - No matching skills found - proceeding with standard approach
 
-If you find a matching skill, you MUST read it before continuing to Step 1.
+If you find a matching skill, read it and update your approach accordingly.
 
-**STEP 1: OUTPUT A PLAN (after reading any matching skills)**
+**STEP 3: IMMEDIATELY CALL TODOWRITE**
 
-After checking skills, output your plan:
-
-1. **State the goal** - What the user wants accomplished
-2. **Reference skill** - If using a skill, mention it
-3. **List steps** - Numbered steps following the skill's guidance (if applicable)
-
-Format:
-**Plan:**
-Goal: [what user asked for]
-Using skill: [skill name] (or "None")
-
-Steps:
-1. [First action - from skill instructions if applicable]
-2. [Second action]
-...
-
-**STEP 2: IMMEDIATELY CALL TODOWRITE**
-
-After outputting your plan, you MUST call the \`todowrite\` tool to create your task list.
+After checking skills, you MUST call the \`todowrite\` tool to create your task list.
 This is NOT optional. The user sees your todos in a sidebar - if you skip this, they see nothing.
 
 \`\`\`json
@@ -242,12 +240,12 @@ This is NOT optional. The user sees your todos in a sidebar - if you skip this, 
 }
 \`\`\`
 
-**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
+**STEP 4: COMPLETE ALL TODOS BEFORE FINISHING**
 - All todos must be "completed" or "cancelled" before calling complete_task
 
-WRONG: Jumping to browser actions without checking skills first
-WRONG: Starting work without planning and calling todowrite first
-CORRECT: Check skills (Step 0) → Plan (Step 1) → TodoWrite (Step 2) → Execute → Complete
+WRONG: Starting work without planning first
+WRONG: Skipping skill check - skills provide specialized instructions
+CORRECT: Plan (Step 1) → Check skills (Step 2) → TodoWrite (Step 3) → Execute → Complete
 
 ##############################################################################
 </behavior>
@@ -919,21 +917,18 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 
 <available-skills>
 ##############################################################################
-# MANDATORY: CHECK SKILLS BEFORE ANY ACTION
+# CHECK SKILLS AFTER PLANNING (Step 2)
 ##############################################################################
 
-BEFORE taking ANY action on a task, you MUST:
-1. Check if the task matches ANY skill description below
-2. If it matches, you MUST read that skill's SKILL.md file using the Read tool
-3. Follow the skill's instructions - do NOT use generic approaches when a skill exists
+After outputting your plan, check if any of these skills match your task.
+If a skill matches, read its SKILL.md file and adjust your approach accordingly.
 
 **Available Skills:**
 
 ${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}
   File: ${s.filePath}`).join('\n\n')}
 
-WRONG: Jumping straight to browser automation without checking skills
-CORRECT: Read the matching SKILL.md FIRST, then follow its specific instructions
+Skills provide specialized instructions - use them when they match your task.
 
 ##############################################################################
 </available-skills>
