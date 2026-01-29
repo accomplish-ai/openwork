@@ -3,10 +3,16 @@ import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electro
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+
+// Hardcode userData path to 'Openwork' regardless of package.json name
+// This ensures consistent data location across all versions
+const APP_DATA_NAME = 'Openwork';
+app.setPath('userData', path.join(app.getPath('appData'), APP_DATA_NAME));
+
 import { registerIPCHandlers } from './ipc/handlers';
 import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
-import { checkAndCleanupFreshInstall } from './store/freshInstallCleanup';
+import { migrateLegacyData } from './store/legacyMigration';
 import { initializeDatabase, closeDatabase } from './store/db';
 import { getProviderSettings, clearProviderSettings } from './store/repositories/providerSettings';
 import { getApiKey } from './store/secureStorage';
@@ -184,15 +190,14 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     console.log('[Main] Electron app ready, version:', app.getVersion());
 
-    // Check for fresh install and cleanup old data BEFORE initializing stores
-    // This ensures users get a clean slate after reinstalling from DMG
+    // Migrate data from legacy userData paths if needed (one-time migration)
     try {
-      const didCleanup = await checkAndCleanupFreshInstall();
-      if (didCleanup) {
-        console.log('[Main] Cleaned up data from previous installation');
+      const didMigrate = migrateLegacyData();
+      if (didMigrate) {
+        console.log('[Main] Migrated data from legacy userData path');
       }
     } catch (err) {
-      console.error('[Main] Fresh install cleanup failed:', err);
+      console.error('[Main] Legacy data migration failed:', err);
     }
 
     // Initialize database and run migrations
