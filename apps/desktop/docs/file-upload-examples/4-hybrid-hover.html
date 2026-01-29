@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Option 4: Hybrid with Hover Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --background: #f9f9f9;
+      --foreground: #202020;
+      --card: #fcfcfc;
+      --primary: #213c20;
+      --primary-foreground: #ffffff;
+      --muted: #efefef;
+      --muted-foreground: #646464;
+      --border: #eae2e1;
+      --ring: #644a40;
+      --destructive: #e54d2e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { width: 100%; max-width: 680px; }
+
+    .label {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      margin-bottom: 0.75rem;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 1px var(--ring);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .plus-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .plus-btn:hover {
+      background: var(--muted);
+      color: var(--foreground);
+    }
+
+    .plus-btn svg { width: 16px; height: 16px; }
+
+    textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--foreground);
+      font-family: inherit;
+      font-size: 1.25rem;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      min-height: 36px;
+    }
+
+    textarea::placeholder { color: #9ca3af; }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 0.5rem;
+      border: none;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover { opacity: 0.9; }
+    .send-btn svg { width: 16px; height: 16px; }
+
+    /* File Chips with Hover Preview */
+    .file-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .file-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.375rem 0.25rem 0.5rem;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.8125rem;
+      color: var(--foreground);
+      cursor: default;
+      animation: chipIn 0.15s ease;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .file-chip.removing {
+      animation: chipOut 0.15s ease forwards;
+    }
+
+    @keyframes chipOut {
+      to { opacity: 0; transform: scale(0.95); }
+    }
+
+    .file-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-icon svg { width: 12px; height: 12px; }
+
+    .file-icon.pdf { background: #fee2e2; color: #dc2626; }
+    .file-icon.image { background: #dbeafe; color: #2563eb; }
+    .file-icon.csv { background: #dcfce7; color: #16a34a; }
+
+    .file-name {
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .remove-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .remove-btn:hover {
+      background: #fee2e2;
+      color: var(--destructive);
+    }
+
+    .remove-btn svg { width: 14px; height: 14px; }
+
+    /* Hover Preview Tooltip */
+    .preview-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) scale(0.95);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 0.5rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.15s ease;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .file-chip:hover .preview-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .preview-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--card);
+    }
+
+    .preview-image {
+      width: 180px;
+      height: 120px;
+      border-radius: 0.375rem;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-doc {
+      width: 180px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .preview-doc svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 0.5rem;
+    }
+
+    .preview-doc.pdf svg { color: #dc2626; }
+    .preview-doc.csv svg { color: #16a34a; }
+
+    .preview-doc-name {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--foreground);
+      margin-bottom: 0.25rem;
+    }
+
+    .preview-doc-meta {
+      font-size: 0.6875rem;
+      color: var(--muted-foreground);
+    }
+
+    .description {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+
+    .description h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.375rem;
+    }
+
+    .description p {
+      font-size: 0.8125rem;
+      color: var(--muted-foreground);
+      line-height: 1.5;
+    }
+
+    .hint {
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="label">Option 4: Hybrid - Chips with Hover Previews</div>
+
+    <div class="input-wrapper">
+      <div class="file-chips">
+        <div class="file-chip">
+          <span class="file-icon image">
+            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 16l4-4 2 2 4-4 4 4V4H2v12h2z"/></svg>
+          </span>
+          <span class="file-name">screenshot.png</span>
+          <button class="remove-btn" title="Remove">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <div class="preview-tooltip">
+            <img class="preview-image" src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=360&h=240&fit=crop" alt="Preview">
+          </div>
+        </div>
+
+        <div class="file-chip">
+          <span class="file-icon pdf">
+            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm8-15.172L14.172 5H12V2.828z"/></svg>
+          </span>
+          <span class="file-name">requirements.pdf</span>
+          <button class="remove-btn" title="Remove">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <div class="preview-tooltip">
+            <div class="preview-doc pdf">
+              <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm8-15.172L14.172 5H12V2.828zM2 0h10l4 4v16H2V0z"/></svg>
+              <div class="preview-doc-name">requirements.pdf</div>
+              <div class="preview-doc-meta">PDF Document · 2.4 MB</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="file-chip">
+          <span class="file-icon csv">
+            <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zM6 8h8v2H6V8zm0 4h8v2H6v-2z"/></svg>
+          </span>
+          <span class="file-name">data.csv</span>
+          <button class="remove-btn" title="Remove">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <div class="preview-tooltip">
+            <div class="preview-doc csv">
+              <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zM6 8h8v2H6V8zm0 4h8v2H6v-2z"/></svg>
+              <div class="preview-doc-name">data.csv</div>
+              <div class="preview-doc-meta">Spreadsheet · 156 KB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <button class="plus-btn" title="Add files">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+        </button>
+        <textarea rows="1" placeholder="Assign a task or ask anything..."></textarea>
+        <button class="send-btn" title="Send">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="description">
+      <h3>Hybrid: Chips + Hover Preview</h3>
+      <p>Compact chips that reveal previews on hover. Best balance of space efficiency and visual confirmation.</p>
+      <div class="hint">💡 Hover over the file chips above to see previews!</div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const chip = this.closest('.file-chip');
+        chip.classList.add('removing');
+        setTimeout(() => chip.remove(), 150);
+      });
+    });
+  </script>
+</body>
+</html>
