@@ -25,6 +25,11 @@ import {
 } from '../store/taskHistory';
 import { generateTaskSummary } from '../services/summarizer';
 import {
+  validateElevenLabsApiKey,
+  transcribeAudio,
+  isElevenLabsConfigured,
+} from '../services/speechToText';
+import {
   storeApiKey,
   getApiKey,
   deleteApiKey,
@@ -987,6 +992,25 @@ export function registerIPCHandlers(): void {
               headers: {
                 'Authorization': `Bearer ${sanitizedKey}`,
               },
+            },
+            API_KEY_VALIDATION_TIMEOUT_MS
+          );
+          break;
+
+        case 'moonshot':
+          response = await fetchWithTimeout(
+            'https://api.moonshot.ai/v1/chat/completions',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sanitizedKey}`,
+              },
+              body: JSON.stringify({
+                model: 'kimi-latest',
+                max_tokens: 1,
+                messages: [{ role: 'user', content: 'test' }],
+              }),
             },
             API_KEY_VALIDATION_TIMEOUT_MS
           );
@@ -2365,6 +2389,39 @@ export function registerIPCHandlers(): void {
       return { ok: true };
     }
   );
+
+  // Speech-to-Text: Check if ElevenLabs is configured
+  handle('speech:is-configured', async (_event: IpcMainInvokeEvent) => {
+    return isElevenLabsConfigured();
+  });
+
+  // Speech-to-Text: Get configuration status
+  handle('speech:get-config', async (_event: IpcMainInvokeEvent) => {
+    const apiKey = getApiKey('elevenlabs');
+    return {
+      enabled: Boolean(apiKey && apiKey.trim()),
+      hasApiKey: Boolean(apiKey),
+      apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : undefined,
+    };
+  });
+
+  // Speech-to-Text: Validate API key (makes actual API call to ElevenLabs)
+  handle('speech:validate', async (_event: IpcMainInvokeEvent, apiKey?: string) => {
+    return validateElevenLabsApiKey(apiKey);
+  });
+
+  // Speech-to-Text: Transcribe audio (receives audio data from renderer, calls ElevenLabs API)
+  handle('speech:transcribe', async (_event: IpcMainInvokeEvent, audioData: ArrayBuffer, mimeType?: string) => {
+    console.log('[IPC] speech:transcribe received:', {
+      audioDataType: typeof audioData,
+      audioDataByteLength: audioData?.byteLength,
+      mimeType,
+    });
+    // Convert ArrayBuffer to Buffer for the service
+    const buffer = Buffer.from(audioData);
+    console.log('[IPC] Converted to buffer:', { bufferLength: buffer.length });
+    return transcribeAudio(buffer, mimeType);
+  });
 
   // Provider Settings
   handle('provider-settings:get', async () => {
