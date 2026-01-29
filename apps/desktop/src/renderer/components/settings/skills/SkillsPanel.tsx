@@ -13,7 +13,7 @@ import {
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { SkillCard } from './SkillCard';
 
-type FilterType = 'all' | 'active' | 'official';
+type FilterType = 'all' | 'active' | 'inactive' | 'official';
 
 interface SkillsPanelProps {
   refreshTrigger?: number;
@@ -35,6 +35,8 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
     // Apply filter
     if (filter === 'active') {
       result = result.filter((s) => s.isEnabled);
+    } else if (filter === 'inactive') {
+      result = result.filter((s) => !s.isEnabled);
     } else if (filter === 'official') {
       result = result.filter((s) => s.source === 'official');
     }
@@ -154,7 +156,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
     }
   }, [isResyncing]);
 
-  const filterLabel = filter === 'all' ? 'All types' : filter === 'active' ? 'Active' : 'By Openwork';
+  const filterLabel = filter === 'all' ? 'Filters' : filter === 'active' ? 'Active' : filter === 'inactive' ? 'Inactive' : 'By Openwork';
 
   if (loading) {
     return (
@@ -194,8 +196,9 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setFilter('all')}>All types</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter('all')}>All</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilter('active')}>Active</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter('inactive')}>Inactive</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilter('official')}>By Openwork</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

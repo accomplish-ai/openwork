@@ -59,18 +59,41 @@ export class SkillsManager {
     const bundledPath = this.getBundledSkillsPath();
     const userPath = this.getUserSkillsPath();
 
-    const existingSkills = new Map(getAllSkills().map(s => [s.id, s]));
+    const existingSkills = getAllSkills();
+    const existingById = new Map(existingSkills.map(s => [s.id, s]));
+    const existingByPath = new Map(existingSkills.map(s => [s.filePath, s]));
 
     const bundledSkills = this.scanDirectory(bundledPath, 'official');
     const userSkills = this.scanDirectory(userPath, 'custom');
 
     const allFoundSkills = [...bundledSkills, ...userSkills];
+    const processedPaths = new Set<string>();
 
     for (const skill of allFoundSkills) {
-      const existing = existingSkills.get(skill.id);
-      if (existing) {
-        skill.isEnabled = existing.isEnabled;
+      // Skip if we've already processed this file path (prevents duplicates)
+      if (processedPaths.has(skill.filePath)) {
+        continue;
       }
+      processedPaths.add(skill.filePath);
+
+      // Check if skill already exists by file path (preserves community source for GitHub imports)
+      const existingByFilePath = existingByPath.get(skill.filePath);
+      if (existingByFilePath) {
+        // Preserve existing source if it was imported from GitHub
+        if (existingByFilePath.githubUrl) {
+          skill.source = existingByFilePath.source;
+          skill.id = existingByFilePath.id;
+          skill.githubUrl = existingByFilePath.githubUrl;
+        }
+        skill.isEnabled = existingByFilePath.isEnabled;
+      } else {
+        // Check by ID for backwards compatibility
+        const existingById_ = existingById.get(skill.id);
+        if (existingById_) {
+          skill.isEnabled = existingById_.isEnabled;
+        }
+      }
+
       upsertSkill(skill);
     }
 
