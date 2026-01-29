@@ -16,6 +16,7 @@ import { useProviderSettings } from '@/components/settings/hooks/useProviderSett
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
+import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -28,7 +29,7 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'voice';
+  initialTab?: 'providers' | 'voice' | 'skills';
 }
 
 export default function SettingsDialog({
@@ -42,7 +43,7 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'voice'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills'>(initialTab);
 
   const {
     settings,
@@ -286,27 +287,49 @@ export default function SettingsDialog({
 
         <div className="space-y-6 mt-4">
           {/* Tab Navigation */}
-          <div className="flex gap-4 border-b border-border">
-            <button
-              onClick={() => setActiveTab('providers')}
-              className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                activeTab === 'providers'
-                  ? 'text-foreground border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Providers
-            </button>
-            <button
-              onClick={() => setActiveTab('voice')}
-              className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                activeTab === 'voice'
-                  ? 'text-foreground border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Voice Input
-            </button>
+          <div className="flex items-end justify-between border-b border-border">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setActiveTab('providers')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'providers'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Providers
+              </button>
+              <button
+                onClick={() => setActiveTab('voice')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'voice'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Voice Input
+              </button>
+              <button
+                onClick={() => setActiveTab('skills')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'skills'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Skills
+              </button>
+            </div>
+            {activeTab === 'skills' && (
+              <div className="pb-2">
+                <AddSkillDropdown
+                  onBuildWithAI={() => console.log('Build with AI')}
+                  onUpload={() => console.log('Upload')}
+                  onAddFromOfficial={() => console.log('Add from official')}
+                  onImportFromGitHub={() => console.log('Import from GitHub')}
+                />
+              </div>
+            )}
           </div>
 
           {/* Providers Tab */}
@@ -460,6 +483,13 @@ export default function SettingsDialog({
           {activeTab === 'voice' && (
             <div className="space-y-6">
               <SpeechSettingsForm onSave={() => {}} onChange={() => {}} />
+            </div>
+          )}
+
+          {/* Skills Tab */}
+          {activeTab === 'skills' && (
+            <div className="space-y-6">
+              <SkillsPanel />
             </div>
           )}
 

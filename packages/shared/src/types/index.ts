@@ -3,5 +3,6 @@ export * from './opencode';
 export * from './permission';
 export * from './provider';
 export * from './providerSettings';
+export * from './skills';
 export * from './task';
 export * from './todo';
