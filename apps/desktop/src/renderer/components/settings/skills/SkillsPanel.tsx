@@ -143,7 +143,11 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
     if (!window.accomplish || isResyncing) return;
     setIsResyncing(true);
     try {
-      const updatedSkills = await window.accomplish.resyncSkills();
+      // Run resync and minimum delay in parallel so animation is visible
+      const [updatedSkills] = await Promise.all([
+        window.accomplish.resyncSkills(),
+        new Promise((resolve) => setTimeout(resolve, 600)),
+      ]);
       setSkills(updatedSkills);
     } catch (err) {
       console.error('Failed to resync skills:', err);
@@ -226,20 +230,26 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
           disabled={isResyncing}
           className="flex items-center justify-center rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           title="Refresh skills"
-          whileTap={{ scale: 0.92 }}
+          whileTap={{ scale: 0.9 }}
         >
-          <motion.svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            animate={isResyncing ? { rotate: 360 } : { rotate: 0 }}
-            transition={isResyncing ? { duration: 0.8, repeat: Infinity, ease: 'linear' } : { duration: 0.3 }}
+          <motion.div
+            animate={isResyncing ? { rotate: 720 } : { rotate: 0 }}
+            transition={isResyncing
+              ? { duration: 1, repeat: Infinity, ease: 'linear' }
+              : { duration: 0 }
+            }
           >
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-          </motion.svg>
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+          </motion.div>
         </motion.button>
       </div>
 
