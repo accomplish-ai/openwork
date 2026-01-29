@@ -110,7 +110,7 @@ import {
 } from '../test-utils/mock-task-flow';
 
 const MAX_TEXT_LENGTH = 8000;
-const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'zai', 'azure-foundry', 'custom', 'bedrock', 'litellm', 'minimax', 'lmstudio']);
+const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai', 'azure-foundry', 'custom', 'bedrock', 'litellm', 'minimax', 'lmstudio', 'elevenlabs']);
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
 interface OllamaModel {
@@ -1203,14 +1203,44 @@ export function registerIPCHandlers(): void {
         });
       } else if (parsed.authType === 'apiKey') {
         // API Key (Bearer token) authentication
-        // AWS SDK doesn't directly support bearer tokens for Bedrock validation,
-        // but we can accept it and let OpenCode CLI handle the actual API calls.
-        // For validation, we just check that the apiKey is provided.
+        // Validate by making a direct API call to Bedrock with the bearer token
         if (!parsed.apiKey) {
           return { valid: false, error: 'API Key is required' };
         }
-        console.log('[Bedrock] API Key validation - accepting without SDK verification');
-        return { valid: true };
+
+        const region = parsed.region || 'us-east-1';
+        const bedrockUrl = `https://bedrock.${region}.amazonaws.com/foundation-models`;
+
+        try {
+          const response = await fetchWithTimeout(
+            bedrockUrl,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${parsed.apiKey}`,
+              },
+            },
+            API_KEY_VALIDATION_TIMEOUT_MS
+          );
+
+          if (response.ok) {
+            console.log('[Bedrock] API Key validation succeeded');
+            return { valid: true };
+          }
+
+          const errorText = await response.text();
+          console.warn('[Bedrock] API Key validation failed:', response.status, errorText);
+
+          if (response.status === 401 || response.status === 403) {
+            return { valid: false, error: 'Invalid or expired API key. Please check your Bedrock API key.' };
+          }
+
+          return { valid: false, error: `Validation failed: ${response.status}` };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Validation failed';
+          console.warn('[Bedrock] API Key validation error:', message);
+          return { valid: false, error: message };
+        }
       } else {
         return { valid: false, error: 'Invalid authentication type' };
       }
@@ -1261,13 +1291,44 @@ export function registerIPCHandlers(): void {
           region: credentials.region || 'us-east-1',
           credentials: fromIni({ profile: credentials.profileName }),
         });
+      } else if (credentials.authType === 'apiKey') {
+        // API Key (Bearer token) authentication - use direct API call
+        const region = credentials.region || 'us-east-1';
+        const bedrockUrl = `https://bedrock.${region}.amazonaws.com/foundation-models`;
+
+        const response = await fetchWithTimeout(
+          bedrockUrl,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${credentials.apiKey}`,
+            },
+          },
+          30000 // 30 second timeout for model fetching
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[Bedrock] API Key fetch models failed:', response.status, errorText);
+          return { success: false, error: `Failed to fetch models: ${response.status}`, models: [] };
+        }
+
+        const data = await response.json();
+        const models = (data.modelSummaries || [])
+          .filter((m: { outputModalities?: string[] }) => m.outputModalities?.includes('TEXT'))
+          .map((m: { modelId?: string; providerName?: string }) => ({
+            id: `amazon-bedrock/${m.modelId}`,
+            name: m.modelId || 'Unknown',
+            provider: m.providerName || 'Unknown',
+          }))
+          .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
+
+        return { success: true, models };
       } else {
-        // apiKey auth type - AWS SDK doesn't directly support bearer tokens for ListFoundationModels
-        // Return empty models list; user can still use Bedrock via the CLI with bearer token auth
-        return { success: true, models: [] };
+        return { success: false, error: 'Invalid authentication type', models: [] };
       }
 
-      // Fetch all foundation models
+      // Fetch all foundation models using SDK client
       const command = new ListFoundationModelsCommand({});
       const response = await bedrockClient.send(command);
 
