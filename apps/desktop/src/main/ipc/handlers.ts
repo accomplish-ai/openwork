@@ -1181,75 +1181,50 @@ export function registerIPCHandlers(): void {
   handle('bedrock:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
     console.log('[Bedrock] Validation requested');
 
-    try {
-      const parsed = JSON.parse(credentials);
-      let client: BedrockClient;
+    const parsed = JSON.parse(credentials);
+    let client: BedrockClient;
+    let cleanupEnv: (() => void) | null = null;
 
-      if (parsed.authType === 'apiKey') {
-        // API Key authentication (Bearer token)
-        console.log('[Bedrock] Using API Key authentication');
-        console.log('[Bedrock] Region:', parsed.region || 'us-east-1');
-        console.log('[Bedrock] API Key length:', parsed.apiKey?.length);
-        console.log('[Bedrock] API Key prefix:', parsed.apiKey?.substring(0, 12) + '...');
-
-        // Set environment variable for AWS SDK to pick up
-        const originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
-        process.env.AWS_BEARER_TOKEN_BEDROCK = parsed.apiKey;
-
-        try {
-          client = new BedrockClient({
-            region: parsed.region || 'us-east-1',
-          });
-
-          // Test by listing foundation models
-          const command = new ListFoundationModelsCommand({});
-          console.log('[Bedrock] Sending ListFoundationModelsCommand...');
-          const result = await client.send(command);
-          console.log('[Bedrock] API Key validation succeeded, models count:', result.modelSummaries?.length);
-          return { valid: true };
-        } catch (apiKeyError) {
-          console.error('[Bedrock] API Key validation error:');
-          console.error('[Bedrock] Error name:', apiKeyError instanceof Error ? apiKeyError.name : 'unknown');
-          console.error('[Bedrock] Error message:', apiKeyError instanceof Error ? apiKeyError.message : String(apiKeyError));
-          if (apiKeyError instanceof Error && 'code' in apiKeyError) {
-            console.error('[Bedrock] Error code:', (apiKeyError as { code?: string }).code);
-          }
-          if (apiKeyError instanceof Error && '$metadata' in apiKeyError) {
-            console.error('[Bedrock] Error metadata:', JSON.stringify((apiKeyError as { $metadata?: unknown }).$metadata, null, 2));
-          }
-          throw apiKeyError;
-        } finally {
-          // Restore original env
-          if (originalToken !== undefined) {
-            process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
-          } else {
-            delete process.env.AWS_BEARER_TOKEN_BEDROCK;
-          }
+    // Create client based on auth type
+    if (parsed.authType === 'apiKey') {
+      // Set environment variable for AWS SDK to pick up
+      const originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
+      process.env.AWS_BEARER_TOKEN_BEDROCK = parsed.apiKey;
+      cleanupEnv = () => {
+        if (originalToken !== undefined) {
+          process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
+        } else {
+          delete process.env.AWS_BEARER_TOKEN_BEDROCK;
         }
-      } else if (parsed.authType === 'accessKeys') {
-        // Access key authentication
-        const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
-          accessKeyId: parsed.accessKeyId,
-          secretAccessKey: parsed.secretAccessKey,
-        };
-        if (parsed.sessionToken) {
-          awsCredentials.sessionToken = parsed.sessionToken;
-        }
-        client = new BedrockClient({
-          region: parsed.region || 'us-east-1',
-          credentials: awsCredentials,
-        });
-      } else if (parsed.authType === 'profile') {
-        // AWS Profile authentication
-        client = new BedrockClient({
-          region: parsed.region || 'us-east-1',
-          credentials: fromIni({ profile: parsed.profileName || 'default' }),
-        });
-      } else {
-        return { valid: false, error: 'Invalid authentication type' };
+      };
+      client = new BedrockClient({
+        region: parsed.region || 'us-east-1',
+      });
+    } else if (parsed.authType === 'accessKeys') {
+      // Access key authentication
+      const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
+        accessKeyId: parsed.accessKeyId,
+        secretAccessKey: parsed.secretAccessKey,
+      };
+      if (parsed.sessionToken) {
+        awsCredentials.sessionToken = parsed.sessionToken;
       }
+      client = new BedrockClient({
+        region: parsed.region || 'us-east-1',
+        credentials: awsCredentials,
+      });
+    } else if (parsed.authType === 'profile') {
+      // AWS Profile authentication
+      client = new BedrockClient({
+        region: parsed.region || 'us-east-1',
+        credentials: fromIni({ profile: parsed.profileName || 'default' }),
+      });
+    } else {
+      return { valid: false, error: 'Invalid authentication type' };
+    }
 
-      // Test by listing foundation models
+    try {
+      // Test by listing foundation models - single request point for all auth types
       const command = new ListFoundationModelsCommand({});
       await client.send(command);
 
@@ -1274,6 +1249,8 @@ export function registerIPCHandlers(): void {
       }
 
       return { valid: false, error: message };
+    } finally {
+      cleanupEnv?.();
     }
   });
 
