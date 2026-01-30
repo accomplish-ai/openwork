@@ -84,7 +84,7 @@ describe('BedrockApiKeyTab', () => {
 
       // Assert
       const regionSelect = screen.getByTestId('bedrock-region-select');
-      expect(regionSelect).toHaveValue('eu-west-1');
+      expect(regionSelect).toHaveTextContent('eu-west-1');
     });
   });
 
@@ -107,9 +107,11 @@ describe('BedrockApiKeyTab', () => {
       const onRegionChange = vi.fn();
       render(<BedrockApiKeyTab {...defaultProps} onRegionChange={onRegionChange} />);
 
-      // Act
+      // Act - Click to open dropdown, then click an option
       const regionSelect = screen.getByTestId('bedrock-region-select');
-      fireEvent.change(regionSelect, { target: { value: 'ap-northeast-1' } });
+      fireEvent.click(regionSelect);
+      const option = screen.getByTestId('bedrock-region-select-option-ap-northeast-1');
+      fireEvent.click(option);
 
       // Assert
       expect(onRegionChange).toHaveBeenCalledWith('ap-northeast-1');
@@ -123,7 +125,7 @@ describe('BedrockApiKeyTab', () => {
       render(<BedrockApiKeyTab {...props} />);
 
       // Assert
-      const clearButton = screen.getByRole('button');
+      const clearButton = screen.getByTestId('bedrock-api-key-clear');
       expect(clearButton).toBeInTheDocument();
     });
 
@@ -132,7 +134,7 @@ describe('BedrockApiKeyTab', () => {
       render(<BedrockApiKeyTab {...defaultProps} />);
 
       // Assert
-      const clearButton = screen.queryByRole('button');
+      const clearButton = screen.queryByTestId('bedrock-api-key-clear');
       expect(clearButton).not.toBeInTheDocument();
     });
 
@@ -143,7 +145,7 @@ describe('BedrockApiKeyTab', () => {
       render(<BedrockApiKeyTab {...props} />);
 
       // Act
-      const clearButton = screen.getByRole('button');
+      const clearButton = screen.getByTestId('bedrock-api-key-clear');
       fireEvent.click(clearButton);
 
       // Assert

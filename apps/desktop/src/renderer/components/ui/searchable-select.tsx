@@ -60,15 +60,18 @@ function SelectOption({
   item,
   isSelected,
   onSelect,
+  testId,
 }: {
   item: SelectItem;
   isSelected: boolean;
   onSelect: () => void;
+  testId?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
+      data-testid={testId ? `${testId}-option-${item.id}` : undefined}
       className={`w-full px-3 py-2 text-sm text-left hover:bg-muted ${
         isSelected ? 'bg-muted font-medium' : ''
       }`}
@@ -88,6 +91,7 @@ function SelectDropdown({
   emptyMessage,
   onSelect,
   inputRef,
+  testId,
 }: {
   items: SelectItem[];
   value: string | null;
@@ -98,6 +102,7 @@ function SelectDropdown({
   emptyMessage: string;
   onSelect: (id: string) => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
+  testId?: string;
 }) {
   return (
     <motion.div
@@ -108,6 +113,7 @@ function SelectDropdown({
       exit="exit"
       transition={settingsTransitions.fast}
       style={{ transformOrigin: 'top' }}
+      data-testid={testId ? `${testId}-dropdown` : undefined}
     >
       {showSearch && (
         <div className="p-2 border-b border-input">
@@ -131,6 +137,7 @@ function SelectDropdown({
               item={item}
               isSelected={item.id === value}
               onSelect={() => onSelect(item.id)}
+              testId={testId}
             />
           ))
         )}
@@ -259,6 +266,7 @@ export function SearchableSelect({
               emptyMessage={emptyMessage}
               onSelect={handleSelect}
               inputRef={inputRef}
+              testId={testId}
             />
           )}
         </AnimatePresence>
