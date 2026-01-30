@@ -1185,7 +1185,48 @@ export function registerIPCHandlers(): void {
       const parsed = JSON.parse(credentials);
       let client: BedrockClient;
 
-      if (parsed.authType === 'accessKeys') {
+      if (parsed.authType === 'apiKey') {
+        // API Key authentication (Bearer token)
+        console.log('[Bedrock] Using API Key authentication');
+        console.log('[Bedrock] Region:', parsed.region || 'us-east-1');
+        console.log('[Bedrock] API Key length:', parsed.apiKey?.length);
+        console.log('[Bedrock] API Key prefix:', parsed.apiKey?.substring(0, 12) + '...');
+
+        // Set environment variable for AWS SDK to pick up
+        const originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
+        process.env.AWS_BEARER_TOKEN_BEDROCK = parsed.apiKey;
+
+        try {
+          client = new BedrockClient({
+            region: parsed.region || 'us-east-1',
+          });
+
+          // Test by listing foundation models
+          const command = new ListFoundationModelsCommand({});
+          console.log('[Bedrock] Sending ListFoundationModelsCommand...');
+          const result = await client.send(command);
+          console.log('[Bedrock] API Key validation succeeded, models count:', result.modelSummaries?.length);
+          return { valid: true };
+        } catch (apiKeyError) {
+          console.error('[Bedrock] API Key validation error:');
+          console.error('[Bedrock] Error name:', apiKeyError instanceof Error ? apiKeyError.name : 'unknown');
+          console.error('[Bedrock] Error message:', apiKeyError instanceof Error ? apiKeyError.message : String(apiKeyError));
+          if (apiKeyError instanceof Error && 'code' in apiKeyError) {
+            console.error('[Bedrock] Error code:', (apiKeyError as { code?: string }).code);
+          }
+          if (apiKeyError instanceof Error && '$metadata' in apiKeyError) {
+            console.error('[Bedrock] Error metadata:', JSON.stringify((apiKeyError as { $metadata?: unknown }).$metadata, null, 2));
+          }
+          throw apiKeyError;
+        } finally {
+          // Restore original env
+          if (originalToken !== undefined) {
+            process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
+          } else {
+            delete process.env.AWS_BEARER_TOKEN_BEDROCK;
+          }
+        }
+      } else if (parsed.authType === 'accessKeys') {
         // Access key authentication
         const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
           accessKeyId: parsed.accessKeyId,
@@ -1228,6 +1269,9 @@ export function registerIPCHandlers(): void {
       if (message.includes('could not be found')) {
         return { valid: false, error: 'AWS profile not found. Check your ~/.aws/credentials file.' };
       }
+      if (message.includes('InvalidBearerTokenException') || message.includes('bearer token')) {
+        return { valid: false, error: 'Invalid Bedrock API key. Please check your API key and try again.' };
+      }
 
       return { valid: false, error: message };
     }
@@ -1240,7 +1284,16 @@ export function registerIPCHandlers(): void {
 
       // Create Bedrock client (same pattern as validate)
       let bedrockClient: BedrockClient;
-      if (credentials.authType === 'accessKeys') {
+      let originalToken: string | undefined;
+
+      if (credentials.authType === 'apiKey') {
+        // API Key authentication (Bearer token)
+        originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
+        process.env.AWS_BEARER_TOKEN_BEDROCK = credentials.apiKey;
+        bedrockClient = new BedrockClient({
+          region: credentials.region || 'us-east-1',
+        });
+      } else if (credentials.authType === 'accessKeys') {
         bedrockClient = new BedrockClient({
           region: credentials.region || 'us-east-1',
           credentials: {
@@ -1256,22 +1309,33 @@ export function registerIPCHandlers(): void {
         });
       }
 
-      // Fetch all foundation models
-      const command = new ListFoundationModelsCommand({});
-      const response = await bedrockClient.send(command);
+      try {
+        // Fetch all foundation models
+        const command = new ListFoundationModelsCommand({});
+        const response = await bedrockClient.send(command);
 
-      // Transform to standard format, filtering for text output models
-      // Use modelId for display name to avoid duplicates (multiple versions share the same modelName)
-      const models = (response.modelSummaries || [])
-        .filter(m => m.outputModalities?.includes('TEXT'))
-        .map(m => ({
-          id: `amazon-bedrock/${m.modelId}`,
-          name: m.modelId || 'Unknown',
-          provider: m.providerName || 'Unknown',
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        // Transform to standard format, filtering for text output models
+        // Use modelId for display name to avoid duplicates (multiple versions share the same modelName)
+        const models = (response.modelSummaries || [])
+          .filter(m => m.outputModalities?.includes('TEXT'))
+          .map(m => ({
+            id: `amazon-bedrock/${m.modelId}`,
+            name: m.modelId || 'Unknown',
+            provider: m.providerName || 'Unknown',
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
 
-      return { success: true, models };
+        return { success: true, models };
+      } finally {
+        // Restore original env for API key auth
+        if (credentials.authType === 'apiKey') {
+          if (originalToken !== undefined) {
+            process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
+          } else {
+            delete process.env.AWS_BEARER_TOKEN_BEDROCK;
+          }
+        }
+      }
     } catch (error) {
       console.error('[Bedrock] Failed to fetch models:', error);
       return { success: false, error: normalizeIpcError(error), models: [] };
@@ -1283,7 +1347,11 @@ export function registerIPCHandlers(): void {
     const parsed = JSON.parse(credentials);
 
     // Validate structure
-    if (parsed.authType === 'accessKeys') {
+    if (parsed.authType === 'apiKey') {
+      if (!parsed.apiKey) {
+        throw new Error('API Key is required');
+      }
+    } else if (parsed.authType === 'accessKeys') {
       if (!parsed.accessKeyId || !parsed.secretAccessKey) {
         throw new Error('Access Key ID and Secret Access Key are required');
       }
@@ -1298,11 +1366,25 @@ export function registerIPCHandlers(): void {
     // Store the credentials
     storeApiKey('bedrock', credentials);
 
+    // Generate label and keyPrefix based on auth type
+    let label: string;
+    let keyPrefix: string;
+    if (parsed.authType === 'apiKey') {
+      label = 'Bedrock API Key';
+      keyPrefix = `${parsed.apiKey.substring(0, 8)}...`;
+    } else if (parsed.authType === 'accessKeys') {
+      label = 'AWS Access Keys';
+      keyPrefix = `${parsed.accessKeyId.substring(0, 8)}...`;
+    } else {
+      label = `AWS Profile: ${parsed.profileName}`;
+      keyPrefix = parsed.profileName;
+    }
+
     return {
       id: 'local-bedrock',
       provider: 'bedrock',
-      label: parsed.authType === 'accessKeys' ? 'AWS Access Keys' : `AWS Profile: ${parsed.profileName}`,
-      keyPrefix: parsed.authType === 'accessKeys' ? `${parsed.accessKeyId.substring(0, 8)}...` : parsed.profileName,
+      label,
+      keyPrefix,
       isActive: true,
       createdAt: new Date().toISOString(),
     };

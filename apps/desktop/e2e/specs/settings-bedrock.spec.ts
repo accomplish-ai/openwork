@@ -34,7 +34,8 @@ test.describe('Settings - Amazon Bedrock', () => {
     // Click Bedrock provider card
     await settingsPage.selectProvider('bedrock');
 
-    // Verify Access Key tab is visible (default)
+    // Verify all three auth tabs are visible
+    await expect(settingsPage.bedrockApiKeyTab).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
     await expect(settingsPage.bedrockAccessKeyTab).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
     await expect(settingsPage.bedrockAwsProfileTab).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
 
@@ -42,11 +43,11 @@ test.describe('Settings - Amazon Bedrock', () => {
       window,
       'settings-bedrock',
       'credential-form-visible',
-      ['Bedrock credential form is visible', 'Auth tabs are shown']
+      ['Bedrock credential form is visible', 'All three auth tabs are shown']
     );
   });
 
-  test('should switch between Access Key and AWS Profile tabs', async ({ window }) => {
+  test('should have API Key tab selected by default', async ({ window }) => {
     const settingsPage = new SettingsPage(window);
     await window.waitForLoadState('domcontentloaded');
     await settingsPage.navigateToSettings();
@@ -57,24 +58,88 @@ test.describe('Settings - Amazon Bedrock', () => {
     // Click Bedrock provider card
     await settingsPage.selectProvider('bedrock');
 
-    // Default is Access Key - verify inputs
+    // Verify API Key tab is selected (has active styling)
+    const apiKeyTab = settingsPage.bedrockApiKeyTab;
+    await expect(apiKeyTab).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+    // API Key tab should have active styling (bg-[#4A7C59])
+    await expect(apiKeyTab).toHaveClass(/bg-\[#4A7C59\]/);
+
+    // Verify API Key input is visible (default tab content)
+    await expect(settingsPage.bedrockApiKeyInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+
+    await captureForAI(
+      window,
+      'settings-bedrock',
+      'api-key-tab-default',
+      ['API Key tab is selected by default', 'API Key input is visible']
+    );
+  });
+
+  test('should switch between all three auth tabs', async ({ window }) => {
+    const settingsPage = new SettingsPage(window);
+    await window.waitForLoadState('domcontentloaded');
+    await settingsPage.navigateToSettings();
+
+    // Click Show All to see all providers
+    await settingsPage.toggleShowAll();
+
+    // Click Bedrock provider card
+    await settingsPage.selectProvider('bedrock');
+
+    // Default is API Key - verify input
+    await expect(settingsPage.bedrockApiKeyInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+    await expect(settingsPage.bedrockAccessKeyIdInput).not.toBeVisible();
+    await expect(settingsPage.bedrockProfileNameInput).not.toBeVisible();
+
+    // Switch to Access Key tab
+    await settingsPage.selectBedrockAccessKeyTab();
     await expect(settingsPage.bedrockAccessKeyIdInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
     await expect(settingsPage.bedrockSecretKeyInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+    await expect(settingsPage.bedrockApiKeyInput).not.toBeVisible();
 
     // Switch to AWS Profile tab
     await settingsPage.selectBedrockAwsProfileTab();
     await expect(settingsPage.bedrockProfileNameInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
     await expect(settingsPage.bedrockAccessKeyIdInput).not.toBeVisible();
 
-    // Switch back to Access Key
-    await settingsPage.selectBedrockAccessKeyTab();
-    await expect(settingsPage.bedrockAccessKeyIdInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+    // Switch back to API Key tab
+    await settingsPage.selectBedrockApiKeyTab();
+    await expect(settingsPage.bedrockApiKeyInput).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
 
     await captureForAI(
       window,
       'settings-bedrock',
       'tab-switching',
-      ['Can switch between auth tabs', 'Form fields update correctly']
+      ['Can switch between all three auth tabs', 'Form fields update correctly']
+    );
+  });
+
+  test('should allow typing in Bedrock API key field', async ({ window }) => {
+    const settingsPage = new SettingsPage(window);
+    await window.waitForLoadState('domcontentloaded');
+    await settingsPage.navigateToSettings();
+
+    // Click Show All to see all providers
+    await settingsPage.toggleShowAll();
+
+    // Click Bedrock provider card
+    await settingsPage.selectProvider('bedrock');
+
+    // API Key tab is selected by default
+    const testApiKey = 'br-test-api-key-12345';
+
+    await settingsPage.bedrockApiKeyInput.fill(testApiKey);
+
+    await expect(settingsPage.bedrockApiKeyInput).toHaveValue(testApiKey);
+
+    // Verify region selector is visible
+    await expect(settingsPage.bedrockRegionSelect).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
+
+    await captureForAI(
+      window,
+      'settings-bedrock',
+      'api-key-field-filled',
+      ['API key field accepts input', 'Region selector is available']
     );
   });
 
@@ -88,6 +153,9 @@ test.describe('Settings - Amazon Bedrock', () => {
 
     // Click Bedrock provider card
     await settingsPage.selectProvider('bedrock');
+
+    // Switch to Access Key tab
+    await settingsPage.selectBedrockAccessKeyTab();
 
     const testAccessKey = 'AKIAIOSFODNN7EXAMPLE';
     const testSecretKey = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
