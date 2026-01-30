@@ -1,4 +1,8 @@
 {
+  "app": {
+    "notInElectron": "此应用必须在 Openwork 桌面应用中运行。",
+    "unableToStart": "无法启动"
+  },
   "api": {
     "timeout": "请求超时。请检查您的网络连接。",
     "timeoutRetry": "请求超时。请检查您的网络连接并重试。",

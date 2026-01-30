@@ -2,6 +2,11 @@
   "app": {
     "name": "Openwork"
   },
+  "auth": {
+    "sessionExpired": "{{provider}} 会话已过期",
+    "reLogin": "重新登录 {{provider}}",
+    "dismiss": "关闭"
+  },
   "buttons": {
     "send": "发送",
     "submit": "提交",

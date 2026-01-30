@@ -2,6 +2,11 @@
   "app": {
     "name": "Openwork"
   },
+  "auth": {
+    "sessionExpired": "{{provider}} Session Expired",
+    "reLogin": "Re-login to {{provider}}",
+    "dismiss": "Dismiss"
+  },
   "buttons": {
     "send": "Send",
     "submit": "Submit",

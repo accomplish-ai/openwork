@@ -1,4 +1,8 @@
 {
+  "app": {
+    "notInElectron": "This application must be run inside the Openwork desktop app.",
+    "unableToStart": "Unable to Start"
+  },
   "api": {
     "timeout": "Request timed out. Please check your internet connection.",
     "timeoutRetry": "Request timed out. Please check your internet connection and try again.",
