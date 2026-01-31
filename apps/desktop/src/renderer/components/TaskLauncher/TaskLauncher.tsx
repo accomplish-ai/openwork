@@ -20,6 +20,7 @@ export default function TaskLauncher() {
 
   const {
     isLauncherOpen,
+    launcherInitialPrompt,
     closeLauncher,
     tasks,
     startTask
@@ -45,13 +46,13 @@ export default function TaskLauncher() {
     setSelectedIndex(i => Math.min(i, Math.max(0, totalItems - 1)));
   }, [totalItems]);
 
-  // Reset state when launcher opens
+  // Reset state when launcher opens, use initial prompt if provided
   useEffect(() => {
     if (isLauncherOpen) {
-      setSearchQuery('');
+      setSearchQuery(launcherInitialPrompt || '');
       setSelectedIndex(0);
     }
-  }, [isLauncherOpen]);
+  }, [isLauncherOpen, launcherInitialPrompt]);
 
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open && isLauncherOpen) {

@@ -111,6 +111,7 @@ import {
   executeMockTaskFlow,
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
+import { skillsManager } from '../skills';
 
 const MAX_TEXT_LENGTH = 8000;
 const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai', 'azure-foundry', 'custom', 'bedrock', 'litellm', 'minimax', 'lmstudio', 'elevenlabs']);
@@ -2478,6 +2479,65 @@ export function registerIPCHandlers(): void {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, error: message };
     }
+  });
+
+  // Skills management
+  ipcMain.handle('skills:list', async () => {
+    return skillsManager.getAll();
+  });
+
+  ipcMain.handle('skills:list-enabled', async () => {
+    return skillsManager.getEnabled();
+  });
+
+  ipcMain.handle('skills:set-enabled', async (_, id: string, enabled: boolean) => {
+    await skillsManager.setEnabled(id, enabled);
+  });
+
+  ipcMain.handle('skills:get-content', async (_, id: string) => {
+    return skillsManager.getContent(id);
+  });
+
+  // File picker dialog for uploading skills
+  ipcMain.handle('skills:pick-file', async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select a SKILL.md file',
+      filters: [
+        { name: 'Skill Files', extensions: ['md'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle('skills:add-from-file', async (_, filePath: string) => {
+    return skillsManager.addFromFile(filePath);
+  });
+
+  ipcMain.handle('skills:add-from-github', async (_, rawUrl: string) => {
+    return skillsManager.addFromGitHub(rawUrl);
+  });
+
+  ipcMain.handle('skills:delete', async (_, id: string) => {
+    await skillsManager.delete(id);
+  });
+
+  ipcMain.handle('skills:resync', async () => {
+    await skillsManager.resync();
+    return skillsManager.getAll();
+  });
+
+  ipcMain.handle('skills:open-in-editor', async (_, filePath: string) => {
+    await shell.openPath(filePath);
+  });
+
+  ipcMain.handle('skills:show-in-folder', async (_, filePath: string) => {
+    shell.showItemInFolder(filePath);
   });
 }
 

@@ -8,6 +8,7 @@ import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } 
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
 import { ensureMoonshotProxy } from './moonshot-proxy';
 import { getNodePath } from '../utils/bundled-node';
+import { skillsManager } from '../skills';
 import type { BedrockCredentials, ProviderId, ZaiCredentials, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
@@ -23,24 +24,24 @@ export const ACCOMPLISH_AGENT_NAME = 'accomplish';
  * @see https://github.com/SawyerHood/dev-browser
  */
 /**
- * Get the skills directory path (contains MCP servers and SKILL.md files)
- * In dev: apps/desktop/skills
- * In packaged: resources/skills (unpacked from asar)
+ * Get the MCP tools directory path (contains MCP servers)
+ * In dev: apps/desktop/mcp-tools
+ * In packaged: resources/mcp-tools (unpacked from asar)
  */
 export function getSkillsPath(): string {
   if (app.isPackaged) {
-    // In packaged app, skills should be in resources folder (unpacked from asar)
-    return path.join(process.resourcesPath, 'skills');
+    // In packaged app, mcp-tools should be in resources folder (unpacked from asar)
+    return path.join(process.resourcesPath, 'mcp-tools');
   } else {
     // In development, use app.getAppPath() which returns the desktop app directory
     // app.getAppPath() returns apps/desktop in dev mode
-    return path.join(app.getAppPath(), 'skills');
+    return path.join(app.getAppPath(), 'mcp-tools');
   }
 }
 
 /**
- * Get the OpenCode config directory path (parent of skills/ for OPENCODE_CONFIG_DIR)
- * OpenCode looks for skills at $OPENCODE_CONFIG_DIR/skills/<name>/SKILL.md
+ * Get the OpenCode config directory path (parent of mcp-tools/ for OPENCODE_CONFIG_DIR)
+ * OpenCode looks for skills at $OPENCODE_CONFIG_DIR/mcp-tools/<name>/SKILL.md
  */
 export function getOpenCodeConfigDir(): string {
   if (app.isPackaged) {
@@ -189,15 +190,15 @@ See the ask-user-question skill for full documentation and examples.
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: PLAN FIRST, THEN USE TODOWRITE - BOTH ARE MANDATORY
+# CRITICAL: PLAN, CHECK SKILLS, THEN USE TODOWRITE - ALL ARE MANDATORY
 ##############################################################################
 
-**STEP 1: OUTPUT A PLAN (before any action)**
+**STEP 1: OUTPUT A PLAN**
 
-Before taking ANY action, you MUST first output a plan:
+First, output your plan:
 
 1. **State the goal** - What the user wants accomplished
-2. **List steps** - Numbered steps to achieve the goal
+2. **List steps** - High-level steps to accomplish the goal
 
 Format:
 **Plan:**
@@ -208,9 +209,25 @@ Steps:
 2. [Second action]
 ...
 
-**STEP 2: IMMEDIATELY CALL TODOWRITE**
+**STEP 2: CHECK FOR MATCHING SKILLS (after the plan)**
 
-After outputting your plan, you MUST call the \`todowrite\` tool to create your task list.
+After planning, check if any skills can help:
+1. Review the <available-skills> section
+2. Identify ANY skills that match the task (check descriptions carefully)
+3. If a skill matches, call the Read tool on its SKILL.md file
+4. Adjust your plan based on the skill's instructions
+
+Output format:
+**Skill Check:**
+- Matching skill: [skill name] - Reading SKILL.md...
+  OR
+- No matching skills found - proceeding with standard approach
+
+If you find a matching skill, read it and update your approach accordingly.
+
+**STEP 3: IMMEDIATELY CALL TODOWRITE**
+
+After checking skills, you MUST call the \`todowrite\` tool to create your task list.
 This is NOT optional. The user sees your todos in a sidebar - if you skip this, they see nothing.
 
 \`\`\`json
@@ -223,11 +240,12 @@ This is NOT optional. The user sees your todos in a sidebar - if you skip this, 
 }
 \`\`\`
 
-**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
+**STEP 4: COMPLETE ALL TODOS BEFORE FINISHING**
 - All todos must be "completed" or "cancelled" before calling complete_task
 
-WRONG: Starting work without planning and calling todowrite first
-CORRECT: Output plan FIRST, call todowrite SECOND, then start working
+WRONG: Starting work without planning first
+WRONG: Skipping skill check - skills provide specialized instructions
+CORRECT: Plan (Step 1) → Check skills (Step 2) → TodoWrite (Step 3) → Execute → Complete
 
 ##############################################################################
 </behavior>
@@ -889,6 +907,37 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   }
 
   const tsxCommand = resolveBundledTsxCommand(skillsPath);
+
+  // Get enabled skills and add to system prompt
+  const enabledSkills = await skillsManager.getEnabled();
+
+  let skillsSection = '';
+  if (enabledSkills.length > 0) {
+    skillsSection = `
+
+<available-skills>
+##############################################################################
+# CHECK SKILLS AFTER PLANNING (Step 2)
+##############################################################################
+
+After outputting your plan, check if any of these skills match your task.
+If a skill matches, read its SKILL.md file and adjust your approach accordingly.
+
+**Available Skills:**
+
+${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`).join('\n\n')}
+
+Skills provide specialized instructions - use them when they match your task.
+
+##############################################################################
+</available-skills>
+`;
+  }
+
+  // Combine base system prompt with skills section
+  const fullSystemPrompt = systemPrompt + skillsSection;
+
   console.log('[OpenCode Config] MCP build marker: edited by codex');
   const config: OpenCodeConfig = {
     $schema: 'https://opencode.ai/config.json',
@@ -910,7 +959,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
-        prompt: systemPrompt,
+        prompt: fullSystemPrompt,
         mode: 'primary',
       },
     },

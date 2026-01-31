@@ -6,6 +6,7 @@ import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PlusMenu } from './PlusMenu';
 
 interface TaskInputBarProps {
   value: string;
@@ -22,6 +23,10 @@ interface TaskInputBarProps {
    */
   onOpenSpeechSettings?: () => void;
   /**
+   * Called when user wants to open settings (e.g., from "Manage Skills")
+   */
+  onOpenSettings?: (tab: 'providers' | 'voice' | 'skills') => void;
+  /**
    * Automatically submit after a successful transcription.
    */
   autoSubmitOnTranscription?: boolean;
@@ -37,6 +42,7 @@ export default function TaskInputBar({
   large = false,
   autoFocus = false,
   onOpenSpeechSettings,
+  onOpenSettings,
   autoSubmitOnTranscription = true,
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
@@ -102,6 +108,16 @@ export default function TaskInputBar({
     }
   };
 
+  const handleSkillSelect = (command: string) => {
+    // Prepend command to input with space
+    const newValue = `${command} ${value}`.trim();
+    onChange(newValue);
+    // Focus textarea
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
   return (
     <div className="w-full space-y-2">
       {/* Error message */}
@@ -128,6 +144,13 @@ export default function TaskInputBar({
 
       {/* Input container */}
       <div className="relative flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+        {/* Plus Menu */}
+        <PlusMenu
+          onSkillSelect={handleSkillSelect}
+          onOpenSettings={(tab) => onOpenSettings?.(tab)}
+          disabled={isDisabled || speechInput.isRecording}
+        />
+
         {/* Text input */}
         <textarea
           data-testid="task-input-textarea"

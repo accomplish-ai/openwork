@@ -65,7 +65,9 @@ interface TaskState {
 
   // Task launcher
   isLauncherOpen: boolean;
+  launcherInitialPrompt: string | null;
   openLauncher: () => void;
+  openLauncherWithPrompt: (prompt: string) => void;
   closeLauncher: () => void;
 
   // Actions
@@ -112,6 +114,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   todosTaskId: null,
   authError: null,
   isLauncherOpen: false,
+  launcherInitialPrompt: null,
 
   setSetupProgress: (taskId: string | null, message: string | null) => {
     // Detect which package is being downloaded from the message
@@ -562,8 +565,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ authError: null });
   },
 
-  openLauncher: () => set({ isLauncherOpen: true }),
-  closeLauncher: () => set({ isLauncherOpen: false }),
+  openLauncher: () => set({ isLauncherOpen: true, launcherInitialPrompt: null }),
+  openLauncherWithPrompt: (prompt: string) => set({ isLauncherOpen: true, launcherInitialPrompt: prompt }),
+  closeLauncher: () => set({ isLauncherOpen: false, launcherInitialPrompt: null }),
 }));
 
 // Startup stages that should be tracked (before first tool runs)

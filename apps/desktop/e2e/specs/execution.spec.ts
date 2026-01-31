@@ -839,8 +839,8 @@ test.describe('Execution Page', () => {
     expect(clipboardText).toBeTruthy();
     expect(clipboardText.length).toBeGreaterThan(0);
 
-    // Verify visual feedback - button should have green background
+    // Verify visual feedback - button should have green styling
     const buttonClasses = await firstCopyButton.getAttribute('class');
-    expect(buttonClasses).toContain('text-green-600');
+    expect(buttonClasses).toContain('text-green-300');
   });
 });

@@ -16,6 +16,7 @@ import { useProviderSettings } from '@/components/settings/hooks/useProviderSett
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
+import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -28,7 +29,7 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'voice';
+  initialTab?: 'providers' | 'voice' | 'skills';
 }
 
 export default function SettingsDialog({
@@ -42,7 +43,8 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'voice'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills'>(initialTab);
+  const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
   const {
     settings,
@@ -286,66 +288,86 @@ export default function SettingsDialog({
 
         <div className="space-y-6 mt-4">
           {/* Tab Navigation */}
-          <div className="flex gap-4 border-b border-border">
-            <button
-              onClick={() => setActiveTab('providers')}
-              className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                activeTab === 'providers'
-                  ? 'text-foreground border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Providers
-            </button>
-            <button
-              onClick={() => setActiveTab('voice')}
-              className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                activeTab === 'voice'
-                  ? 'text-foreground border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Voice Input
-            </button>
+          <div className="flex items-end justify-between border-b border-border">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setActiveTab('providers')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'providers'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Providers
+              </button>
+              <button
+                onClick={() => setActiveTab('voice')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'voice'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Voice Input
+              </button>
+              <button
+                onClick={() => setActiveTab('skills')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'skills'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Skills
+              </button>
+            </div>
+            {activeTab === 'skills' && (
+              <div className="pb-2">
+                <AddSkillDropdown
+                  onSkillAdded={() => setSkillsRefreshTrigger(t => t + 1)}
+                  onClose={() => onOpenChange(false)}
+                />
+              </div>
+            )}
           </div>
+
+          {/* Close Warning - shown on all tabs when no provider ready */}
+          <AnimatePresence>
+            {closeWarning && (
+              <motion.div
+                className="rounded-lg border border-warning bg-warning/10 p-4 mb-6"
+                variants={settingsVariants.fadeSlide}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={settingsTransitions.enter}
+              >
+                <div className="flex items-start gap-3">
+                  <svg className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-warning">No provider ready</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      You need to connect a provider and select a model before you can run tasks.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={handleForceClose}
+                        className="rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80"
+                      >
+                        Close Anyway
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Providers Tab */}
           {activeTab === 'providers' && (
             <div className="space-y-6">
-              {/* Close Warning */}
-              <AnimatePresence>
-                {closeWarning && (
-                  <motion.div
-                    className="rounded-lg border border-warning bg-warning/10 p-4"
-                    variants={settingsVariants.fadeSlide}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    transition={settingsTransitions.enter}
-                  >
-                    <div className="flex items-start gap-3">
-                      <svg className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-warning">No provider ready</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          You need to connect a provider and select a model before you can run tasks.
-                        </p>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={handleForceClose}
-                            className="rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80"
-                          >
-                            Close Anyway
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               {/* Provider Grid Section */}
               <section>
                 <ProviderGrid
@@ -460,6 +482,13 @@ export default function SettingsDialog({
           {activeTab === 'voice' && (
             <div className="space-y-6">
               <SpeechSettingsForm onSave={() => {}} onChange={() => {}} />
+            </div>
+          )}
+
+          {/* Skills Tab */}
+          {activeTab === 'skills' && (
+            <div className="space-y-6">
+              <SkillsPanel refreshTrigger={skillsRefreshTrigger} />
             </div>
           )}
 

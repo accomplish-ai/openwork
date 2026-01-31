@@ -20,6 +20,7 @@ import { FutureSchemaError } from './store/migrations/errors';
 import { stopAzureFoundryProxy } from './opencode/azure-foundry-proxy';
 import { stopMoonshotProxy } from './opencode/moonshot-proxy';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
+import { skillsManager } from './skills';
 
 // Local UI - no longer uses remote URL
 
@@ -236,6 +237,9 @@ if (!gotTheLock) {
     } catch (err) {
       console.error('[Main] Provider validation failed:', err);
     }
+
+    // Initialize skills manager (scans skill directories and syncs to database)
+    await skillsManager.initialize();
 
     // Set dock icon on macOS
     if (process.platform === 'darwin' && app.dock) {
