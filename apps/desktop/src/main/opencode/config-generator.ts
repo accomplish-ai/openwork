@@ -813,7 +813,14 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   if (huggingfaceProvider?.connectionStatus === 'connected' && huggingfaceProvider.credentials.type === 'huggingface') {
     if (huggingfaceProvider.selectedModelId) {
       // OpenCode CLI splits "huggingface/model" into provider="huggingface" and modelID="model"
-      const modelId = huggingfaceProvider.selectedModelId.replace(/^huggingface\//, '');
+      const rawModelId = huggingfaceProvider.selectedModelId.replace(/^huggingface\//, '');
+
+      // Sanitize model ID to only allow safe characters (alphanumeric, hyphens, underscores, periods, colons)
+      // This prevents potential injection if a malicious model ID was stored
+      const modelId = rawModelId.replace(/[^a-zA-Z0-9._:-]/g, '_');
+      if (modelId !== rawModelId) {
+        console.warn(`[OpenCode Config] HuggingFace model ID sanitized: "${rawModelId}" -> "${modelId}"`);
+      }
 
       // Check if the model supports tools from the availableModels metadata
       const modelInfo = huggingfaceProvider.availableModels?.find(
