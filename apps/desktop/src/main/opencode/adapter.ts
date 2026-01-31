@@ -696,7 +696,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Set Bedrock credentials if configured
     const bedrockCredentials = getBedrockCredentials();
     if (bedrockCredentials) {
-      if (bedrockCredentials.authType === 'accessKeys') {
+      if (bedrockCredentials.authType === 'apiKey') {
+        // AWS SDK automatically uses this env var for Bedrock API key auth
+        env.AWS_BEARER_TOKEN_BEDROCK = bedrockCredentials.apiKey;
+        console.log('[OpenCode CLI] Using Bedrock API Key authentication');
+      } else if (bedrockCredentials.authType === 'accessKeys') {
         env.AWS_ACCESS_KEY_ID = bedrockCredentials.accessKeyId;
         env.AWS_SECRET_ACCESS_KEY = bedrockCredentials.secretAccessKey;
         if (bedrockCredentials.sessionToken) {

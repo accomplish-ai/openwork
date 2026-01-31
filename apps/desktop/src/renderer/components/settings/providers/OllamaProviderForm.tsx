@@ -10,6 +10,7 @@ import {
   ConnectedControls,
   ProviderFormHeader,
   FormError,
+  ModelSelector,
 } from '../shared';
 
 // Import Ollama logo
@@ -95,27 +96,28 @@ function OllamaModelSelector({
     return aOrder - bOrder;
   });
 
+  // Transform models for ModelSelector with tool support indicators in name
+  const selectorModels = sortedModels.map((model) => {
+    const toolSupport = model.toolSupport || 'unknown';
+    const toolIcon = toolSupport === 'supported' ? '✓' : toolSupport === 'unsupported' ? '✗' : '?';
+    return {
+      id: model.id,
+      name: `${model.name} ${toolIcon}`,
+    };
+  });
+
   const selectedModel = models.find(m => m.id === value);
   const hasUnsupportedSelected = selectedModel?.toolSupport === 'unsupported';
   const hasUnknownSelected = selectedModel?.toolSupport === 'unknown';
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-foreground">Model</label>
-      <select
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-md border px-3 py-2.5 text-sm bg-background ${
-          error ? 'border-destructive' : 'border-input'
-        }`}
-      >
-        <option value="">Select a model...</option>
-        {sortedModels.map((model) => (
-          <option key={model.id} value={model.id}>
-            {model.name} {model.toolSupport === 'supported' ? '✓' : model.toolSupport === 'unsupported' ? '✗' : '?'}
-          </option>
-        ))}
-      </select>
+      <ModelSelector
+        models={selectorModels}
+        value={value}
+        onChange={onChange}
+        error={error}
+      />
 
       {/* Warning for unsupported or unknown models */}
       {hasUnsupportedSelected && (
@@ -140,10 +142,6 @@ function OllamaModelSelector({
             <p className="text-yellow-400/80 mt-1">This model may or may not support tool/function calling. Test it to confirm.</p>
           </div>
         </div>
-      )}
-
-      {error && !value && (
-        <p className="mt-1 text-sm text-destructive">Please select a model</p>
       )}
     </div>
   );
