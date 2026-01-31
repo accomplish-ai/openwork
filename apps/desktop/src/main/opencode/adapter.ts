@@ -747,6 +747,57 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     return env;
   }
 
+  /**
+   * Process attachments and build an enhanced prompt with file contents
+   * Based on issue #190 spec:
+   * - Images (.png, .jpg, .gif): Send to vision model (base64 in prompt)
+   * - Text (.txt, .md, .json) and Code (.js, .py, .ts): Include in prompt
+   * - PDF: Extract text (path for now, extraction handled by agent)
+   * - Other: Pass file path
+   */
+  private processAttachments(config: TaskConfig): string {
+    if (!config.attachments || config.attachments.length === 0) {
+      return config.prompt;
+    }
+
+    const attachmentParts: string[] = [];
+    
+    for (const attachment of config.attachments) {
+      switch (attachment.type) {
+        case 'image':
+          // For images, include as base64 data URL if preview exists, otherwise path
+          if (attachment.preview) {
+            attachmentParts.push(`\n\n[Image: ${attachment.name}]\n${attachment.preview}`);
+          } else {
+            attachmentParts.push(`\n\n[Image file: ${attachment.path}]`);
+          }
+          break;
+          
+        case 'text':
+          // For text/code files, include content in prompt
+          if (attachment.preview) {
+            attachmentParts.push(`\n\n[File: ${attachment.name}]\n\`\`\`\n${attachment.preview}\n\`\`\``);
+          } else {
+            attachmentParts.push(`\n\n[Text file: ${attachment.path}]`);
+          }
+          break;
+          
+        case 'document':
+          // For PDFs, pass path for text extraction by agent
+          attachmentParts.push(`\n\n[PDF document: ${attachment.path}]\nPlease extract and read the text from this PDF file.`);
+          break;
+          
+        case 'other':
+        default:
+          // For other files, pass file path
+          attachmentParts.push(`\n\n[Attached file: ${attachment.path}]`);
+          break;
+      }
+    }
+
+    return config.prompt + attachmentParts.join('');
+  }
+
   private async buildCliArgs(config: TaskConfig): Promise<string[]> {
     // Try new provider settings first, fall back to legacy settings
     const activeModel = getActiveProviderModel();
@@ -755,10 +806,13 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Store the model ID for display name in progress events
     this.currentModelId = selectedModel?.model || null;
 
+    // Process attachments and build enhanced prompt
+    const enhancedPrompt = this.processAttachments(config);
+
     // OpenCode CLI uses: opencode run "message" --format json
     const args = [
       'run',
-      config.prompt,
+      enhancedPrompt,
       '--format', 'json',
     ];
 

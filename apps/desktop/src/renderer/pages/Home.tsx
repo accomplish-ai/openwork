@@ -11,6 +11,7 @@ import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish/shared';
+import type { FileAttachment } from '@accomplish/shared';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -82,6 +83,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice'>('providers');
@@ -109,11 +111,12 @@ export default function HomePage() {
     if (!prompt.trim() || isLoading) return;
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const task = await startTask({ prompt: prompt.trim(), taskId, attachments });
     if (task) {
+      setAttachments([]); // Clear attachments after task starts
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, isLoading, startTask, navigate, attachments]);
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -198,6 +201,7 @@ export default function HomePage() {
                 large={true}
                 autoFocus={true}
                 onOpenSpeechSettings={handleOpenSpeechSettings}
+                onAttachmentsChange={setAttachments}
               />
             </CardContent>
 

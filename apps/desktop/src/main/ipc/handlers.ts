@@ -94,6 +94,8 @@ import type {
   LMStudioConfig,
   ToolSupportStatus,
   TodoItem,
+  FileAttachment,
+  TaskAttachment,
 } from '@accomplish/shared';
 import { DEFAULT_PROVIDERS } from '@accomplish/shared';
 import {
@@ -248,6 +250,25 @@ function sanitizeString(input: unknown, field: string, maxLength = MAX_TEXT_LENG
   return trimmed;
 }
 
+/**
+ * Convert FileAttachment (UI format) to TaskAttachment (storage format)
+ * Based on issue #190 spec:
+ * - Images: Store base64 data for vision model
+ * - Text/Code: Store content for prompt inclusion
+ * - PDF/Document: Store path for text extraction
+ * - Other: Store file path
+ */
+function fileAttachmentToTaskAttachment(fileAttachment: FileAttachment): TaskAttachment {
+  return {
+    type: fileAttachment.type,
+    data: fileAttachment.preview || fileAttachment.path,
+    label: fileAttachment.name,
+    fileName: fileAttachment.name,
+    fileSize: fileAttachment.size,
+    mimeType: fileAttachment.mimeType,
+  };
+}
+
 function validateTaskConfig(config: TaskConfig): TaskConfig {
   const prompt = sanitizeString(config.prompt, 'prompt');
   const validated: TaskConfig = { prompt };
@@ -276,6 +297,10 @@ function validateTaskConfig(config: TaskConfig): TaskConfig {
   }
   if (config.outputSchema && typeof config.outputSchema === 'object') {
     validated.outputSchema = config.outputSchema;
+  }
+  // Validate file attachments (max 5 files per issue #190)
+  if (Array.isArray(config.attachments)) {
+    validated.attachments = config.attachments.slice(0, 5);
   }
 
   return validated;
@@ -465,12 +490,16 @@ export function registerIPCHandlers(): void {
     // Start the task via TaskManager (creates isolated adapter or queues if busy)
     const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
 
-    // Add initial user message with the prompt to the chat
+    // Convert file attachments to task attachments for storage
+    const taskAttachments = validatedConfig.attachments?.map(fileAttachmentToTaskAttachment);
+
+    // Add initial user message with the prompt and attachments to the chat
     const initialUserMessage: TaskMessage = {
       id: createMessageId(),
       type: 'user',
       content: validatedConfig.prompt,
       timestamp: new Date().toISOString(),
+      attachments: taskAttachments,
     };
     task.messages = [initialUserMessage];
 

@@ -66,7 +66,7 @@ function getMessagesForTask(taskId: string): TaskMessage[] {
     const attachments: TaskAttachment[] | undefined =
       attachmentRows.length > 0
         ? attachmentRows.map((a) => ({
-            type: a.type as 'screenshot' | 'json',
+            type: a.type as TaskAttachment['type'],
             data: a.data,
             label: a.label || undefined,
           }))
