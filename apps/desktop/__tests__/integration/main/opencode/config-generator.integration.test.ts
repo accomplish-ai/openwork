@@ -147,7 +147,7 @@ describe('OpenCode Config Generator Integration', () => {
         const result = getSkillsPath();
 
         // Assert
-        expect(result).toBe(path.join(tempAppDir, 'skills'));
+        expect(result).toBe(path.join(tempAppDir, 'mcp-tools'));
       });
     });
 
@@ -164,7 +164,7 @@ describe('OpenCode Config Generator Integration', () => {
         const result = getSkillsPath();
 
         // Assert
-        expect(result).toBe(path.join(resourcesPath, 'skills'));
+        expect(result).toBe(path.join(resourcesPath, 'mcp-tools'));
       });
     });
   });
