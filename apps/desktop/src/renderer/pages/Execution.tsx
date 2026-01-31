@@ -23,6 +23,7 @@ import { BrowserScriptCard } from '../components/BrowserScriptCard';
 import loadingSymbol from '/assets/loading-symbol.svg';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
+import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
 
@@ -170,7 +171,7 @@ export default function ExecutionPage() {
   const accomplish = getAccomplish();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [followUp, setFollowUp] = useState('');
-  const followUpInputRef = useRef<HTMLInputElement>(null);
+  const followUpInputRef = useRef<HTMLTextAreaElement>(null);
   const [taskRunCount, setTaskRunCount] = useState(0);
   const [currentTool, setCurrentTool] = useState<string | null>(null);
   const [currentToolInput, setCurrentToolInput] = useState<unknown>(null);
@@ -515,6 +516,11 @@ export default function ExecutionPage() {
 
   const handleOpenSpeechSettings = useCallback(() => {
     setSettingsInitialTab('voice');
+    setShowSettingsDialog(true);
+  }, []);
+
+  const handleOpenModelSettings = useCallback(() => {
+    setSettingsInitialTab('providers');
     setShowSettingsDialog(true);
   }, []);
 
@@ -1225,22 +1231,28 @@ export default function ExecutionPage() {
 {/* Running state input with Stop button */}
       {currentTask.status === 'running' && !permissionRequest && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex gap-3">
-            <Input
-              placeholder="Agent is working..."
-              disabled
-              className="flex-1 opacity-50"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={interruptTask}
-              title="Stop agent (Ctrl+C)"
-              className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
-              data-testid="execution-stop-button"
-            >
-              <Square className="h-4 w-4 fill-current" />
-            </Button>
+          <div className="max-w-4xl mx-auto">
+            {/* All elements inside one bordered container */}
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
+              <input
+                placeholder="Agent is working..."
+                disabled
+                className="flex-1 bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
+              />
+              <ModelIndicator
+                isRunning={true}
+                onOpenSettings={handleOpenModelSettings}
+              />
+              <div className="w-px h-6 bg-border flex-shrink-0" />
+              <button
+                onClick={interruptTask}
+                title="Stop agent (Ctrl+C)"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                data-testid="execution-stop-button"
+              >
+                <Square className="h-4 w-4 fill-current" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1248,11 +1260,11 @@ export default function ExecutionPage() {
       {/* Follow-up input */}
       {canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-2">
             {speechInput.error && (
               <Alert
                 variant="destructive"
-                className="mb-2 py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
+                className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
               >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-xs leading-tight">
@@ -1269,52 +1281,70 @@ export default function ExecutionPage() {
                 </AlertDescription>
               </Alert>
             )}
-            {/* Input field with Send button */}
-            <div className="flex gap-3">
-              <Input
-                ref={followUpInputRef}
-                value={followUp}
-                onChange={(e) => setFollowUp(e.target.value)}
-                onKeyDown={(e) => {
-                  // Ignore Enter during IME composition (Chinese/Japanese input)
-                  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleFollowUp();
+            {/* Two-row layout: textarea top, toolbar bottom */}
+            <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+              {/* Textarea area */}
+              <div className="px-4 pt-3 pb-2">
+                <textarea
+                  ref={followUpInputRef}
+                  value={followUp}
+                  onChange={(e) => {
+                    setFollowUp(e.target.value);
+                    // Auto-resize
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    // Ignore Enter during IME composition (Chinese/Japanese input)
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleFollowUp();
+                    }
+                  }}
+                  placeholder={
+                    currentTask.status === 'interrupted'
+                      ? (hasSession ? "Give new instructions..." : "Send a new instruction to retry...")
+                      : currentTask.status === 'completed'
+                        ? "Give new instructions..."
+                        : "Ask for something..."
                   }
-                }}
-                placeholder={
-                  currentTask.status === 'interrupted'
-                    ? (hasSession ? "Give new instructions..." : "Send a new instruction to retry...")
-                    : currentTask.status === 'completed'
-                      ? "Give new instructions..."
-                      : "Ask for something..."
-                }
-                disabled={isLoading || speechInput.isRecording}
-                className="flex-1"
-                data-testid="execution-follow-up-input"
-              />
-              <SpeechInputButton
-                isRecording={speechInput.isRecording}
-                isTranscribing={speechInput.isTranscribing}
-                recordingDuration={speechInput.recordingDuration}
-                error={speechInput.error}
-                isConfigured={speechInput.isConfigured}
-                disabled={isLoading}
-                onStartRecording={() => speechInput.startRecording()}
-                onStopRecording={() => speechInput.stopRecording()}
-                onRetry={() => speechInput.retry()}
-                onOpenSettings={handleOpenSpeechSettings}
-                size="md"
-              />
-              <Button
-                onClick={handleFollowUp}
-                disabled={!followUp.trim() || isLoading || speechInput.isRecording}
-                variant="outline"
-              >
-                <CornerDownLeft className="h-4 w-4 mr-1.5" />
-                Send
-              </Button>
+                  disabled={isLoading || speechInput.isRecording}
+                  rows={1}
+                  className="w-full max-h-[160px] resize-none bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  data-testid="execution-follow-up-input"
+                />
+              </div>
+              {/* Toolbar - fixed at bottom */}
+              <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/50">
+                <ModelIndicator
+                  isRunning={false}
+                  onOpenSettings={handleOpenModelSettings}
+                />
+                <div className="w-px h-6 bg-border flex-shrink-0" />
+                <SpeechInputButton
+                  isRecording={speechInput.isRecording}
+                  isTranscribing={speechInput.isTranscribing}
+                  recordingDuration={speechInput.recordingDuration}
+                  error={speechInput.error}
+                  isConfigured={speechInput.isConfigured}
+                  disabled={isLoading}
+                  onStartRecording={() => speechInput.startRecording()}
+                  onStopRecording={() => speechInput.stopRecording()}
+                  onRetry={() => speechInput.retry()}
+                  onOpenSettings={handleOpenSpeechSettings}
+                  size="md"
+                />
+                <button
+                  type="button"
+                  onClick={handleFollowUp}
+                  disabled={!followUp.trim() || isLoading || speechInput.isRecording}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Send"
+                >
+                  <CornerDownLeft className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

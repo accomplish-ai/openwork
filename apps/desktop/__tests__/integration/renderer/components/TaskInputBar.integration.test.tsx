@@ -477,7 +477,7 @@ describe('TaskInputBar Integration', () => {
   });
 
   describe('large variant', () => {
-    it('should apply large text style when large prop is true', () => {
+    it('should apply consistent text style when large prop is true', () => {
       // Arrange
       const onChange = vi.fn();
       const onSubmit = vi.fn();
@@ -492,12 +492,12 @@ describe('TaskInputBar Integration', () => {
         />
       );
 
-      // Assert
+      // Assert - now uses consistent text-[15px] regardless of large prop
       const textarea = screen.getByRole('textbox');
-      expect(textarea.className).toContain('text-[20px]');
+      expect(textarea.className).toContain('text-[15px]');
     });
 
-    it('should apply default text size when large prop is false', () => {
+    it('should apply consistent text size when large prop is false', () => {
       // Arrange
       const onChange = vi.fn();
       const onSubmit = vi.fn();
@@ -512,9 +512,9 @@ describe('TaskInputBar Integration', () => {
         />
       );
 
-      // Assert
+      // Assert - now uses consistent text-[15px] regardless of large prop
       const textarea = screen.getByRole('textbox');
-      expect(textarea.className).toContain('text-sm');
+      expect(textarea.className).toContain('text-[15px]');
     });
   });
 });
