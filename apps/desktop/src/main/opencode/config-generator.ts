@@ -427,6 +427,7 @@ type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundr
 interface OpenCodeConfig {
   $schema?: string;
   model?: string;
+  small_model?: string;
   default_agent?: string;
   enabled_providers?: string[];
   permission?: string | Record<string, string | Record<string, string>>;
@@ -890,8 +891,19 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 
   const tsxCommand = resolveBundledTsxCommand(skillsPath);
   console.log('[OpenCode Config] MCP build marker: edited by codex');
+
+  // For Bedrock, set model and small_model to the same value in order to prevent the model from using 
+  // Haiku by default since anthropic via bedrock require an approval form to use it: https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html
+  const bedrockModelConfig: { model?: string; small_model?: string } = {};
+  if (activeModel?.provider === 'bedrock' && activeModel.model) {
+    bedrockModelConfig.model = activeModel.model;
+    bedrockModelConfig.small_model = activeModel.model;
+    console.log('[OpenCode Config] Bedrock model config:', bedrockModelConfig);
+  }
+
   const config: OpenCodeConfig = {
     $schema: 'https://opencode.ai/config.json',
+    ...bedrockModelConfig,
     default_agent: ACCOMPLISH_AGENT_NAME,
     // Enable all supported providers - providers auto-configure when API keys are set via env vars
     enabled_providers: enabledProviders,

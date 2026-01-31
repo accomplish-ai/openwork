@@ -14,6 +14,7 @@ import {
   ProviderFormHeader,
   FormError,
 } from '../shared';
+import { BedrockApiKeyTab } from './BedrockApiKeyTab';
 
 // Import Bedrock logo
 import bedrockLogo from '/assets/ai-logos/bedrock.svg';
@@ -33,7 +34,8 @@ export function BedrockProviderForm({
   onModelChange,
   showModelError,
 }: BedrockProviderFormProps) {
-  const [authTab, setAuthTab] = useState<'accessKey' | 'profile'>('accessKey');
+  const [authTab, setAuthTab] = useState<'apiKey' | 'accessKey' | 'profile'>('apiKey');
+  const [bedrockApiKey, setBedrockApiKey] = useState('');
   const [accessKeyId, setAccessKeyId] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [sessionToken, setSessionToken] = useState('');
@@ -52,19 +54,26 @@ export function BedrockProviderForm({
     try {
       const accomplish = getAccomplish();
 
-      const credentials = authTab === 'accessKey'
-        ? {
-            authType: 'accessKeys' as const,
-            accessKeyId: accessKeyId.trim(),
-            secretAccessKey: secretKey.trim(),
-            sessionToken: sessionToken.trim() || undefined,
-            region,
-          }
-        : {
-            authType: 'profile' as const,
-            profileName: profileName.trim() || 'default',
-            region,
-          };
+      const credentialsMap = {
+        apiKey: {
+          authType: 'apiKey' as const,
+          apiKey: bedrockApiKey.trim(),
+          region,
+        },
+        accessKey: {
+          authType: 'accessKeys' as const,
+          accessKeyId: accessKeyId.trim(),
+          secretAccessKey: secretKey.trim(),
+          sessionToken: sessionToken.trim() || undefined,
+          region,
+        },
+        profile: {
+          authType: 'profile' as const,
+          profileName: profileName.trim() || 'default',
+          region,
+        },
+      };
+      const credentials = credentialsMap[authTab];
 
       const validation = await accomplish.validateBedrockCredentials(credentials);
 
@@ -95,9 +104,11 @@ export function BedrockProviderForm({
           type: 'bedrock',
           authMethod: authTab,
           region,
-          ...(authTab === 'accessKey'
-            ? { accessKeyIdPrefix: accessKeyId.substring(0, 8) + '...' }
-            : { profileName: profileName.trim() || 'default' }
+          ...(authTab === 'apiKey'
+            ? { apiKeyPrefix: bedrockApiKey.substring(0, 8) + '...' }
+            : authTab === 'accessKey'
+              ? { accessKeyIdPrefix: accessKeyId.substring(0, 8) + '...' }
+              : { profileName: profileName.trim() || 'default' }
           ),
         } as BedrockProviderCredentials,
         lastConnectedAt: new Date().toISOString(),
@@ -105,6 +116,7 @@ export function BedrockProviderForm({
       };
 
       onConnect(provider);
+      setBedrockApiKey('');
       setSecretKey('');
       setSessionToken('');
     } catch (err) {
@@ -135,7 +147,19 @@ export function BedrockProviderForm({
               {/* Auth tabs */}
               <div className="flex gap-2">
                 <button
+                  onClick={() => setAuthTab('apiKey')}
+                  data-testid="bedrock-auth-tab-apikey"
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    authTab === 'apiKey'
+                      ? 'bg-[#4A7C59] text-white'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  API Key
+                </button>
+                <button
                   onClick={() => setAuthTab('accessKey')}
+                  data-testid="bedrock-auth-tab-accesskey"
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     authTab === 'accessKey'
                       ? 'bg-[#4A7C59] text-white'
@@ -146,6 +170,7 @@ export function BedrockProviderForm({
                 </button>
                 <button
                   onClick={() => setAuthTab('profile')}
+                  data-testid="bedrock-auth-tab-profile"
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     authTab === 'profile'
                       ? 'bg-[#4A7C59] text-white'
@@ -156,7 +181,14 @@ export function BedrockProviderForm({
                 </button>
               </div>
 
-              {authTab === 'accessKey' ? (
+              {authTab === 'apiKey' ? (
+                <BedrockApiKeyTab
+                  apiKey={bedrockApiKey}
+                  region={region}
+                  onApiKeyChange={setBedrockApiKey}
+                  onRegionChange={setRegion}
+                />
+              ) : authTab === 'accessKey' ? (
                 <>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-foreground">Access Key ID</label>
@@ -193,22 +225,24 @@ export function BedrockProviderForm({
                       className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
                     />
                   </div>
+                  <RegionSelector value={region} onChange={setRegion} />
                 </>
               ) : (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">Profile Name</label>
-                  <input
-                    type="text"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    placeholder="default"
-                    data-testid="bedrock-profile-name"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-foreground">Profile Name</label>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="default"
+                      data-testid="bedrock-profile-name"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+                    />
+                  </div>
+                  <RegionSelector value={region} onChange={setRegion} />
+                </>
               )}
-
-              <RegionSelector value={region} onChange={setRegion} />
 
               <FormError error={error} />
               <ConnectButton onClick={handleConnect} connecting={connecting} />
@@ -225,7 +259,17 @@ export function BedrockProviderForm({
             >
               {/* Display saved credentials info */}
               <div className="space-y-3">
-                {(connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod === 'accessKey' ? (
+                {(connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod === 'apiKey' ? (
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-foreground">API Key</label>
+                    <input
+                      type="text"
+                      value={(connectedProvider?.credentials as BedrockProviderCredentials)?.apiKeyPrefix || '********'}
+                      disabled
+                      className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
+                    />
+                  </div>
+                ) : (connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod === 'accessKey' ? (
                   <div>
                     <label className="mb-2 block text-sm font-medium text-foreground">Access Key ID</label>
                     <input

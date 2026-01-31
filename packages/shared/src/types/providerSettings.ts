@@ -53,10 +53,11 @@ export interface ApiKeyCredentials {
 
 export interface BedrockProviderCredentials {
   type: 'bedrock';
-  authMethod: 'accessKey' | 'profile';
+  authMethod: 'accessKey' | 'profile' | 'apiKey';
   region: string;
   accessKeyIdPrefix?: string;
   profileName?: string;
+  apiKeyPrefix?: string;
 }
 
 export interface OllamaCredentials {
