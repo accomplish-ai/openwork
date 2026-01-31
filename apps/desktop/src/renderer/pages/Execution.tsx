@@ -1340,6 +1340,7 @@ export default function ExecutionPage() {
                   onClick={handleFollowUp}
                   disabled={!followUp.trim() || isLoading || speechInput.isRecording}
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Send"
                 >
                   <CornerDownLeft className="h-4 w-4" />
                 </button>
