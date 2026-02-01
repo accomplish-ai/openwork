@@ -214,16 +214,24 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     }
 
     // Start the log watcher to detect errors that aren't output as JSON
+    // Fire-and-forget: error detection is helpful but not required for task execution
     if (this.logWatcher) {
-      await this.logWatcher.start();
+      this.logWatcher.start().catch((err) => {
+        console.warn('[OpenCode Adapter] Log watcher failed to start:', err);
+      });
     }
 
     // Run Node.js diagnostics to help troubleshoot MCP server issues
-    // This is non-blocking and just logs information
-    await this.runNodeDiagnostics();
+    // Fire-and-forget: this is pure diagnostic logging that doesn't affect task execution
+    this.runNodeDiagnostics().catch((err) => {
+      console.warn('[OpenCode Adapter] Node diagnostics failed:', err);
+    });
 
     // Sync API keys to OpenCode CLI's auth.json (for DeepSeek, Z.AI support)
-    await syncApiKeysToOpenCodeAuth();
+    // Fire-and-forget: this just writes to auth.json and doesn't block task execution
+    syncApiKeysToOpenCodeAuth().catch((err) => {
+      console.warn('[OpenCode Adapter] Failed to sync API keys to OpenCode auth:', err);
+    });
 
     // For Azure Foundry with Entra ID auth, get the token first so we can include it in config
     let azureFoundryToken: string | undefined;
@@ -251,21 +259,23 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI] Obtained Azure Entra ID token for config');
     }
 
-    // Generate OpenCode config file with MCP settings and agent
+    // Run independent operations in parallel:
+    // - generateOpenCodeConfig: writes config file (depends on azureFoundryToken which we have now)
+    // - buildCliArgs: prepares CLI arguments
+    // - buildEnvironment: loads API keys into env vars
     console.log('[OpenCode CLI] Generating OpenCode config with MCP settings and agent...');
-    const configPath = await generateOpenCodeConfig(azureFoundryToken);
+    const [configPath, cliArgs, env] = await Promise.all([
+      generateOpenCodeConfig(azureFoundryToken),
+      this.buildCliArgs(config),
+      this.buildEnvironment(),
+    ]);
     console.log('[OpenCode CLI] Config generated at:', configPath);
-
-    const cliArgs = await this.buildCliArgs(config);
 
     // Get the bundled CLI path
     const { command, args: baseArgs } = getOpenCodeCliPath();
     const startMsg = `Starting: ${command} ${[...baseArgs, ...cliArgs].join(' ')}`;
     console.log('[OpenCode CLI]', startMsg);
     this.emit('debug', { type: 'info', message: startMsg });
-
-    // Build environment with API keys
-    const env = await this.buildEnvironment();
 
     const allArgs = [...baseArgs, ...cliArgs];
     const cmdMsg = `Command: ${command}`;
