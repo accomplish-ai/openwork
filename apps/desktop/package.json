@@ -100,7 +100,7 @@
   },
   "build": {
     "npmRebuild": false,
-    "compression": "maximum",
+    "compression": "normal",
     "appId": "ai.accomplish.desktop",
     "productName": "Openwork",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
