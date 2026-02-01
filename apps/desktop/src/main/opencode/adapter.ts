@@ -263,6 +263,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // - generateOpenCodeConfig: writes config file (depends on azureFoundryToken which we have now)
     // - buildCliArgs: prepares CLI arguments
     // - buildEnvironment: loads API keys into env vars
+    // Note: generateOpenCodeConfig sets process.env.OPENCODE_CONFIG as a side effect,
+    // but buildEnvironment captures process.env at call time. We add the config path
+    // to env explicitly after Promise.all to avoid race conditions.
     console.log('[OpenCode CLI] Generating OpenCode config with MCP settings and agent...');
     const [configPath, cliArgs, env] = await Promise.all([
       generateOpenCodeConfig(azureFoundryToken),
@@ -270,6 +273,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       this.buildEnvironment(),
     ]);
     console.log('[OpenCode CLI] Config generated at:', configPath);
+
+    // Ensure OPENCODE_CONFIG and OPENCODE_CONFIG_DIR are in the environment
+    // These may have been missed due to parallel execution (buildEnvironment captures
+    // process.env before generateOpenCodeConfig sets these values)
+    env.OPENCODE_CONFIG = configPath;
+    env.OPENCODE_CONFIG_DIR = path.join(app.getPath('userData'), 'opencode');
 
     // Get the bundled CLI path
     const { command, args: baseArgs } = getOpenCodeCliPath();
