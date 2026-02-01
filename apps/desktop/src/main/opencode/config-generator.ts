@@ -904,11 +904,12 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 ##############################################################################
 
 Review these skills and include any relevant ones in your start_task call's \`skills\` array.
-The skill content will be provided to you automatically after you call start_task.
+After calling start_task, you MUST read the SKILL.md file for each skill you listed.
 
 **Available Skills:**
 
-${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}`).join('\n')}
+${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`).join('\n\n')}
 
 Use empty array [] if no skills apply to your task.
 
