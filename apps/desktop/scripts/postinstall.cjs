@@ -107,7 +107,7 @@ if (!useBundledSkills) {
   // Install ALL dependencies (including devDependencies) during development
   // because esbuild needs them for bundling. The bundle-skills.cjs script
   // will reinstall with --omit=dev during packaged builds.
-  const skills = ['dev-browser', 'dev-browser-mcp', 'file-permission', 'ask-user-question', 'complete-task'];
+  const skills = ['dev-browser', 'dev-browser-mcp', 'file-permission', 'ask-user-question', 'complete-task', 'start-task'];
   for (const skill of skills) {
     runCommand(`npm --prefix skills/${skill} install`, `Installing ${skill} dependencies`);
   }

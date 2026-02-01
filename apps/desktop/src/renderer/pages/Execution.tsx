@@ -92,6 +92,7 @@ const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }
   complete_task: { label: 'Completing task', icon: CheckCircle },
   report_thought: { label: 'Thinking', icon: Lightbulb },
   report_checkpoint: { label: 'Checkpoint', icon: Flag },
+  start_task: { label: 'Starting Task', icon: Play },
 };
 
 // Extract base tool name from MCP-prefixed tool names

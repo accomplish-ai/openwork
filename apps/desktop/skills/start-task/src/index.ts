@@ -1,0 +1,101 @@
+#!/usr/bin/env node
+/**
+ * start-task MCP Server
+ *
+ * PURPOSE: Provides a `start_task` tool that agents MUST call before executing any task.
+ *
+ * WHY THIS EXISTS:
+ * - Agents often skip outputting a plan before executing tools
+ * - Prompt-based instructions ("output Plan text first") are unreliable
+ * - Requiring an explicit tool call with schema-enforced fields guarantees plan capture
+ * - The adapter enforces this by blocking other tools until start_task is called
+ *
+ * HOW IT WORKS WITH THE ADAPTER:
+ * 1. Agent calls start_task with original_request, goal, and steps
+ * 2. Adapter detects the tool call and marks session as "started"
+ * 3. Adapter emits the plan as a synthetic chat message (user sees it)
+ * 4. Other tool calls are now allowed
+ * 5. If agent tries to call other tools first, adapter blocks with error
+ */
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+
+const server = new Server(
+  { name: 'start-task', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+// List available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'start_task',
+      description:
+        'Call this tool FIRST before executing any task. Captures your plan. Other tools will fail until this is called.',
+      inputSchema: {
+        type: 'object',
+        required: ['original_request', 'goal', 'steps', 'verification'],
+        properties: {
+          original_request: {
+            type: 'string',
+            description: 'Echo the user\'s original request exactly as stated',
+          },
+          goal: {
+            type: 'string',
+            description: 'What you aim to accomplish for the user',
+          },
+          steps: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Planned actions to achieve the goal, in order',
+          },
+          verification: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'How you will verify the task is complete',
+          },
+        },
+      },
+    },
+  ],
+}));
+
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name !== 'start_task') {
+    throw new Error(`Unknown tool: ${request.params.name}`);
+  }
+
+  const { original_request, goal, steps, verification } = request.params.arguments as {
+    original_request: string;
+    goal: string;
+    steps: string[];
+    verification: string[];
+  };
+
+  // Log for debugging
+  console.error(`[start-task] original_request=${original_request}`);
+  console.error(`[start-task] goal=${goal}`);
+  console.error(`[start-task] steps=${JSON.stringify(steps)}`);
+  console.error(`[start-task] verification=${JSON.stringify(verification)}`);
+
+  return {
+    content: [{ type: 'text', text: 'Plan registered. Proceed with execution.' }],
+  };
+});
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('[start-task] MCP server running');
+}
+
+main().catch((error) => {
+  console.error('[start-task] Fatal error:', error);
+  process.exit(1);
+});

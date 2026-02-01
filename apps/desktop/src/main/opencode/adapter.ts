@@ -89,6 +89,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
   /** Whether the first tool has been received (to stop showing startup stages) */
   private hasReceivedFirstTool: boolean = false;
+  /** Whether start_task has been called this session (for hard enforcement) */
+  private startTaskCalled: boolean = false;
 
   /**
    * Create a new OpenCodeAdapter instance
@@ -207,6 +209,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.completionEnforcer.reset();
     this.lastWorkingDirectory = config.workingDirectory;
     this.hasReceivedFirstTool = false;
+    this.startTaskCalled = false;
     // Clear any existing waiting transition timer
     if (this.waitingTransitionTimer) {
       clearTimeout(this.waitingTransitionTimer);
@@ -489,6 +492,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.hasCompleted = true;
     this.currentModelId = null;
     this.hasReceivedFirstTool = false;
+    this.startTaskCalled = false;
 
     // Clear waiting transition timer
     if (this.waitingTransitionTimer) {
@@ -870,6 +874,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
         console.log('[OpenCode Adapter] Tool call:', toolName);
 
+        // START_TASK ENFORCEMENT: Track start_task tool calls
+        if (this.isStartTaskTool(toolName)) {
+          this.startTaskCalled = true;
+          const startInput = toolInput as StartTaskInput;
+          if (startInput?.goal && startInput?.steps) {
+            this.emitPlanMessage(startInput, this.currentSessionId || '');
+            // Also create todos from steps (so todowrite isn't required)
+            const todos: TodoItem[] = startInput.steps.map((step, i) => ({
+              id: String(i + 1),
+              content: step,
+              status: i === 0 ? 'in_progress' : 'pending',
+              priority: 'medium',
+            }));
+            if (todos.length > 0) {
+              this.emit('todo:update', todos);
+              this.completionEnforcer.updateTodos(todos);
+              console.log('[OpenCode Adapter] Created todos from start_task steps');
+            }
+          }
+        }
+
+        // START_TASK ENFORCEMENT: Warn if non-exempt tool called before start_task
+        if (!this.startTaskCalled && !this.isExemptTool(toolName)) {
+          console.warn(`[OpenCode Adapter] Tool "${toolName}" called before start_task`);
+          this.emit('debug', {
+            type: 'warning',
+            message: `Tool "${toolName}" called before start_task - plan may not be captured`,
+          });
+        }
+
         // Mark first tool received and cancel waiting transition timer
         if (!this.hasReceivedFirstTool) {
           this.hasReceivedFirstTool = true;
@@ -919,6 +953,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         const toolUseName = toolUseMessage.part.tool || 'unknown';
         const toolUseInput = toolUseMessage.part.state?.input;
         const toolUseOutput = toolUseMessage.part.state?.output || '';
+
+        // START_TASK ENFORCEMENT: Track start_task tool calls
+        if (this.isStartTaskTool(toolUseName)) {
+          this.startTaskCalled = true;
+          const startInput = toolUseInput as StartTaskInput;
+          if (startInput?.goal && startInput?.steps) {
+            this.emitPlanMessage(startInput, toolUseMessage.part.sessionID || '');
+            // Also create todos from steps (so todowrite isn't required)
+            const todos: TodoItem[] = startInput.steps.map((step, i) => ({
+              id: String(i + 1),
+              content: step,
+              status: i === 0 ? 'in_progress' : 'pending',
+              priority: 'medium',
+            }));
+            if (todos.length > 0) {
+              this.emit('todo:update', todos);
+              this.completionEnforcer.updateTodos(todos);
+              console.log('[OpenCode Adapter] Created todos from start_task steps');
+            }
+          }
+        }
+
+        // START_TASK ENFORCEMENT: Warn if non-exempt tool called before start_task
+        if (!this.startTaskCalled && !this.isExemptTool(toolUseName)) {
+          console.warn(`[OpenCode Adapter] Tool "${toolUseName}" called before start_task`);
+          this.emit('debug', {
+            type: 'warning',
+            message: `Tool "${toolUseName}" called before start_task - plan may not be captured`,
+          });
+        }
 
         // Mark first tool received and cancel waiting transition timer
         if (!this.hasReceivedFirstTool) {
@@ -1254,6 +1318,57 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   }
 
   /**
+   * Check if a tool name is the start_task tool.
+   * Tool name may be prefixed with MCP server name (e.g., "start-task_start_task").
+   */
+  private isStartTaskTool(toolName: string): boolean {
+    return toolName === 'start_task' || toolName.endsWith('_start_task');
+  }
+
+  /**
+   * Check if a tool is exempt from start_task enforcement.
+   * Exempt tools can be called before start_task.
+   */
+  private isExemptTool(toolName: string): boolean {
+    // todowrite is a planning tool, often used alongside start_task
+    if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {
+      return true;
+    }
+    // start_task itself is obviously exempt
+    if (this.isStartTaskTool(toolName)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Emit a synthetic plan message to the UI when start_task is called.
+   * This ensures users see the plan in the chat interface.
+   */
+  private emitPlanMessage(input: StartTaskInput, sessionId: string): void {
+    const verificationSection = input.verification?.length
+      ? `\n\n**Verification:**\n${input.verification.map((v, i) => `${i + 1}. ${v}`).join('\n')}`
+      : '';
+    const planText = `**Plan:**\n\n**Goal:** ${input.goal}\n\n**Steps:**\n${input.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}${verificationSection}`;
+
+    const syntheticMessage: OpenCodeMessage = {
+      type: 'text',
+      timestamp: Date.now(),
+      sessionID: sessionId,
+      part: {
+        id: this.generateMessageId(),
+        sessionID: sessionId,
+        messageID: this.generateMessageId(),
+        type: 'text',
+        text: planText,
+      },
+    } as import('@accomplish/shared').OpenCodeTextMessage;
+
+    this.emit('message', syntheticMessage);
+    console.log('[OpenCode Adapter] Emitted synthetic plan message');
+  }
+
+  /**
    * Get platform-appropriate shell command
    *
    * In packaged apps on macOS, we use /bin/sh instead of the user's shell
@@ -1314,6 +1429,13 @@ interface AskUserQuestionInput {
     options?: Array<{ label: string; description?: string }>;
     multiSelect?: boolean;
   }>;
+}
+
+interface StartTaskInput {
+  original_request: string;
+  goal: string;
+  steps: string[];
+  verification: string[];
 }
 
 /**
