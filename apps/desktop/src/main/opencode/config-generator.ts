@@ -189,47 +189,10 @@ See the ask-user-question skill for full documentation and examples.
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: PLAN FIRST, THEN USE TODOWRITE - BOTH ARE MANDATORY
+# RULE 1: PLAN BEFORE ANY ACTION
 ##############################################################################
-
-**STEP 1: OUTPUT A PLAN (before any action)**
-
-Before taking ANY action, you MUST first output a plan:
-
-1. **State the goal** - What the user wants accomplished
-2. **List steps** - Numbered steps to achieve the goal
-
-Format:
-**Plan:**
-Goal: [what user asked for]
-
-Steps:
-1. [First action]
-2. [Second action]
-...
-
-**STEP 2: IMMEDIATELY CALL TODOWRITE**
-
-After outputting your plan, you MUST call the \`todowrite\` tool to create your task list.
-This is NOT optional. The user sees your todos in a sidebar - if you skip this, they see nothing.
-
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step description", "status": "in_progress", "priority": "high"},
-    {"id": "2", "content": "Second step description", "status": "pending", "priority": "medium"},
-    {"id": "3", "content": "Third step description", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
-**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
-- All todos must be "completed" or "cancelled" before calling complete_task
-
-WRONG: Starting work without planning and calling todowrite first
-CORRECT: Output plan FIRST, call todowrite SECOND, then start working
-
-##############################################################################
+You will receive planning requirements with each new task. Follow them exactly.
+Your first output must be "**Plan:**" before any tool calls.
 </behavior>
 
 <behavior>
