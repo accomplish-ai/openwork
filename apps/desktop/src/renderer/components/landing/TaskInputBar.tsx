@@ -27,6 +27,10 @@ interface TaskInputBarProps {
    */
   onOpenModelSettings?: () => void;
   /**
+   * Hide model indicator when no model is selected (instead of showing warning)
+   */
+  hideModelWhenNoModel?: boolean;
+  /**
    * Automatically submit after a successful transcription.
    */
   autoSubmitOnTranscription?: boolean;
@@ -43,6 +47,7 @@ export default function TaskInputBar({
   autoFocus = false,
   onOpenSpeechSettings,
   onOpenModelSettings,
+  hideModelWhenNoModel = false,
   autoSubmitOnTranscription = true,
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
@@ -156,6 +161,7 @@ export default function TaskInputBar({
             <ModelIndicator
               isRunning={false}
               onOpenSettings={onOpenModelSettings}
+              hideWhenNoModel={hideModelWhenNoModel}
             />
           )}
 

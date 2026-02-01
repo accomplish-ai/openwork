@@ -27,12 +27,15 @@ interface ModelIndicatorProps {
   onOpenSettings: () => void;
   /** Additional CSS classes */
   className?: string;
+  /** Hide the indicator when no model is selected (instead of showing warning) */
+  hideWhenNoModel?: boolean;
 }
 
 export function ModelIndicator({
   isRunning = false,
   onOpenSettings,
   className,
+  hideWhenNoModel = false,
 }: ModelIndicatorProps) {
   const { settings, loading, refetch } = useProviderSettings();
   const [open, setOpen] = useState(false);
@@ -84,6 +87,11 @@ export function ModelIndicator({
         <div className="w-20 h-4 rounded bg-muted-foreground/10" />
       </div>
     );
+  }
+
+  // Hide completely when no model and hideWhenNoModel is true
+  if (hideWhenNoModel && !hasModel) {
+    return null;
   }
 
   // When running, just show text without dropdown

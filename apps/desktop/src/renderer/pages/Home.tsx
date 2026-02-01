@@ -204,6 +204,7 @@ export default function HomePage() {
                 autoFocus={true}
                 onOpenSpeechSettings={handleOpenSpeechSettings}
                 onOpenModelSettings={handleOpenModelSettings}
+                hideModelWhenNoModel={true}
               />
             </CardContent>
 
