@@ -349,6 +349,11 @@ export default function ExecutionPage() {
       // Clear debug logs and search when switching tasks
       setDebugLogs([]);
       setDebugSearchQuery('');
+
+      // Fetch todos for this task from database (always set, even if empty, to clear stale todos)
+      accomplish.getTodosForTask(id).then((todos) => {
+        useTaskStore.getState().setTodos(id, todos);
+      });
     }
 
     // Handle individual task updates
