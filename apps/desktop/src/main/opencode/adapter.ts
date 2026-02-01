@@ -5,6 +5,7 @@ import fs from 'fs';
 import { StreamParser } from './stream-parser';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './log-watcher';
 import { CompletionEnforcer, CompletionEnforcerCallbacks } from './completion';
+import { injectPlanningContext } from './planning-context';
 import {
   getOpenCodeCliPath,
   isOpenCodeBundled,
@@ -256,7 +257,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const configPath = await generateOpenCodeConfig(azureFoundryToken);
     console.log('[OpenCode CLI] Config generated at:', configPath);
 
-    const cliArgs = await this.buildCliArgs(config);
+    const cliArgs = await this.buildCliArgs(config, !config.sessionId);
 
     // Get the bundled CLI path
     const { command, args: baseArgs } = getOpenCodeCliPath();
@@ -751,7 +752,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     return env;
   }
 
-  private async buildCliArgs(config: TaskConfig): Promise<string[]> {
+  private async buildCliArgs(config: TaskConfig, isFirstMessage: boolean = true): Promise<string[]> {
     // Try new provider settings first, fall back to legacy settings
     const activeModel = getActiveProviderModel();
     const selectedModel = activeModel || getSelectedModel();
@@ -762,7 +763,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // OpenCode CLI uses: opencode run "message" --format json
     const args = [
       'run',
-      config.prompt,
+      injectPlanningContext(config.prompt, isFirstMessage),
       '--format', 'json',
     ];
 
@@ -1191,7 +1192,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       workingDirectory: this.lastWorkingDirectory,
     };
 
-    const cliArgs = await this.buildCliArgs(config);
+    // Session resumption is never a first message, so isFirstMessage = false
+    const cliArgs = await this.buildCliArgs(config, !config.sessionId);
 
     // Get the bundled CLI path
     const { command, args: baseArgs } = getOpenCodeCliPath();
