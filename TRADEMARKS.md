@@ -9,20 +9,20 @@ This document describes the trademarks owned by Accomplish Ltd. and provides gui
 ## Trademark Ownership
 
 ACCOMPLISH™ is a trademark of Accomplish Ltd.
-ACCOMPLISH™ is also a trademark of Accomplish Ltd.
+OPENWORK™ is also a trademark of Accomplish Ltd.
 
-Additional trademarks, service marks, logos, product names, or other brand identifiers may be owned or used by Accomplish Ltd. now or in the future. All such marks, including ACCOMPLISH™ and ACCOMPLISH™, are collectively referred to in this document as the "Accomplish Trademarks".
+Additional trademarks, service marks, logos, product names, or other brand identifiers may be owned or used by Accomplish Ltd. now or in the future. All such marks, including ACCOMPLISH™ and OPENWORK™, are collectively referred to in this document as the "Accomplish Trademarks".
 
-ACCOMPLISH™ and ACCOMPLISH™ are currently the subject of pending trademark applications in the United States. Use of these marks prior to registration does not imply that they are registered trademarks.
+ACCOMPLISH™ and OPENWORK™ are currently the subject of pending trademark applications in the United States. Use of these marks prior to registration does not imply that they are registered trademarks.
 
 ## Permitted Use
 
 You may use the Accomplish Trademarks without prior written permission solely for the following purposes:
 
-- To refer to the ACCOMPLISH™ project or the ACCOMPLISH™ brand in a factual and descriptive manner.
-- To identify an unmodified copy of the ACCOMPLISH™ software (including releases branded as ACCOMPLISH™).
-- To indicate compatibility with ACCOMPLISH™ or ACCOMPLISH™, provided such use is truthful and non-misleading.
-- To discuss or review the ACCOMPLISH™ project or the ACCOMPLISH™ brand, including in documentation, articles, or presentations.
+- To refer to the ACCOMPLISH™ project or the OPENWORK™ brand in a factual and descriptive manner.
+- To identify an unmodified copy of the ACCOMPLISH™ software (including releases formerly branded as OPENWORK™).
+- To indicate compatibility with ACCOMPLISH™ or OPENWORK™, provided such use is truthful and non-misleading.
+- To discuss or review the ACCOMPLISH™ project or the OPENWORK™ brand, including in documentation, articles, or presentations.
 
 Any permitted use must be consistent with honest commercial practices and must not create confusion as to source, sponsorship, affiliation, or endorsement.
 
