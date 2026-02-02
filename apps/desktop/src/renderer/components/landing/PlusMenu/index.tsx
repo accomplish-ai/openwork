@@ -28,12 +28,12 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch enabled skills when dropdown opens
+  // Fetch enabled skills when dropdown opens (filter out hidden skills for UI)
   useEffect(() => {
     if (open && window.accomplish) {
       window.accomplish
         .getEnabledSkills()
-        .then(setSkills)
+        .then((skills) => setSkills(skills.filter((s) => !s.isHidden)))
         .catch((err) => console.error('Failed to load skills:', err));
     }
   }, [open]);
@@ -48,7 +48,8 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
         new Promise((resolve) => setTimeout(resolve, 600)),
         accomplish.resyncSkills().then(() => accomplish.getEnabledSkills()),
       ]);
-      setSkills(updatedSkills);
+      // Filter out hidden skills for UI display
+      setSkills(updatedSkills.filter((s) => !s.isHidden));
     } catch (err) {
       console.error('Failed to refresh skills:', err);
     } finally {

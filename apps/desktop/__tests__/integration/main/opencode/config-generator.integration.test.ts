@@ -68,6 +68,15 @@ vi.mock('@main/store/providerSettings', () => ({
   getConnectedProviderIds: vi.fn(() => []),
 }));
 
+// Mock skills module (uses SQLite which requires native module)
+vi.mock('@main/skills', () => ({
+  skillsManager: {
+    getEnabled: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([])),
+    initialize: vi.fn(() => Promise.resolve()),
+  },
+}));
+
 // Mock appSettings (now uses SQLite which requires native module)
 vi.mock('@main/store/appSettings', () => ({
   getDebugMode: vi.fn(() => false),
@@ -109,11 +118,11 @@ describe('OpenCode Config Generator Integration', () => {
     tempUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-userData-'));
     tempAppDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-app-'));
 
-    // Create skills directory structure in temp app dir
-    const skillsDir = path.join(tempAppDir, 'skills');
-    fs.mkdirSync(skillsDir, { recursive: true });
-    fs.mkdirSync(path.join(skillsDir, 'file-permission', 'src'), { recursive: true });
-    fs.writeFileSync(path.join(skillsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
+    // Create mcp-tools directory structure in temp app dir
+    const mcpToolsDir = path.join(tempAppDir, 'mcp-tools');
+    fs.mkdirSync(mcpToolsDir, { recursive: true });
+    fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
+    fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
 
     // Update mock to use temp directories
     mockApp.getAppPath.mockReturnValue(tempAppDir);

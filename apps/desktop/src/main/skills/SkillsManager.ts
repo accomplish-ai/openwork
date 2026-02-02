@@ -76,16 +76,17 @@ export class SkillsManager {
       }
       processedPaths.add(skill.filePath);
 
-      // Check if skill already exists by file path (preserves community source for GitHub imports)
+      // Check if skill already exists by file path
       const existingByFilePath = existingByPath.get(skill.filePath);
       if (existingByFilePath) {
-        // Preserve existing source if it was imported from GitHub
+        // Always preserve existing ID to prevent duplicates when name changes
+        skill.id = existingByFilePath.id;
+        skill.isEnabled = existingByFilePath.isEnabled;
+        // Preserve GitHub-specific metadata if it was imported from GitHub
         if (existingByFilePath.githubUrl) {
           skill.source = existingByFilePath.source;
-          skill.id = existingByFilePath.id;
           skill.githubUrl = existingByFilePath.githubUrl;
         }
-        skill.isEnabled = existingByFilePath.isEnabled;
       } else {
         // Check by ID for backwards compatibility
         const existingById_ = existingById.get(skill.id);
@@ -132,11 +133,13 @@ export class SkillsManager {
         const name = frontmatter.name || entry.name;
         const source = defaultSource;
         const id = this.generateId(name, source);
+        // Use sanitized name for default command to avoid spaces/special chars
+        const safeName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
         skills.push({
           id,
           name,
-          command: frontmatter.command || `/${name}`,
+          command: frontmatter.command || `/${safeName}`,
           description: frontmatter.description || '',
           source,
           isEnabled: true,
@@ -268,8 +271,21 @@ export class SkillsManager {
   }
 
   async addFromGitHub(rawUrl: string): Promise<Skill> {
-    if (!rawUrl.includes('raw.githubusercontent.com') && !rawUrl.includes('github.com')) {
-      throw new Error('URL must be a GitHub URL');
+    // Validate URL with strict host allowlist to prevent SSRF attacks
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(rawUrl);
+    } catch {
+      throw new Error('Invalid URL format');
+    }
+
+    const allowedHosts = ['github.com', 'raw.githubusercontent.com'];
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      throw new Error('URL must be from github.com or raw.githubusercontent.com');
+    }
+
+    if (parsedUrl.protocol !== 'https:') {
+      throw new Error('URL must use HTTPS');
     }
 
     let fetchUrl = rawUrl;
