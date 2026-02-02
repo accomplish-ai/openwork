@@ -94,6 +94,7 @@ async function callAnthropic(apiKey: string, prompt: string): Promise<string> {
 }
 
 async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -112,13 +113,19 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
     }),
   });
 
+
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorData = await response.json();
+    console.error('OpenAI error data', errorData);
+    throw new Error(`OpenAI API error: ${response.status} ${JSON.stringify(errorData)}`);
   }
 
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
   };
+console.log('OpenAI response', response);
+  console.log('OpenAI response', data);
+  console.log('OpenAI choices', data.choices);
   const text = data.choices?.[0]?.message?.content;
   return cleanSummary(text || '');
 }

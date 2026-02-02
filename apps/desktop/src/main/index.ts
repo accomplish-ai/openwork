@@ -123,7 +123,7 @@ function createWindow() {
   mainWindow.maximize();
 
   // Open DevTools in dev mode (non-packaged), but not during E2E tests
-  const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
+  const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true || process.env.NODE_ENV === 'test';
   if (!app.isPackaged && !isE2EMode) {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }

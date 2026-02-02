@@ -32,9 +32,9 @@ export function getSkillsPath(): string {
     // In packaged app, skills should be in resources folder (unpacked from asar)
     return path.join(process.resourcesPath, 'skills');
   } else {
-    // In development, use app.getAppPath() which returns the desktop app directory
-    // app.getAppPath() returns apps/desktop in dev mode
-    return path.join(app.getAppPath(), 'skills');
+    // In development, app.getAppPath() returns dist-electron/main (entry point location)
+    // Go up 2 levels to get to apps/desktop, then into skills/
+    return path.join(app.getAppPath(), '..', '..', 'skills');
   }
 }
 
@@ -46,7 +46,9 @@ export function getOpenCodeConfigDir(): string {
   if (app.isPackaged) {
     return process.resourcesPath;
   } else {
-    return app.getAppPath();
+    // In development, app.getAppPath() returns dist-electron/main
+    // Go up 2 levels to get to apps/desktop
+    return path.join(app.getAppPath(), '..', '..');
   }
 }
 
