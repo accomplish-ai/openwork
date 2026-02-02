@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - Agente de escritorio de IA de código abierto que automatiza la gestión de archivos, creación de documentos y tareas del navegador con tus propias claves API de IA" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - Agente de escritorio de IA de código abierto que automatiza la gestión de archivos, creación de documentos y tareas del navegador con tus propias claves API de IA" width="100%" />
 </p>
 
 <p align="center">
@@ -14,22 +14,22 @@
   <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Descargar para macOS" /></a>
 </p>
 
-# Openwork™ - Agente de Escritorio de IA de Código Abierto
+# Accomplish™ - Agente de Escritorio de IA de Código Abierto
 
-Openwork es un agente de escritorio de IA de código abierto que automatiza la gestión de archivos, creación de documentos y tareas del navegador localmente en tu máquina. Usa tus propias claves API (OpenAI, Anthropic, Google, xAI) o ejecuta modelos locales a través de Ollama.
+Accomplish es un agente de escritorio de IA de código abierto que automatiza la gestión de archivos, creación de documentos y tareas del navegador localmente en tu máquina. Usa tus propias claves API (OpenAI, Anthropic, Google, xAI) o ejecuta modelos locales a través de Ollama.
 
 <p align="center">
   <strong>Se ejecuta localmente en tu máquina. Usa tus propias claves API o modelos locales. Licencia MIT.</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Descargar Openwork para Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Descargar Accomplish para Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Sitio web de Openwork</a>
+  <a href="https://www.openwork.me/">Sitio web de Accomplish</a>
   ·
-  <a href="https://www.openwork.me/blog/">Blog de Openwork</a>
+  <a href="https://www.openwork.me/blog/">Blog de Accomplish</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">Versiones de Openwork</a>
+  <a href="https://github.com/accomplish-ai/openwork/releases">Versiones de Accomplish</a>
 </p>
 
 <br />
@@ -50,7 +50,7 @@ Openwork es un agente de escritorio de IA de código abierto que automatiza la g
 
 - Tus archivos permanecen en tu máquina
 - Tú decides a qué carpetas puede acceder
-- Nada se envía a Openwork (ni a nadie más)
+- Nada se envía a Accomplish (ni a nadie más)
 
 </div>
 
@@ -150,7 +150,7 @@ Openwork es un agente de escritorio de IA de código abierto que automatiza la g
 
 ## Privacidad y local primero
 
-Openwork se ejecuta localmente en tu máquina. Tus archivos permanecen en tu dispositivo y tú eliges a qué carpetas puede acceder.
+Accomplish se ejecuta localmente en tu máquina. Tus archivos permanecen en tu dispositivo y tú eliges a qué carpetas puede acceder.
 
 <br />
 
@@ -195,11 +195,11 @@ Openwork se ejecuta localmente en tu máquina. Tus archivos permanecen en tu dis
 
 ## Capturas de pantalla y Demo
 
-Un vistazo rápido a Openwork en macOS, más un breve video de demostración.
+Un vistazo rápido a Accomplish en macOS, más un breve video de demostración.
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="Demo de Openwork - Agente de IA automatizando gestión de archivos y tareas del navegador" width="600" />
+    <img src="docs/video-thumbnail.png" alt="Demo de Accomplish - Agente de IA automatizando gestión de archivos y tareas del navegador" width="600" />
   </a>
 </p>
 
@@ -211,14 +211,14 @@ Un vistazo rápido a Openwork en macOS, más un breve video de demostración.
 
 ## Preguntas frecuentes
 
-**¿Openwork se ejecuta localmente?**
-Sí. Openwork se ejecuta localmente en tu máquina y tú controlas a qué carpetas puede acceder.
+**¿Accomplish se ejecuta localmente?**
+Sí. Accomplish se ejecuta localmente en tu máquina y tú controlas a qué carpetas puede acceder.
 
 **¿Necesito una clave API?**
 Puedes usar tus propias claves API (OpenAI, Anthropic, Google, xAI, etc.) o ejecutar modelos locales a través de Ollama.
 
-**¿Openwork es gratis?**
-Sí. Openwork es de código abierto y tiene licencia MIT.
+**¿Accomplish es gratis?**
+Sí. Accomplish es de código abierto y tiene licencia MIT.
 
 **¿Qué plataformas son compatibles?**
 macOS (Apple Silicon) está disponible ahora. El soporte para Windows llegará pronto.
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Sitio web de Openwork](https://www.openwork.me/)** · **[Blog de Openwork](https://www.openwork.me/blog/)** · **[Versiones de Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Sitio web de Accomplish](https://www.openwork.me/)** · **[Blog de Accomplish](https://www.openwork.me/blog/)** · **[Versiones de Accomplish](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-Licencia MIT · Creado por [Openwork](https://www.openwork.me)
+Licencia MIT · Creado por [Accomplish](https://www.openwork.me)
 
 <br />
 

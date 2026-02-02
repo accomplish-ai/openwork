@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - Kendi AI API anahtarlarınızla dosya yönetimi, belge oluşturma ve tarayıcı görevlerini otomatikleştiren açık kaynaklı AI masaüstü ajanı" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - Kendi AI API anahtarlarınızla dosya yönetimi, belge oluşturma ve tarayıcı görevlerini otomatikleştiren açık kaynaklı AI masaüstü ajanı" width="100%" />
 </p>
 
 <p align="center">
@@ -14,22 +14,22 @@
   <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
 </p>
 
-# Openwork™ - Açık Kaynaklı AI Masaüstü Ajanı
+# Accomplish™ - Açık Kaynaklı AI Masaüstü Ajanı
 
-Openwork, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve tarayıcı görevlerini otomatikleştiren açık kaynaklı bir AI masaüstü ajanıdır. Kendi API anahtarlarınızı (OpenAI, Anthropic, Google, xAI) kullanın veya Ollama üzerinden yerel modeller çalıştırın.
+Accomplish, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve tarayıcı görevlerini otomatikleştiren açık kaynaklı bir AI masaüstü ajanıdır. Kendi API anahtarlarınızı (OpenAI, Anthropic, Google, xAI) kullanın veya Ollama üzerinden yerel modeller çalıştırın.
 
 <p align="center">
   <strong>Bilgisayarınızda yerel olarak çalışır. Kendi API anahtarlarınızı veya yerel modellerinizi kullanın. MIT lisanslı.</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Mac için Openwork'ü İndirin (Apple Silicon)</strong></a>
+  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Mac için Accomplish'u İndirin (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Openwork web sitesi</a>
+  <a href="https://www.openwork.me/">Accomplish web sitesi</a>
   ·
-  <a href="https://www.openwork.me/blog/">Openwork blogu</a>
+  <a href="https://www.openwork.me/blog/">Accomplish blogu</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">Openwork sürümleri</a>
+  <a href="https://github.com/accomplish-ai/openwork/releases">Accomplish sürümleri</a>
 </p>
 
 <br />
@@ -50,7 +50,7 @@ Openwork, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve t
 
 - Dosyalarınız bilgisayarınızda kalır
 - Hangi klasörlere erişebileceğine siz karar verirsiniz
-- Openwork'e (veya başka birine) hiçbir şey gönderilmez
+- Accomplish'a (veya başka birine) hiçbir şey gönderilmez
 
 </div>
 
@@ -150,7 +150,7 @@ Openwork, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve t
 
 ## Gizlilik ve yerel öncelikli
 
-Openwork bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazınızda kalır ve hangi klasörlere erişebileceğini siz seçersiniz.
+Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazınızda kalır ve hangi klasörlere erişebileceğini siz seçersiniz.
 
 <br />
 
@@ -195,11 +195,11 @@ Openwork bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazınız
 
 ## Ekran görüntüleri ve Demo
 
-macOS'ta Openwork'e hızlı bir bakış ve kısa bir demo videosu.
+macOS'ta Accomplish'a hızlı bir bakış ve kısa bir demo videosu.
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="Openwork demosu - Dosya yönetimi ve tarayıcı görevlerini otomatikleştiren AI ajanı" width="600" />
+    <img src="docs/video-thumbnail.png" alt="Accomplish demosu - Dosya yönetimi ve tarayıcı görevlerini otomatikleştiren AI ajanı" width="600" />
   </a>
 </p>
 
@@ -211,14 +211,14 @@ macOS'ta Openwork'e hızlı bir bakış ve kısa bir demo videosu.
 
 ## Sık sorulan sorular
 
-**Openwork yerel olarak mı çalışıyor?**
-Evet. Openwork bilgisayarınızda yerel olarak çalışır ve hangi klasörlere erişebileceğini kontrol edersiniz.
+**Accomplish yerel olarak mı çalışıyor?**
+Evet. Accomplish bilgisayarınızda yerel olarak çalışır ve hangi klasörlere erişebileceğini kontrol edersiniz.
 
 **API anahtarına ihtiyacım var mı?**
 Kendi API anahtarlarınızı (OpenAI, Anthropic, Google, xAI, vb.) kullanabilir veya Ollama üzerinden yerel modeller çalıştırabilirsiniz.
 
-**Openwork ücretsiz mi?**
-Evet. Openwork açık kaynaklıdır ve MIT lisanslıdır.
+**Accomplish ücretsiz mi?**
+Evet. Accomplish açık kaynaklıdır ve MIT lisanslıdır.
 
 **Hangi platformlar destekleniyor?**
 macOS (Apple Silicon) şu anda mevcut. Windows desteği yakında gelecek.
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openwork web sitesi](https://www.openwork.me/)** · **[Openwork blogu](https://www.openwork.me/blog/)** · **[Openwork sürümleri](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Accomplish web sitesi](https://www.openwork.me/)** · **[Accomplish blogu](https://www.openwork.me/blog/)** · **[Accomplish sürümleri](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-MIT Lisansı · [Openwork](https://www.openwork.me) tarafından yapıldı
+MIT Lisansı · [Accomplish](https://www.openwork.me) tarafından yapıldı
 
 <br />
 
