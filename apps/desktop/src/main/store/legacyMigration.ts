@@ -6,32 +6,53 @@ import fs from 'fs';
 
 /**
  * Legacy userData paths that may contain data from previous app versions.
+ * Each entry includes the path and optional database name override for that path.
  * Ordered from most recent to oldest.
  */
-function getLegacyPaths(): string[] {
+interface LegacyPath {
+  path: string;
+  /** Database name used in this legacy path (defaults to current name if not specified) */
+  dbName?: string;
+}
+
+function getLegacyPaths(): LegacyPath[] {
   const appDataPath = app.getPath('appData');
+  const isPackaged = app.isPackaged;
+
   return [
-    // Previous production path before rebrand
-    path.join(appDataPath, 'Accomplish'),
-    path.join(appDataPath, 'accomplish'),
+    // Previous Accomplish paths (same db name)
+    { path: path.join(appDataPath, 'Accomplish') },
+    { path: path.join(appDataPath, 'accomplish') },
+    // Openwork paths (before rebrand - different db name)
+    {
+      path: path.join(appDataPath, 'Openwork'),
+      dbName: isPackaged ? 'openwork.db' : 'openwork-dev.db'
+    },
+    {
+      path: path.join(appDataPath, 'openwork'),
+      dbName: isPackaged ? 'openwork.db' : 'openwork-dev.db'
+    },
     // Only migrate from DATA_SCHEMA_VERSION=2 path
-    path.join(appDataPath, '@accomplish', 'desktop-v2'),
+    { path: path.join(appDataPath, '@accomplish', 'desktop-v2') },
   ];
 }
 
-const LEGACY_DB_NAME = app.isPackaged ? 'accomplish.db' : 'accomplish-dev.db';
 const NEW_DB_NAME = app.isPackaged ? 'accomplish.db' : 'accomplish-dev.db';
+const SECURE_STORAGE_NAME = app.isPackaged ? 'secure-storage.json' : 'secure-storage-dev.json';
 
 /**
- * Files to migrate from legacy path to new path.
- * Includes database files and secure storage.
+ * Get files to migrate for a given legacy path.
+ * Handles different database names for different legacy paths.
  */
-const FILES_TO_MIGRATE: Array<{ src: string; dest: string }> = [
-  { src: LEGACY_DB_NAME, dest: NEW_DB_NAME },
-  { src: `${LEGACY_DB_NAME}-wal`, dest: `${NEW_DB_NAME}-wal` },
-  { src: `${LEGACY_DB_NAME}-shm`, dest: `${NEW_DB_NAME}-shm` },
-  { src: 'secure-storage.json', dest: 'secure-storage.json' },
-];
+function getFilesToMigrate(legacyDbName?: string): Array<{ src: string; dest: string }> {
+  const srcDbName = legacyDbName || NEW_DB_NAME;
+  return [
+    { src: srcDbName, dest: NEW_DB_NAME },
+    { src: `${srcDbName}-wal`, dest: `${NEW_DB_NAME}-wal` },
+    { src: `${srcDbName}-shm`, dest: `${NEW_DB_NAME}-shm` },
+    { src: SECURE_STORAGE_NAME, dest: SECURE_STORAGE_NAME },
+  ];
+}
 
 /**
  * Check for and migrate data from legacy userData paths.
@@ -55,30 +76,38 @@ export function migrateLegacyData(): boolean {
       return false;
     }
 
-    // If current path has legacy DB name, migrate in place
-    const currentLegacyDb = path.join(currentPath, LEGACY_DB_NAME);
-    if (fs.existsSync(currentLegacyDb)) {
-      console.log('[Migration] Found legacy database name in current userData path');
-      let migratedCount = 0;
-      for (const file of FILES_TO_MIGRATE) {
-        const src = path.join(currentPath, file.src);
-        const dest = path.join(currentPath, file.dest);
-        try {
-          if (fs.existsSync(src)) {
-            fs.copyFileSync(src, dest);
-            console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
-            migratedCount++;
+    // Check if current path has legacy database names that need renaming
+    const legacyDbNames = ['openwork.db', 'openwork-dev.db'];
+    for (const legacyDbName of legacyDbNames) {
+      const currentLegacyDb = path.join(currentPath, legacyDbName);
+      if (fs.existsSync(currentLegacyDb)) {
+        console.log(`[Migration] Found legacy database name in current userData path: ${legacyDbName}`);
+        const filesToMigrate = getFilesToMigrate(legacyDbName);
+        let migratedCount = 0;
+        for (const file of filesToMigrate) {
+          const src = path.join(currentPath, file.src);
+          const dest = path.join(currentPath, file.dest);
+          // Skip if src and dest are the same
+          if (file.src === file.dest) continue;
+          try {
+            if (fs.existsSync(src)) {
+              fs.copyFileSync(src, dest);
+              console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
+              migratedCount++;
+            }
+          } catch (err) {
+            console.error(`[Migration] Failed to copy ${file.src}:`, err);
           }
-        } catch (err) {
-          console.error(`[Migration] Failed to copy ${file.src}:`, err);
+        }
+        if (migratedCount > 0) {
+          console.log(`[Migration] In-place migration complete. Copied ${migratedCount} files.`);
+          return true;
         }
       }
-      console.log(`[Migration] In-place migration complete. Copied ${migratedCount} files.`);
-      return migratedCount > 0;
     }
 
     // Look for legacy data in known paths
-    let legacyPaths: string[];
+    let legacyPaths: LegacyPath[];
     try {
       legacyPaths = getLegacyPaths();
     } catch (err) {
@@ -88,16 +117,18 @@ export function migrateLegacyData(): boolean {
 
     for (const legacyPath of legacyPaths) {
       try {
-        if (!fs.existsSync(legacyPath)) {
+        if (!fs.existsSync(legacyPath.path)) {
           continue;
         }
 
-        const legacyDb = path.join(legacyPath, LEGACY_DB_NAME);
+        // Determine which database name to look for in this legacy path
+        const srcDbName = legacyPath.dbName || NEW_DB_NAME;
+        const legacyDb = path.join(legacyPath.path, srcDbName);
         if (!fs.existsSync(legacyDb)) {
           continue;
         }
 
-        console.log(`[Migration] Found legacy data at: ${legacyPath}`);
+        console.log(`[Migration] Found legacy data at: ${legacyPath.path}`);
 
         // Ensure current userData directory exists
         try {
@@ -111,9 +142,10 @@ export function migrateLegacyData(): boolean {
         }
 
         // Copy files from legacy path to new path
+        const filesToMigrate = getFilesToMigrate(legacyPath.dbName);
         let migratedCount = 0;
-        for (const file of FILES_TO_MIGRATE) {
-          const src = path.join(legacyPath, file.src);
+        for (const file of filesToMigrate) {
+          const src = path.join(legacyPath.path, file.src);
           const dest = path.join(currentPath, file.dest);
 
           try {
@@ -129,10 +161,10 @@ export function migrateLegacyData(): boolean {
         }
 
         console.log(`[Migration] Migration complete. Copied ${migratedCount} files.`);
-        console.log(`[Migration] Original data preserved at: ${legacyPath}`);
+        console.log(`[Migration] Original data preserved at: ${legacyPath.path}`);
         return migratedCount > 0;
       } catch (err) {
-        console.error(`[Migration] Error processing legacy path ${legacyPath}:`, err);
+        console.error(`[Migration] Error processing legacy path ${legacyPath.path}:`, err);
         // Continue with next legacy path
       }
     }
