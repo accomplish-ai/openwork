@@ -3,33 +3,33 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - 开源 AI 桌面代理，使用您自己的 AI API 密钥自动化文件管理、文档创建和浏览器任务" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - 开源 AI 桌面代理，使用您自己的 AI API 密钥自动化文件管理、文档创建和浏览器任务" width="100%" />
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MIT 许可证" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="最近提交" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="下载 macOS 版" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最近提交" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="下载 macOS 版" /></a>
 </p>
 
-# Openwork™ - 开源 AI 桌面代理
+# Accomplish™ - 开源 AI 桌面代理
 
-Openwork 是一款开源 AI 桌面代理，可在您的本地机器上自动化文件管理、文档创建和浏览器任务。使用您自己的 API 密钥（OpenAI、Anthropic、Google、xAI）或通过 Ollama 运行本地模型。
+Accomplish 是一款开源 AI 桌面代理，可在您的本地机器上自动化文件管理、文档创建和浏览器任务。使用您自己的 API 密钥（OpenAI、Anthropic、Google、xAI）或通过 Ollama 运行本地模型。
 
 <p align="center">
   <strong>在您的机器上本地运行。使用您自己的 API 密钥或本地模型。MIT 许可证。</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>下载 Mac 版 Openwork（Apple Silicon）</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><strong>下载 Mac 版 Accomplish（Apple Silicon）</strong></a>
   ·
-  <a href="https://www.accomplish.ai/">Openwork 官网</a>
+  <a href="https://www.accomplish.ai/">Accomplish 官网</a>
   ·
-  <a href="https://www.accomplish.ai/blog/">Openwork 博客</a>
+  <a href="https://www.accomplish.ai/blog/">Accomplish 博客</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">Openwork 发布版本</a>
+  <a href="https://github.com/accomplish-ai/accomplish/releases">Accomplish 发布版本</a>
 </p>
 
 <br />
@@ -50,7 +50,7 @@ Openwork 是一款开源 AI 桌面代理，可在您的本地机器上自动化�
 
 - 您的文件保留在您的机器上
 - 您决定它可以访问哪些文件夹
-- 不会向 Openwork（或任何人）发送任何数据
+- 不会向 Accomplish（或任何人）发送任何数据
 
 </div>
 
@@ -150,7 +150,7 @@ Openwork 是一款开源 AI 桌面代理，可在您的本地机器上自动化�
 
 ## 隐私和本地优先
 
-Openwork 在您的机器上本地运行。您的文件保留在您的设备上，您可以选择它可以访问哪些文件夹。
+Accomplish 在您的机器上本地运行。您的文件保留在您的设备上，您可以选择它可以访问哪些文件夹。
 
 <br />
 
@@ -183,7 +183,7 @@ Openwork 在您的机器上本地运行。您的文件保留在您的设备上�
 
 <div align="center">
 
-[**下载 Mac 版（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
+[**下载 Mac 版（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg)
 
 </div>
 
@@ -195,11 +195,11 @@ Openwork 在您的机器上本地运行。您的文件保留在您的设备上�
 
 ## 截图和演示
 
-快速了解 macOS 上的 Openwork，以及简短的演示视频。
+快速了解 macOS 上的 Accomplish，以及简短的演示视频。
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="Openwork 演示 - AI 代理自动化文件管理和浏览器任务" width="600" />
+    <img src="docs/video-thumbnail.png" alt="Accomplish 演示 - AI 代理自动化文件管理和浏览器任务" width="600" />
   </a>
 </p>
 
@@ -211,14 +211,14 @@ Openwork 在您的机器上本地运行。您的文件保留在您的设备上�
 
 ## 常见问题
 
-**Openwork 是本地运行的吗？**
-是的。Openwork 在您的机器上本地运行，您可以控制它可以访问哪些文件夹。
+**Accomplish 是本地运行的吗？**
+是的。Accomplish 在您的机器上本地运行，您可以控制它可以访问哪些文件夹。
 
 **我需要 API 密钥吗？**
 您可以使用您自己的 API 密钥（OpenAI、Anthropic、Google、xAI 等）或通过 Ollama 运行本地模型。
 
-**Openwork 是免费的吗？**
-是的。Openwork 是开源的，采用 MIT 许可证。
+**Accomplish 是免费的吗？**
+是的。Accomplish 是开源的，采用 MIT 许可证。
 
 **支持哪些平台？**
 macOS（Apple Silicon）现已可用。Windows 支持即将推出。
@@ -312,7 +312,7 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openwork 官网](https://www.accomplish.ai/)** · **[Openwork 博客](https://www.accomplish.ai/blog/)** · **[Openwork 发布版本](https://github.com/accomplish-ai/openwork/releases)** · **[问题反馈](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Accomplish 官网](https://www.accomplish.ai/)** · **[Accomplish 博客](https://www.accomplish.ai/blog/)** · **[Accomplish 发布版本](https://github.com/accomplish-ai/accomplish/releases)** · **[问题反馈](https://github.com/accomplish-ai/accomplish/issues)** · **[Twitter](https://x.com/Accomplish_ai)**
 
 <br />
 

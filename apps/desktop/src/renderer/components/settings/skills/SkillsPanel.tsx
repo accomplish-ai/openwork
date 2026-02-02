@@ -166,7 +166,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
     }
   }, [isResyncing]);
 
-  const filterLabel = filter === 'all' ? 'All' : filter === 'active' ? 'Active' : filter === 'inactive' ? 'Inactive' : 'By Openwork';
+  const filterLabel = filter === 'all' ? 'All' : filter === 'active' ? 'Active' : filter === 'inactive' ? 'Inactive' : 'By Accomplish';
 
   if (loading) {
     return (
@@ -218,7 +218,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
               Inactive <span className="text-muted-foreground">{filterCounts.inactive}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilter('official')} className="flex justify-between">
-              By Openwork <span className="text-muted-foreground">{filterCounts.official}</span>
+              By Accomplish <span className="text-muted-foreground">{filterCounts.official}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

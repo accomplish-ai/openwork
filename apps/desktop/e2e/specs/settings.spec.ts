@@ -600,7 +600,7 @@ test.describe('Settings Dialog', () => {
     await expect(settingsPage.providerGrid).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
 
     // Additional verification: can interact with the dialog
-    const dialogTitle = window.getByRole('heading', { name: 'Set up Openwork' });
+    const dialogTitle = window.getByRole('heading', { name: 'Set up Accomplish' });
     await expect(dialogTitle).toBeVisible();
 
     // Capture successful state

@@ -3,33 +3,33 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - 自分のAI APIキーでファイル管理、ドキュメント作成、ブラウザタスクを自動化するオープンソースAIデスクトップエージェント" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - 自分のAI APIキーでファイル管理、ドキュメント作成、ブラウザタスクを自動化するオープンソースAIデスクトップエージェント" width="100%" />
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MITライセンス" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="最終コミット" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最終コミット" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
 </p>
 
-# Openwork™ - オープンソースAIデスクトップエージェント
+# Accomplish™ - オープンソースAIデスクトップエージェント
 
-Openworkは、お使いのマシン上でローカルにファイル管理、ドキュメント作成、ブラウザタスクを自動化するオープンソースAIデスクトップエージェントです。独自のAPIキー（OpenAI、Anthropic、Google、xAI）を使用するか、Ollama経由でローカルモデルを実行できます。
+Accomplishは、お使いのマシン上でローカルにファイル管理、ドキュメント作成、ブラウザタスクを自動化するオープンソースAIデスクトップエージェントです。独自のAPIキー（OpenAI、Anthropic、Google、xAI）を使用するか、Ollama経由でローカルモデルを実行できます。
 
 <p align="center">
   <strong>お使いのマシン上でローカルに実行。独自のAPIキーまたはローカルモデルを使用。MITライセンス。</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>Mac用Openworkをダウンロード（Apple Silicon）</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><strong>Mac用Accomplishをダウンロード（Apple Silicon）</strong></a>
   ·
-  <a href="https://www.accomplish.ai/">Openworkウェブサイト</a>
+  <a href="https://www.accomplish.ai/">Accomplishウェブサイト</a>
   ·
-  <a href="https://www.accomplish.ai/blog/">Openworkブログ</a>
+  <a href="https://www.accomplish.ai/blog/">Accomplishブログ</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">Openworkリリース</a>
+  <a href="https://github.com/accomplish-ai/accomplish/releases">Accomplishリリース</a>
 </p>
 
 <br />
@@ -50,7 +50,7 @@ Openworkは、お使いのマシン上でローカルにファイル管理、ド
 
 - ファイルはお使いのマシン上に保存
 - アクセスできるフォルダを自分で決定
-- Openwork（または他の誰か）にデータは送信されません
+- Accomplish（または他の誰か）にデータは送信されません
 
 </div>
 
@@ -150,7 +150,7 @@ Openworkは、お使いのマシン上でローカルにファイル管理、ド
 
 ## プライバシーとローカルファースト
 
-Openworkはお使いのマシン上でローカルに実行されます。ファイルはデバイス上に保存され、アクセスできるフォルダを選択できます。
+Accomplishはお使いのマシン上でローカルに実行されます。ファイルはデバイス上に保存され、アクセスできるフォルダを選択できます。
 
 <br />
 
@@ -183,7 +183,7 @@ Openworkはお使いのマシン上でローカルに実行されます。ファ
 
 <div align="center">
 
-[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
+[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg)
 
 </div>
 
@@ -195,11 +195,11 @@ Openworkはお使いのマシン上でローカルに実行されます。ファ
 
 ## スクリーンショットとデモ
 
-macOSでのOpenworkの概要と、短いデモ動画。
+macOSでのAccomplishの概要と、短いデモ動画。
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="Openworkデモ - ファイル管理とブラウザタスクを自動化するAIエージェント" width="600" />
+    <img src="docs/video-thumbnail.png" alt="Accomplishデモ - ファイル管理とブラウザタスクを自動化するAIエージェント" width="600" />
   </a>
 </p>
 
@@ -211,14 +211,14 @@ macOSでのOpenworkの概要と、短いデモ動画。
 
 ## よくある質問
 
-**Openworkはローカルで動作しますか？**
-はい。Openworkはお使いのマシン上でローカルに動作し、アクセスできるフォルダを制御できます。
+**Accomplishはローカルで動作しますか？**
+はい。Accomplishはお使いのマシン上でローカルに動作し、アクセスできるフォルダを制御できます。
 
 **APIキーは必要ですか？**
 独自のAPIキー（OpenAI、Anthropic、Google、xAIなど）を使用するか、Ollama経由でローカルモデルを実行できます。
 
-**Openworkは無料ですか？**
-はい。OpenworkはオープンソースでMITライセンスです。
+**Accomplishは無料ですか？**
+はい。AccomplishはオープンソースでMITライセンスです。
 
 **どのプラットフォームに対応していますか？**
 macOS（Apple Silicon）は現在利用可能です。Windows対応は近日公開予定です。
@@ -312,7 +312,7 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openworkウェブサイト](https://www.accomplish.ai/)** · **[Openworkブログ](https://www.accomplish.ai/blog/)** · **[Openworkリリース](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Accomplishウェブサイト](https://www.accomplish.ai/)** · **[Accomplishブログ](https://www.accomplish.ai/blog/)** · **[Accomplishリリース](https://github.com/accomplish-ai/accomplish/releases)** · **[Issues](https://github.com/accomplish-ai/accomplish/issues)** · **[Twitter](https://x.com/Accomplish_ai)**
 
 <br />
 

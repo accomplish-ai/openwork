@@ -4,14 +4,19 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// Hardcode userData path to 'Openwork' regardless of package.json name
+// Hardcode userData path to 'Accomplish' regardless of package.json name
 // This ensures consistent data location across all versions
-const APP_DATA_NAME = 'Openwork';
+const APP_DATA_NAME = 'Accomplish';
 app.setPath('userData', path.join(app.getPath('appData'), APP_DATA_NAME));
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('ai.accomplish.desktop');
+}
 
 import { registerIPCHandlers } from './ipc/handlers';
 import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
+import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import { initializeDatabase, closeDatabase } from './store/db';
 import { getProviderSettings, clearProviderSettings } from './store/repositories/providerSettings';
@@ -50,8 +55,8 @@ if (process.env.CLEAN_START === '1') {
   // which lives in userData, so it gets cleared with the directory above
 }
 
-// Set app name before anything else (affects deep link dialogs)
-app.name = 'Openwork';
+// Set app name before anything else (affects internal Electron name)
+app.setName('Accomplish');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -88,10 +93,14 @@ function createWindow() {
   console.log('[Main] Creating main application window');
 
   // Get app icon
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
   const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icon.png')
-    : path.join(process.env.APP_ROOT!, 'resources', 'icon.png');
+    ? path.join(process.resourcesPath, iconFile)
+    : path.join(process.env.APP_ROOT!, 'resources', iconFile);
   const icon = nativeImage.createFromPath(iconPath);
+  if (process.platform === 'darwin' && app.dock && !icon.isEmpty()) {
+    app.dock.setIcon(icon);
+  }
 
   const preloadPath = getPreloadPath();
   console.log('[Main] Using preload script:', preloadPath);
@@ -101,7 +110,7 @@ function createWindow() {
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    title: 'Openwork',
+    title: 'Accomplish',
     icon: icon.isEmpty() ? undefined : icon,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 16 },
@@ -220,8 +229,8 @@ if (!gotTheLock) {
         await dialog.showMessageBox({
           type: 'error',
           title: 'Update Required',
-          message: `This data was created by a newer version of Openwork (schema v${err.storedVersion}).`,
-          detail: `Your app supports up to schema v${err.appVersion}. Please update Openwork to continue.`,
+          message: `This data was created by a newer version of Accomplish (schema v${err.storedVersion}).`,
+          detail: `Your app supports up to schema v${err.appVersion}. Please update Accomplish to continue.`,
           buttons: ['Quit'],
         });
         app.quit();
@@ -291,6 +300,8 @@ app.on('before-quit', () => {
   flushPendingTasks();
   // Dispose all active tasks and cleanup PTY processes
   disposeTaskManager();
+  // Cancel any active OAuth flow
+  oauthBrowserFlow.dispose();
   // Stop Azure Foundry proxy server if running
   stopAzureFoundryProxy().catch((err) => {
     console.error('[Main] Failed to stop Azure Foundry proxy:', err);

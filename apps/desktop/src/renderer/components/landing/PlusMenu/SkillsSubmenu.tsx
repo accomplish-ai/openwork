@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import type { Skill } from '@accomplish/shared';
 import { Input } from '@/components/ui/input';
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import openworkFavicon from '/assets/openwork-favicon.png';
+import accomplishFavicon from '/assets/accomplish-favicon.png';
 
 interface SkillsSubmenuProps {
   skills: Skill[];
@@ -66,8 +66,8 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
                 <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
                   {skill.source === 'official' && (
                     <>
-                      <img src={openworkFavicon} alt="" className="h-2.5 w-2.5" />
-                      By Openwork
+                      <img src={accomplishFavicon} alt="" className="h-2.5 w-2.5" />
+                      By Accomplish
                     </>
                   )}
                   {skill.source === 'community' && (

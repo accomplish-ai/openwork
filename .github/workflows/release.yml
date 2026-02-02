@@ -274,7 +274,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Openwork-macOS-arm64
+          name: Accomplish-macOS-arm64
           path: |
             apps/desktop/release/*-arm64.dmg
             apps/desktop/release/*-arm64.zip
@@ -325,7 +325,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Openwork-macOS-x64
+          name: Accomplish-macOS-x64
           path: |
             apps/desktop/release/*-x64.dmg
             apps/desktop/release/*-x64.zip
@@ -370,7 +370,7 @@ jobs:
   #     - name: Upload artifacts
   #       uses: actions/upload-artifact@v4
   #       with:
-  #         name: Openwork-Windows-x64
+  #         name: Accomplish-Windows-x64
   #         path: apps/desktop/release/*.exe
   #         retention-days: 30
 
@@ -428,21 +428,21 @@ jobs:
         if: needs.build-mac-arm64.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: Openwork-macOS-arm64
+          name: Accomplish-macOS-arm64
           path: ./release/arm64
 
       - name: Download macOS x64 artifacts
         if: needs.build-mac-x64.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: Openwork-macOS-x64
+          name: Accomplish-macOS-x64
           path: ./release/x64
 
       # - name: Download Windows x64 artifacts
       #   if: needs.build-windows-x64.result == 'success'
       #   uses: actions/download-artifact@v4
       #   with:
-      #     name: Openwork-Windows-x64
+      #     name: Accomplish-Windows-x64
       #     path: ./release/win-x64
 
       - name: List release artifacts
@@ -454,7 +454,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version-bump.outputs.new_version }}
-          name: ${{ steps.check.outputs.dry_run == 'true' && '[TEST] ' || '' }}Openwork v${{ needs.version-bump.outputs.new_version }}
+          name: ${{ steps.check.outputs.dry_run == 'true' && '[TEST] ' || '' }}Accomplish v${{ needs.version-bump.outputs.new_version }}
           draft: false
           prerelease: ${{ steps.check.outputs.dry_run == 'true' }}
           generate_release_notes: true
@@ -482,7 +482,7 @@ jobs:
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: "✅ *Openwork v\($version) Released!*\n\nDownload the latest version from GitHub."
+                    text: "✅ *Accomplish v\($version) Released!*\n\nDownload the latest version from GitHub."
                   },
                   accessory: {
                     type: "button",

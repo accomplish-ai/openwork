@@ -181,7 +181,7 @@ describe('Sidebar Integration', () => {
       );
 
       // Assert
-      const logo = screen.getByRole('img', { name: /openwork/i });
+      const logo = screen.getByRole('img', { name: /accomplish/i });
       expect(logo).toBeInTheDocument();
     });
 

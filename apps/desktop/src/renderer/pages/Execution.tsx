@@ -37,7 +37,7 @@ interface DebugLogEntry {
   data?: unknown;
 }
 
-// Spinning Openwork icon component
+// Spinning Accomplish icon component
 const SpinningIcon = ({ className }: { className?: string }) => (
   <img
     src={loadingSymbol}

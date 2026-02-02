@@ -12,12 +12,12 @@
     "build": "tsc && vite build && node scripts/bundle-skills.cjs",
     "build:electron": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
-    "package": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
-    "package:mac": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
-    "release": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
-    "release:mac": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
-    "package:win": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
-    "release:win": "OPENWORK_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
+    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
+    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
+    "release": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
+    "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -102,8 +102,8 @@
     "npmRebuild": false,
     "compression": "normal",
     "appId": "ai.accomplish.desktop",
-    "productName": "Openwork",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "productName": "Accomplish (formerly Openwork)",
+    "artifactName": "Accomplish-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release",
       "buildResources": "resources"
@@ -170,7 +170,7 @@
     "publish": {
       "provider": "github",
       "owner": "accomplish-ai",
-      "repo": "openwork"
+      "repo": "accomplish"
     },
     "mac": {
       "category": "public.app-category.productivity",
@@ -210,7 +210,7 @@
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Openwork",
+      "shortcutName": "Accomplish",
       "runAfterFinish": true,
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",

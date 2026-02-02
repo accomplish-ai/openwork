@@ -281,7 +281,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     // Create a minimal package.json in the working directory so OpenCode finds it there
     // and stops searching upward. This prevents EPERM errors when OpenCode traverses
-    // up to protected directories like C:\Program Files\Openwork\resources\
+    // up to protected directories like C:\Program Files\Accomplish\resources\
     // This is Windows-specific since the EPERM issue occurs with protected Program Files directories.
     if (app.isPackaged && process.platform === 'win32') {
       const dummyPackageJson = path.join(safeCwd, 'package.json');

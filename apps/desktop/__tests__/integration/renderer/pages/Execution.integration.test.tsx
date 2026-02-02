@@ -169,8 +169,8 @@ vi.mock('@/components/ui/streaming-text', () => ({
   ),
 }));
 
-// Mock openwork icon
-vi.mock('/assets/openwork-icon.png', () => ({ default: 'openwork-icon.png' }));
+// Mock Accomplish icon
+vi.mock('/assets/accomplish-icon.png', () => ({ default: 'accomplish-icon.png' }));
 
 // Import after mocks
 import ExecutionPage from '@/pages/Execution';

@@ -1,11 +1,11 @@
-# Contributing to Openwork
+# Contributing to Accomplish
 
-Thank you for your interest in contributing to Openwork! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Accomplish! This document provides guidelines and instructions for contributing.
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/openwork.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/accomplish.git`
 3. Install dependencies: `pnpm install`
 4. Create a branch: `git checkout -b feature/your-feature-name`
 
