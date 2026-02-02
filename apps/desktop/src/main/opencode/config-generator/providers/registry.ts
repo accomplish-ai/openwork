@@ -72,7 +72,7 @@ export const PROVIDER_SPECS: Record<string, ProviderSpec> = {
     openCodeId: OPENCODE_PROVIDER_NAMES.MOONSHOT,
     displayName: 'Moonshot AI',
     npm: NPM_PACKAGES[PROVIDER_IDS.MOONSHOT],
-    credentialsType: 'api-key', // Moonshot uses api_key credentials type
+    credentialsType: 'api_key', // Matches shared ApiKeyCredentials type
     modelIdPrefix: `${PROVIDER_IDS.MOONSHOT}/`,
     requiresApiKey: true,
     defaultToolSupport: true,

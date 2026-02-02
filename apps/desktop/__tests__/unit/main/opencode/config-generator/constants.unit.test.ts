@@ -5,7 +5,7 @@
  * - ACCOMPLISH_AGENT_NAME
  * - NPM_PACKAGES
  * - PROVIDER_URLS
- * - MCP_CONFIG
+ * - MCP_SERVER_CONFIG
  * - ZAI_MODELS
  * - MCP_SERVERS
  * - PROVIDER_ID_TO_OPENCODE
@@ -20,7 +20,7 @@ import {
   ACCOMPLISH_AGENT_NAME,
   NPM_PACKAGES,
   PROVIDER_URLS,
-  MCP_CONFIG,
+  MCP_SERVER_CONFIG,
   ZAI_MODELS,
   MCP_SERVERS,
   PROVIDER_ID_TO_OPENCODE,
@@ -61,17 +61,25 @@ describe('config-generator constants', () => {
     });
   });
 
-  describe('MCP_CONFIG', () => {
-    it('should have timeout of 30000', () => {
-      expect(MCP_CONFIG.timeout).toBe(30000);
+  describe('MCP_SERVER_CONFIG', () => {
+    it('should have TIMEOUT_MS of 30000', () => {
+      expect(MCP_SERVER_CONFIG.TIMEOUT_MS).toBe(30000);
     });
 
-    it('should have type "local"', () => {
-      expect(MCP_CONFIG.type).toBe('local');
+    it('should have TYPE "local"', () => {
+      expect(MCP_SERVER_CONFIG.TYPE).toBe('local');
     });
 
-    it('should have enabled set to true', () => {
-      expect(MCP_CONFIG.enabled).toBe(true);
+    it('should have ENABLED set to true', () => {
+      expect(MCP_SERVER_CONFIG.ENABLED).toBe(true);
+    });
+
+    it('should have SOURCE_FILE for dev mode', () => {
+      expect(MCP_SERVER_CONFIG.SOURCE_FILE).toBe('src/index.ts');
+    });
+
+    it('should have DIST_FILE for production mode', () => {
+      expect(MCP_SERVER_CONFIG.DIST_FILE).toBe('dist/index.mjs');
     });
   });
 

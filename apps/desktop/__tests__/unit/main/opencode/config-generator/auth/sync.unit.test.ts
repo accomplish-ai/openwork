@@ -630,37 +630,37 @@ describe('Auth Sync Module', () => {
     });
   });
 
-  describe('API_KEY_MAPPINGS Export', () => {
-    it('should export correct mapping for deepseek', async () => {
+  describe('AUTH_SYNC_PROVIDER_MAPPINGS (from constants)', () => {
+    it('should have correct mapping for deepseek', async () => {
       // Act
-      const module = await import('@main/opencode/config-generator/auth/sync');
+      const { AUTH_SYNC_PROVIDER_MAPPINGS } = await import('@main/opencode/config-generator/constants');
 
       // Assert
-      expect(module.API_KEY_MAPPINGS.deepseek).toBe('deepseek');
+      expect(AUTH_SYNC_PROVIDER_MAPPINGS.deepseek).toBe('deepseek');
     });
 
-    it('should export correct mapping for zai -> zai-coding-plan', async () => {
+    it('should have correct mapping for zai -> zai-coding-plan', async () => {
       // Act
-      const module = await import('@main/opencode/config-generator/auth/sync');
+      const { AUTH_SYNC_PROVIDER_MAPPINGS } = await import('@main/opencode/config-generator/constants');
 
       // Assert
-      expect(module.API_KEY_MAPPINGS.zai).toBe('zai-coding-plan');
+      expect(AUTH_SYNC_PROVIDER_MAPPINGS.zai).toBe('zai-coding-plan');
     });
 
-    it('should export correct mapping for minimax', async () => {
+    it('should have correct mapping for minimax', async () => {
       // Act
-      const module = await import('@main/opencode/config-generator/auth/sync');
+      const { AUTH_SYNC_PROVIDER_MAPPINGS } = await import('@main/opencode/config-generator/constants');
 
       // Assert
-      expect(module.API_KEY_MAPPINGS.minimax).toBe('minimax');
+      expect(AUTH_SYNC_PROVIDER_MAPPINGS.minimax).toBe('minimax');
     });
 
     it('should have exactly 3 mappings', async () => {
       // Act
-      const module = await import('@main/opencode/config-generator/auth/sync');
+      const { AUTH_SYNC_PROVIDER_MAPPINGS } = await import('@main/opencode/config-generator/constants');
 
       // Assert
-      expect(Object.keys(module.API_KEY_MAPPINGS)).toHaveLength(3);
+      expect(Object.keys(AUTH_SYNC_PROVIDER_MAPPINGS)).toHaveLength(3);
     });
   });
 

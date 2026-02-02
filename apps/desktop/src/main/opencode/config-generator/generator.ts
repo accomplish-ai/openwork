@@ -36,9 +36,11 @@ export type {
 } from './types';
 
 // Import internal dependencies
-import { getMcpToolsPath, getOpenCodeConfigDir, resolveBundledTsxCommand, resolveMcpCommand } from './paths';
+import { getMcpToolsPath, getOpenCodeConfigDir, resolveBundledTsxCommand } from './paths';
 import { PROVIDER_ID_TO_OPENCODE, BASE_ENABLED_PROVIDERS, PROVIDER_IDS } from './constants';
 import { ACCOMPLISH_AGENT_NAME, ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE, getPlatformEnvironmentInstructions } from './system-prompt';
+import { buildMcpServerConfigs } from './mcp-servers/builder';
+import { buildAllStandardProviders } from './providers/builder';
 import type {
   OpenCodeConfig,
   ProviderConfig,
@@ -60,8 +62,7 @@ export interface AssembleConfigOptions {
     model?: string;
     small_model?: string;
   };
-  mcpToolsPath: string;
-  tsxCommand: string[];
+  mcpConfigs: Record<string, import('./types').McpServerConfig>;
 }
 
 /**
@@ -124,8 +125,7 @@ export function assembleConfig(options: AssembleConfigOptions): OpenCodeConfig {
     providerConfig,
     fullSystemPrompt,
     bedrockModelConfig,
-    mcpToolsPath,
-    tsxCommand,
+    mcpConfigs,
   } = options;
 
   const config: OpenCodeConfig = {
@@ -153,78 +153,9 @@ export function assembleConfig(options: AssembleConfigOptions): OpenCodeConfig {
         mode: 'primary',
       },
     },
-    // MCP servers for additional tools
+    // MCP servers for additional tools (built by buildMcpServerConfigs)
     // Timeout set to 30000ms to handle slow npx startup on Windows
-    mcp: {
-      'file-permission': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'file-permission',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        environment: {
-          PERMISSION_API_PORT: String(PERMISSION_API_PORT),
-        },
-        timeout: 30000,
-      },
-      'ask-user-question': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'ask-user-question',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        environment: {
-          QUESTION_API_PORT: String(QUESTION_API_PORT),
-        },
-        timeout: 30000,
-      },
-      'dev-browser-mcp': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'dev-browser-mcp',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-      // Provides complete_task tool - agent must call to signal task completion
-      'complete-task': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'complete-task',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-      // Provides start_task tool - agent must call FIRST to capture plan before execution
-      'start-task': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'start-task',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-    },
+    mcp: mcpConfigs,
   };
 
   return config;
@@ -519,13 +450,20 @@ Use empty array [] if no skills apply to your task.
     console.log('[OpenCode Config] Bedrock model config:', bedrockModelConfig);
   }
 
+  // Build MCP server configurations using the builder module
+  const mcpConfigs = buildMcpServerConfigs(
+    mcpToolsPath,
+    tsxCommand,
+    PERMISSION_API_PORT,
+    QUESTION_API_PORT
+  );
+
   const config = assembleConfig({
     enabledProviders,
     providerConfig,
     fullSystemPrompt,
     bedrockModelConfig,
-    mcpToolsPath,
-    tsxCommand,
+    mcpConfigs,
   });
 
   // Write config file

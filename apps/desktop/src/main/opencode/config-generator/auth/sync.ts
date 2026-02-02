@@ -21,12 +21,6 @@ import {
 } from '../constants';
 
 /**
- * @deprecated Use AUTH_SYNC_PROVIDER_MAPPINGS from constants instead
- * Kept for backward compatibility with existing code
- */
-export const API_KEY_MAPPINGS = AUTH_SYNC_PROVIDER_MAPPINGS;
-
-/**
  * Auth entry structure in auth.json
  */
 interface AuthEntry {

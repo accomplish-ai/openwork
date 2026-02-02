@@ -289,14 +289,8 @@ export function buildProviderConfig(
   // Get connected provider
   const provider = providerSettings.connectedProviders[providerId as ProviderId];
 
-  // Validate credentials type
-  // Moonshot uses api_key type, others use their specific type
-  const validCredentialsTypes =
-    providerId === 'moonshot'
-      ? ['api_key']
-      : [spec.credentialsType];
-
-  if (!isValidProvider(provider, validCredentialsTypes)) {
+  // Validate credentials type matches the spec
+  if (!isValidProvider(provider, [spec.credentialsType])) {
     return null;
   }
 

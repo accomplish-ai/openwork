@@ -123,7 +123,7 @@ describe('provider registry', () => {
       });
 
       it('should have correct credentialsType', () => {
-        expect(PROVIDER_SPECS.moonshot.credentialsType).toBe('api-key');
+        expect(PROVIDER_SPECS.moonshot.credentialsType).toBe('api_key');
       });
 
       it('should have correct modelIdPrefix', () => {

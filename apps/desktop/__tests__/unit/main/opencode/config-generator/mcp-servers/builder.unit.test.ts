@@ -492,34 +492,6 @@ describe('MCP Server Builder', () => {
     });
   });
 
-  describe('MCP_CONFIG Constants Export', () => {
-    it('should export TIMEOUT_MS as 30000', async () => {
-      // Act
-      const module = await import(
-        '@main/opencode/config-generator/mcp-servers/builder'
-      );
-
-      // Assert
-      expect(module.MCP_CONFIG.TIMEOUT_MS).toBe(30000);
-    });
-
-    it('should export SERVER_NAMES with all 5 server names', async () => {
-      // Act
-      const module = await import(
-        '@main/opencode/config-generator/mcp-servers/builder'
-      );
-
-      // Assert
-      expect(module.MCP_SERVER_NAMES).toEqual([
-        'file-permission',
-        'ask-user-question',
-        'dev-browser-mcp',
-        'complete-task',
-        'start-task',
-      ]);
-    });
-  });
-
   describe('Edge Cases', () => {
     it('should handle empty tsx command array gracefully', () => {
       // This tests defensive coding - passing empty array shouldn't crash

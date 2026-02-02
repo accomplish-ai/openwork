@@ -182,15 +182,6 @@ export const MCP_SERVER_CONFIG = {
   DIST_FILE: 'dist/index.mjs',
 } as const;
 
-/**
- * @deprecated Use MCP_SERVER_CONFIG instead (with TIMEOUT_MS, TYPE, ENABLED)
- * Kept for backward compatibility
- */
-export const MCP_CONFIG = {
-  timeout: MCP_SERVER_CONFIG.TIMEOUT_MS,
-  type: MCP_SERVER_CONFIG.TYPE,
-  enabled: MCP_SERVER_CONFIG.ENABLED,
-} as const;
 
 // =============================================================================
 // Z.AI Models

@@ -19,10 +19,6 @@ import { getNodePath } from '../../../utils/bundled-node';
 import type { McpServerConfig } from '../types';
 import { MCP_SERVERS, MCP_SERVER_CONFIG, type McpServerName } from '../constants';
 
-// Re-export for backward compatibility
-export { MCP_SERVERS as MCP_SERVER_NAMES };
-export const MCP_CONFIG = MCP_SERVER_CONFIG;
-
 /**
  * Resolve the command to run an MCP server
  *
