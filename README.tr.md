@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Son Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
 </p>
 
 # Accomplish™ - Açık Kaynaklı AI Masaüstü Ajanı
@@ -23,7 +23,7 @@ Accomplish, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><strong>Mac için Accomplish'ü İndirin (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Mac için Accomplish'ü İndirin (Apple Silicon)</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplish web sitesi</a>
   ·
@@ -183,7 +183,7 @@ Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazın�
 
 <div align="center">
 
-[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg)
+[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
 
 </div>
 

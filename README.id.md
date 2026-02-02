@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Commit Terakhir" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Unduh untuk macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Unduh untuk macOS" /></a>
 </p>
 
 # Accomplish™ - Agen Desktop AI Open Source
@@ -23,7 +23,7 @@ Accomplish adalah agen desktop AI open source yang mengotomatisasi manajemen fil
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><strong>Unduh Accomplish untuk Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Unduh Accomplish untuk Mac (Apple Silicon)</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Website Accomplish</a>
   ·
@@ -183,7 +183,7 @@ Accomplish berjalan secara lokal di mesin Anda. File Anda tetap di perangkat And
 
 <div align="center">
 
-[**Unduh untuk Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg)
+[**Unduh untuk Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
 
 </div>
 

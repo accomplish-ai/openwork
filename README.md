@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Last Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
 </p>
 
 # Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
@@ -23,7 +23,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg"><strong>Download Accomplish for Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Download Accomplish for Mac (Apple Silicon)</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplish website</a>
   ·
@@ -183,7 +183,7 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 <div align="center">
 
-[**Download for Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.5/macos/Accomplish-0.3.5-mac-arm64.dmg)
+[**Download for Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
 
 </div>
 
