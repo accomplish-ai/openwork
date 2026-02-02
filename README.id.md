@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="Commit Terakhir" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Unduh untuk macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Unduh untuk macOS" /></a>
 </p>
 
 # Openwork™ - Agen Desktop AI Open Source
@@ -23,11 +23,11 @@ Openwork adalah agen desktop AI open source yang mengotomatisasi manajemen file,
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Unduh Openwork untuk Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>Unduh Openwork untuk Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Website Openwork</a>
+  <a href="https://www.accomplish.ai/">Website Openwork</a>
   ·
-  <a href="https://www.openwork.me/blog/">Blog Openwork</a>
+  <a href="https://www.accomplish.ai/blog/">Blog Openwork</a>
   ·
   <a href="https://github.com/accomplish-ai/openwork/releases">Rilis Openwork</a>
 </p>
@@ -183,7 +183,7 @@ Openwork berjalan secara lokal di mesin Anda. File Anda tetap di perangkat Anda,
 
 <div align="center">
 
-[**Unduh untuk Mac (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**Unduh untuk Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
 
 </div>
 
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Website Openwork](https://www.openwork.me/)** · **[Blog Openwork](https://www.openwork.me/blog/)** · **[Rilis Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Website Openwork](https://www.accomplish.ai/)** · **[Blog Openwork](https://www.accomplish.ai/blog/)** · **[Rilis Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-Lisensi MIT · Dibuat oleh [Openwork](https://www.openwork.me)
+Lisensi MIT · Dibuat oleh [Accomplish](https://www.accomplish.ai)
 
 <br />
 

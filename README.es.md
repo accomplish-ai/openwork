@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="Último Commit" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Descargar para macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Descargar para macOS" /></a>
 </p>
 
 # Openwork™ - Agente de Escritorio de IA de Código Abierto
@@ -23,11 +23,11 @@ Openwork es un agente de escritorio de IA de código abierto que automatiza la g
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Descargar Openwork para Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>Descargar Openwork para Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Sitio web de Openwork</a>
+  <a href="https://www.accomplish.ai/">Sitio web de Openwork</a>
   ·
-  <a href="https://www.openwork.me/blog/">Blog de Openwork</a>
+  <a href="https://www.accomplish.ai/blog/">Blog de Openwork</a>
   ·
   <a href="https://github.com/accomplish-ai/openwork/releases">Versiones de Openwork</a>
 </p>
@@ -183,7 +183,7 @@ Openwork se ejecuta localmente en tu máquina. Tus archivos permanecen en tu dis
 
 <div align="center">
 
-[**Descargar para Mac (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**Descargar para Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
 
 </div>
 
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Sitio web de Openwork](https://www.openwork.me/)** · **[Blog de Openwork](https://www.openwork.me/blog/)** · **[Versiones de Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Sitio web de Openwork](https://www.accomplish.ai/)** · **[Blog de Openwork](https://www.accomplish.ai/blog/)** · **[Versiones de Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-Licencia MIT · Creado por [Openwork](https://www.openwork.me)
+Licencia MIT · Creado por [Accomplish](https://www.accomplish.ai)
 
 <br />
 

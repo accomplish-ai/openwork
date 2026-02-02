@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="최근 커밋" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS 다운로드" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS 다운로드" /></a>
 </p>
 
 # Openwork™ - 오픈소스 AI 데스크톱 에이전트
@@ -23,11 +23,11 @@ Openwork는 로컬 머신에서 파일 관리, 문서 작성, 브라우저 작�
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Mac용 Openwork 다운로드 (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>Mac용 Openwork 다운로드 (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Openwork 웹사이트</a>
+  <a href="https://www.accomplish.ai/">Openwork 웹사이트</a>
   ·
-  <a href="https://www.openwork.me/blog/">Openwork 블로그</a>
+  <a href="https://www.accomplish.ai/blog/">Openwork 블로그</a>
   ·
   <a href="https://github.com/accomplish-ai/openwork/releases">Openwork 릴리스</a>
 </p>
@@ -183,7 +183,7 @@ Openwork는 로컬 머신에서 실행됩니다. 파일은 기기에 저장되�
 
 <div align="center">
 
-[**Mac용 다운로드 (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**Mac용 다운로드 (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
 
 </div>
 
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openwork 웹사이트](https://www.openwork.me/)** · **[Openwork 블로그](https://www.openwork.me/blog/)** · **[Openwork 릴리스](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Openwork 웹사이트](https://www.accomplish.ai/)** · **[Openwork 블로그](https://www.accomplish.ai/blog/)** · **[Openwork 릴리스](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-MIT 라이선스 · [Openwork](https://www.openwork.me) 제작
+MIT 라이선스 · [Accomplish](https://www.accomplish.ai) 제작
 
 <br />
 

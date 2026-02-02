@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="Son Commit" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
 </p>
 
 # Openwork™ - Açık Kaynaklı AI Masaüstü Ajanı
@@ -23,11 +23,11 @@ Openwork, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve t
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Mac için Openwork'ü İndirin (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg"><strong>Mac için Openwork'ü İndirin (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Openwork web sitesi</a>
+  <a href="https://www.accomplish.ai/">Openwork web sitesi</a>
   ·
-  <a href="https://www.openwork.me/blog/">Openwork blogu</a>
+  <a href="https://www.accomplish.ai/blog/">Openwork blogu</a>
   ·
   <a href="https://github.com/accomplish-ai/openwork/releases">Openwork sürümleri</a>
 </p>
@@ -183,7 +183,7 @@ Openwork bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazınız
 
 <div align="center">
 
-[**Mac için İndirin (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Openwork-0.3.6-mac-arm64.dmg)
 
 </div>
 
@@ -312,11 +312,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openwork web sitesi](https://www.openwork.me/)** · **[Openwork blogu](https://www.openwork.me/blog/)** · **[Openwork sürümleri](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Openwork web sitesi](https://www.accomplish.ai/)** · **[Openwork blogu](https://www.accomplish.ai/blog/)** · **[Openwork sürümleri](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
 
 <br />
 
-MIT Lisansı · [Openwork](https://www.openwork.me) tarafından yapıldı
+MIT Lisansı · [Accomplish](https://www.accomplish.ai) tarafından yapıldı
 
 <br />
 
