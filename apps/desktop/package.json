@@ -170,7 +170,7 @@
     "publish": {
       "provider": "github",
       "owner": "accomplish-ai",
-      "repo": "openwork"
+      "repo": "accomplish"
     },
     "mac": {
       "category": "public.app-category.productivity",

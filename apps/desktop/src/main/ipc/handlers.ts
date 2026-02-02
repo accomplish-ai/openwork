@@ -2529,7 +2529,7 @@ export function registerIPCHandlers(): void {
 
     // Generate default filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const defaultFilename = `openwork-logs-${timestamp}.txt`;
+    const defaultFilename = `accomplish-logs-${timestamp}.txt`;
 
     // Show save dialog
     const result = await dialog.showSaveDialog(window, {
@@ -2553,7 +2553,7 @@ export function registerIPCHandlers(): void {
         fs.copyFileSync(logPath, result.filePath);
       } else {
         // No logs yet - create empty file with header
-        const header = `Openwork Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
+        const header = `Accomplish Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
         fs.writeFileSync(result.filePath, header);
       }
 
