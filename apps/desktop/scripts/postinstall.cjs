@@ -98,8 +98,10 @@ if (isWindows) {
 const useBundledMcp = process.env.ACCOMPLISH_BUNDLED_MCP === '1' || process.env.CI === 'true';
 
 // Install shared MCP tools runtime dependencies (Playwright) at mcp-tools/ root
+// MCP tools are now in packages/core/mcp-tools
+const mcpToolsPath = path.join(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools');
 if (useBundledMcp) {
-  runCommand('npm --prefix mcp-tools install --omit=dev', 'Installing shared MCP tools runtime dependencies');
+  runCommand(`npm --prefix ${mcpToolsPath} install --omit=dev`, 'Installing shared MCP tools runtime dependencies');
 }
 
 // Install per-tool dependencies for dev/tsx workflows
@@ -109,7 +111,7 @@ if (!useBundledMcp) {
   // will reinstall with --omit=dev during packaged builds.
   const tools = ['dev-browser', 'dev-browser-mcp', 'file-permission', 'ask-user-question', 'complete-task', 'start-task'];
   for (const tool of tools) {
-    runCommand(`npm --prefix mcp-tools/${tool} install`, `Installing ${tool} dependencies`);
+    runCommand(`npm --prefix ${mcpToolsPath}/${tool} install`, `Installing ${tool} dependencies`);
   }
 }
 

@@ -1,4 +1,4 @@
-// apps/desktop/mcp-tools/dev-browser-mcp/src/snapshot/manager.test.ts
+// packages/core/mcp-tools/dev-browser-mcp/src/snapshot/manager.test.ts
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SnapshotManager } from './manager.js';

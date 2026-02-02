@@ -53,8 +53,8 @@ interface OpenCodeConfig {
  */
 function getMcpToolsPath(): string {
   // Script is at apps/desktop/scripts/test-local-agent-config.ts
-  // MCP tools are at apps/desktop/mcp-tools/
-  return path.resolve(__dirname, '..', 'mcp-tools');
+  // MCP tools are now at packages/core/mcp-tools/
+  return path.resolve(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools');
 }
 
 /**

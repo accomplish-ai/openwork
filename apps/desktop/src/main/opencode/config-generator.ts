@@ -25,7 +25,7 @@ export const ACCOMPLISH_AGENT_NAME = 'accomplish';
  */
 /**
  * Get the MCP tools directory path (contains MCP servers)
- * In dev: apps/desktop/mcp-tools
+ * In dev: packages/core/mcp-tools (relative to repo root)
  * In packaged: resources/mcp-tools (unpacked from asar)
  */
 export function getMcpToolsPath(): string {
@@ -33,9 +33,9 @@ export function getMcpToolsPath(): string {
     // In packaged app, mcp-tools should be in resources folder (unpacked from asar)
     return path.join(process.resourcesPath, 'mcp-tools');
   } else {
-    // In development, use app.getAppPath() which returns the desktop app directory
-    // app.getAppPath() returns apps/desktop in dev mode
-    return path.join(app.getAppPath(), 'mcp-tools');
+    // In development, app.getAppPath() returns apps/desktop
+    // MCP tools are now in packages/core/mcp-tools
+    return path.join(app.getAppPath(), '..', '..', 'packages', 'core', 'mcp-tools');
   }
 }
 
@@ -47,7 +47,9 @@ export function getOpenCodeConfigDir(): string {
   if (app.isPackaged) {
     return process.resourcesPath;
   } else {
-    return app.getAppPath();
+    // In development, MCP tools are at packages/core/mcp-tools
+    // So the config dir is packages/core
+    return path.join(app.getAppPath(), '..', '..', 'packages', 'core');
   }
 }
 

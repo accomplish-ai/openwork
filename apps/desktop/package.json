@@ -145,7 +145,7 @@
         "to": "icon.png"
       },
       {
-        "from": "mcp-tools",
+        "from": "../../packages/core/mcp-tools",
         "to": "mcp-tools",
         "filter": [
           "**/*",

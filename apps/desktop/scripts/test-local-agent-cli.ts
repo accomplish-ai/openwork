@@ -155,7 +155,8 @@ function findOpenCodeCli(): string {
  * Start the dev-browser server for test local agent
  */
 async function startDevBrowserServer(): Promise<ChildProcess> {
-  const devBrowserDir = path.resolve(__dirname, '..', 'mcp-tools', 'dev-browser');
+  // MCP tools are now in packages/core/mcp-tools
+  const devBrowserDir = path.resolve(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools', 'dev-browser');
   const serverScript = path.join(devBrowserDir, 'scripts', 'start-server.ts');
 
   log('test-local-agent', `Starting dev-browser server on port ${TEST_LOCAL_AGENT_HTTP_PORT}...`);

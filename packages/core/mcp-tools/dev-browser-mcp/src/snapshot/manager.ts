@@ -1,4 +1,4 @@
-// apps/desktop/mcp-tools/dev-browser-mcp/src/snapshot/manager.ts
+// packages/core/mcp-tools/dev-browser-mcp/src/snapshot/manager.ts
 
 import type { ParsedSnapshot, SnapshotResult, SessionHistoryEntry, SessionSummary } from './types.js';
 import { parseSnapshot } from './parser.js';

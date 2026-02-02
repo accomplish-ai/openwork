@@ -1,4 +1,4 @@
-// apps/desktop/mcp-tools/dev-browser-mcp/src/snapshot/differ.test.ts
+// packages/core/mcp-tools/dev-browser-mcp/src/snapshot/differ.test.ts
 
 import { describe, it, expect } from 'vitest';
 import { diffSnapshots, formatDiff, compressRefList } from './differ.js';

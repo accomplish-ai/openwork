@@ -119,7 +119,9 @@ describe('OpenCode Config Generator Integration', () => {
     tempAppDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-app-'));
 
     // Create mcp-tools directory structure in temp app dir
-    const mcpToolsDir = path.join(tempAppDir, 'mcp-tools');
+    // In development, mcp-tools is at packages/core/mcp-tools relative to apps/desktop
+    // So we simulate this by creating the structure: tempAppDir/../../packages/core/mcp-tools
+    const mcpToolsDir = path.join(tempAppDir, '..', '..', 'packages', 'core', 'mcp-tools');
     fs.mkdirSync(mcpToolsDir, { recursive: true });
     fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
     fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
@@ -155,8 +157,8 @@ describe('OpenCode Config Generator Integration', () => {
         const { getMcpToolsPath } = await import('@main/opencode/config-generator');
         const result = getMcpToolsPath();
 
-        // Assert
-        expect(result).toBe(path.join(tempAppDir, 'mcp-tools'));
+        // Assert - mcp-tools is now at packages/core/mcp-tools relative to apps/desktop
+        expect(result).toBe(path.join(tempAppDir, '..', '..', 'packages', 'core', 'mcp-tools'));
       });
     });
 

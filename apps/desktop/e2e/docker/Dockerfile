@@ -37,7 +37,8 @@ COPY apps/desktop/package.json ./apps/desktop/
 COPY scripts/ ./scripts/
 
 # Copy mcp-tools directories (needed by desktop postinstall script)
-COPY apps/desktop/mcp-tools ./apps/desktop/mcp-tools
+# MCP tools are now in packages/core/mcp-tools
+COPY packages/core/mcp-tools ./packages/core/mcp-tools
 
 # Copy scripts directory (needed by postinstall script)
 COPY apps/desktop/scripts ./apps/desktop/scripts

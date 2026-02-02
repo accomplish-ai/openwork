@@ -5,7 +5,8 @@ const fs = require('fs');
 const esbuild = require('esbuild');
 const { execSync } = require('child_process');
 
-const skillsDir = path.join(__dirname, '..', 'mcp-tools');
+// MCP tools are now in packages/core/mcp-tools
+const skillsDir = path.join(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools');
 
 // Skills that have runtime dependencies (playwright) that cannot be bundled
 const SKILLS_WITH_RUNTIME_DEPS = ['dev-browser', 'dev-browser-mcp'];
