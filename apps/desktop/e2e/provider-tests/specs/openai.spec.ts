@@ -2,37 +2,38 @@ import { test, expect } from '../fixtures';
 import { SettingsPage } from '../../pages/settings.page';
 import { HomePage } from '../../pages/home.page';
 import { ExecutionPage } from '../../pages/execution.page';
-import { getProviderSecrets, getTaskPrompt } from '../secrets-loader';
-import type { ApiKeySecrets } from '../types';
-
+import { getProviderTestConfig, DEFAULT_TASK_TIMEOUT } from '../provider-test-configs';
+import type { ResolvedProviderTestConfig, ApiKeySecrets } from '../types';
 
 test.describe('OpenAI Provider E2E', () => {
+  let testConfig: ResolvedProviderTestConfig;
+
   test.beforeEach(async ({}, testInfo) => {
-    const secrets = getProviderSecrets('openai');
-    if (!secrets) {
+    const config = getProviderTestConfig('openai');
+    if (!config) {
       testInfo.skip(true, 'No OpenAI secrets configured');
+      return;
     }
+    testConfig = config;
   });
 
   test('connect and complete task', async ({ providerWindow }) => {
     const settings = new SettingsPage(providerWindow);
     const home = new HomePage(providerWindow);
     const execution = new ExecutionPage(providerWindow);
-    const secrets = getProviderSecrets('openai') as ApiKeySecrets;
+    const secrets = testConfig.secrets as ApiKeySecrets;
 
     // Navigate to settings
     await settings.navigateToSettings();
 
     // Select OpenAI provider
-    await settings.selectProvider('openai');
+    await settings.selectProvider(testConfig.config.providerId);
 
     // Check if already connected (from previous run)
     const isAlreadyConnected = await settings.disconnectButton.isVisible();
-
     if (isAlreadyConnected) {
       // Disconnect first to test the full connection flow
       await settings.clickDisconnect();
-      // Wait for disconnect to complete
       await providerWindow.waitForTimeout(500);
     }
 
@@ -42,26 +43,23 @@ test.describe('OpenAI Provider E2E', () => {
     // Click connect and wait for validation
     await settings.clickConnect();
 
-
-
-    // Verify connection succeeded (status should show connected state)
-
-    console.log('waiting for connected');
+    // Verify connection succeeded
     const statusText = await settings.connectionStatus.textContent();
     expect(statusText?.toLowerCase()).toContain('connected');
-    console.log('statusText', statusText);  
-    // Verify we got a response
+
+    // Select model from resolved configuration
+    await settings.selectModel(testConfig.modelId);
+
+    // Close settings
     await settings.doneButton.click();
-    console.log('clicked done');
-// wait for 2 seconds to make sure the dialog is closed
-    await providerWindow.waitForTimeout(2000);
-    await home.enterTask('Say hello');
-    console.log('entered task');
+    await providerWindow.waitForTimeout(1000);
+
+    // Execute task
+    await home.enterTask(testConfig.taskPrompt);
     await home.submitButton.click();
-    console.log('clicked submit');
-    await execution.waitForCompleteReal(180000);
-    // keep test open for debugging
-    await providerWindow.pause();
-    // Verify the response contains expected text from our simple prompt
+
+    // Wait for task completion
+    
+    await execution.waitForCompleteReal(DEFAULT_TASK_TIMEOUT);
   });
 });

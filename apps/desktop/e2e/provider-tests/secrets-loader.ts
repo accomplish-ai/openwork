@@ -239,18 +239,3 @@ export function clearSecretsCache(): void {
   cachedSecrets = null;
 }
 
-/**
- * Get the model ID override for a provider (if specified in secrets).
- * This allows using real model IDs for testing without changing DEFAULT_PROVIDERS.
- */
-export function getModelOverride(configKey: string): string | null {
-  const secrets = getProviderSecrets(configKey);
-  if (!secrets) return null;
-
-  // Check if modelId is specified in secrets
-  if ('modelId' in secrets && typeof secrets.modelId === 'string') {
-    return secrets.modelId;
-  }
-
-  return null;
-}

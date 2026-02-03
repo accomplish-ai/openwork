@@ -134,6 +134,20 @@ export interface ProviderTestContext {
   readonly taskPrompt: string;
 }
 
+/** Complete provider test configuration with resolved secrets */
+export interface ResolvedProviderTestConfig {
+  /** Static provider configuration */
+  readonly config: ProviderTestConfig;
+  /** Provider secrets (API key, credentials, etc.) */
+  readonly secrets: ProviderSecrets;
+  /** Task prompt for the test */
+  readonly taskPrompt: string;
+  /** Resolved model ID (from secrets.modelId > config.modelSelection.modelId > provider default) */
+  readonly modelId: string;
+  /** Connection timeout in ms */
+  readonly connectionTimeout: number;
+}
+
 /** IPC log entry */
 export interface IpcLogEntry {
   readonly timestamp: number;
