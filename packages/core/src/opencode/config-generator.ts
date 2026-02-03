@@ -41,6 +41,12 @@ export interface ConfigGeneratorOptions {
   questionApiPort?: number;
   /** Path to user data directory for config file storage */
   userDataPath: string;
+  /** Model override (e.g., for Bedrock which uses same model for both) */
+  model?: string;
+  /** Small model override (e.g., for Bedrock which uses same model for both) */
+  smallModel?: string;
+  /** List of enabled provider IDs (if not provided, uses defaults) */
+  enabledProviders?: string[];
 }
 
 /**
@@ -108,7 +114,7 @@ interface OpenCodeConfigFile {
   permission?: string | Record<string, string | Record<string, string>>;
   agent?: Record<string, AgentConfig>;
   mcp?: Record<string, McpServerConfig>;
-  provider?: Record<string, ProviderConfig>;
+  provider?: Record<string, Omit<ProviderConfig, 'id'>>;
   plugin?: string[];
 }
 
@@ -386,6 +392,9 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
     permissionApiPort = 9226,
     questionApiPort = 9227,
     userDataPath,
+    model,
+    smallModel,
+    enabledProviders: customEnabledProviders,
   } = options;
 
   // Build platform-specific system prompt by replacing placeholders
@@ -506,22 +515,32 @@ Use empty array [] if no skills apply to your task.
     },
   };
 
-  // Build provider configurations
-  const providerConfig: Record<string, ProviderConfig> = {};
+  // Build provider configurations (strip id from values since it's used as the key)
+  const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
-    providerConfig[provider.id] = provider;
+    const { id, ...rest } = provider;
+    providerConfig[id] = rest;
   }
 
-  // Build base providers list
-  const baseProviders = [
-    'anthropic', 'openai', 'openrouter', 'google', 'xai',
-    'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
-  ];
-  const enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
+  // Build enabled providers list
+  let enabledProviders: string[];
+  if (customEnabledProviders) {
+    // Use custom list if provided
+    enabledProviders = [...new Set([...customEnabledProviders, ...Object.keys(providerConfig)])];
+  } else {
+    // Default base providers
+    const baseProviders = [
+      'anthropic', 'openai', 'openrouter', 'google', 'xai',
+      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+    ];
+    enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
+  }
 
   // Build the full config
   const config: OpenCodeConfigFile = {
     $schema: 'https://opencode.ai/config.json',
+    ...(model && { model }),
+    ...(smallModel && { small_model: smallModel }),
     default_agent: ACCOMPLISH_AGENT_NAME,
     enabled_providers: enabledProviders,
     permission: {

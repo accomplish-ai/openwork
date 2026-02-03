@@ -10,24 +10,18 @@ import {
   getConnectedProviderIds,
   ensureAzureFoundryProxy,
   ensureMoonshotProxy,
+  generateConfig,
+  ACCOMPLISH_AGENT_NAME,
 } from '@accomplish/core';
+import type { ProviderConfig, ProviderModelConfig } from '@accomplish/core';
 import { getApiKey } from '../store/secureStorage';
 import { getNodePath } from '../utils/bundled-node';
 import { skillsManager } from '../skills';
 import type { BedrockCredentials, ProviderId, ZaiCredentials, AzureFoundryCredentials } from '@accomplish/shared';
 
-/**
- * Agent name used by Accomplish
- */
-export const ACCOMPLISH_AGENT_NAME = 'accomplish';
+// Re-export for external use
+export { ACCOMPLISH_AGENT_NAME };
 
-/**
- * System prompt for the Accomplish agent.
- *
- * Uses the dev-browser MCP tool for browser automation with persistent page state.
- *
- * @see https://github.com/SawyerHood/dev-browser
- */
 /**
  * Get the MCP tools directory path (contains MCP servers)
  * In dev: packages/core/mcp-tools (relative to repo root)
@@ -58,287 +52,29 @@ export function getOpenCodeConfigDir(): string {
   }
 }
 
-function resolveBundledTsxCommand(mcpToolsPath: string): string[] {
-  const tsxBin = process.platform === 'win32' ? 'tsx.cmd' : 'tsx';
-  const candidates = [
-    path.join(mcpToolsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      console.log('[OpenCode Config] Using bundled tsx:', candidate);
-      return [candidate];
-    }
-  }
-
-  console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
-  return ['npx', 'tsx'];
-}
-
-function resolveMcpCommand(
-  tsxCommand: string[],
-  mcpToolsPath: string,
-  mcpName: string,
-  sourceRelPath: string,
-  distRelPath: string
-): string[] {
-  const mcpDir = path.join(mcpToolsPath, mcpName);
-  const distPath = path.join(mcpDir, distRelPath);
-
-  if ((app.isPackaged || process.env.ACCOMPLISH_BUNDLED_MCP === '1') && fs.existsSync(distPath)) {
-    const nodePath = getNodePath();
-    console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
-    return [nodePath, distPath];
-  }
-
-  const sourcePath = path.join(mcpDir, sourceRelPath);
-  console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
-  return [...tsxCommand, sourcePath];
-}
+/**
+ * Map our provider IDs to OpenCode CLI provider names
+ */
+const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
+  anthropic: 'anthropic',
+  openai: 'openai',
+  google: 'google',
+  xai: 'xai',
+  deepseek: 'deepseek',
+  moonshot: 'moonshot',
+  zai: 'zai-coding-plan',
+  bedrock: 'amazon-bedrock',
+  'azure-foundry': 'azure-foundry',
+  ollama: 'ollama',
+  openrouter: 'openrouter',
+  litellm: 'litellm',
+  minimax: 'minimax',
+  lmstudio: 'lmstudio',
+};
 
 /**
- * Build platform-specific environment setup instructions
+ * Build Bedrock provider configuration
  */
-function getPlatformEnvironmentInstructions(): string {
-  if (process.platform === 'win32') {
-    return `<environment>
-**You are running on Windows.** Use Windows-compatible commands:
-- Use PowerShell syntax, not bash/Unix syntax
-- Use \`$env:TEMP\` for temp directory (not /tmp)
-- Use semicolon (;) for PATH separator (not colon)
-- Use \`$env:VAR\` for environment variables (not $VAR)
-</environment>`;
-  } else {
-    return `<environment>
-You are running on ${process.platform === 'darwin' ? 'macOS' : 'Linux'}.
-</environment>`;
-  }
-}
-
-
-const ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE = `<identity>
-You are Accomplish, a browser automation assistant.
-</identity>
-
-{{ENVIRONMENT_INSTRUCTIONS}}
-
-<behavior name="task-planning">
-##############################################################################
-# CRITICAL: PLAN FIRST WITH start_task - THIS IS MANDATORY
-##############################################################################
-
-**STEP 1: CALL start_task (before any other action)**
-
-You MUST call start_task before any other tool. This is enforced - other tools will fail until start_task is called.
-
-start_task requires:
-- original_request: Echo the user's request exactly as stated
-- goal: What you aim to accomplish
-- steps: Array of planned actions to achieve the goal
-- verification: Array of how you will verify the task is complete
-- skills: Array of relevant skill names from <available-skills> (or empty [] if none apply)
-
-**STEP 2: UPDATE TODOS AS YOU PROGRESS**
-
-As you complete each step, call \`todowrite\` to update progress:
-- Mark completed steps as "completed"
-- Mark the current step as "in_progress"
-- Keep the same step content - do NOT change the text
-
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step (same as before)", "status": "completed", "priority": "high"},
-    {"id": "2", "content": "Second step (same as before)", "status": "in_progress", "priority": "medium"},
-    {"id": "3", "content": "Third step (same as before)", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
-**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
-
-All todos must be "completed" or "cancelled" before calling complete_task.
-
-WRONG: Starting work without calling start_task first
-WRONG: Forgetting to update todos as you progress
-CORRECT: Call start_task FIRST, update todos as you work, then complete_task
-
-##############################################################################
-</behavior>
-
-<capabilities>
-When users ask about your capabilities, mention:
-- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons
-- **File Management**: Sort, rename, and move files based on content or rules you give it
-</capabilities>
-
-<important name="filesystem-rules">
-##############################################################################
-# CRITICAL: FILE PERMISSION WORKFLOW - NEVER SKIP
-##############################################################################
-
-BEFORE using Write, Edit, Bash (with file ops), or ANY tool that touches files:
-1. FIRST: Call request_file_permission tool and wait for response
-2. ONLY IF response is "allowed": Proceed with the file operation
-3. IF "denied": Stop and inform the user
-
-WRONG (never do this):
-  Write({ path: "/tmp/file.txt", content: "..." })  ← NO! Permission not requested!
-
-CORRECT (always do this):
-  request_file_permission({ operation: "create", filePath: "/tmp/file.txt" })
-  → Wait for "allowed"
-  Write({ path: "/tmp/file.txt", content: "..." })  ← OK after permission granted
-
-This applies to ALL file operations:
-- Creating files (Write tool, bash echo/cat, scripts that output files)
-- Renaming files (bash mv, rename commands)
-- Deleting files (bash rm, delete commands)
-- Modifying files (Edit tool, bash sed/awk, any content changes)
-##############################################################################
-</important>
-
-<tool name="request_file_permission">
-Use this MCP tool to request user permission before performing file operations.
-
-<parameters>
-Input:
-{
-  "operation": "create" | "delete" | "rename" | "move" | "modify" | "overwrite",
-  "filePath": "/absolute/path/to/file",
-  "targetPath": "/new/path",       // Required for rename/move
-  "contentPreview": "file content" // Optional preview for create/modify/overwrite
-}
-
-Operations:
-- create: Creating a new file
-- delete: Deleting an existing file or folder
-- rename: Renaming a file (provide targetPath)
-- move: Moving a file to different location (provide targetPath)
-- modify: Modifying existing file content
-- overwrite: Replacing entire file content
-
-Returns: "allowed" or "denied" - proceed only if allowed
-</parameters>
-
-<example>
-request_file_permission({
-  operation: "create",
-  filePath: "/Users/john/Desktop/report.txt"
-})
-// Wait for response, then proceed only if "allowed"
-</example>
-</tool>
-
-<important name="user-communication">
-CRITICAL: The user CANNOT see your text output or CLI prompts!
-To ask ANY question or get user input, you MUST use the AskUserQuestion MCP tool.
-See the ask-user-question MCP tool for full documentation and examples.
-</important>
-
-<behavior>
-- Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
-- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
-- For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
-- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
-
-**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
-- Before each browser action, briefly explain what you're about to do in user terms
-- After navigation: mention the page title and what you see
-- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
-- After typing: confirm what you typed and where
-- When analyzing a snapshot: describe the key elements you found
-- If something unexpected happens, explain what you see and how you'll adapt
-
-Example good narration:
-"I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
-
-Example bad narration (too terse):
-"Done." or "Navigated." or "Clicked."
-
-- After each action, evaluate the result before deciding next steps
-- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
-- Don't announce server checks or startup - proceed directly to the task
-- Only use AskUserQuestion when you genuinely need user input or decisions
-
-**DO NOT ASK FOR PERMISSION TO CONTINUE:**
-If the user gave you a task with specific criteria (e.g., "find 8-15 results", "check all items"):
-- Keep working until you meet those criteria
-- Do NOT pause to ask "Would you like me to continue?" or "Should I keep going?"
-- Do NOT stop after reviewing just a few items when the task asks for more
-- Just continue working until the task requirements are met
-- Only use AskUserQuestion for genuine clarifications about requirements, NOT for progress check-ins
-
-**TASK COMPLETION - CRITICAL:**
-
-You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
-
-When to call \`complete_task\`:
-
-1. **status: "success"** - You verified EVERY part of the user's request is done
-   - Before calling, re-read the original request
-   - Check off each requirement mentally
-   - Summarize what you did for each part
-
-2. **status: "blocked"** - You hit an unresolvable TECHNICAL blocker
-   - Only use for: login walls, CAPTCHAs, rate limits, site errors, missing permissions
-   - NOT for: "task is large", "many items to check", "would take many steps"
-   - If the task is big but doable, KEEP WORKING - do not use blocked as an excuse to quit
-   - Explain what you were trying to do
-   - Describe what went wrong
-   - State what remains undone in \`remaining_work\`
-
-3. **status: "partial"** - AVOID THIS STATUS
-   - Only use if you are FORCED to stop mid-task (context limit approaching, etc.)
-   - The system will automatically continue you to finish the remaining work
-   - If you use partial, you MUST fill in remaining_work with specific next steps
-   - Do NOT use partial as a way to ask "should I continue?" - just keep working
-   - If you've done some work and can keep going, KEEP GOING - don't use partial
-
-**NEVER** just stop working. If you find yourself about to end without calling \`complete_task\`,
-ask yourself: "Did I actually finish what was asked?" If unsure, keep working.
-
-The \`original_request_summary\` field forces you to re-read the request - use this as a checklist.
-</behavior>
-`;
-
-interface AgentConfig {
-  description?: string;
-  prompt?: string;
-  mode?: 'primary' | 'subagent' | 'all';
-}
-
-interface McpServerConfig {
-  type?: 'local' | 'remote';
-  command?: string[];
-  url?: string;
-  enabled?: boolean;
-  environment?: Record<string, string>;
-  timeout?: number;
-}
-
-interface ProviderModelConfig {
-  name: string;
-  tools?: boolean;
-  limit?: {
-    context?: number;
-    output?: number;
-  };
-  options?: Record<string, unknown>;
-}
-
-interface OllamaProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-  };
-  models: Record<string, ProviderModelConfig>;
-}
-
 interface BedrockProviderConfig {
   options: {
     region: string;
@@ -346,121 +82,21 @@ interface BedrockProviderConfig {
   };
 }
 
-interface AzureFoundryProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    resourceName?: string;
-    baseURL?: string;
-    apiKey?: string;
-    headers?: Record<string, string>;
-  };
-  models: Record<string, ProviderModelConfig>;
-}
-
-interface OpenRouterProviderModelConfig {
-  name: string;
-  tools?: boolean;
-}
-
-interface OpenRouterProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-  };
-  models: Record<string, OpenRouterProviderModelConfig>;
-}
-
-interface MoonshotProviderModelConfig {
-  name: string;
-  tools?: boolean;
-}
-
-interface MoonshotProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-  };
-  models: Record<string, MoonshotProviderModelConfig>;
-}
-
-interface LiteLLMProviderModelConfig {
-  name: string;
-  tools?: boolean;
-}
-
-interface LiteLLMProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-    apiKey?: string;
-  };
-  models: Record<string, LiteLLMProviderModelConfig>;
-}
-
-interface ZaiProviderModelConfig {
-  name: string;
-  tools?: boolean;
-}
-
-interface ZaiProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-  };
-  models: Record<string, ZaiProviderModelConfig>;
-}
-
-interface LMStudioProviderModelConfig {
-  name: string;
-  tools?: boolean;
-}
-
-interface LMStudioProviderConfig {
-  npm: string;
-  name: string;
-  options: {
-    baseURL: string;
-  };
-  models: Record<string, LMStudioProviderModelConfig>;
-}
-
-type ProviderConfig = OllamaProviderConfig | BedrockProviderConfig | AzureFoundryProviderConfig | OpenRouterProviderConfig | MoonshotProviderConfig | LiteLLMProviderConfig | ZaiProviderConfig | LMStudioProviderConfig;
-
-interface OpenCodeConfig {
-  $schema?: string;
-  model?: string;
-  small_model?: string;
-  default_agent?: string;
-  enabled_providers?: string[];
-  permission?: string | Record<string, string | Record<string, string>>;
-  agent?: Record<string, AgentConfig>;
-  mcp?: Record<string, McpServerConfig>;
-  provider?: Record<string, ProviderConfig>;
-  plugin?: string[];
-}
-
 /**
  * Build Azure Foundry provider configuration for OpenCode CLI
- * Shared helper to avoid duplication between new settings and legacy paths
  */
 async function buildAzureFoundryProviderConfig(
   endpoint: string,
   deploymentName: string,
   authMethod: 'api-key' | 'entra-id',
   azureFoundryToken?: string
-): Promise<AzureFoundryProviderConfig | null> {
+): Promise<ProviderConfig | null> {
   const baseUrl = endpoint.replace(/\/$/, '');
   const targetBaseUrl = `${baseUrl}/openai/v1`;
   const proxyInfo = await ensureAzureFoundryProxy(targetBaseUrl);
 
   // Build options for @ai-sdk/openai-compatible provider
-  // Route through local proxy to strip unsupported params for Azure Foundry
-  const azureOptions: AzureFoundryProviderConfig['options'] = {
+  const azureOptions: ProviderConfig['options'] = {
     baseURL: proxyInfo.baseURL,
   };
 
@@ -478,6 +114,7 @@ async function buildAzureFoundryProviderConfig(
   }
 
   return {
+    id: 'azure-foundry',
     npm: '@ai-sdk/openai-compatible',
     name: 'Azure AI Foundry',
     options: azureOptions,
@@ -485,8 +122,6 @@ async function buildAzureFoundryProviderConfig(
       [deploymentName]: {
         name: `Azure Foundry (${deploymentName})`,
         tools: true,
-        // Set conservative output token limit - can be overridden per-deployment
-        // This prevents errors from models with lower limits (e.g., 16384 for some GPT-5 deployments)
         limit: {
           context: 128000,
           output: 16384,
@@ -497,325 +132,232 @@ async function buildAzureFoundryProviderConfig(
 }
 
 /**
- * Generate OpenCode configuration file
- * OpenCode reads config from .opencode.json in the working directory or
- * from ~/.config/opencode/opencode.json
- * @param azureFoundryToken - Optional Entra ID token for Azure Foundry authentication
+ * Build all provider configurations from Electron secure storage
  */
-export async function generateOpenCodeConfig(azureFoundryToken?: string): Promise<string> {
-  const configDir = path.join(app.getPath('userData'), 'opencode');
-  const configPath = path.join(configDir, 'opencode.json');
-
-  // Ensure directory exists
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-
-  // Get MCP tools directory path
-  const mcpToolsPath = getMcpToolsPath();
-
-  // Build platform-specific system prompt by replacing placeholders
-  const systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
-    .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, getPlatformEnvironmentInstructions());
-
-  // Get OpenCode config directory (parent of mcp-tools/) for OPENCODE_CONFIG_DIR
-  const openCodeConfigDir = getOpenCodeConfigDir();
-
-  console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
-  console.log('[OpenCode Config] OpenCode config dir:', openCodeConfigDir);
-
-  // Build file-permission MCP server command
-
-  // Get connected providers from new settings (with legacy fallback)
+async function buildProviderConfigs(azureFoundryToken?: string): Promise<{
+  providerConfigs: ProviderConfig[];
+  bedrockConfig?: BedrockProviderConfig;
+  enabledProviders: string[];
+  modelOverride?: { model: string; smallModel: string };
+}> {
   const providerSettings = getProviderSettings();
   const connectedIds = getConnectedProviderIds();
   const activeModel = getActiveProviderModel();
+  const providerConfigs: ProviderConfig[] = [];
 
-  // Map our provider IDs to OpenCode CLI provider names
-  const providerIdToOpenCode: Record<ProviderId, string> = {
-    anthropic: 'anthropic',
-    openai: 'openai',
-    google: 'google',
-    xai: 'xai',
-    deepseek: 'deepseek',
-    moonshot: 'moonshot',
-    zai: 'zai-coding-plan',
-    bedrock: 'amazon-bedrock',
-    'azure-foundry': 'azure-foundry',
-    ollama: 'ollama',
-    openrouter: 'openrouter',
-    litellm: 'litellm',
-    minimax: 'minimax',
-    lmstudio: 'lmstudio',
-  };
-
-  // Build enabled providers list from new settings or fall back to base providers
+  // Build enabled providers list
   const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
   let enabledProviders = baseProviders;
 
-  // If we have connected providers in the new settings, use those
   if (connectedIds.length > 0) {
-    const mappedProviders = connectedIds.map(id => providerIdToOpenCode[id]);
-    // Always include base providers to allow switching
+    const mappedProviders = connectedIds.map(id => PROVIDER_ID_TO_OPENCODE[id]);
     enabledProviders = [...new Set([...baseProviders, ...mappedProviders])];
-    console.log('[OpenCode Config] Using connected providers from new settings:', mappedProviders);
+    console.log('[OpenCode Config] Using connected providers:', mappedProviders);
   } else {
-    // Legacy fallback: add ollama if configured in old settings
+    // Legacy fallback: add ollama if configured
     const ollamaConfig = getOllamaConfig();
     if (ollamaConfig?.enabled) {
       enabledProviders = [...baseProviders, 'ollama'];
     }
   }
 
-  // Build provider configurations
-  const providerConfig: Record<string, ProviderConfig> = {};
-
-  // Configure Ollama if connected (check new settings first, then legacy)
+  // Configure Ollama
   const ollamaProvider = providerSettings.connectedProviders.ollama;
   if (ollamaProvider?.connectionStatus === 'connected' && ollamaProvider.credentials.type === 'ollama') {
-    // New provider settings: Ollama is connected
     if (ollamaProvider.selectedModelId) {
-      // OpenCode CLI splits "ollama/model" into provider="ollama" and modelID="model"
-      // So we need to register the model without the "ollama/" prefix
       const modelId = ollamaProvider.selectedModelId.replace(/^ollama\//, '');
-      providerConfig.ollama = {
+      providerConfigs.push({
+        id: 'ollama',
         npm: '@ai-sdk/openai-compatible',
         name: 'Ollama (local)',
         options: {
           baseURL: `${ollamaProvider.credentials.serverUrl}/v1`,
         },
         models: {
-          [modelId]: {
-            name: modelId,
-            tools: true,
-          },
+          [modelId]: { name: modelId, tools: true },
         },
-      };
-      console.log('[OpenCode Config] Ollama configured from new settings:', modelId);
+      });
+      console.log('[OpenCode Config] Ollama configured:', modelId);
     }
   } else {
-    // Legacy fallback: use old Ollama config
+    // Legacy fallback
     const ollamaConfig = getOllamaConfig();
-    if (ollamaConfig?.enabled && ollamaConfig.models && ollamaConfig.models.length > 0) {
-      const ollamaModels: Record<string, ProviderModelConfig> = {};
-      for (const model of ollamaConfig.models) {
-        ollamaModels[model.id] = {
-          name: model.displayName,
-          tools: true,
-        };
+    const ollamaModels = ollamaConfig?.models;
+    if (ollamaConfig?.enabled && ollamaModels && ollamaModels.length > 0) {
+      const models: Record<string, ProviderModelConfig> = {};
+      for (const model of ollamaModels) {
+        models[model.id] = { name: model.displayName, tools: true };
       }
-
-      providerConfig.ollama = {
+      providerConfigs.push({
+        id: 'ollama',
         npm: '@ai-sdk/openai-compatible',
         name: 'Ollama (local)',
-        options: {
-          baseURL: `${ollamaConfig.baseUrl}/v1`,
-        },
-        models: ollamaModels,
-      };
-
-      console.log('[OpenCode Config] Ollama configured from legacy settings:', Object.keys(ollamaModels));
+        options: { baseURL: `${ollamaConfig.baseUrl}/v1` },
+        models,
+      });
+      console.log('[OpenCode Config] Ollama (legacy) configured:', Object.keys(models));
     }
   }
 
-  // Configure OpenRouter if connected (check new settings first, then legacy)
+  // Configure OpenRouter
   const openrouterProvider = providerSettings.connectedProviders.openrouter;
   if (openrouterProvider?.connectionStatus === 'connected' && activeModel?.provider === 'openrouter') {
-    // New provider settings: OpenRouter is connected and active
     const modelId = activeModel.model.replace('openrouter/', '');
-    providerConfig.openrouter = {
+    providerConfigs.push({
+      id: 'openrouter',
       npm: '@ai-sdk/openai-compatible',
       name: 'OpenRouter',
-      options: {
-        baseURL: 'https://openrouter.ai/api/v1',
-      },
+      options: { baseURL: 'https://openrouter.ai/api/v1' },
       models: {
-        [modelId]: {
-          name: modelId,
-          tools: true,
-        },
+        [modelId]: { name: modelId, tools: true },
       },
-    };
-    console.log('[OpenCode Config] OpenRouter configured from new settings:', modelId);
+    });
+    console.log('[OpenCode Config] OpenRouter configured:', modelId);
   } else {
-    // Legacy fallback: use old OpenRouter config
+    // Legacy fallback
     const openrouterKey = getApiKey('openrouter');
     if (openrouterKey) {
       const { getSelectedModel } = await import('@accomplish/core');
       const selectedModel = getSelectedModel();
-
-      const openrouterModels: Record<string, OpenRouterProviderModelConfig> = {};
-
       if (selectedModel?.provider === 'openrouter' && selectedModel.model) {
         const modelId = selectedModel.model.replace('openrouter/', '');
-        openrouterModels[modelId] = {
-          name: modelId,
-          tools: true,
-        };
-      }
-
-      if (Object.keys(openrouterModels).length > 0) {
-        providerConfig.openrouter = {
+        providerConfigs.push({
+          id: 'openrouter',
           npm: '@ai-sdk/openai-compatible',
           name: 'OpenRouter',
-          options: {
-            baseURL: 'https://openrouter.ai/api/v1',
+          options: { baseURL: 'https://openrouter.ai/api/v1' },
+          models: {
+            [modelId]: { name: modelId, tools: true },
           },
-          models: openrouterModels,
-        };
-        console.log('[OpenCode Config] OpenRouter configured from legacy settings:', Object.keys(openrouterModels));
+        });
+        console.log('[OpenCode Config] OpenRouter (legacy) configured:', modelId);
       }
     }
   }
 
-  // Configure Moonshot if connected
+  // Configure Moonshot
   const moonshotProvider = providerSettings.connectedProviders.moonshot;
-  if (moonshotProvider?.connectionStatus === 'connected') {
-    if (moonshotProvider.selectedModelId) {
-      const modelId = moonshotProvider.selectedModelId.replace(/^moonshot\//, '');
-      const moonshotApiKey = getApiKey('moonshot');
-      const proxyInfo = await ensureMoonshotProxy('https://api.moonshot.ai/v1');
-      providerConfig.moonshot = {
-        npm: '@ai-sdk/openai-compatible',
-        name: 'Moonshot AI',
-        options: {
-          baseURL: proxyInfo.baseURL,
-          ...(moonshotApiKey ? { apiKey: moonshotApiKey } : {}),
-        },
-        models: {
-          [modelId]: {
-            name: modelId,
-            tools: true,
-          },
-        },
-      };
-      console.log('[OpenCode Config] Moonshot AI configured:', modelId);
-    }
+  if (moonshotProvider?.connectionStatus === 'connected' && moonshotProvider.selectedModelId) {
+    const modelId = moonshotProvider.selectedModelId.replace(/^moonshot\//, '');
+    const moonshotApiKey = getApiKey('moonshot');
+    const proxyInfo = await ensureMoonshotProxy('https://api.moonshot.ai/v1');
+    providerConfigs.push({
+      id: 'moonshot',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Moonshot AI',
+      options: {
+        baseURL: proxyInfo.baseURL,
+        ...(moonshotApiKey ? { apiKey: moonshotApiKey } : {}),
+      },
+      models: {
+        [modelId]: { name: modelId, tools: true },
+      },
+    });
+    console.log('[OpenCode Config] Moonshot configured:', modelId);
   }
 
-  // Configure Bedrock if connected (check new settings first, then legacy)
+  // Configure Bedrock - special handling as it uses a different config structure
+  let bedrockConfig: BedrockProviderConfig | undefined;
+  let modelOverride: { model: string; smallModel: string } | undefined;
+
   const bedrockProvider = providerSettings.connectedProviders.bedrock;
   if (bedrockProvider?.connectionStatus === 'connected' && bedrockProvider.credentials.type === 'bedrock') {
-    // New provider settings: Bedrock is connected
     const creds = bedrockProvider.credentials;
-    const bedrockOptions: BedrockProviderConfig['options'] = {
-      region: creds.region || 'us-east-1',
+    bedrockConfig = {
+      options: {
+        region: creds.region || 'us-east-1',
+        ...(creds.authMethod === 'profile' && creds.profileName ? { profile: creds.profileName } : {}),
+      },
     };
-    if (creds.authMethod === 'profile' && creds.profileName) {
-      bedrockOptions.profile = creds.profileName;
-    }
-    providerConfig['amazon-bedrock'] = {
-      options: bedrockOptions,
-    };
-    console.log('[OpenCode Config] Bedrock configured from new settings:', bedrockOptions);
+    console.log('[OpenCode Config] Bedrock configured:', bedrockConfig);
   } else {
-    // Legacy fallback: use old Bedrock config
+    // Legacy fallback
     const bedrockCredsJson = getApiKey('bedrock');
     if (bedrockCredsJson) {
       try {
         const creds = JSON.parse(bedrockCredsJson) as BedrockCredentials;
-
-        const bedrockOptions: BedrockProviderConfig['options'] = {
-          region: creds.region || 'us-east-1',
+        bedrockConfig = {
+          options: {
+            region: creds.region || 'us-east-1',
+            ...(creds.authType === 'profile' && creds.profileName ? { profile: creds.profileName } : {}),
+          },
         };
-
-        if (creds.authType === 'profile' && creds.profileName) {
-          bedrockOptions.profile = creds.profileName;
-        }
-
-        providerConfig['amazon-bedrock'] = {
-          options: bedrockOptions,
-        };
-
-        console.log('[OpenCode Config] Bedrock configured from legacy settings:', bedrockOptions);
+        console.log('[OpenCode Config] Bedrock (legacy) configured:', bedrockConfig);
       } catch (e) {
         console.warn('[OpenCode Config] Failed to parse Bedrock credentials:', e);
       }
     }
   }
 
-  // Configure LiteLLM if connected
+  // For Bedrock, set model overrides so both model and small_model use the same value
+  if (activeModel?.provider === 'bedrock' && activeModel.model) {
+    modelOverride = {
+      model: activeModel.model,
+      smallModel: activeModel.model,
+    };
+    console.log('[OpenCode Config] Bedrock model override:', modelOverride);
+  }
+
+  // Configure LiteLLM
   const litellmProvider = providerSettings.connectedProviders.litellm;
-  if (litellmProvider?.connectionStatus === 'connected' && litellmProvider.credentials.type === 'litellm') {
-    if (litellmProvider.selectedModelId) {
-      // Get API key if available
-      const litellmApiKey = getApiKey('litellm');
-      const litellmOptions: LiteLLMProviderConfig['options'] = {
+  if (litellmProvider?.connectionStatus === 'connected' && litellmProvider.credentials.type === 'litellm' && litellmProvider.selectedModelId) {
+    const litellmApiKey = getApiKey('litellm');
+    providerConfigs.push({
+      id: 'litellm',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'LiteLLM',
+      options: {
         baseURL: `${litellmProvider.credentials.serverUrl}/v1`,
-      };
-      if (litellmApiKey) {
-        litellmOptions.apiKey = litellmApiKey;
-      }
-      providerConfig.litellm = {
-        npm: '@ai-sdk/openai-compatible',
-        name: 'LiteLLM',
-        options: litellmOptions,
-        models: {
-          [litellmProvider.selectedModelId]: {
-            name: litellmProvider.selectedModelId,
-            tools: true,
-          },
-        },
-      };
-      console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId, litellmApiKey ? '(with API key)' : '(no API key)');
-    }
+        ...(litellmApiKey ? { apiKey: litellmApiKey } : {}),
+      },
+      models: {
+        [litellmProvider.selectedModelId]: { name: litellmProvider.selectedModelId, tools: true },
+      },
+    });
+    console.log('[OpenCode Config] LiteLLM configured:', litellmProvider.selectedModelId);
   }
 
-  // Configure LM Studio if connected
+  // Configure LM Studio
   const lmstudioProvider = providerSettings.connectedProviders.lmstudio;
-  if (lmstudioProvider?.connectionStatus === 'connected' && lmstudioProvider.credentials.type === 'lmstudio') {
-    if (lmstudioProvider.selectedModelId) {
-      // OpenCode CLI splits "lmstudio/model" into provider="lmstudio" and modelID="model"
-      // So we need to register the model without the "lmstudio/" prefix
-      const modelId = lmstudioProvider.selectedModelId.replace(/^lmstudio\//, '');
-
-      // Check if the model supports tools from the availableModels metadata
-      const modelInfo = lmstudioProvider.availableModels?.find(
-        m => m.id === lmstudioProvider.selectedModelId || m.id === modelId
-      );
-      const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
-
-      providerConfig.lmstudio = {
-        npm: '@ai-sdk/openai-compatible',
-        name: 'LM Studio',
-        options: {
-          baseURL: `${lmstudioProvider.credentials.serverUrl}/v1`,
-        },
-        models: {
-          [modelId]: {
-            name: modelId,
-            tools: supportsTools,
-          },
-        },
-      };
-      console.log(`[OpenCode Config] LM Studio configured: ${modelId} (tools: ${supportsTools})`);
-    }
+  if (lmstudioProvider?.connectionStatus === 'connected' && lmstudioProvider.credentials.type === 'lmstudio' && lmstudioProvider.selectedModelId) {
+    const modelId = lmstudioProvider.selectedModelId.replace(/^lmstudio\//, '');
+    const modelInfo = lmstudioProvider.availableModels?.find(
+      m => m.id === lmstudioProvider.selectedModelId || m.id === modelId
+    );
+    const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
+    providerConfigs.push({
+      id: 'lmstudio',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'LM Studio',
+      options: {
+        baseURL: `${lmstudioProvider.credentials.serverUrl}/v1`,
+      },
+      models: {
+        [modelId]: { name: modelId, tools: supportsTools },
+      },
+    });
+    console.log(`[OpenCode Config] LM Studio configured: ${modelId} (tools: ${supportsTools})`);
   } else {
-    // Legacy fallback: use old LM Studio config if it exists
+    // Legacy fallback
     const lmstudioConfig = getLMStudioConfig();
-    if (lmstudioConfig?.enabled && lmstudioConfig.models && lmstudioConfig.models.length > 0) {
-      const lmstudioModels: Record<string, LMStudioProviderModelConfig> = {};
-      for (const model of lmstudioConfig.models) {
-        lmstudioModels[model.id] = {
-          name: model.name,
-          tools: model.toolSupport === 'supported',
-        };
+    const lmstudioModels = lmstudioConfig?.models;
+    if (lmstudioConfig?.enabled && lmstudioModels && lmstudioModels.length > 0) {
+      const models: Record<string, ProviderModelConfig> = {};
+      for (const model of lmstudioModels) {
+        models[model.id] = { name: model.name, tools: model.toolSupport === 'supported' };
       }
-
-      providerConfig.lmstudio = {
+      providerConfigs.push({
+        id: 'lmstudio',
         npm: '@ai-sdk/openai-compatible',
         name: 'LM Studio',
-        options: {
-          baseURL: `${lmstudioConfig.baseUrl}/v1`,
-        },
-        models: lmstudioModels,
-      };
-
-      console.log('[OpenCode Config] LM Studio configured from legacy settings:', Object.keys(lmstudioModels));
+        options: { baseURL: `${lmstudioConfig.baseUrl}/v1` },
+        models,
+      });
+      console.log('[OpenCode Config] LM Studio (legacy) configured:', Object.keys(models));
     }
   }
 
-  // Configure Azure Foundry if connected (check new settings first, then legacy)
+  // Configure Azure Foundry
   const azureFoundryProvider = providerSettings.connectedProviders['azure-foundry'];
   if (azureFoundryProvider?.connectionStatus === 'connected' && azureFoundryProvider.credentials.type === 'azure-foundry') {
     const creds = azureFoundryProvider.credentials;
@@ -825,22 +367,18 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       creds.authMethod,
       azureFoundryToken
     );
-
     if (config) {
-      providerConfig['azure-foundry'] = config;
-
+      providerConfigs.push(config);
       if (!enabledProviders.includes('azure-foundry')) {
         enabledProviders.push('azure-foundry');
       }
-
-      console.log('[OpenCode Config] Azure Foundry configured from new settings:', {
+      console.log('[OpenCode Config] Azure Foundry configured:', {
         deployment: creds.deploymentName,
         authMethod: creds.authMethod,
       });
     }
   } else {
-    // TODO: Remove legacy Azure Foundry config support in v0.4.0
-    // Legacy fallback: use old Azure Foundry config
+    // Legacy fallback
     const { getAzureFoundryConfig } = await import('@accomplish/core');
     const azureFoundryConfig = getAzureFoundryConfig();
     if (azureFoundryConfig?.enabled && activeModel?.provider === 'azure-foundry') {
@@ -850,15 +388,12 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
         azureFoundryConfig.authType,
         azureFoundryToken
       );
-
       if (config) {
-        providerConfig['azure-foundry'] = config;
-
+        providerConfigs.push(config);
         if (!enabledProviders.includes('azure-foundry')) {
           enabledProviders.push('azure-foundry');
         }
-
-        console.log('[OpenCode Config] Azure Foundry configured from legacy settings:', {
+        console.log('[OpenCode Config] Azure Foundry (legacy) configured:', {
           deployment: azureFoundryConfig.deploymentName,
           authType: azureFoundryConfig.authType,
         });
@@ -866,197 +401,86 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     }
   }
 
-  // Add Z.AI Coding Plan provider configuration with all supported models
-  // This is needed because OpenCode's built-in zai-coding-plan provider may not have all models
+  // Configure Z.AI Coding Plan
   const zaiKey = getApiKey('zai');
   if (zaiKey) {
-    const zaiModels: Record<string, ZaiProviderModelConfig> = {
-      'glm-4.7-flashx': { name: 'GLM-4.7 FlashX (Latest)', tools: true },
-      'glm-4.7': { name: 'GLM-4.7', tools: true },
-      'glm-4.7-flash': { name: 'GLM-4.7 Flash', tools: true },
-      'glm-4.6': { name: 'GLM-4.6', tools: true },
-      'glm-4.5-flash': { name: 'GLM-4.5 Flash', tools: true },
-    };
-
-    // Z.AI - use endpoint based on stored region
     const zaiCredentials = providerSettings.connectedProviders.zai?.credentials as ZaiCredentials | undefined;
     const zaiRegion = zaiCredentials?.region || 'international';
     const zaiEndpoint = zaiRegion === 'china'
       ? 'https://open.bigmodel.cn/api/paas/v4'
       : 'https://api.z.ai/api/coding/paas/v4';
 
-    providerConfig['zai-coding-plan'] = {
+    providerConfigs.push({
+      id: 'zai-coding-plan',
       npm: '@ai-sdk/openai-compatible',
       name: 'Z.AI Coding Plan',
-      options: {
-        baseURL: zaiEndpoint,
+      options: { baseURL: zaiEndpoint },
+      models: {
+        'glm-4.7-flashx': { name: 'GLM-4.7 FlashX (Latest)', tools: true },
+        'glm-4.7': { name: 'GLM-4.7', tools: true },
+        'glm-4.7-flash': { name: 'GLM-4.7 Flash', tools: true },
+        'glm-4.6': { name: 'GLM-4.6', tools: true },
+        'glm-4.5-flash': { name: 'GLM-4.5 Flash', tools: true },
       },
-      models: zaiModels,
-    };
-    console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels), 'region:', zaiRegion, 'endpoint:', zaiEndpoint);
+    });
+    console.log('[OpenCode Config] Z.AI Coding Plan configured, region:', zaiRegion);
   }
 
-  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath);
+  return { providerConfigs, bedrockConfig, enabledProviders, modelOverride };
+}
 
-  // Get enabled skills and add to system prompt
+/**
+ * Generate OpenCode configuration file
+ * Delegates to core's generateConfig() while providing Electron-specific data
+ * @param azureFoundryToken - Optional Entra ID token for Azure Foundry authentication
+ */
+export async function generateOpenCodeConfig(azureFoundryToken?: string): Promise<string> {
+  // Collect Electron-specific paths
+  const mcpToolsPath = getMcpToolsPath();
+  const userDataPath = app.getPath('userData');
+  const nodePath = getNodePath();
+  const bundledNodeBinPath = nodePath ? path.dirname(nodePath) : undefined;
+
+  console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
+  console.log('[OpenCode Config] User data path:', userDataPath);
+
+  // Build provider configurations from secure storage
+  const { providerConfigs, bedrockConfig, enabledProviders, modelOverride } = await buildProviderConfigs(azureFoundryToken);
+
+  // Get enabled skills
   const enabledSkills = await skillsManager.getEnabled();
 
-  let skillsSection = '';
-  if (enabledSkills.length > 0) {
-    skillsSection = `
+  // Call core's generateConfig with all the collected data
+  const result = generateConfig({
+    platform: process.platform,
+    mcpToolsPath,
+    userDataPath,
+    isPackaged: app.isPackaged,
+    bundledNodeBinPath,
+    skills: enabledSkills,
+    providerConfigs,
+    permissionApiPort: PERMISSION_API_PORT,
+    questionApiPort: QUESTION_API_PORT,
+    enabledProviders,
+    model: modelOverride?.model,
+    smallModel: modelOverride?.smallModel,
+  });
 
-<available-skills>
-##############################################################################
-# SKILLS - Include relevant ones in your start_task call
-##############################################################################
+  // Set environment variables
+  process.env.OPENCODE_CONFIG = result.configPath;
+  process.env.OPENCODE_CONFIG_DIR = path.dirname(result.configPath);
 
-Review these skills and include any relevant ones in your start_task call's \`skills\` array.
-After calling start_task, you MUST read the SKILL.md file for each skill you listed.
-
-**Available Skills:**
-
-${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}
-  File: ${s.filePath}`).join('\n\n')}
-
-Use empty array [] if no skills apply to your task.
-
-##############################################################################
-</available-skills>
-`;
-  }
-
-  // Combine base system prompt with skills section
-  const fullSystemPrompt = systemPrompt + skillsSection;
-
-  console.log('[OpenCode Config] MCP build marker: edited by codex');
-
-  // For Bedrock, set model and small_model to the same value in order to prevent the model from using 
-  // Haiku by default since anthropic via bedrock require an approval form to use it: https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html
-  const bedrockModelConfig: { model?: string; small_model?: string } = {};
-  if (activeModel?.provider === 'bedrock' && activeModel.model) {
-    bedrockModelConfig.model = activeModel.model;
-    bedrockModelConfig.small_model = activeModel.model;
-    console.log('[OpenCode Config] Bedrock model config:', bedrockModelConfig);
-  }
-
-  const config: OpenCodeConfig = {
-    $schema: 'https://opencode.ai/config.json',
-    ...bedrockModelConfig,
-    default_agent: ACCOMPLISH_AGENT_NAME,
-    // Enable all supported providers - providers auto-configure when API keys are set via env vars
-    enabled_providers: enabledProviders,
-  // Auto-allow all tool permissions - the system prompt instructs the agent to use
-  // AskUserQuestion for user confirmations, which shows in the UI as an interactive modal.
-    // CLI-level permission prompts don't show in the UI and would block task execution.
-    // Note: todowrite is disabled by default and must be explicitly enabled.
-    permission: {
-      '*': 'allow',
-      todowrite: 'allow',
-    },
-    provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
-    // Dynamic Context Pruning plugin - prunes obsolete tool outputs from conversation
-    // history to reduce token usage (deduplication, supersede writes, purge errors)
-    plugin: ['@tarquinen/opencode-dcp@^1.2.7'],
-    agent: {
-      [ACCOMPLISH_AGENT_NAME]: {
-        description: 'Browser automation assistant using dev-browser',
-        prompt: fullSystemPrompt,
-        mode: 'primary',
-      },
-    },
-    // MCP servers for additional tools
-    // Timeout set to 30000ms to handle slow npx startup on Windows
-    mcp: {
-      'file-permission': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'file-permission',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        environment: {
-          PERMISSION_API_PORT: String(PERMISSION_API_PORT),
-        },
-        timeout: 30000,
-      },
-      'ask-user-question': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'ask-user-question',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        environment: {
-          QUESTION_API_PORT: String(QUESTION_API_PORT),
-        },
-        timeout: 30000,
-      },
-      'dev-browser-mcp': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'dev-browser-mcp',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-      // Provides complete_task tool - agent must call to signal task completion
-      'complete-task': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'complete-task',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-      // Provides start_task tool - agent must call FIRST to capture plan before execution
-      'start-task': {
-        type: 'local',
-        command: resolveMcpCommand(
-          tsxCommand,
-          mcpToolsPath,
-          'start-task',
-          'src/index.ts',
-          'dist/index.mjs'
-        ),
-        enabled: true,
-        timeout: 30000,
-      },
-    },
-  };
-
-  // Write config file
-  const configJson = JSON.stringify(config, null, 2);
-  fs.writeFileSync(configPath, configJson);
-
-  // Set environment variables for OpenCode to find the config
-  process.env.OPENCODE_CONFIG = configPath;
-
-  // Set OPENCODE_CONFIG_DIR to the writable config directory, not resourcesPath
-  // resourcesPath is read-only on mounted DMGs (macOS) and protected on Windows (Program Files).
-  // This causes EROFS/EPERM errors when OpenCode tries to write package.json there.
-  // MCP servers are configured with explicit paths, so we don't need MCP tools discovery via OPENCODE_CONFIG_DIR.
-  process.env.OPENCODE_CONFIG_DIR = configDir;
-
-  console.log('[OpenCode Config] Generated config at:', configPath);
-  console.log('[OpenCode Config] Full config:', configJson);
+  console.log('[OpenCode Config] Generated config at:', result.configPath);
   console.log('[OpenCode Config] OPENCODE_CONFIG env set to:', process.env.OPENCODE_CONFIG);
   console.log('[OpenCode Config] OPENCODE_CONFIG_DIR env set to:', process.env.OPENCODE_CONFIG_DIR);
 
-  return configPath;
+  // Note: Bedrock config is handled separately by OpenCode CLI through enabled_providers
+  // The bedrockConfig would need special handling if OpenCode CLI doesn't auto-configure it
+  if (bedrockConfig) {
+    console.log('[OpenCode Config] Bedrock provider options:', bedrockConfig.options);
+  }
+
+  return result.configPath;
 }
 
 /**
@@ -1116,7 +540,7 @@ export async function syncApiKeysToOpenCodeAuth(): Promise<void> {
     }
   }
 
-  // Sync Z.AI Coding Plan API key (maps to 'zai-coding-plan' provider in OpenCode CLI)
+  // Sync Z.AI Coding Plan API key
   if (apiKeys.zai) {
     if (!auth['zai-coding-plan'] || auth['zai-coding-plan'].key !== apiKeys.zai) {
       auth['zai-coding-plan'] = { type: 'api', key: apiKeys.zai };
