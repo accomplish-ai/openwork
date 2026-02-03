@@ -2,7 +2,7 @@
  * Provider and model configuration types for multi-provider support
  */
 
-import type { ZaiRegion } from './providerSettings';
+import type { ZaiRegion } from './providerSettings.js';
 
 export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   china: 'https://open.bigmodel.cn/api/paas/v4',
