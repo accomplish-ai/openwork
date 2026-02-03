@@ -529,6 +529,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     anthropic: 'anthropic',
     openai: 'openai',
     google: 'google',
+    'google-vertex-ai': 'google-vertex-ai',
     xai: 'xai',
     deepseek: 'deepseek',
     moonshot: 'moonshot',

@@ -122,6 +122,16 @@ export class SettingsPage {
     return this.page.getByTestId('litellm-api-key');
   }
 
+  // ===== Google Vertex AI Specific =====
+
+  get vertexProjectIdInput() {
+    return this.page.getByTestId('project-id-input');
+  }
+
+  get vertexRegionSelect() {
+    return this.page.getByTestId('region-select');
+  }
+
   // ===== OpenRouter Specific =====
 
   get openrouterFetchModelsButton() {
@@ -259,5 +269,14 @@ export class SettingsPage {
 
   async enterLiteLLMApiKey(key: string) {
     await this.litellmApiKeyInput.fill(key);
+  }
+
+  // Google Vertex AI specific actions
+  async enterVertexProjectId(projectId: string) {
+    await this.vertexProjectIdInput.fill(projectId);
+  }
+
+  async selectVertexRegion(region: string) {
+    await this.vertexRegionSelect.selectOption(region);
   }
 }
