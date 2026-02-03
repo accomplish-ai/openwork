@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm build
+
       - name: Run unit tests
         run: pnpm -F @accomplish/desktop test:unit
 
@@ -72,6 +75,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
 
       - name: Run integration tests
         run: pnpm -F @accomplish/desktop test:integration
@@ -105,8 +111,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm build
+
       - name: Run type check
-        run: pnpm -F @accomplish/desktop typecheck
+        run: pnpm typecheck
 
   # E2E tests (runs in Docker with Xvfb)
   e2e-tests:
@@ -161,11 +170,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm build
+
       - name: Run unit tests
         run: pnpm -F @accomplish/desktop test:unit
 
       - name: Run typecheck
-        run: pnpm -F @accomplish/desktop typecheck
+        run: pnpm typecheck
 
       - name: Upload test results
         if: always()
