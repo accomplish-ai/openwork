@@ -103,6 +103,7 @@ function OllamaModelSelector({
     <div>
       <label className="mb-2 block text-sm font-medium text-foreground">Model</label>
       <select
+        data-testid="model-selector"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         className={`w-full rounded-md border px-3 py-2.5 text-sm bg-background ${

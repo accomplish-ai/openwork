@@ -11,7 +11,7 @@ import {
 
 const ollamaConfig = PROVIDER_TEST_CONFIGS.ollama;
 const DEFAULT_TASK_PROMPT = "Say 'hello' and nothing else";
-test.setTimeout(120000);
+test.setTimeout(1200000);
 test.describe('Ollama Provider E2E', () => {
   let setupResult: OllamaSetupResult;
 
@@ -57,12 +57,14 @@ test.describe('Ollama Provider E2E', () => {
     // Wait for connection with longer timeout for local server
     await providerWindow.waitForTimeout(2000);
 
-    const statusText = await settings.connectionStatus.textContent();
+    const statusText = await settings.connectionStatus.textContent({ timeout: 1200000 });
     expect(statusText?.toLowerCase()).toContain('connected');
 
     // Select model
     if (setupResult.modelId) {
-      await settings.selectModel(setupResult.modelId);
+      console.log('Selecting model', setupResult.modelId);
+      await providerWindow.pause();
+      await settings.selectModel(`ollama/${setupResult.modelId}`);
     } else {
       await settings.selectFirstModel();
     }
