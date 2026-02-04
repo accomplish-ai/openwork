@@ -221,7 +221,7 @@ describe('OpenCode CLI Path Module', () => {
         expect(result.args).toEqual([]);
       });
 
-      it('should throw error when bundled CLI not found in packaged app', async () => {
+      it('should fallback to opencode on PATH when bundled CLI not found in packaged app', async () => {
         // Arrange
         mockApp.isPackaged = true;
         const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
@@ -229,9 +229,13 @@ describe('OpenCode CLI Path Module', () => {
 
         mockFs.existsSync.mockReturnValue(false);
 
-        // Act & Assert
+        // Act
         const { getOpenCodeCliPath } = await import('@main/opencode/electron-options');
-        expect(() => getOpenCodeCliPath()).toThrow('OpenCode CLI not found at');
+        const result = getOpenCodeCliPath();
+
+        // Assert - falls back to system PATH instead of throwing
+        expect(result.command).toBe('opencode');
+        expect(result.args).toEqual([]);
       });
     });
   });
