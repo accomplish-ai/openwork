@@ -7,7 +7,13 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import TaskInputBar from '@/components/landing/TaskInputBar';
+
+// Helper to render with Router context (required for PlusMenu -> CreateSkillModal -> useNavigate)
+const renderWithRouter = (ui: React.ReactElement) => {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+};
 
 // Mock accomplish API
 const mockAccomplish = {
@@ -55,7 +61,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -75,7 +81,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -95,7 +101,7 @@ describe('TaskInputBar Integration', () => {
       const customPlaceholder = 'Enter your task here';
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -116,7 +122,7 @@ describe('TaskInputBar Integration', () => {
       const taskValue = 'Review my inbox for urgent messages';
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value={taskValue}
           onChange={onChange}
@@ -135,7 +141,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -155,7 +161,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -177,11 +183,13 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       const { rerender } = render(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <MemoryRouter>
+          <TaskInputBar
+            value=""
+            onChange={onChange}
+            onSubmit={onSubmit}
+          />
+        </MemoryRouter>
       );
 
       // Act - First change
@@ -190,11 +198,13 @@ describe('TaskInputBar Integration', () => {
 
       // Rerender with updated value
       rerender(
-        <TaskInputBar
-          value="First"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <MemoryRouter>
+          <TaskInputBar
+            value="First"
+            onChange={onChange}
+            onSubmit={onSubmit}
+          />
+        </MemoryRouter>
       );
 
       // Act - Second change
@@ -214,7 +224,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -233,7 +243,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="   "
           onChange={onChange}
@@ -252,7 +262,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Check my calendar"
           onChange={onChange}
@@ -270,7 +280,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Submit this task"
           onChange={onChange}
@@ -291,7 +301,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Submit via Enter"
           onChange={onChange}
@@ -312,7 +322,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Multiline text"
           onChange={onChange}
@@ -333,7 +343,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -357,7 +367,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Task in progress"
           onChange={onChange}
@@ -377,7 +387,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Task in progress"
           onChange={onChange}
@@ -397,7 +407,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Task in progress"
           onChange={onChange}
@@ -417,7 +427,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Loading task"
           onChange={onChange}
@@ -441,7 +451,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Disabled input"
           onChange={onChange}
@@ -461,7 +471,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value="Disabled input"
           onChange={onChange}
@@ -483,7 +493,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -503,7 +513,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      render(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}

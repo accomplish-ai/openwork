@@ -21,6 +21,7 @@ import type {
   ConnectedProvider,
   TodoItem,
   ToolSupportStatus,
+  Skill,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -162,6 +163,9 @@ interface AccomplishAPI {
   setProviderDebugMode(enabled: boolean): Promise<void>;
   getProviderDebugMode(): Promise<boolean>;
 
+  // Todo operations
+  getTodosForTask(taskId: string): Promise<TodoItem[]>;
+
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
   onTaskUpdateBatch?(callback: (event: { taskId: string; messages: TaskMessage[] }) => void): () => void;
@@ -189,6 +193,19 @@ interface AccomplishAPI {
   // Logging
   logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
+
+  // Skills management
+  getSkills(): Promise<Skill[]>;
+  getEnabledSkills(): Promise<Skill[]>;
+  setSkillEnabled(id: string, enabled: boolean): Promise<void>;
+  getSkillContent(id: string): Promise<string | null>;
+  pickSkillFile(): Promise<string | null>;
+  addSkillFromFile(filePath: string): Promise<Skill>;
+  addSkillFromGitHub(rawUrl: string): Promise<Skill>;
+  deleteSkill(id: string): Promise<void>;
+  resyncSkills(): Promise<Skill[]>;
+  openSkillInEditor(filePath: string): Promise<void>;
+  showSkillInFolder(filePath: string): Promise<void>;
 }
 
 interface AccomplishShell {

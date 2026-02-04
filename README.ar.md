@@ -3,33 +3,35 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر يقوم بأتمتة إدارة الملفات وإنشاء المستندات ومهام المتصفح باستخدام مفاتيح API الخاصة بك" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر يقوم بأتمتة إدارة الملفات وإنشاء المستندات ومهام المتصفح باستخدام مفاتيح API الخاصة بك" width="100%" />
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="رخصة MIT" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="نجوم GitHub" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="مشكلات GitHub" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="آخر تحديث" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="تحميل لـ macOS" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="نجوم GitHub" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="مشكلات GitHub" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="آخر تحديث" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="تحميل لـ macOS" /></a>
 </p>
 
-# Openwork™ - وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر
+# Accomplish™ - وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر
 
-Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر يقوم بأتمتة إدارة الملفات وإنشاء المستندات ومهام المتصفح محلياً على جهازك. استخدم مفاتيح API الخاصة بك (OpenAI، Anthropic، Google، xAI) أو شغّل نماذج محلية عبر Ollama.
+Accomplish هو وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر يقوم بأتمتة إدارة الملفات وإنشاء المستندات ومهام المتصفح محلياً على جهازك. استخدم مفاتيح API الخاصة بك (OpenAI، Anthropic، Google، xAI) أو شغّل نماذج محلية عبر Ollama.
 
 <p align="center">
   <strong>يعمل محلياً على جهازك. استخدم مفاتيح API الخاصة بك أو النماذج المحلية. مرخص بـ MIT.</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>تحميل Openwork لـ Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>تحميل لـ Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">موقع Openwork</a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>تحميل لـ Windows 11</strong></a>
   ·
-  <a href="https://www.openwork.me/blog/">مدونة Openwork</a>
+  <a href="https://www.accomplish.ai/">موقع Accomplish</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">إصدارات Openwork</a>
+  <a href="https://www.accomplish.ai/blog/">مدونة Accomplish</a>
+  ·
+  <a href="https://github.com/accomplish-ai/accomplish/releases">إصدارات Accomplish</a>
 </p>
 
 <br />
@@ -50,7 +52,7 @@ Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح الم
 
 - ملفاتك تبقى على جهازك
 - أنت تقرر المجلدات التي يمكنه الوصول إليها
-- لا يتم إرسال أي شيء إلى Openwork (أو أي شخص آخر)
+- لا يتم إرسال أي شيء إلى Accomplish (أو أي شخص آخر)
 
 </div>
 
@@ -150,14 +152,14 @@ Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح الم
 
 ## الخصوصية والمحلية أولاً
 
-يعمل Openwork محلياً على جهازك. ملفاتك تبقى على جهازك، وأنت تختار المجلدات التي يمكنه الوصول إليها.
+يعمل Accomplish محلياً على جهازك. ملفاتك تبقى على جهازك، وأنت تختار المجلدات التي يمكنه الوصول إليها.
 
 <br />
 
 ## متطلبات النظام
 
 - macOS (Apple Silicon)
-- دعم Windows قادم قريباً
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح الم
 
 <div align="center">
 
-[**تحميل لـ Mac (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**تحميل لـ Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**تحميل لـ Windows 11**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -195,11 +197,11 @@ Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح الم
 
 ## لقطات الشاشة والعرض التوضيحي
 
-نظرة سريعة على Openwork على macOS، بالإضافة إلى فيديو عرض توضيحي قصير.
+نظرة سريعة على Accomplish على macOS، بالإضافة إلى فيديو عرض توضيحي قصير.
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="عرض Openwork - وكيل ذكاء اصطناعي يؤتمت إدارة الملفات ومهام المتصفح" width="600" />
+    <img src="docs/video-thumbnail.png" alt="عرض Accomplish - وكيل ذكاء اصطناعي يؤتمت إدارة الملفات ومهام المتصفح" width="600" />
   </a>
 </p>
 
@@ -211,17 +213,17 @@ Openwork هو وكيل سطح مكتب ذكاء اصطناعي مفتوح الم
 
 ## الأسئلة الشائعة
 
-**هل يعمل Openwork محلياً؟**
-نعم. يعمل Openwork محلياً على جهازك وأنت تتحكم في المجلدات التي يمكنه الوصول إليها.
+**هل يعمل Accomplish محلياً؟**
+نعم. يعمل Accomplish محلياً على جهازك وأنت تتحكم في المجلدات التي يمكنه الوصول إليها.
 
 **هل أحتاج إلى مفتاح API؟**
 يمكنك استخدام مفاتيح API الخاصة بك (OpenAI، Anthropic، Google، xAI، إلخ) أو تشغيل نماذج محلية عبر Ollama.
 
-**هل Openwork مجاني؟**
-نعم. Openwork مفتوح المصدر ومرخص بـ MIT.
+**هل Accomplish مجاني؟**
+نعم. Accomplish مفتوح المصدر ومرخص بـ MIT.
 
 **ما هي المنصات المدعومة؟**
-macOS (Apple Silicon) متاح الآن. دعم Windows قادم قريباً.
+macOS (Apple Silicon) و Windows 11 متاحان الآن.
 
 <br />
 
@@ -312,11 +314,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[موقع Openwork](https://www.openwork.me/)** · **[مدونة Openwork](https://www.openwork.me/blog/)** · **[إصدارات Openwork](https://github.com/accomplish-ai/openwork/releases)** · **[المشكلات](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[موقع Accomplish](https://www.accomplish.ai/)** · **[مدونة Accomplish](https://www.accomplish.ai/blog/)** · **[إصدارات Accomplish](https://github.com/accomplish-ai/accomplish/releases)** · **[المشكلات](https://github.com/accomplish-ai/accomplish/issues)** · **[Twitter](https://x.com/Accomplish_ai)**
 
 <br />
 
-رخصة MIT · صنع بواسطة [Openwork](https://www.openwork.me)
+رخصة MIT · صنع بواسطة [Accomplish](https://www.accomplish.ai)
 
 <br />
 

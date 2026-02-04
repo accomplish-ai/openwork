@@ -82,8 +82,8 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
   } else {
     // In development, prefer the bundled CLI (node_modules) to keep behavior
     // consistent with the packaged app and avoid schema/version mismatches.
-    // Opt into global with OPENWORK_USE_GLOBAL_OPENCODE=1 if needed.
-    const preferGlobal = process.env.OPENWORK_USE_GLOBAL_OPENCODE === '1';
+    // Opt into global with ACCOMPLISH_USE_GLOBAL_OPENCODE=1 if needed.
+    const preferGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE === '1';
 
     // Try bundled CLI in node_modules first (unless preferGlobal)
     // Use app.getAppPath() instead of process.cwd() as cwd is unpredictable in Electron IPC handlers

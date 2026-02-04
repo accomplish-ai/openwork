@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Openwork is a standalone desktop automation assistant built with Electron. The app hosts a local React UI (bundled via Vite), communicating with the main process through `contextBridge` IPC. The main process spawns the OpenCode CLI (via `node-pty`) to execute user tasks. Users provide their own API key (Anthropic, OpenAI, Google, or xAI) on first launch, stored securely in the OS keychain.
+Accomplish is a standalone desktop automation assistant built with Electron. The app hosts a local React UI (bundled via Vite), communicating with the main process through `contextBridge` IPC. The main process spawns the OpenCode CLI (via `node-pty`) to execute user tasks. Users provide their own API key (Anthropic, OpenAI, Google, or xAI) on first launch, stored securely in the OS keychain.
 
 ## Common Commands
 
@@ -80,6 +80,7 @@ Renderer
 - IPC handlers in `src/main/ipc/handlers.ts` must match `window.accomplish` API in preload
 - **Avoid nested ternaries** - Use mapper objects, if/else instead for better readability
 - **Minimal comments** - Only add comments for counter-intuitive behavior or when code cannot clearly express intent. Don't comment obvious operations.
+- **Reuse UI components** - Check `src/renderer/components/ui/` for existing components before creating new ones (e.g., `SearchableSelect`, `Button`, `Dialog`)
 
 
 ### Image Assets in Renderer
@@ -167,7 +168,7 @@ environment: {
 
 ## SQLite Storage
 
-App data is stored in SQLite (`openwork.db` in production, `openwork-dev.db` in development) located in the user data directory.
+App data is stored in SQLite (`accomplish.db` in production, `accomplish-dev.db` in development) located in the user data directory.
 
 ### Database Structure
 ```

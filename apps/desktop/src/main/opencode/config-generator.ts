@@ -8,6 +8,7 @@ import { getProviderSettings, getActiveProviderModel, getConnectedProviderIds } 
 import { ensureAzureFoundryProxy } from './azure-foundry-proxy';
 import { ensureMoonshotProxy } from './moonshot-proxy';
 import { getNodePath } from '../utils/bundled-node';
+import { skillsManager } from '../skills';
 import type { BedrockCredentials, ProviderId, ZaiCredentials, AzureFoundryCredentials } from '@accomplish/shared';
 
 /**
@@ -18,29 +19,29 @@ export const ACCOMPLISH_AGENT_NAME = 'accomplish';
 /**
  * System prompt for the Accomplish agent.
  *
- * Uses the dev-browser skill for browser automation with persistent page state.
+ * Uses the dev-browser MCP tool for browser automation with persistent page state.
  *
  * @see https://github.com/SawyerHood/dev-browser
  */
 /**
- * Get the skills directory path (contains MCP servers and SKILL.md files)
- * In dev: apps/desktop/skills
- * In packaged: resources/skills (unpacked from asar)
+ * Get the MCP tools directory path (contains MCP servers)
+ * In dev: apps/desktop/mcp-tools
+ * In packaged: resources/mcp-tools (unpacked from asar)
  */
-export function getSkillsPath(): string {
+export function getMcpToolsPath(): string {
   if (app.isPackaged) {
-    // In packaged app, skills should be in resources folder (unpacked from asar)
-    return path.join(process.resourcesPath, 'skills');
+    // In packaged app, mcp-tools should be in resources folder (unpacked from asar)
+    return path.join(process.resourcesPath, 'mcp-tools');
   } else {
-    // In development, app.getAppPath() returns dist-electron/main (entry point location)
-    // Go up 2 levels to get to apps/desktop, then into skills/
-    return path.join(app.getAppPath(), '..', '..', 'skills');
+    // In development, use app.getAppPath() which returns the desktop app directory
+    // app.getAppPath() returns apps/desktop in dev mode
+    return path.join(app.getAppPath(), 'mcp-tools');
   }
 }
 
 /**
- * Get the OpenCode config directory path (parent of skills/ for OPENCODE_CONFIG_DIR)
- * OpenCode looks for skills at $OPENCODE_CONFIG_DIR/skills/<name>/SKILL.md
+ * Get the OpenCode config directory path (parent of mcp-tools/ for OPENCODE_CONFIG_DIR)
+ * OpenCode looks for MCP tools at $OPENCODE_CONFIG_DIR/mcp-tools/<name>/
  */
 export function getOpenCodeConfigDir(): string {
   if (app.isPackaged) {
@@ -52,13 +53,13 @@ export function getOpenCodeConfigDir(): string {
   }
 }
 
-function resolveBundledTsxCommand(skillsPath: string): string[] {
+function resolveBundledTsxCommand(mcpToolsPath: string): string[] {
   const tsxBin = process.platform === 'win32' ? 'tsx.cmd' : 'tsx';
   const candidates = [
-    path.join(skillsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
-    path.join(skillsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
-    path.join(skillsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
-    path.join(skillsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
   ];
 
   for (const candidate of candidates) {
@@ -72,24 +73,24 @@ function resolveBundledTsxCommand(skillsPath: string): string[] {
   return ['npx', 'tsx'];
 }
 
-function resolveSkillCommand(
+function resolveMcpCommand(
   tsxCommand: string[],
-  skillsPath: string,
-  skillName: string,
+  mcpToolsPath: string,
+  mcpName: string,
   sourceRelPath: string,
   distRelPath: string
 ): string[] {
-  const skillDir = path.join(skillsPath, skillName);
-  const distPath = path.join(skillDir, distRelPath);
+  const mcpDir = path.join(mcpToolsPath, mcpName);
+  const distPath = path.join(mcpDir, distRelPath);
 
-  if ((app.isPackaged || process.env.OPENWORK_BUNDLED_SKILLS === '1') && fs.existsSync(distPath)) {
+  if ((app.isPackaged || process.env.ACCOMPLISH_BUNDLED_MCP === '1') && fs.existsSync(distPath)) {
     const nodePath = getNodePath();
-    console.log('[OpenCode Config] Using bundled skill entry:', distPath);
+    console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodePath, distPath];
   }
 
-  const sourcePath = path.join(skillDir, sourceRelPath);
-  console.log('[OpenCode Config] Using tsx skill entry:', sourcePath);
+  const sourcePath = path.join(mcpDir, sourceRelPath);
+  console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
   return [...tsxCommand, sourcePath];
 }
 
@@ -118,6 +119,50 @@ You are Accomplish, a browser automation assistant.
 </identity>
 
 {{ENVIRONMENT_INSTRUCTIONS}}
+
+<behavior name="task-planning">
+##############################################################################
+# CRITICAL: PLAN FIRST WITH start_task - THIS IS MANDATORY
+##############################################################################
+
+**STEP 1: CALL start_task (before any other action)**
+
+You MUST call start_task before any other tool. This is enforced - other tools will fail until start_task is called.
+
+start_task requires:
+- original_request: Echo the user's request exactly as stated
+- goal: What you aim to accomplish
+- steps: Array of planned actions to achieve the goal
+- verification: Array of how you will verify the task is complete
+- skills: Array of relevant skill names from <available-skills> (or empty [] if none apply)
+
+**STEP 2: UPDATE TODOS AS YOU PROGRESS**
+
+As you complete each step, call \`todowrite\` to update progress:
+- Mark completed steps as "completed"
+- Mark the current step as "in_progress"
+- Keep the same step content - do NOT change the text
+
+\`\`\`json
+{
+  "todos": [
+    {"id": "1", "content": "First step (same as before)", "status": "completed", "priority": "high"},
+    {"id": "2", "content": "Second step (same as before)", "status": "in_progress", "priority": "medium"},
+    {"id": "3", "content": "Third step (same as before)", "status": "pending", "priority": "medium"}
+  ]
+}
+\`\`\`
+
+**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
+
+All todos must be "completed" or "cancelled" before calling complete_task.
+
+WRONG: Starting work without calling start_task first
+WRONG: Forgetting to update todos as you progress
+CORRECT: Call start_task FIRST, update todos as you work, then complete_task
+
+##############################################################################
+</behavior>
 
 <capabilities>
 When users ask about your capabilities, mention:
@@ -186,53 +231,8 @@ request_file_permission({
 <important name="user-communication">
 CRITICAL: The user CANNOT see your text output or CLI prompts!
 To ask ANY question or get user input, you MUST use the AskUserQuestion MCP tool.
-See the ask-user-question skill for full documentation and examples.
+See the ask-user-question MCP tool for full documentation and examples.
 </important>
-
-<behavior name="task-planning">
-##############################################################################
-# CRITICAL: PLAN FIRST, THEN USE TODOWRITE - BOTH ARE MANDATORY
-##############################################################################
-
-**STEP 1: OUTPUT A PLAN (before any action)**
-
-Before taking ANY action, you MUST first output a plan:
-
-1. **State the goal** - What the user wants accomplished
-2. **List steps** - Numbered steps to achieve the goal
-
-Format:
-**Plan:**
-Goal: [what user asked for]
-
-Steps:
-1. [First action]
-2. [Second action]
-...
-
-**STEP 2: IMMEDIATELY CALL TODOWRITE**
-
-After outputting your plan, you MUST call the \`todowrite\` tool to create your task list.
-This is NOT optional. The user sees your todos in a sidebar - if you skip this, they see nothing.
-
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step description", "status": "in_progress", "priority": "high"},
-    {"id": "2", "content": "Second step description", "status": "pending", "priority": "medium"},
-    {"id": "3", "content": "Third step description", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
-**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
-- All todos must be "completed" or "cancelled" before calling complete_task
-
-WRONG: Starting work without planning and calling todowrite first
-CORRECT: Output plan FIRST, call todowrite SECOND, then start working
-
-##############################################################################
-</behavior>
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
@@ -506,17 +506,17 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     fs.mkdirSync(configDir, { recursive: true });
   }
 
-  // Get skills directory path
-  const skillsPath = getSkillsPath();
+  // Get MCP tools directory path
+  const mcpToolsPath = getMcpToolsPath();
 
   // Build platform-specific system prompt by replacing placeholders
   const systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
     .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, getPlatformEnvironmentInstructions());
 
-  // Get OpenCode config directory (parent of skills/) for OPENCODE_CONFIG_DIR
+  // Get OpenCode config directory (parent of mcp-tools/) for OPENCODE_CONFIG_DIR
   const openCodeConfigDir = getOpenCodeConfigDir();
 
-  console.log('[OpenCode Config] Skills path:', skillsPath);
+  console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
   console.log('[OpenCode Config] OpenCode config dir:', openCodeConfigDir);
 
   // Build file-permission MCP server command
@@ -914,7 +914,38 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     console.log('[OpenCode Config] Z.AI Coding Plan provider configured with models:', Object.keys(zaiModels), 'region:', zaiRegion, 'endpoint:', zaiEndpoint);
   }
 
-  const tsxCommand = resolveBundledTsxCommand(skillsPath);
+  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath);
+
+  // Get enabled skills and add to system prompt
+  const enabledSkills = await skillsManager.getEnabled();
+
+  let skillsSection = '';
+  if (enabledSkills.length > 0) {
+    skillsSection = `
+
+<available-skills>
+##############################################################################
+# SKILLS - Include relevant ones in your start_task call
+##############################################################################
+
+Review these skills and include any relevant ones in your start_task call's \`skills\` array.
+After calling start_task, you MUST read the SKILL.md file for each skill you listed.
+
+**Available Skills:**
+
+${enabledSkills.map(s => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`).join('\n\n')}
+
+Use empty array [] if no skills apply to your task.
+
+##############################################################################
+</available-skills>
+`;
+  }
+
+  // Combine base system prompt with skills section
+  const fullSystemPrompt = systemPrompt + skillsSection;
+
   console.log('[OpenCode Config] MCP build marker: edited by codex');
 
   // For Bedrock, set model and small_model to the same value in order to prevent the model from using 
@@ -947,7 +978,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
-        prompt: systemPrompt,
+        prompt: fullSystemPrompt,
         mode: 'primary',
       },
     },
@@ -956,9 +987,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     mcp: {
       'file-permission': {
         type: 'local',
-        command: resolveSkillCommand(
+        command: resolveMcpCommand(
           tsxCommand,
-          skillsPath,
+          mcpToolsPath,
           'file-permission',
           'src/index.ts',
           'dist/index.mjs'
@@ -971,9 +1002,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'ask-user-question': {
         type: 'local',
-        command: resolveSkillCommand(
+        command: resolveMcpCommand(
           tsxCommand,
-          skillsPath,
+          mcpToolsPath,
           'ask-user-question',
           'src/index.ts',
           'dist/index.mjs'
@@ -986,9 +1017,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       },
       'dev-browser-mcp': {
         type: 'local',
-        command: resolveSkillCommand(
+        command: resolveMcpCommand(
           tsxCommand,
-          skillsPath,
+          mcpToolsPath,
           'dev-browser-mcp',
           'src/index.ts',
           'dist/index.mjs'
@@ -999,10 +1030,23 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
       // Provides complete_task tool - agent must call to signal task completion
       'complete-task': {
         type: 'local',
-        command: resolveSkillCommand(
+        command: resolveMcpCommand(
           tsxCommand,
-          skillsPath,
+          mcpToolsPath,
           'complete-task',
+          'src/index.ts',
+          'dist/index.mjs'
+        ),
+        enabled: true,
+        timeout: 30000,
+      },
+      // Provides start_task tool - agent must call FIRST to capture plan before execution
+      'start-task': {
+        type: 'local',
+        command: resolveMcpCommand(
+          tsxCommand,
+          mcpToolsPath,
+          'start-task',
           'src/index.ts',
           'dist/index.mjs'
         ),
@@ -1022,7 +1066,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   // Set OPENCODE_CONFIG_DIR to the writable config directory, not resourcesPath
   // resourcesPath is read-only on mounted DMGs (macOS) and protected on Windows (Program Files).
   // This causes EROFS/EPERM errors when OpenCode tries to write package.json there.
-  // MCP servers are configured with explicit paths, so we don't need skills discovery via OPENCODE_CONFIG_DIR.
+  // MCP servers are configured with explicit paths, so we don't need MCP tools discovery via OPENCODE_CONFIG_DIR.
   process.env.OPENCODE_CONFIG_DIR = configDir;
 
   console.log('[OpenCode Config] Generated config at:', configPath);
@@ -1053,7 +1097,7 @@ export function getOpenCodeAuthPath(): string {
 }
 
 /**
- * Sync API keys from Openwork's secure storage to OpenCode CLI's auth.json
+ * Sync API keys from Accomplish's secure storage to OpenCode CLI's auth.json
  * This allows OpenCode CLI to recognize DeepSeek and Z.AI providers
  */
 export async function syncApiKeysToOpenCodeAuth(): Promise<void> {

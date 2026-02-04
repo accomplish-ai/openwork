@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { springs } from '../lib/animations';
 import loadingSymbol from '/assets/loading-symbol.svg';
 
-// Spinning Openwork icon component
+// Spinning Accomplish icon component
 const SpinningIcon = ({ className }: { className?: string }) => (
   <img
     src={loadingSymbol}

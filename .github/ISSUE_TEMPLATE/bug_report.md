@@ -22,7 +22,7 @@ What actually happened.
 
 ## Environment
 - OS: [e.g., macOS 14.0]
-- Openwork Version: [e.g., 0.1.0]
+- Accomplish Version: [e.g., 0.1.0]
 
 ## Screenshots
 If applicable, add screenshots.

@@ -84,7 +84,7 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice'>('providers');
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
@@ -203,6 +203,10 @@ export default function HomePage() {
                 large={true}
                 autoFocus={true}
                 onOpenSpeechSettings={handleOpenSpeechSettings}
+                onOpenSettings={(tab) => {
+                  setSettingsInitialTab(tab);
+                  setShowSettingsDialog(true);
+                }}
                 onOpenModelSettings={handleOpenModelSettings}
                 hideModelWhenNoModel={true}
               />

@@ -20,6 +20,7 @@ const mockRespondToPermission = vi.fn();
 const mockSendFollowUp = vi.fn();
 const mockCancelTask = vi.fn();
 const mockInterruptTask = vi.fn();
+const mockSetTodos = vi.fn();
 const mockOnTaskUpdate = vi.fn();
 const mockOnTaskUpdateBatch = vi.fn();
 const mockOnPermissionRequest = vi.fn();
@@ -88,6 +89,7 @@ const mockAccomplish = {
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   speechIsConfigured: vi.fn().mockResolvedValue(true),
+  getTodosForTask: vi.fn().mockResolvedValue([]),
 };
 
 // Mock the accomplish module
@@ -110,6 +112,9 @@ let mockStoreState: {
   sendFollowUp: typeof mockSendFollowUp;
   cancelTask: typeof mockCancelTask;
   interruptTask: typeof mockInterruptTask;
+  setTodos: typeof mockSetTodos;
+  todos: unknown[];
+  todosTaskId: string | null;
   setupProgress: string | null;
   setupProgressTaskId: string | null;
   setupDownloadStep: number;
@@ -127,15 +132,22 @@ let mockStoreState: {
   sendFollowUp: mockSendFollowUp,
   cancelTask: mockCancelTask,
   interruptTask: mockInterruptTask,
+  setTodos: mockSetTodos,
+  todos: [],
+  todosTaskId: null,
   setupProgress: null,
   setupProgressTaskId: null,
   setupDownloadStep: 1,
 };
 
-// Mock the task store
-vi.mock('@/stores/taskStore', () => ({
-  useTaskStore: () => mockStoreState,
-}));
+// Mock the task store - needs both hook usage and .getState() for direct calls
+vi.mock('@/stores/taskStore', () => {
+  // Create a function that will be used as useTaskStore
+  const useTaskStoreFn = () => mockStoreState;
+  // Add getState method for direct store access (used by getTodosForTask callback)
+  useTaskStoreFn.getState = () => mockStoreState;
+  return { useTaskStore: useTaskStoreFn };
+});
 
 // Mock framer-motion for simpler testing
 vi.mock('framer-motion', () => ({
@@ -157,8 +169,8 @@ vi.mock('@/components/ui/streaming-text', () => ({
   ),
 }));
 
-// Mock openwork icon
-vi.mock('/assets/openwork-icon.png', () => ({ default: 'openwork-icon.png' }));
+// Mock Accomplish icon
+vi.mock('/assets/accomplish-icon.png', () => ({ default: 'accomplish-icon.png' }));
 
 // Import after mocks
 import ExecutionPage from '@/pages/Execution';
@@ -193,6 +205,9 @@ describe('Execution Page Integration', () => {
       sendFollowUp: mockSendFollowUp,
       cancelTask: mockCancelTask,
       interruptTask: mockInterruptTask,
+      setTodos: mockSetTodos,
+      todos: [],
+      todosTaskId: null,
       setupProgress: null,
       setupProgressTaskId: null,
       setupDownloadStep: 1,
@@ -391,15 +406,15 @@ describe('Execution Page Integration', () => {
       expect(screen.getByText('Third message')).toBeInTheDocument();
     });
 
-    it('should show "Thinking..." indicator when running without tool', () => {
+    it('should show thinking indicator when running without tool', () => {
       // Arrange
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', []);
 
       // Act
       renderWithRouter('task-123');
 
-      // Assert
-      expect(screen.getByText('Thinking...')).toBeInTheDocument();
+      // Assert - matches any of the action-oriented thinking phrases
+      expect(screen.getByText(/^(Doing|Executing|Running|Handling it|Accomplishing)\.\.\.$/)).toBeInTheDocument();
     });
 
     it('should display message timestamps', () => {

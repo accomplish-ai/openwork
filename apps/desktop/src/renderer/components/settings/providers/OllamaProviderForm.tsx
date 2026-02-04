@@ -10,6 +10,7 @@ import {
   ConnectedControls,
   ProviderFormHeader,
   FormError,
+  ModelSelector,
 } from '../shared';
 
 // Import Ollama logo
@@ -95,6 +96,16 @@ function OllamaModelSelector({
     return aOrder - bOrder;
   });
 
+  // Transform models for ModelSelector with tool support indicators in name
+  const selectorModels = sortedModels.map((model) => {
+    const toolSupport = model.toolSupport || 'unknown';
+    const toolIcon = toolSupport === 'supported' ? '✓' : toolSupport === 'unsupported' ? '✗' : '?';
+    return {
+      id: model.id,
+      name: `${model.name} ${toolIcon}`,
+    };
+  });
+
   const selectedModel = models.find(m => m.id === value);
   const hasUnsupportedSelected = selectedModel?.toolSupport === 'unsupported';
   const hasUnknownSelected = selectedModel?.toolSupport === 'unknown';
@@ -141,10 +152,6 @@ function OllamaModelSelector({
             <p className="text-yellow-400/80 mt-1">This model may or may not support tool/function calling. Test it to confirm.</p>
           </div>
         </div>
-      )}
-
-      {error && !value && (
-        <p className="mt-1 text-sm text-destructive">Please select a model</p>
       )}
     </div>
   );

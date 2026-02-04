@@ -1,6 +1,6 @@
 # E2E Test Infrastructure
 
-This directory contains the E2E test infrastructure for the Openwork desktop app using Playwright.
+This directory contains the E2E test infrastructure for the Accomplish desktop app using Playwright.
 
 ## Structure
 

@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/accomplish-ai/openwork.git"
+    "url": "https://github.com/accomplish-ai/accomplish.git"
   },
   "scripts": {
     "predev": "node scripts/check-deps.cjs",

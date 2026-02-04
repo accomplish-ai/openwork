@@ -7,7 +7,7 @@
  */
 
 import { OpenCodeAdapter, isOpenCodeCliInstalled, OpenCodeCliNotFoundError } from './adapter';
-import { getSkillsPath } from './config-generator';
+import { getMcpToolsPath } from './config-generator';
 import { getNpxPath, getBundledNodePaths } from '../utils/bundled-node';
 import { spawn } from 'child_process';
 import path from 'path';
@@ -81,8 +81,8 @@ async function installPlaywrightChromium(
   onProgress?: (message: string) => void
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const skillsPath = getSkillsPath();
-    const devBrowserDir = path.join(skillsPath, 'dev-browser');
+    const mcpToolsPath = getMcpToolsPath();
+    const devBrowserDir = path.join(mcpToolsPath, 'dev-browser');
 
     // Use bundled npx for packaged app compatibility
     const npxPath = getNpxPath();
@@ -226,9 +226,9 @@ async function ensureDevBrowserServer(
 
   // Now start the server
   try {
-    const skillsPath = getSkillsPath();
-    const serverScript = path.join(skillsPath, 'dev-browser', 'server.cjs');
-    const serverCwd = path.join(skillsPath, 'dev-browser');
+    const mcpToolsPath = getMcpToolsPath();
+    const serverScript = path.join(mcpToolsPath, 'dev-browser', 'server.cjs');
+    const serverCwd = path.join(mcpToolsPath, 'dev-browser');
 
     // Build environment with bundled Node.js in PATH
     const bundledPaths = getBundledNodePaths();

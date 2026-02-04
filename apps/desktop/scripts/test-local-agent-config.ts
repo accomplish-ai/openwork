@@ -49,12 +49,12 @@ interface OpenCodeConfig {
 }
 
 /**
- * Get the skills directory path relative to this script
+ * Get the MCP tools directory path relative to this script
  */
-function getSkillsPath(): string {
+function getMcpToolsPath(): string {
   // Script is at apps/desktop/scripts/test-local-agent-config.ts
-  // Skills are at apps/desktop/skills/
-  return path.resolve(__dirname, '..', 'skills');
+  // MCP tools are at apps/desktop/mcp-tools/
+  return path.resolve(__dirname, '..', 'mcp-tools');
 }
 
 /**
@@ -107,7 +107,7 @@ export function generateTestLocalAgentConfig(): string {
     fs.mkdirSync(TEST_LOCAL_AGENT_CHROME_PROFILE, { recursive: true });
   }
 
-  const skillsPath = getSkillsPath();
+  const mcpToolsPath = getMcpToolsPath();
 
   const config: OpenCodeConfig = {
     $schema: 'https://opencode.ai/config.json',
@@ -124,7 +124,7 @@ export function generateTestLocalAgentConfig(): string {
     mcp: {
       'file-permission': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'file-permission', 'src', 'index.ts')],
+        command: ['npx', 'tsx', path.join(mcpToolsPath, 'file-permission', 'src', 'index.ts')],
         enabled: true,
         environment: {
           PERMISSION_API_PORT: String(PERMISSION_API_PORT),
@@ -133,7 +133,7 @@ export function generateTestLocalAgentConfig(): string {
       },
       'ask-user-question': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'ask-user-question', 'src', 'index.ts')],
+        command: ['npx', 'tsx', path.join(mcpToolsPath, 'ask-user-question', 'src', 'index.ts')],
         enabled: true,
         environment: {
           QUESTION_API_PORT: String(QUESTION_API_PORT),
@@ -142,7 +142,7 @@ export function generateTestLocalAgentConfig(): string {
       },
       'dev-browser-mcp': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'dev-browser-mcp', 'src', 'index.ts')],
+        command: ['npx', 'tsx', path.join(mcpToolsPath, 'dev-browser-mcp', 'src', 'index.ts')],
         enabled: true,
         environment: {
           // Override ports for isolation
@@ -154,7 +154,7 @@ export function generateTestLocalAgentConfig(): string {
       },
       'complete-task': {
         type: 'local',
-        command: ['npx', 'tsx', path.join(skillsPath, 'complete-task', 'src', 'index.ts')],
+        command: ['npx', 'tsx', path.join(mcpToolsPath, 'complete-task', 'src', 'index.ts')],
         enabled: true,
         timeout: 5000,
       },

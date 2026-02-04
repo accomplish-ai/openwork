@@ -68,6 +68,15 @@ vi.mock('@main/store/providerSettings', () => ({
   getConnectedProviderIds: vi.fn(() => []),
 }));
 
+// Mock skills module (uses SQLite which requires native module)
+vi.mock('@main/skills', () => ({
+  skillsManager: {
+    getEnabled: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([])),
+    initialize: vi.fn(() => Promise.resolve()),
+  },
+}));
+
 // Mock appSettings (now uses SQLite which requires native module)
 vi.mock('@main/store/appSettings', () => ({
   getDebugMode: vi.fn(() => false),
@@ -109,11 +118,11 @@ describe('OpenCode Config Generator Integration', () => {
     tempUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-userData-'));
     tempAppDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-app-'));
 
-    // Create skills directory structure in temp app dir
-    const skillsDir = path.join(tempAppDir, 'skills');
-    fs.mkdirSync(skillsDir, { recursive: true });
-    fs.mkdirSync(path.join(skillsDir, 'file-permission', 'src'), { recursive: true });
-    fs.writeFileSync(path.join(skillsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
+    // Create mcp-tools directory structure in temp app dir
+    const mcpToolsDir = path.join(tempAppDir, 'mcp-tools');
+    fs.mkdirSync(mcpToolsDir, { recursive: true });
+    fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
+    fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
 
     // Update mock to use temp directories
     mockApp.getAppPath.mockReturnValue(tempAppDir);
@@ -136,18 +145,18 @@ describe('OpenCode Config Generator Integration', () => {
     }
   });
 
-  describe('getSkillsPath()', () => {
+  describe('getMcpToolsPath()', () => {
     describe('Development Mode', () => {
       it('should return skills path relative to app path in dev mode', async () => {
         // Arrange
         mockApp.isPackaged = false;
 
         // Act
-        const { getSkillsPath } = await import('@main/opencode/config-generator');
-        const result = getSkillsPath();
+        const { getMcpToolsPath } = await import('@main/opencode/config-generator');
+        const result = getMcpToolsPath();
 
         // Assert
-        expect(result).toBe(path.join(tempAppDir, 'skills'));
+        expect(result).toBe(path.join(tempAppDir, 'mcp-tools'));
       });
     });
 
@@ -160,11 +169,11 @@ describe('OpenCode Config Generator Integration', () => {
         (process as NodeJS.Process & { resourcesPath: string }).resourcesPath = resourcesPath;
 
         // Act
-        const { getSkillsPath } = await import('@main/opencode/config-generator');
-        const result = getSkillsPath();
+        const { getMcpToolsPath } = await import('@main/opencode/config-generator');
+        const result = getMcpToolsPath();
 
         // Assert
-        expect(result).toBe(path.join(resourcesPath, 'skills'));
+        expect(result).toBe(path.join(resourcesPath, 'mcp-tools'));
       });
     });
   });

@@ -3,33 +3,35 @@
 </p>
 
 <p align="center">
-  <img src="docs/banner.svg" alt="Openwork - Open source AI desktop agent that automates file management, document creation, and browser tasks with your own AI API keys" width="100%" />
+  <img src="docs/banner.svg" alt="Accomplish - Open source AI desktop agent that automates file management, document creation, and browser tasks with your own AI API keys" width="100%" />
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MIT License" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
-  <a href="https://github.com/accomplish-ai/openwork/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/openwork?style=flat-square&color=22c55e" alt="Last Commit" /></a>
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Last Commit" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
 </p>
 
-# Openwork™ - Open Source AI Desktop Agent
+# Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
 
-Openwork is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama.
+Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama.
 
 <p align="center">
   <strong>Runs locally on your machine. Bring your own API keys or local models. MIT licensed.</strong>
 </p>
 
 <p align="center">
-  <a href="https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg"><strong>Download Openwork for Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Download for Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://www.openwork.me/">Openwork website</a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Download for Windows 11</strong></a>
   ·
-  <a href="https://www.openwork.me/blog/">Openwork blog</a>
+  <a href="https://www.accomplish.ai/">Accomplish website</a>
   ·
-  <a href="https://github.com/accomplish-ai/openwork/releases">Openwork releases</a>
+  <a href="https://www.accomplish.ai/blog/">Accomplish blog</a>
+  ·
+  <a href="https://github.com/accomplish-ai/accomplish/releases">Accomplish releases</a>
 </p>
 
 <br />
@@ -50,7 +52,7 @@ Openwork is an open source AI desktop agent that automates file management, docu
 
 - Your files stay on your machine
 - You decide which folders it can touch
-- Nothing gets sent to Openwork (or anyone else)
+- Nothing gets sent to Accomplish (or anyone else)
 
 </div>
 
@@ -150,14 +152,14 @@ Openwork is an open source AI desktop agent that automates file management, docu
 
 ## Privacy and local-first
 
-Openwork runs locally on your machine. Your files stay on your device, and you choose which folders it can access.
+Accomplish runs locally on your machine. Your files stay on your device, and you choose which folders it can access.
 
 <br />
 
 ## System requirements
 
 - macOS (Apple Silicon)
-- Windows support coming soon
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Openwork runs locally on your machine. Your files stay on your device, and you c
 
 <div align="center">
 
-[**Download for Mac (Apple Silicon)**](https://downloads.openwork.me/downloads/0.3.5/macos/Openwork-0.3.5-mac-arm64.dmg)
+[**Download for Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Download for Windows 11**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -195,11 +197,11 @@ Openwork runs locally on your machine. Your files stay on your device, and you c
 
 ## Screenshots and Demo
 
-A quick look at Openwork on macOS, plus a short demo video.
+A quick look at Accomplish on macOS, plus a short demo video.
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
-    <img src="docs/video-thumbnail.png" alt="Openwork demo - AI agent automating file management and browser tasks" width="600" />
+    <img src="docs/video-thumbnail.png" alt="Accomplish demo - AI agent automating file management and browser tasks" width="600" />
   </a>
 </p>
 
@@ -211,17 +213,17 @@ A quick look at Openwork on macOS, plus a short demo video.
 
 ## FAQ
 
-**Does Openwork run locally?**  
-Yes. Openwork runs locally on your machine and you control which folders it can access.
+**Does Accomplish run locally?**  
+Yes. Accomplish runs locally on your machine and you control which folders it can access.
 
 **Do I need an API key?**  
 You can use your own API keys (OpenAI, Anthropic, Google, xAI, etc.) or run local models via Ollama.
 
-**Is Openwork free?**  
-Yes. Openwork is open source and MIT licensed.
+**Is Accomplish free?**  
+Yes. Accomplish is open source and MIT licensed.
 
-**Which platforms are supported?**  
-macOS (Apple Silicon) is available now. Windows support is coming soon.
+**Which platforms are supported?**
+macOS (Apple Silicon) and Windows 11 are available now.
 
 <br />
 
@@ -312,11 +314,11 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-**[Openwork website](https://www.openwork.me/)** · **[Openwork blog](https://www.openwork.me/blog/)** · **[Openwork releases](https://github.com/accomplish-ai/openwork/releases)** · **[Issues](https://github.com/accomplish-ai/openwork/issues)** · **[Twitter](https://x.com/openwork_ai)**
+**[Accomplish website](https://www.accomplish.ai/)** · **[Accomplish blog](https://www.accomplish.ai/blog/)** · **[Accomplish releases](https://github.com/accomplish-ai/accomplish/releases)** · **[Issues](https://github.com/accomplish-ai/accomplish/issues)** · **[Twitter](https://x.com/Accomplish_ai)**
 
 <br />
 
-MIT License · Built by [Openwork](https://www.openwork.me)
+MIT License · Built by [Accomplish](https://www.accomplish.ai)
 
 <br />
 

@@ -23,6 +23,9 @@ import {
   addTaskMessage,
   deleteTask,
   clearHistory,
+  saveTodosForTask,
+  getTodosForTask,
+  clearTodosForTask,
 } from '../store/taskHistory';
 import { generateTaskSummary } from '../services/summarizer';
 import {
@@ -52,6 +55,7 @@ import {
   getLMStudioConfig,
   setLMStudioConfig,
 } from '../store/appSettings';
+import { safeParseJson } from '../utils/json';
 import {
   getProviderSettings,
   setActiveProvider,
@@ -63,7 +67,8 @@ import {
   getProviderDebugMode,
   hasReadyProvider,
 } from '../store/providerSettings';
-import { getOpenAiOauthStatus, loginOpenAiWithChatGpt } from '../opencode/auth';
+import { getOpenAiOauthStatus } from '../opencode/auth';
+import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
 import type { ProviderId, ConnectedProvider, BedrockCredentials } from '@accomplish/shared';
 import { getDesktopConfig } from '../config';
 import {
@@ -111,6 +116,7 @@ import {
   executeMockTaskFlow,
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
+import { skillsManager } from '../skills';
 
 const MAX_TEXT_LENGTH = 8000;
 const ALLOWED_API_KEY_PROVIDERS = new Set(['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai', 'azure-foundry', 'custom', 'bedrock', 'litellm', 'minimax', 'lmstudio', 'elevenlabs']);
@@ -416,6 +422,11 @@ export function registerIPCHandlers(): void {
         if (sessionId) {
           updateTaskSessionId(taskId, sessionId);
         }
+
+        // Clear todos from DB only on success (keep todos for failed/interrupted tasks so user can see what was incomplete)
+        if (result.status === 'success') {
+          clearTodosForTask(taskId);
+        }
       },
 
       onError: (error: Error) => {
@@ -453,6 +464,9 @@ export function registerIPCHandlers(): void {
       },
 
       onTodoUpdate: (todos: TodoItem[]) => {
+        // Save to database for persistence
+        saveTodosForTask(taskId, todos);
+        // Forward to renderer for immediate UI update
         forwardToRenderer('todo:update', { taskId, todos });
       },
 
@@ -537,6 +551,11 @@ export function registerIPCHandlers(): void {
   // Task: Clear all history
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
     clearHistory();
+  });
+
+  // Task: Get todos for a specific task
+  handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    return getTodosForTask(taskId);
   });
 
   // Permission: Respond to permission request
@@ -677,6 +696,11 @@ export function registerIPCHandlers(): void {
         if (newSessionId) {
           updateTaskSessionId(taskId, newSessionId);
         }
+
+        // Clear todos from DB only on success (keep todos for failed/interrupted tasks so user can see what was incomplete)
+        if (result.status === 'success') {
+          clearTodosForTask(taskId);
+        }
       },
 
       onError: (error: Error) => {
@@ -714,6 +738,9 @@ export function registerIPCHandlers(): void {
       },
 
       onTodoUpdate: (todos: TodoItem[]) => {
+        // Save to database for persistence
+        saveTodosForTask(taskId, todos);
+        // Forward to renderer for immediate UI update
         forwardToRenderer('todo:update', { taskId, todos });
       },
     };
@@ -1181,7 +1208,13 @@ export function registerIPCHandlers(): void {
   handle('bedrock:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
     console.log('[Bedrock] Validation requested');
 
-    const parsed = JSON.parse(credentials);
+    const parseResult = safeParseJson<BedrockCredentials>(credentials);
+    if (!parseResult.success) {
+      console.warn('[Bedrock] Failed to parse credentials:', parseResult.error);
+      return { valid: false, error: 'Failed to parse credentials' };
+    }
+    const parsed = parseResult.data;
+
     let client: BedrockClient;
     let cleanupEnv: (() => void) | null = null;
 
@@ -1202,6 +1235,9 @@ export function registerIPCHandlers(): void {
       });
     } else if (parsed.authType === 'accessKeys') {
       // Access key authentication
+      if (!parsed.accessKeyId || !parsed.secretAccessKey) {
+        return { valid: false, error: 'Access Key ID and Secret Access Key are required' };
+      }
       const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
         accessKeyId: parsed.accessKeyId,
         secretAccessKey: parsed.secretAccessKey,
@@ -2445,7 +2481,7 @@ export function registerIPCHandlers(): void {
 
     // Generate default filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const defaultFilename = `openwork-logs-${timestamp}.txt`;
+    const defaultFilename = `accomplish-logs-${timestamp}.txt`;
 
     // Show save dialog
     const result = await dialog.showSaveDialog(window, {
@@ -2469,7 +2505,7 @@ export function registerIPCHandlers(): void {
         fs.copyFileSync(logPath, result.filePath);
       } else {
         // No logs yet - create empty file with header
-        const header = `Openwork Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
+        const header = `Accomplish Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
         fs.writeFileSync(result.filePath, header);
       }
 
@@ -2478,6 +2514,65 @@ export function registerIPCHandlers(): void {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, error: message };
     }
+  });
+
+  // Skills management
+  ipcMain.handle('skills:list', async () => {
+    return skillsManager.getAll();
+  });
+
+  ipcMain.handle('skills:list-enabled', async () => {
+    return skillsManager.getEnabled();
+  });
+
+  ipcMain.handle('skills:set-enabled', async (_, id: string, enabled: boolean) => {
+    await skillsManager.setEnabled(id, enabled);
+  });
+
+  ipcMain.handle('skills:get-content', async (_, id: string) => {
+    return skillsManager.getContent(id);
+  });
+
+  // File picker dialog for uploading skills
+  ipcMain.handle('skills:pick-file', async () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select a SKILL.md file',
+      filters: [
+        { name: 'Skill Files', extensions: ['md'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle('skills:add-from-file', async (_, filePath: string) => {
+    return skillsManager.addFromFile(filePath);
+  });
+
+  ipcMain.handle('skills:add-from-github', async (_, rawUrl: string) => {
+    return skillsManager.addFromGitHub(rawUrl);
+  });
+
+  ipcMain.handle('skills:delete', async (_, id: string) => {
+    await skillsManager.delete(id);
+  });
+
+  ipcMain.handle('skills:resync', async () => {
+    await skillsManager.resync();
+    return skillsManager.getAll();
+  });
+
+  ipcMain.handle('skills:open-in-editor', async (_, filePath: string) => {
+    await shell.openPath(filePath);
+  });
+
+  ipcMain.handle('skills:show-in-folder', async (_, filePath: string) => {
+    shell.showItemInFolder(filePath);
   });
 }
 

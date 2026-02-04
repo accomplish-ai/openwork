@@ -89,6 +89,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
   /** Whether the first tool has been received (to stop showing startup stages) */
   private hasReceivedFirstTool: boolean = false;
+  /** Whether start_task has been called this session (for hard enforcement) */
+  private startTaskCalled: boolean = false;
 
   /**
    * Create a new OpenCodeAdapter instance
@@ -207,6 +209,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.completionEnforcer.reset();
     this.lastWorkingDirectory = config.workingDirectory;
     this.hasReceivedFirstTool = false;
+    this.startTaskCalled = false;
     // Clear any existing waiting transition timer
     if (this.waitingTransitionTimer) {
       clearTimeout(this.waitingTransitionTimer);
@@ -278,7 +281,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     // Create a minimal package.json in the working directory so OpenCode finds it there
     // and stops searching upward. This prevents EPERM errors when OpenCode traverses
-    // up to protected directories like C:\Program Files\Openwork\resources\
+    // up to protected directories like C:\Program Files\Accomplish\resources\
     // This is Windows-specific since the EPERM issue occurs with protected Program Files directories.
     if (app.isPackaged && process.platform === 'win32') {
       const dummyPackageJson = path.join(safeCwd, 'package.json');
@@ -318,7 +321,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
       this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
         name: 'xterm-256color',
-        cols: 200,
+        // Use very wide columns to minimize PTY line wrapping on Windows
+        // Windows PTY inserts raw newlines at column boundary which corrupts JSON
+        cols: 32000,
         rows: 30,
         cwd: safeCwd,
         env: env as { [key: string]: string },
@@ -489,6 +494,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.hasCompleted = true;
     this.currentModelId = null;
     this.hasReceivedFirstTool = false;
+    this.startTaskCalled = false;
 
     // Clear waiting transition timer
     if (this.waitingTransitionTimer) {
@@ -870,6 +876,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
         console.log('[OpenCode Adapter] Tool call:', toolName);
 
+        // START_TASK ENFORCEMENT: Track start_task tool calls
+        if (this.isStartTaskTool(toolName)) {
+          this.startTaskCalled = true;
+          const startInput = toolInput as StartTaskInput;
+          if (startInput?.goal && startInput?.steps) {
+            this.emitPlanMessage(startInput, this.currentSessionId || '');
+            // Also create todos from steps (so todowrite isn't required)
+            const todos: TodoItem[] = startInput.steps.map((step, i) => ({
+              id: String(i + 1),
+              content: step,
+              status: i === 0 ? 'in_progress' : 'pending',
+              priority: 'medium',
+            }));
+            if (todos.length > 0) {
+              this.emit('todo:update', todos);
+              this.completionEnforcer.updateTodos(todos);
+              console.log('[OpenCode Adapter] Created todos from start_task steps');
+            }
+          }
+        }
+
+        // START_TASK ENFORCEMENT: Warn if non-exempt tool called before start_task
+        if (!this.startTaskCalled && !this.isExemptTool(toolName)) {
+          console.warn(`[OpenCode Adapter] Tool "${toolName}" called before start_task`);
+          this.emit('debug', {
+            type: 'warning',
+            message: `Tool "${toolName}" called before start_task - plan may not be captured`,
+          });
+        }
+
         // Mark first tool received and cancel waiting transition timer
         if (!this.hasReceivedFirstTool) {
           this.hasReceivedFirstTool = true;
@@ -919,6 +955,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         const toolUseName = toolUseMessage.part.tool || 'unknown';
         const toolUseInput = toolUseMessage.part.state?.input;
         const toolUseOutput = toolUseMessage.part.state?.output || '';
+
+        // START_TASK ENFORCEMENT: Track start_task tool calls
+        if (this.isStartTaskTool(toolUseName)) {
+          this.startTaskCalled = true;
+          const startInput = toolUseInput as StartTaskInput;
+          if (startInput?.goal && startInput?.steps) {
+            this.emitPlanMessage(startInput, toolUseMessage.part.sessionID || '');
+            // Also create todos from steps (so todowrite isn't required)
+            const todos: TodoItem[] = startInput.steps.map((step, i) => ({
+              id: String(i + 1),
+              content: step,
+              status: i === 0 ? 'in_progress' : 'pending',
+              priority: 'medium',
+            }));
+            if (todos.length > 0) {
+              this.emit('todo:update', todos);
+              this.completionEnforcer.updateTodos(todos);
+              console.log('[OpenCode Adapter] Created todos from start_task steps');
+            }
+          }
+        }
+
+        // START_TASK ENFORCEMENT: Warn if non-exempt tool called before start_task
+        if (!this.startTaskCalled && !this.isExemptTool(toolUseName)) {
+          console.warn(`[OpenCode Adapter] Tool "${toolUseName}" called before start_task`);
+          this.emit('debug', {
+            type: 'warning',
+            message: `Tool "${toolUseName}" called before start_task - plan may not be captured`,
+          });
+        }
 
         // Mark first tool received and cancel waiting transition timer
         if (!this.hasReceivedFirstTool) {
@@ -1090,19 +1156,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   /**
    * Build a shell command string with properly escaped arguments.
-   * On Windows, prepends & call operator for paths with spaces.
    */
   private buildShellCommand(command: string, args: string[]): string {
     const escapedCommand = this.escapeShellArg(command);
     const escapedArgs = args.map(arg => this.escapeShellArg(arg));
 
-    // On Windows, if the command path contains spaces (and is thus quoted),
-    // we need to prepend & call operator so PowerShell executes it as a command
-    // Without &, PowerShell treats "path with spaces" as a string literal
-    if (process.platform === 'win32' && escapedCommand.startsWith('"')) {
-      return ['&', escapedCommand, ...escapedArgs].join(' ');
-    }
-
+    // cmd.exe and Unix shells can execute quoted paths directly
     return [escapedCommand, ...escapedArgs].join(' ');
   }
 
@@ -1211,7 +1270,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
       name: 'xterm-256color',
-      cols: 200,
+      // Use very wide columns to minimize PTY line wrapping on Windows
+      // Windows PTY inserts raw newlines at column boundary which corrupts JSON
+      cols: 32000,
       rows: 30,
       cwd: safeCwd,
       env: env as { [key: string]: string },
@@ -1220,7 +1281,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     // Set up event handlers for new process
     this.ptyProcess.onData((data: string) => {
       // Filter out ANSI escape codes and control characters for cleaner parsing
-      // Enhanced to handle Windows PowerShell sequences (cursor visibility, window titles)
+      // Enhanced to handle Windows cmd.exe sequences
       const cleanData = data
         .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences (added ? for DEC modes like cursor hide)
         .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences with BEL terminator (window titles)
@@ -1254,6 +1315,61 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   }
 
   /**
+   * Check if a tool name is the start_task tool.
+   * Tool name may be prefixed with MCP server name (e.g., "start-task_start_task").
+   */
+  private isStartTaskTool(toolName: string): boolean {
+    return toolName === 'start_task' || toolName.endsWith('_start_task');
+  }
+
+  /**
+   * Check if a tool is exempt from start_task enforcement.
+   * Exempt tools can be called before start_task.
+   */
+  private isExemptTool(toolName: string): boolean {
+    // todowrite is a planning tool, often used alongside start_task
+    if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {
+      return true;
+    }
+    // start_task itself is obviously exempt
+    if (this.isStartTaskTool(toolName)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Emit a synthetic plan message to the UI when start_task is called.
+   * This ensures users see the plan in the chat interface.
+   */
+  private emitPlanMessage(input: StartTaskInput, sessionId: string): void {
+    const verificationSection = input.verification?.length
+      ? `\n\n**Verification:**\n${input.verification.map((v, i) => `${i + 1}. ${v}`).join('\n')}`
+      : '';
+    const skillsSection = input.skills?.length
+      ? `\n\n**Skills:** ${input.skills.join(', ')}`
+      : '';
+    const planText = `**Plan:**\n\n**Goal:** ${input.goal}\n\n**Steps:**\n${input.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}${verificationSection}${skillsSection}`;
+
+    const syntheticMessage: OpenCodeMessage = {
+      type: 'text',
+      timestamp: Date.now(),
+      sessionID: sessionId,
+      part: {
+        id: this.generateMessageId(),
+        sessionID: sessionId,
+        messageID: this.generateMessageId(),
+        type: 'text',
+        text: planText,
+      },
+    } as import('@accomplish/shared').OpenCodeTextMessage;
+
+    this.emit('message', syntheticMessage);
+    console.log('[OpenCode Adapter] Emitted synthetic plan message');
+  }
+
+
+  /**
    * Get platform-appropriate shell command
    *
    * In packaged apps on macOS, we use /bin/sh instead of the user's shell
@@ -1264,8 +1380,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
    */
   private getPlatformShell(): string {
     if (process.platform === 'win32') {
-      // Use PowerShell on Windows for better compatibility
-      return 'powershell.exe';
+      // Use cmd.exe on Windows - much faster startup than PowerShell
+      return 'cmd.exe';
     } else if (app.isPackaged && process.platform === 'darwin') {
       // In packaged macOS apps, use /bin/sh to avoid loading user shell configs
       // (zsh always loads ~/.zshenv, which may trigger TCC permissions)
@@ -1295,11 +1411,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
    */
   private getShellArgs(command: string): string[] {
     if (process.platform === 'win32') {
-      // PowerShell: Use -EncodedCommand with Base64-encoded UTF-16LE to avoid
-      // all escaping/parsing issues. This is the most reliable way to pass
-      // complex commands with quotes, special characters, etc. to PowerShell.
-      const encodedCommand = Buffer.from(command, 'utf16le').toString('base64');
-      return ['-NoProfile', '-EncodedCommand', encodedCommand];
+      // cmd.exe: Use /c to run command and exit
+      // /s strips outer quotes, /c runs the command
+      return ['/s', '/c', command];
     } else {
       // Unix shells: -c to run command (no -l to avoid profile loading)
       return ['-c', command];
@@ -1314,6 +1428,14 @@ interface AskUserQuestionInput {
     options?: Array<{ label: string; description?: string }>;
     multiSelect?: boolean;
   }>;
+}
+
+interface StartTaskInput {
+  original_request: string;
+  goal: string;
+  steps: string[];
+  verification: string[];
+  skills: string[];
 }
 
 /**

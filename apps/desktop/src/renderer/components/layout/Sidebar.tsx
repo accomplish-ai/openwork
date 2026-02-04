@@ -108,7 +108,7 @@ export default function Sidebar() {
           <div className="flex items-center">
             <img
               src={logoImage}
-              alt="Openwork"
+              alt="Accomplish"
               style={{ height: '20px', paddingLeft: '6px' }}
             />
           </div>

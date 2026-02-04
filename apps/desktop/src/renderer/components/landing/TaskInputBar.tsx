@@ -7,6 +7,7 @@ import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { ModelIndicator } from '../ui/ModelIndicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PlusMenu } from './PlusMenu';
 
 interface TaskInputBarProps {
   value: string;
@@ -22,6 +23,10 @@ interface TaskInputBarProps {
    * (to open settings dialog)
    */
   onOpenSpeechSettings?: () => void;
+  /**
+   * Called when user wants to open settings (e.g., from "Manage Skills")
+   */
+  onOpenSettings?: (tab: 'providers' | 'voice' | 'skills') => void;
   /**
    * Called when user wants to open settings to change model
    */
@@ -46,6 +51,7 @@ export default function TaskInputBar({
   large = false,
   autoFocus = false,
   onOpenSpeechSettings,
+  onOpenSettings,
   onOpenModelSettings,
   hideModelWhenNoModel = false,
   autoSubmitOnTranscription = true,
@@ -113,6 +119,16 @@ export default function TaskInputBar({
     }
   };
 
+  const handleSkillSelect = (command: string) => {
+    // Prepend command to input with space
+    const newValue = `${command} ${value}`.trim();
+    onChange(newValue);
+    // Focus textarea
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
   return (
     <div className="w-full space-y-2">
       {/* Error message */}
@@ -155,7 +171,16 @@ export default function TaskInputBar({
         </div>
 
         {/* Toolbar - fixed at bottom */}
-        <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/50">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
+          {/* Plus Menu on left */}
+          <PlusMenu
+            onSkillSelect={handleSkillSelect}
+            onOpenSettings={(tab) => onOpenSettings?.(tab)}
+            disabled={isDisabled || speechInput.isRecording}
+          />
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
           {/* Model Indicator */}
           {onOpenModelSettings && (
             <ModelIndicator
@@ -206,6 +231,7 @@ export default function TaskInputBar({
               <CornerDownLeft className="h-4 w-4" />
             )}
           </button>
+          </div>
         </div>
       </div>
     </div>

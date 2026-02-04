@@ -6,6 +6,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
+import type { Skill, TodoItem } from '@accomplish/shared';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -30,6 +31,8 @@ const accomplishAPI = {
   deleteTask: (taskId: string): Promise<void> =>
     ipcRenderer.invoke('task:delete', taskId),
   clearTaskHistory: (): Promise<void> => ipcRenderer.invoke('task:clear-history'),
+  getTodosForTask: (taskId: string): Promise<TodoItem[]> =>
+    ipcRenderer.invoke('task:get-todos', taskId),
 
   // Permission responses
   respondToPermission: (response: { taskId: string; allowed: boolean }): Promise<void> =>
@@ -297,6 +300,24 @@ const accomplishAPI = {
     success: false;
     error: { code: string; message: string };
   }> => ipcRenderer.invoke('speech:transcribe', audioData, mimeType),
+
+  // Skills management
+  getSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:list'),
+  getEnabledSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:list-enabled'),
+  setSkillEnabled: (id: string, enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('skills:set-enabled', id, enabled),
+  getSkillContent: (id: string): Promise<string | null> =>
+    ipcRenderer.invoke('skills:get-content', id),
+  pickSkillFile: (): Promise<string | null> =>
+    ipcRenderer.invoke('skills:pick-file'),
+  addSkillFromFile: (filePath: string): Promise<Skill> =>
+    ipcRenderer.invoke('skills:add-from-file', filePath),
+  addSkillFromGitHub: (rawUrl: string): Promise<Skill> =>
+    ipcRenderer.invoke('skills:add-from-github', rawUrl),
+  deleteSkill: (id: string): Promise<void> => ipcRenderer.invoke('skills:delete', id),
+  resyncSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:resync'),
+  openSkillInEditor: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:open-in-editor', filePath),
+  showSkillInFolder: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:show-in-folder', filePath),
 };
 
 // Expose the API to the renderer

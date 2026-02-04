@@ -42,7 +42,7 @@ Out of scope:
 
 ## Security Best Practices
 
-When using Openwork:
+When using Accomplish:
 - Keep the application updated
 - Only grant file permissions when necessary
 - Review task outputs before approving sensitive operations

@@ -26,6 +26,7 @@ import { TodoSidebar } from '../components/TodoSidebar';
 import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
+import { PlusMenu } from '../components/landing/PlusMenu';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -36,7 +37,7 @@ interface DebugLogEntry {
   data?: unknown;
 }
 
-// Spinning Openwork icon component
+// Spinning Accomplish icon component
 const SpinningIcon = ({ className }: { className?: string }) => (
   <img
     src={loadingSymbol}
@@ -44,6 +45,15 @@ const SpinningIcon = ({ className }: { className?: string }) => (
     className={cn('animate-spin-ccw', className)}
   />
 );
+
+// Action-oriented thinking phrases
+const THINKING_PHRASES = [
+  'Doing...',
+  'Executing...',
+  'Running...',
+  'Handling it...',
+  'Accomplishing...',
+];
 
 // Tool name to human-readable progress mapping
 const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }> = {
@@ -92,6 +102,7 @@ const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }
   complete_task: { label: 'Completing task', icon: CheckCircle },
   report_thought: { label: 'Thinking', icon: Lightbulb },
   report_checkpoint: { label: 'Checkpoint', icon: Flag },
+  start_task: { label: 'Starting Task', icon: Play },
 };
 
 // Extract base tool name from MCP-prefixed tool names
@@ -187,7 +198,7 @@ export default function ExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice'>('providers');
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
 
@@ -216,6 +227,7 @@ export default function ExecutionPage() {
     setupDownloadStep,
     startupStage,
     startupStageTaskId,
+    clearStartupStage,
     todos,
     todosTaskId,
   } = useTaskStore();
@@ -250,6 +262,12 @@ export default function ExecutionPage() {
           .toLowerCase().includes(query))
     );
   }, [debugLogs, debugSearchQuery]);
+
+  // Pick a random thinking phrase when entering thinking state (currentTool becomes null)
+  const thinkingPhrase = useMemo(() => {
+    return THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTool]);
 
   // Reset search index when query changes
   useEffect(() => {
@@ -349,37 +367,60 @@ export default function ExecutionPage() {
       // Clear debug logs and search when switching tasks
       setDebugLogs([]);
       setDebugSearchQuery('');
+      // Reset tool state to prevent stale state when switching tasks (fixes UI leaking)
+      setCurrentTool(null);
+      setCurrentToolInput(null);
+
+      // Fetch todos for this task from database (always set, even if empty, to clear stale todos)
+      accomplish.getTodosForTask(id).then((todos) => {
+        useTaskStore.getState().setTodos(id, todos);
+      });
     }
 
     // Handle individual task updates
     const unsubscribeTask = accomplish.onTaskUpdate((event) => {
       addTaskUpdate(event);
-      // Track current tool from tool messages
-      if (event.type === 'message' && event.message?.type === 'tool') {
+      // Track current tool from tool messages (only for current task to prevent UI leaking)
+      if (event.taskId === id && event.type === 'message' && event.message?.type === 'tool') {
         const toolName = event.message.toolName || event.message.content?.match(/Using tool: (\w+)/)?.[1];
         if (toolName) {
           setCurrentTool(toolName);
           setCurrentToolInput(event.message.toolInput);
         }
       }
-      // Clear tool on completion
-      if (event.type === 'complete' || event.type === 'error') {
+      // Clear tool and startup stage when agent sends a text response (only for current task)
+      if (event.taskId === id && event.type === 'message' && event.message?.type === 'assistant') {
+        setCurrentTool(null);
+        setCurrentToolInput(null);
+        if (id) clearStartupStage(id);
+      }
+      // Clear tool on completion (only for current task)
+      if (event.taskId === id && (event.type === 'complete' || event.type === 'error')) {
         setCurrentTool(null);
         setCurrentToolInput(null);
       }
     });
 
     // Handle batched task updates (for performance)
+    // Only update local UI state for current task to prevent UI leaking between parallel tasks
     const unsubscribeTaskBatch = accomplish.onTaskUpdateBatch?.((event) => {
       if (event.messages?.length) {
         addTaskUpdateBatch(event);
-        // Track current tool from the last tool message
-        const lastToolMsg = [...event.messages].reverse().find(m => m.type === 'tool');
-        if (lastToolMsg) {
-          const toolName = lastToolMsg.toolName || lastToolMsg.content?.match(/Using tool: (\w+)/)?.[1];
-          if (toolName) {
-            setCurrentTool(toolName);
-            setCurrentToolInput(lastToolMsg.toolInput);
+        // Track current tool from the last message (only for current task)
+        if (event.taskId === id) {
+          const lastMsg = event.messages[event.messages.length - 1];
+          if (lastMsg.type === 'assistant') {
+            // Agent sent a text response - no tool is active
+            setCurrentTool(null);
+            setCurrentToolInput(null);
+            if (id) clearStartupStage(id);
+          } else if (lastMsg.type === 'tool') {
+            // Tool is active
+            const toolName = lastMsg.toolName || lastMsg.content?.match(/Using tool: (\w+)/)?.[1];
+            if (toolName) {
+              setCurrentTool(toolName);
+              setCurrentToolInput(lastMsg.toolInput);
+            }
           }
         }
       }
@@ -893,15 +934,15 @@ export default function ExecutionPage() {
                           ? ((currentToolInput as { description?: string })?.description || getToolDisplayInfo(currentTool)?.label || currentTool)
                           : (startupStageTaskId === id && startupStage)
                             ? startupStage.message
-                            : 'Thinking...'}
+                            : thinkingPhrase}
                       </span>
                       {currentTool && !(currentToolInput as { description?: string })?.description && (
                         <span className="text-xs text-muted-foreground/60">
                           ({currentTool})
                         </span>
                       )}
-                      {/* Elapsed time - only show during startup stages */}
-                      {!currentTool && startupStageTaskId === id && startupStage && (
+                      {/* Elapsed time - only show during startup stages when valid */}
+                      {!currentTool && startupStageTaskId === id && startupStage && elapsedTime > 0 && (
                         <span className="text-xs text-muted-foreground/60">
                           ({elapsedTime}s)
                         </span>
@@ -969,8 +1010,9 @@ export default function ExecutionPage() {
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={springs.bouncy}
             >
-              <Card className="w-full max-w-lg p-6 mx-4 max-h-[80vh] flex flex-col">
-                <div className="flex items-start gap-4 min-h-0 flex-1 overflow-hidden">
+              <Card className="w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+                {/* Header - always visible */}
+                <div className="flex items-start gap-4 p-6 pb-4 shrink-0">
                   <div className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full shrink-0",
                     isDeleteOperation(permissionRequest) ? "bg-red-500/10" :
@@ -987,20 +1029,22 @@ export default function ExecutionPage() {
                       <AlertCircle className="h-5 w-5 text-warning" />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 overflow-y-auto">
-                    <h3 className={cn(
-                      "text-lg font-semibold mb-2",
-                      isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
-                    )}>
-                      {isDeleteOperation(permissionRequest)
-                        ? 'File Deletion Warning'
-                        : permissionRequest.type === 'file'
-                          ? 'File Permission Required'
-                          : permissionRequest.type === 'question'
-                            ? (permissionRequest.header || 'Question')
-                            : 'Permission Required'}
-                    </h3>
+                  <h3 className={cn(
+                    "text-lg font-semibold",
+                    isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
+                  )}>
+                    {isDeleteOperation(permissionRequest)
+                      ? 'File Deletion Warning'
+                      : permissionRequest.type === 'file'
+                        ? 'File Permission Required'
+                        : permissionRequest.type === 'question'
+                          ? (permissionRequest.header || 'Question')
+                          : 'Permission Required'}
+                  </h3>
+                </div>
 
+                {/* Scrollable content area */}
+                <div className="flex-1 overflow-y-auto px-6 min-h-0">
                     {/* File permission specific UI */}
                     {permissionRequest.type === 'file' && (
                       <>
@@ -1189,38 +1233,39 @@ export default function ExecutionPage() {
                       </>
                     )}
 
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => handlePermissionResponse(false)}
-                        className="flex-1"
-                        data-testid="permission-deny-button"
-                      >
-                        {permissionRequest.type === 'question' ? 'Cancel' : 'Deny'}
-                      </Button>
-                      <Button
-                        onClick={() => handlePermissionResponse(true)}
-                        className={cn(
-                          "flex-1",
-                          isDeleteOperation(permissionRequest) && "bg-red-600 hover:bg-red-700 text-white"
-                        )}
-                        data-testid="permission-allow-button"
-                        disabled={
-                          permissionRequest.type === 'question' &&
-                          selectedOptions.length === 0 &&
-                          !customResponse.trim()
-                        }
-                      >
-                        {isDeleteOperation(permissionRequest)
-                          ? getDisplayFilePaths(permissionRequest).length > 1
-                            ? 'Delete All'
-                            : 'Delete'
-                          : permissionRequest.type === 'question'
-                            ? 'Submit'
-                            : 'Allow'}
-                      </Button>
-                    </div>
-                  </div>
+                </div>
+
+                {/* Footer with buttons - always visible */}
+                <div className="flex gap-3 p-6 pt-4 shrink-0 border-t border-border">
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePermissionResponse(false)}
+                    className="flex-1"
+                    data-testid="permission-deny-button"
+                  >
+                    {permissionRequest.type === 'question' ? 'Cancel' : 'Deny'}
+                  </Button>
+                  <Button
+                    onClick={() => handlePermissionResponse(true)}
+                    className={cn(
+                      "flex-1",
+                      isDeleteOperation(permissionRequest) && "bg-red-600 hover:bg-red-700 text-white"
+                    )}
+                    data-testid="permission-allow-button"
+                    disabled={
+                      permissionRequest.type === 'question' &&
+                      selectedOptions.length === 0 &&
+                      !customResponse.trim()
+                    }
+                  >
+                    {isDeleteOperation(permissionRequest)
+                      ? getDisplayFilePaths(permissionRequest).length > 1
+                        ? 'Delete All'
+                        : 'Delete'
+                      : permissionRequest.type === 'question'
+                        ? 'Submit'
+                        : 'Allow'}
+                  </Button>
                 </div>
               </Card>
             </motion.div>
@@ -1316,7 +1361,23 @@ export default function ExecutionPage() {
                 />
               </div>
               {/* Toolbar - fixed at bottom */}
-              <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/50">
+              <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
+                {/* Plus Menu on left */}
+                <PlusMenu
+                  onSkillSelect={(command) => {
+                    const newValue = `${command} ${followUp}`.trim();
+                    setFollowUp(newValue);
+                    setTimeout(() => followUpInputRef.current?.focus(), 0);
+                  }}
+                  onOpenSettings={(tab) => {
+                    setSettingsInitialTab(tab);
+                    setShowSettingsDialog(true);
+                  }}
+                  disabled={isLoading || speechInput.isRecording}
+                />
+
+                {/* Right side controls */}
+                <div className="flex items-center gap-2">
                 <ModelIndicator
                   isRunning={false}
                   onOpenSettings={handleOpenModelSettings}
@@ -1344,6 +1405,7 @@ export default function ExecutionPage() {
                 >
                   <CornerDownLeft className="h-4 w-4" />
                 </button>
+                </div>
               </div>
             </div>
           </div>

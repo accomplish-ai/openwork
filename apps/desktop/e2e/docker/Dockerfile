@@ -36,8 +36,8 @@ COPY apps/desktop/package.json ./apps/desktop/
 # Copy scripts directory (needed by root postinstall script)
 COPY scripts/ ./scripts/
 
-# Copy skills directories (needed by desktop postinstall script)
-COPY apps/desktop/skills ./apps/desktop/skills
+# Copy mcp-tools directories (needed by desktop postinstall script)
+COPY apps/desktop/mcp-tools ./apps/desktop/mcp-tools
 
 # Copy scripts directory (needed by postinstall script)
 COPY apps/desktop/scripts ./apps/desktop/scripts
