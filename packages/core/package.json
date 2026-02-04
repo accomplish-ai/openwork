@@ -29,6 +29,10 @@
     "./utils": {
       "import": "./dist/utils/index.js",
       "types": "./dist/utils/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser/index.js",
+      "types": "./dist/browser/index.d.ts"
     }
   },
   "files": [

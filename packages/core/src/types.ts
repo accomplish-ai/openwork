@@ -72,25 +72,17 @@ export interface StorageConfig {
 }
 
 /**
- * Configuration for OpenCode CLI adapter
- */
-export interface OpenCodeConfig {
-  /** Platform configuration */
-  platform: PlatformConfig;
-  /** Handler for permission requests */
-  permissionHandler: PermissionHandler;
-  /** Handler for task events */
-  eventHandler: TaskEventHandler;
-  /** Working directory for task execution */
-  workingDirectory: string;
-  /** Path to MCP tools directory */
-  mcpToolsPath: string;
-  /** Path to bundled Node.js bin directory (for npx) */
-  bundledNodeBinPath?: string;
-}
-
-/**
  * Configuration for CLI path resolution
+ *
+ * Note: The OpenCodeAdapter uses an event-based architecture rather than
+ * direct handler injection. Consumers should:
+ * 1. Listen to adapter events ('permission-request', 'message', 'complete', etc.)
+ * 2. Implement PermissionHandler and TaskEventHandler interfaces
+ * 3. Bridge adapter events to their handler implementations
+ *
+ * This pattern provides flexibility for different consumers:
+ * - Desktop: Forward events to renderer via IPC
+ * - CLI: Write events as NDJSON to stdout
  */
 export interface CliResolverConfig {
   /** Whether the app is packaged (production) */

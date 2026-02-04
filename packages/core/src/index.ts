@@ -22,3 +22,6 @@ export * from './storage/index.js';
 
 // OpenCode - CLI adapter, task manager, and stream parsing
 export * from './opencode/index.js';
+
+// Browser - Detection and dev-browser server management
+export * from './browser/index.js';
