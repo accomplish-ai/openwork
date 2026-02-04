@@ -286,6 +286,9 @@ vi.mock('@accomplish/core', async (importOriginal) => {
   validateOllamaConnection: vi.fn(() => Promise.resolve({ valid: true })),
   validateLiteLLMConnection: vi.fn(() => Promise.resolve({ valid: true })),
   validateLMStudioConnection: vi.fn(() => Promise.resolve({ valid: true })),
+  testLMStudioConnection: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+  fetchLMStudioModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+  validateLMStudioConfig: vi.fn(),
   validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
     validateMoonshotApiKey: vi.fn(() => Promise.resolve({ valid: true })),
   };

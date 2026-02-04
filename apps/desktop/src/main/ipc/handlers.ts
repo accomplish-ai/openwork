@@ -21,7 +21,13 @@ import {
   clearHistory,
   getTodosForTask,
   validateApiKey,
+  validateBedrockCredentials,
+  fetchBedrockModels,
+  validateAzureFoundry,
   fetchWithTimeout,
+  fetchOpenRouterModels,
+  testLiteLLMConnection,
+  fetchLiteLLMModels,
   validateHttpUrl,
   createTaskId,
   createMessageId,
@@ -60,7 +66,10 @@ import {
   getLMStudioConfig,
   setLMStudioConfig,
   testOllamaModelToolSupport,
-  testLMStudioModelToolSupport,
+  testOllamaConnection,
+  testLMStudioConnection,
+  fetchLMStudioModels,
+  validateLMStudioConfig,
 } from '@accomplish/core';
 import { safeParseJson } from '@accomplish/core';
 import {
@@ -113,8 +122,6 @@ import {
   validate,
 } from './validation';
 import { createTaskCallbacks } from './task-callbacks';
-import { BedrockClient, ListFoundationModelsCommand } from '@aws-sdk/client-bedrock';
-import { fromIni } from '@aws-sdk/credential-providers';
 import {
   isMockTaskEventsEnabled,
   createMockTask,
@@ -124,13 +131,6 @@ import {
 import { skillsManager } from '../skills';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
-
-interface OllamaModel {
-  id: string;
-  displayName: string;
-  size: number;
-  toolSupport?: ToolSupportStatus;
-}
 
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   if (!window || window.isDestroyed()) {
@@ -528,104 +528,21 @@ export function registerIPCHandlers(): void {
     // Handle azure-foundry with special Entra ID handling
     if (provider === 'azure-foundry') {
       const config = getAzureFoundryConfig();
-      const baseUrl = options?.baseUrl || config?.baseUrl;
-      const deploymentName = options?.deploymentName || config?.deploymentName;
-      const authType = options?.authType || config?.authType || 'api-key';
+      const result = await validateAzureFoundry(config, {
+        apiKey: key,
+        baseUrl: options?.baseUrl,
+        deploymentName: options?.deploymentName,
+        authType: options?.authType,
+        timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+      });
 
-      let entraToken = '';
-      let sanitizedKey = '';
-
-      if (authType === 'entra-id') {
-        if (options?.baseUrl && options?.deploymentName) {
-          const tokenResult = await getAzureEntraToken();
-          if (!tokenResult.success) {
-            return { valid: false, error: tokenResult.error };
-          }
-          entraToken = tokenResult.token;
-        } else {
-          return { valid: true };
-        }
+      if (result.valid) {
+        console.log(`[API Key] Validation succeeded for ${provider}`);
       } else {
-        try {
-          sanitizedKey = sanitizeString(key, 'apiKey', 256);
-        } catch (e) {
-          return { valid: false, error: e instanceof Error ? e.message : 'Invalid API key' };
-        }
+        console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
       }
 
-      if (!baseUrl || !deploymentName) {
-        console.log('[API Key] Skipping validation for azure-foundry provider (missing config or options)');
-        return { valid: true };
-      }
-
-      const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
-      const testUrl = `${cleanBaseUrl}/openai/deployments/${deploymentName}/chat/completions?api-version=2023-05-15`;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (authType === 'entra-id') {
-        if (!entraToken) {
-          return { valid: false, error: 'Missing Entra ID access token for Azure Foundry validation request' };
-        }
-        headers['Authorization'] = `Bearer ${entraToken}`;
-      } else {
-        headers['api-key'] = sanitizedKey;
-      }
-
-      try {
-        let response = await fetchWithTimeout(
-          testUrl,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              messages: [{ role: 'user', content: 'test' }],
-              max_completion_tokens: 5
-            }),
-          },
-          API_KEY_VALIDATION_TIMEOUT_MS
-        );
-
-        if (!response.ok) {
-          const firstErrorData = await response.json().catch(() => ({}));
-          const firstErrorMessage = (firstErrorData as { error?: { message?: string } })?.error?.message || '';
-
-          if (firstErrorMessage.includes('max_completion_tokens')) {
-            response = await fetchWithTimeout(
-              testUrl,
-              {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                  messages: [{ role: 'user', content: 'test' }],
-                  max_tokens: 5
-                }),
-              },
-              API_KEY_VALIDATION_TIMEOUT_MS
-            );
-          } else {
-            return { valid: false, error: firstErrorMessage || `API returned status ${response.status}` };
-          }
-        }
-
-        if (response.ok) {
-          console.log(`[API Key] Validation succeeded for ${provider}`);
-          return { valid: true };
-        }
-
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        console.warn(`[API Key] Validation failed for ${provider}`, { error: errorMessage });
-        return { valid: false, error: errorMessage };
-      } catch (error) {
-        console.error(`[API Key] Validation error for ${provider}`, { error: error instanceof Error ? error.message : String(error) });
-        if (error instanceof Error && error.name === 'AbortError') {
-          return { valid: false, error: 'Request timed out. Please check your internet connection and try again.' };
-        }
-        return { valid: false, error: 'Failed to validate API key. Check your internet connection.' };
-      }
+      return result;
     }
 
     console.log(`[API Key] Skipping validation for ${provider} (local/custom provider)`);
@@ -634,132 +551,17 @@ export function registerIPCHandlers(): void {
 
   handle('bedrock:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
     console.log('[Bedrock] Validation requested');
-
-    const parseResult = safeParseJson<BedrockCredentials>(credentials);
-    if (!parseResult.success) {
-      console.warn('[Bedrock] Failed to parse credentials:', parseResult.error);
-      return { valid: false, error: 'Failed to parse credentials' };
-    }
-    const parsed = parseResult.data;
-    let client: BedrockClient;
-    let cleanupEnv: (() => void) | null = null;
-
-    if (parsed.authType === 'apiKey') {
-      const originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
-      process.env.AWS_BEARER_TOKEN_BEDROCK = parsed.apiKey;
-      cleanupEnv = () => {
-        if (originalToken !== undefined) {
-          process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
-        } else {
-          delete process.env.AWS_BEARER_TOKEN_BEDROCK;
-        }
-      };
-      client = new BedrockClient({
-        region: parsed.region || 'us-east-1',
-      });
-    } else if (parsed.authType === 'accessKeys') {
-      if (!parsed.accessKeyId || !parsed.secretAccessKey) {
-        return { valid: false, error: 'Access Key ID and Secret Access Key are required' };
-      }
-      const awsCredentials: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
-        accessKeyId: parsed.accessKeyId,
-        secretAccessKey: parsed.secretAccessKey,
-      };
-      if (parsed.sessionToken) {
-        awsCredentials.sessionToken = parsed.sessionToken;
-      }
-      client = new BedrockClient({
-        region: parsed.region || 'us-east-1',
-        credentials: awsCredentials,
-      });
-    } else if (parsed.authType === 'profile') {
-      client = new BedrockClient({
-        region: parsed.region || 'us-east-1',
-        credentials: fromIni({ profile: parsed.profileName || 'default' }),
-      });
-    } else {
-      return { valid: false, error: 'Invalid authentication type' };
-    }
-
-    try {
-      const command = new ListFoundationModelsCommand({});
-      await client.send(command);
-
-      return { valid: true };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Validation failed';
-
-      if (message.includes('UnrecognizedClientException') || message.includes('InvalidSignatureException')) {
-        return { valid: false, error: 'Invalid AWS credentials. Please check your Access Key ID and Secret Access Key.' };
-      }
-      if (message.includes('AccessDeniedException')) {
-        return { valid: false, error: 'Access denied. Ensure your AWS credentials have Bedrock permissions.' };
-      }
-      if (message.includes('could not be found')) {
-        return { valid: false, error: 'AWS profile not found. Check your ~/.aws/credentials file.' };
-      }
-      if (message.includes('InvalidBearerTokenException') || message.includes('bearer token')) {
-        return { valid: false, error: 'Invalid Bedrock API key. Please check your API key and try again.' };
-      }
-
-      return { valid: false, error: message };
-    } finally {
-      cleanupEnv?.();
-    }
+    return validateBedrockCredentials(credentials);
   });
 
   handle('bedrock:fetch-models', async (_event: IpcMainInvokeEvent, credentialsJson: string) => {
     try {
       const credentials = JSON.parse(credentialsJson) as BedrockCredentials;
-
-      let bedrockClient: BedrockClient;
-      let originalToken: string | undefined;
-
-      if (credentials.authType === 'apiKey') {
-        originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
-        process.env.AWS_BEARER_TOKEN_BEDROCK = credentials.apiKey;
-        bedrockClient = new BedrockClient({
-          region: credentials.region || 'us-east-1',
-        });
-      } else if (credentials.authType === 'accessKeys') {
-        bedrockClient = new BedrockClient({
-          region: credentials.region || 'us-east-1',
-          credentials: {
-            accessKeyId: credentials.accessKeyId,
-            secretAccessKey: credentials.secretAccessKey,
-            sessionToken: credentials.sessionToken,
-          },
-        });
-      } else {
-        bedrockClient = new BedrockClient({
-          region: credentials.region || 'us-east-1',
-          credentials: fromIni({ profile: credentials.profileName }),
-        });
+      const result = await fetchBedrockModels(credentials);
+      if (!result.success && result.error) {
+        return { success: false, error: normalizeIpcError(result.error), models: [] };
       }
-
-      try {
-        const command = new ListFoundationModelsCommand({});
-        const response = await bedrockClient.send(command);
-
-        const models = (response.modelSummaries || [])
-          .filter(m => m.outputModalities?.includes('TEXT'))
-          .map(m => ({
-            id: `amazon-bedrock/${m.modelId}`,
-            name: m.modelId || 'Unknown',
-            provider: m.providerName || 'Unknown',
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        return { success: true, models };
-      } finally {
-        if (credentials.authType === 'apiKey') {
-          if (originalToken !== undefined) {
-            process.env.AWS_BEARER_TOKEN_BEDROCK = originalToken;
-          } else {
-            delete process.env.AWS_BEARER_TOKEN_BEDROCK;
-          }
-        }
-      }
+      return result;
     } catch (error) {
       console.error('[Bedrock] Failed to fetch models:', error);
       return { success: false, error: normalizeIpcError(error), models: [] };
@@ -858,52 +660,7 @@ export function registerIPCHandlers(): void {
   });
 
   handle('ollama:test-connection', async (_event: IpcMainInvokeEvent, url: string) => {
-    const sanitizedUrl = sanitizeString(url, 'ollamaUrl', 256);
-
-    try {
-      validateHttpUrl(sanitizedUrl, 'Ollama URL');
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Invalid URL format' };
-    }
-
-    try {
-      const response = await fetchWithTimeout(
-        `${sanitizedUrl}/api/tags`,
-        { method: 'GET' },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        throw new Error(`Ollama returned status ${response.status}`);
-      }
-
-      const data = await response.json() as { models?: Array<{ name: string; size: number }> };
-      const rawModels = data.models || [];
-
-      if (rawModels.length === 0) {
-        return { success: true, models: [] };
-      }
-
-      const models: OllamaModel[] = [];
-      for (const m of rawModels) {
-        const toolSupport = await testOllamaModelToolSupport(sanitizedUrl, m.name);
-        models.push({
-          id: m.name,
-          displayName: m.name,
-          size: m.size,
-          toolSupport,
-        });
-      }
-
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection failed';
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Connection timed out. Make sure Ollama is running.' };
-      }
-      return { success: false, error: `Cannot connect to Ollama: ${message}` };
-    }
+    return testOllamaConnection(url);
   });
 
   handle('ollama:get-config', async (_event: IpcMainInvokeEvent) => {
@@ -1077,162 +834,17 @@ export function registerIPCHandlers(): void {
 
   handle('openrouter:fetch-models', async (_event: IpcMainInvokeEvent) => {
     const apiKey = getApiKey('openrouter');
-    if (!apiKey) {
-      return { success: false, error: 'No OpenRouter API key configured' };
-    }
-
-    try {
-      const response = await fetchWithTimeout(
-        'https://openrouter.ai/api/v1/models',
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-          },
-        },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        return { success: false, error: errorMessage };
-      }
-
-      const data = await response.json() as { data?: Array<{ id: string; name: string; context_length?: number }> };
-      const models = (data.data || []).map((m) => {
-        const provider = m.id.split('/')[0] || 'unknown';
-        return {
-          id: m.id,
-          name: m.name || m.id,
-          provider,
-          contextLength: m.context_length || 0,
-        };
-      });
-
-      console.log(`[OpenRouter] Fetched ${models.length} models`);
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch models';
-      console.warn('[OpenRouter] Fetch failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Request timed out. Check your internet connection.' };
-      }
-      return { success: false, error: `Failed to fetch models: ${message}` };
-    }
+    return fetchOpenRouterModels(apiKey || '', API_KEY_VALIDATION_TIMEOUT_MS);
   });
 
   handle('litellm:test-connection', async (_event: IpcMainInvokeEvent, url: string, apiKey?: string) => {
-    const sanitizedUrl = sanitizeString(url, 'litellmUrl', 256);
-    const sanitizedApiKey = apiKey ? sanitizeString(apiKey, 'apiKey', 256) : undefined;
-
-    try {
-      validateHttpUrl(sanitizedUrl, 'LiteLLM URL');
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Invalid URL format' };
-    }
-
-    try {
-      const headers: Record<string, string> = {};
-      if (sanitizedApiKey) {
-        headers['Authorization'] = `Bearer ${sanitizedApiKey}`;
-      }
-
-      const response = await fetchWithTimeout(
-        `${sanitizedUrl}/v1/models`,
-        { method: 'GET', headers },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        return { success: false, error: errorMessage };
-      }
-
-      const data = await response.json() as { data?: Array<{ id: string; object: string; created?: number; owned_by?: string }> };
-      const models = (data.data || []).map((m) => {
-        const provider = m.id.split('/')[0] || m.owned_by || 'unknown';
-        return {
-          id: m.id,
-          name: m.id,
-          provider,
-          contextLength: 0,
-        };
-      });
-
-      console.log(`[LiteLLM] Connection successful, found ${models.length} models`);
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection failed';
-      console.warn('[LiteLLM] Connection failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Connection timed out. Make sure LiteLLM proxy is running.' };
-      }
-      return { success: false, error: `Cannot connect to LiteLLM: ${message}` };
-    }
+    return testLiteLLMConnection(url, apiKey);
   });
 
   handle('litellm:fetch-models', async (_event: IpcMainInvokeEvent) => {
     const config = getLiteLLMConfig();
-    if (!config || !config.baseUrl) {
-      return { success: false, error: 'No LiteLLM proxy configured' };
-    }
-
     const apiKey = getApiKey('litellm');
-
-    try {
-      const headers: Record<string, string> = {};
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      }
-
-      const response = await fetchWithTimeout(
-        `${config.baseUrl}/v1/models`,
-        { method: 'GET', headers },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        return { success: false, error: errorMessage };
-      }
-
-      const data = await response.json() as { data?: Array<{ id: string; object: string; created?: number; owned_by?: string }> };
-      const models = (data.data || []).map((m) => {
-        const parts = m.id.split('/');
-        const provider = parts.length > 1 ? parts[0] : (m.owned_by !== 'openai' ? m.owned_by : 'unknown') || 'unknown';
-
-        const modelPart = parts.length > 1 ? parts.slice(1).join('/') : m.id;
-        const providerDisplay = provider.charAt(0).toUpperCase() + provider.slice(1);
-        const modelDisplay = modelPart
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        const displayName = parts.length > 1 ? `${providerDisplay}: ${modelDisplay}` : modelDisplay;
-
-        return {
-          id: m.id,
-          name: displayName,
-          provider,
-          contextLength: 0,
-        };
-      });
-
-      console.log(`[LiteLLM] Fetched ${models.length} models`);
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch models';
-      console.warn('[LiteLLM] Fetch failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Request timed out. Check your LiteLLM proxy.' };
-      }
-      return { success: false, error: `Failed to fetch models: ${message}` };
-    }
+    return fetchLiteLLMModels({ config, apiKey: apiKey || undefined });
   });
 
   handle('litellm:get-config', async (_event: IpcMainInvokeEvent) => {
@@ -1263,63 +875,7 @@ export function registerIPCHandlers(): void {
   });
 
   handle('lmstudio:test-connection', async (_event: IpcMainInvokeEvent, url: string) => {
-    const sanitizedUrl = sanitizeString(url, 'lmstudioUrl', 256);
-
-    try {
-      validateHttpUrl(sanitizedUrl, 'LM Studio URL');
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Invalid URL format' };
-    }
-
-    try {
-      const response = await fetchWithTimeout(
-        `${sanitizedUrl}/v1/models`,
-        { method: 'GET' },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        return { success: false, error: errorMessage };
-      }
-
-      const data = await response.json() as { data?: Array<{ id: string; object: string; owned_by?: string }> };
-      const rawModels = data.data || [];
-
-      if (rawModels.length === 0) {
-        return { success: false, error: 'No models loaded in LM Studio. Please load a model first.' };
-      }
-
-      const models: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }> = [];
-
-      for (const m of rawModels) {
-        const displayName = m.id
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-
-        const toolSupport = await testLMStudioModelToolSupport(sanitizedUrl, m.id);
-
-        models.push({
-          id: m.id,
-          name: displayName,
-          toolSupport,
-        });
-
-        console.log(`[LM Studio] Model ${m.id}: toolSupport=${toolSupport}`);
-      }
-
-      console.log(`[LM Studio] Connection successful, found ${models.length} models`);
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection failed';
-      console.warn('[LM Studio] Connection failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Connection timed out. Make sure LM Studio is running.' };
-      }
-      return { success: false, error: `Cannot connect to LM Studio: ${message}` };
-    }
+    return testLMStudioConnection({ url });
   });
 
   handle('lmstudio:fetch-models', async (_event: IpcMainInvokeEvent) => {
@@ -1328,47 +884,7 @@ export function registerIPCHandlers(): void {
       return { success: false, error: 'No LM Studio configured' };
     }
 
-    try {
-      const response = await fetchWithTimeout(
-        `${config.baseUrl}/v1/models`,
-        { method: 'GET' },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-        return { success: false, error: errorMessage };
-      }
-
-      const data = await response.json() as { data?: Array<{ id: string; object: string; owned_by?: string }> };
-      const rawModels = data.data || [];
-
-      const models: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }> = [];
-
-      for (const m of rawModels) {
-        const displayName = m.id
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-
-        const toolSupport = await testLMStudioModelToolSupport(config.baseUrl, m.id);
-
-        models.push({
-          id: m.id,
-          name: displayName,
-          toolSupport,
-        });
-      }
-      return { success: true, models };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch models';
-      console.warn('[LM Studio] Fetch failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Request timed out. Check your LM Studio server.' };
-      }
-      return { success: false, error: `Failed to fetch models: ${message}` };
-    }
+    return fetchLMStudioModels({ baseUrl: config.baseUrl });
   });
 
   handle('lmstudio:get-config', async (_event: IpcMainInvokeEvent) => {
@@ -1377,23 +893,7 @@ export function registerIPCHandlers(): void {
 
   handle('lmstudio:set-config', async (_event: IpcMainInvokeEvent, config: LMStudioConfig | null) => {
     if (config !== null) {
-      if (typeof config.baseUrl !== 'string' || typeof config.enabled !== 'boolean') {
-        throw new Error('Invalid LM Studio configuration');
-      }
-      validateHttpUrl(config.baseUrl, 'LM Studio base URL');
-      if (config.lastValidated !== undefined && typeof config.lastValidated !== 'number') {
-        throw new Error('Invalid LM Studio configuration');
-      }
-      if (config.models !== undefined) {
-        if (!Array.isArray(config.models)) {
-          throw new Error('Invalid LM Studio configuration: models must be an array');
-        }
-        for (const model of config.models) {
-          if (typeof model.id !== 'string' || typeof model.name !== 'string') {
-            throw new Error('Invalid LM Studio configuration: invalid model format');
-          }
-        }
-      }
+      validateLMStudioConfig(config);
     }
     setLMStudioConfig(config);
   });
