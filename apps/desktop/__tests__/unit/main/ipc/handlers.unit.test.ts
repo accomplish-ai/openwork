@@ -134,6 +134,9 @@ vi.mock('@accomplish/core', async (importOriginal) => {
     // Use actual implementation for URL validation since tests depend on real validation
     validateHttpUrl: actual.validateHttpUrl,
 
+    // Use actual implementation for task config validation
+    validateTaskConfig: actual.validateTaskConfig,
+
   // Utility functions
   fetchWithTimeout: vi.fn(() => Promise.resolve(new Response('{}'))),
   createTaskId: vi.fn(() => `task_${Date.now()}`),
