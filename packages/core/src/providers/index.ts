@@ -40,7 +40,10 @@ export {
 } from './ollama.js';
 export {
   validateAzureFoundry,
+  testAzureFoundryConnection,
   type AzureFoundryValidationOptions,
+  type AzureFoundryConnectionOptions,
+  type AzureFoundryConnectionResult,
 } from './azure-foundry.js';
 export {
   testLMStudioConnection,

@@ -10,7 +10,6 @@ import {
 } from '../opencode';
 import { getLogCollector } from '../logging';
 import {
-  getAzureEntraToken,
   getTasks,
   getTask,
   saveTask,
@@ -24,7 +23,7 @@ import {
   validateBedrockCredentials,
   fetchBedrockModels,
   validateAzureFoundry,
-  fetchWithTimeout,
+  testAzureFoundryConnection,
   fetchOpenRouterModels,
   testLiteLLMConnection,
   fetchLiteLLMModels,
@@ -721,88 +720,13 @@ export function registerIPCHandlers(): void {
     _event: IpcMainInvokeEvent,
     config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }
   ) => {
-    const { endpoint, deploymentName, authType, apiKey } = config;
-
-    let baseUrl: string;
-    try {
-      validateHttpUrl(endpoint, 'Azure Foundry endpoint');
-      baseUrl = endpoint.replace(/\/$/, '');
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Invalid endpoint URL format' };
-    }
-
-    try {
-      let authHeader: string;
-
-      if (authType === 'api-key') {
-        if (!apiKey) {
-          return { success: false, error: 'API key is required for API key authentication' };
-        }
-        authHeader = apiKey;
-      } else {
-        const tokenResult = await getAzureEntraToken();
-        if (!tokenResult.success) {
-          return { success: false, error: tokenResult.error };
-        }
-        authHeader = `Bearer ${tokenResult.token}`;
-      }
-
-      const testUrl = `${baseUrl}/openai/deployments/${deploymentName}/chat/completions?api-version=2024-02-15-preview`;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (authType === 'api-key') {
-        headers['api-key'] = authHeader;
-      } else {
-        headers['Authorization'] = authHeader;
-      }
-
-      const response = await fetchWithTimeout(
-        testUrl,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: 'Hi' }],
-            max_completion_tokens: 5,
-          }),
-        },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        const retryResponse = await fetchWithTimeout(
-          testUrl,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              messages: [{ role: 'user', content: 'Hi' }],
-              max_tokens: 5,
-            }),
-          },
-          API_KEY_VALIDATION_TIMEOUT_MS
-        );
-
-        if (!retryResponse.ok) {
-          const errorData = await retryResponse.json().catch(() => ({}));
-          const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${retryResponse.status}`;
-          return { success: false, error: errorMessage };
-        }
-      }
-
-      console.log('[Azure Foundry] Connection test successful for deployment:', deploymentName);
-      return { success: true };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection failed';
-      console.warn('[Azure Foundry] Connection test failed:', message);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Request timed out. Check your endpoint URL and network connection.' };
-      }
-      return { success: false, error: message };
-    }
+    return testAzureFoundryConnection({
+      endpoint: config.endpoint,
+      deploymentName: config.deploymentName,
+      authType: config.authType,
+      apiKey: config.apiKey,
+      timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+    });
   });
 
   handle('azure-foundry:save-config', async (

@@ -2,8 +2,119 @@ import type { AzureFoundryConfig } from '@accomplish/shared';
 
 import { fetchWithTimeout } from '../utils/fetch.js';
 import { sanitizeString } from '../utils/sanitize.js';
+import { validateHttpUrl } from '../utils/url.js';
 import { getAzureEntraToken } from '../opencode/proxies/azure-token-manager.js';
 import type { ValidationResult } from './validation.js';
+
+export interface AzureFoundryConnectionOptions {
+  endpoint: string;
+  deploymentName: string;
+  authType: 'api-key' | 'entra-id';
+  apiKey?: string;
+  timeout?: number;
+}
+
+export interface AzureFoundryConnectionResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Tests connection to an Azure Foundry (Azure OpenAI) endpoint.
+ *
+ * This is used to test user-provided configuration before saving.
+ * For validating stored configuration, use validateAzureFoundry instead.
+ *
+ * @param options - Connection options including endpoint, deployment, and auth
+ * @returns Connection result indicating success or failure with error message
+ */
+export async function testAzureFoundryConnection(
+  options: AzureFoundryConnectionOptions
+): Promise<AzureFoundryConnectionResult> {
+  const { endpoint, deploymentName, authType, apiKey, timeout = DEFAULT_TIMEOUT_MS } = options;
+
+  let baseUrl: string;
+  try {
+    validateHttpUrl(endpoint, 'Azure Foundry endpoint');
+    baseUrl = endpoint.replace(/\/$/, '');
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Invalid endpoint URL format' };
+  }
+
+  try {
+    let authHeader: string;
+
+    if (authType === 'api-key') {
+      if (!apiKey) {
+        return { success: false, error: 'API key is required for API key authentication' };
+      }
+      authHeader = apiKey;
+    } else {
+      const tokenResult = await getAzureEntraToken();
+      if (!tokenResult.success) {
+        return { success: false, error: tokenResult.error };
+      }
+      authHeader = `Bearer ${tokenResult.token}`;
+    }
+
+    const testUrl = `${baseUrl}/openai/deployments/${deploymentName}/chat/completions?api-version=2024-02-15-preview`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (authType === 'api-key') {
+      headers['api-key'] = authHeader;
+    } else {
+      headers['Authorization'] = authHeader;
+    }
+
+    const response = await fetchWithTimeout(
+      testUrl,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_completion_tokens: 5,
+        }),
+      },
+      timeout
+    );
+
+    if (!response.ok) {
+      // Retry with max_tokens for deployments that don't support max_completion_tokens
+      const retryResponse = await fetchWithTimeout(
+        testUrl,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'Hi' }],
+            max_tokens: 5,
+          }),
+        },
+        timeout
+      );
+
+      if (!retryResponse.ok) {
+        const errorData = await retryResponse.json().catch(() => ({}));
+        const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${retryResponse.status}`;
+        return { success: false, error: errorMessage };
+      }
+    }
+
+    console.log('[Azure Foundry] Connection test successful for deployment:', deploymentName);
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Connection failed';
+    console.warn('[Azure Foundry] Connection test failed:', message);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { success: false, error: 'Request timed out. Check your endpoint URL and network connection.' };
+    }
+    return { success: false, error: message };
+  }
+}
 
 export interface AzureFoundryValidationOptions {
   /** API key for api-key auth type */
