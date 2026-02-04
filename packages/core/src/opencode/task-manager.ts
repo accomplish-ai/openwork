@@ -482,6 +482,22 @@ export class TaskManager {
   }
 
   /**
+   * Get the currently running task ID (not queued)
+   * Returns the first active task if multiple are running
+   */
+  getActiveTaskId(): string | null {
+    const firstActive = this.activeTasks.keys().next();
+    return firstActive.done ? null : firstActive.value;
+  }
+
+  /**
+   * Get the number of active tasks
+   */
+  getActiveTaskCount(): number {
+    return this.activeTasks.size;
+  }
+
+  /**
    * Cancel all running tasks
    */
   cancelAllTasks(): void {

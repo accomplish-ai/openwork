@@ -22,7 +22,7 @@ import {
   stopAzureFoundryProxy,
   stopMoonshotProxy,
 } from '@accomplish/core';
-import { disposeTaskManager } from './opencode/task-manager';
+import { disposeTaskManager } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import { initializeDatabase, closeDatabase } from './store/db';

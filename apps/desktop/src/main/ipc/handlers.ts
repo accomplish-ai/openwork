@@ -5,14 +5,12 @@ import fs from 'fs';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
-} from '../opencode/adapter';
-import { getLogCollector } from '../logging';
-import { getAzureEntraToken } from '@accomplish/core';
-import {
   getTaskManager,
   disposeTaskManager,
   type TaskCallbacks,
-} from '../opencode/task-manager';
+} from '../opencode';
+import { getLogCollector } from '../logging';
+import { getAzureEntraToken } from '@accomplish/core';
 import {
   getTasks,
   getTask,
