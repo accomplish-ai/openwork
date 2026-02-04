@@ -34,6 +34,34 @@ pnpm -F @accomplish/desktop test:e2e:native:ui  # E2E with Playwright UI
 pnpm clean                                      # Clean build outputs and node_modules
 ```
 
+## Publishing Packages (Changesets)
+
+The `@accomplish/core` and `@accomplish/shared` packages use [Changesets](https://github.com/changesets/changesets) for versioning.
+
+### Creating a Changeset
+When making changes to core or shared packages, create a changeset:
+```bash
+pnpm changeset
+```
+This prompts you to:
+1. Select which packages changed
+2. Choose bump type (patch/minor/major)
+3. Write a summary for the changelog
+
+Commit the generated `.changeset/*.md` file with your PR.
+
+### Release Process (Automated)
+1. Merge PR with changeset files to `main`
+2. GitHub Action creates a "Release PR" with version bumps
+3. Review and merge the Release PR
+4. GitHub Action publishes to npm automatically
+
+### Manual Release (if needed)
+```bash
+pnpm version-packages  # Apply changesets, bump versions
+pnpm release           # Build and publish
+```
+
 ## Architecture
 
 ### Monorepo Layout

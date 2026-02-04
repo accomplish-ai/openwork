@@ -219,3 +219,57 @@ jobs:
           name: windows-test-results
           path: apps/desktop/coverage/
           retention-days: 7
+
+  # Changeset check - require changeset for package changes
+  changeset-check:
+    name: Changeset Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for package changes
+        id: changes
+        run: |
+          # Get list of changed files compared to base branch
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if any package files changed
+          PACKAGE_CHANGES=$(echo "$CHANGED_FILES" | grep -E "^packages/(core|shared)/" || true)
+
+          if [ -n "$PACKAGE_CHANGES" ]; then
+            echo "package_changes=true" >> $GITHUB_OUTPUT
+            echo "Changed package files:"
+            echo "$PACKAGE_CHANGES"
+          else
+            echo "package_changes=false" >> $GITHUB_OUTPUT
+            echo "No package changes detected"
+          fi
+
+      - name: Check for changeset
+        if: steps.changes.outputs.package_changes == 'true'
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check for changeset files (excluding README.md)
+          CHANGESET_FILES=$(echo "$CHANGED_FILES" | grep -E "^\.changeset/.*\.md$" | grep -v "README.md" || true)
+
+          if [ -z "$CHANGESET_FILES" ]; then
+            echo "::error::Changes detected in packages/core or packages/shared but no changeset found."
+            echo "::error::Please run 'pnpm changeset' to create a changeset describing your changes."
+            echo ""
+            echo "To create a changeset:"
+            echo "  1. Run: pnpm changeset"
+            echo "  2. Select the packages you modified"
+            echo "  3. Choose the bump type (patch/minor/major)"
+            echo "  4. Write a summary of your changes"
+            echo "  5. Commit the generated .changeset/*.md file"
+            exit 1
+          else
+            echo "Changeset found:"
+            echo "$CHANGESET_FILES"
+          fi

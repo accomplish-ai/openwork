@@ -1,7 +1,16 @@
 {
   "name": "@accomplish/core",
   "version": "0.1.0",
-  "private": true,
+  "description": "Core logic for Accomplish desktop and CLI - OpenCode adapter, storage, providers, skills",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/accomplish-ai/accomplish.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
