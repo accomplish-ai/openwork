@@ -4,6 +4,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { ApiKeyProvider } from '@accomplish/shared';
 
+/**
+ * AES-256-GCM encryption using machine-derived keys. Less secure than OS Keychain
+ * (key derivation is reversible) but avoids permission prompts on macOS.
+ * Suitable for API keys that can be rotated if compromised.
+ */
 export interface SecureStorageOptions {
   storagePath: string;
   appId: string;
