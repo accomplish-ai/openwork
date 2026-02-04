@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Último Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Descargar para macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Descargar para macOS" /></a>
 </p>
 
 # Accomplish™ - Agente de Escritorio de IA de Código Abierto
@@ -23,7 +23,9 @@ Accomplish es un agente de escritorio de IA de código abierto que automatiza la
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Descargar Accomplish para Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Descargar para Mac (Apple Silicon)</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Descargar para Windows 11</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Sitio web de Accomplish</a>
   ·
@@ -157,7 +159,7 @@ Accomplish se ejecuta localmente en tu máquina. Tus archivos permanecen en tu d
 ## Requisitos del sistema
 
 - macOS (Apple Silicon)
-- Soporte para Windows próximamente
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Accomplish se ejecuta localmente en tu máquina. Tus archivos permanecen en tu d
 
 <div align="center">
 
-[**Descargar para Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
+[**Descargar para Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Descargar para Windows 11**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -221,7 +223,7 @@ Puedes usar tus propias claves API (OpenAI, Anthropic, Google, xAI, etc.) o ejec
 Sí. Accomplish es de código abierto y tiene licencia MIT.
 
 **¿Qué plataformas son compatibles?**
-macOS (Apple Silicon) está disponible ahora. El soporte para Windows llegará pronto.
+macOS (Apple Silicon) y Windows 11 están disponibles ahora.
 
 <br />
 

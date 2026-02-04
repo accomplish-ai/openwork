@@ -1,48 +1,50 @@
 // apps/desktop/src/renderer/components/settings/shared/RegionSelector.tsx
 
+import { SearchableSelect } from '@/components/ui/searchable-select';
+
 const AWS_REGIONS = [
   // United States
-  { id: 'us-east-1', name: 'US East (N. Virginia)' },
-  { id: 'us-east-2', name: 'US East (Ohio)' },
-  { id: 'us-west-1', name: 'US West (N. California)' },
-  { id: 'us-west-2', name: 'US West (Oregon)' },
+  { id: 'us-east-1', name: 'us-east-1' },
+  { id: 'us-east-2', name: 'us-east-2' },
+  { id: 'us-west-1', name: 'us-west-1' },
+  { id: 'us-west-2', name: 'us-west-2' },
   // Canada
-  { id: 'ca-central-1', name: 'Canada (Central)' },
-  { id: 'ca-west-1', name: 'Canada West (Calgary)' },
+  { id: 'ca-central-1', name: 'ca-central-1' },
+  { id: 'ca-west-1', name: 'ca-west-1' },
   // South America
-  { id: 'sa-east-1', name: 'South America (São Paulo)' },
+  { id: 'sa-east-1', name: 'sa-east-1' },
   // Europe
-  { id: 'eu-north-1', name: 'Europe (Stockholm)' },
-  { id: 'eu-west-1', name: 'Europe (Ireland)' },
-  { id: 'eu-west-2', name: 'Europe (London)' },
-  { id: 'eu-west-3', name: 'Europe (Paris)' },
-  { id: 'eu-central-1', name: 'Europe (Frankfurt)' },
-  { id: 'eu-central-2', name: 'Europe (Zurich)' },
-  { id: 'eu-south-1', name: 'Europe (Milan)' },
-  { id: 'eu-south-2', name: 'Europe (Spain)' },
+  { id: 'eu-north-1', name: 'eu-north-1' },
+  { id: 'eu-west-1', name: 'eu-west-1' },
+  { id: 'eu-west-2', name: 'eu-west-2' },
+  { id: 'eu-west-3', name: 'eu-west-3' },
+  { id: 'eu-central-1', name: 'eu-central-1' },
+  { id: 'eu-central-2', name: 'eu-central-2' },
+  { id: 'eu-south-1', name: 'eu-south-1' },
+  { id: 'eu-south-2', name: 'eu-south-2' },
   // Middle East
-  { id: 'me-south-1', name: 'Middle East (Bahrain)' },
-  { id: 'me-central-1', name: 'Middle East (UAE)' },
-  { id: 'il-central-1', name: 'Israel (Tel Aviv)' },
+  { id: 'me-south-1', name: 'me-south-1' },
+  { id: 'me-central-1', name: 'me-central-1' },
+  { id: 'il-central-1', name: 'il-central-1' },
   // Africa
-  { id: 'af-south-1', name: 'Africa (Cape Town)' },
+  { id: 'af-south-1', name: 'af-south-1' },
   // Asia Pacific
-  { id: 'ap-northeast-1', name: 'Asia Pacific (Tokyo)' },
-  { id: 'ap-northeast-2', name: 'Asia Pacific (Seoul)' },
-  { id: 'ap-northeast-3', name: 'Asia Pacific (Osaka)' },
-  { id: 'ap-southeast-1', name: 'Asia Pacific (Singapore)' },
-  { id: 'ap-southeast-2', name: 'Asia Pacific (Sydney)' },
-  { id: 'ap-southeast-3', name: 'Asia Pacific (Jakarta)' },
-  { id: 'ap-southeast-4', name: 'Asia Pacific (Melbourne)' },
-  { id: 'ap-southeast-5', name: 'Asia Pacific (Malaysia)' },
-  { id: 'ap-southeast-6', name: 'Asia Pacific (New Zealand)' },
-  { id: 'ap-southeast-7', name: 'Asia Pacific (Thailand)' },
-  { id: 'ap-south-1', name: 'Asia Pacific (Mumbai)' },
-  { id: 'ap-south-2', name: 'Asia Pacific (Hyderabad)' },
-  { id: 'ap-east-1', name: 'Asia Pacific (Hong Kong)' },
-  { id: 'ap-east-2', name: 'Asia Pacific (Taipei)' },
+  { id: 'ap-northeast-1', name: 'ap-northeast-1' },
+  { id: 'ap-northeast-2', name: 'ap-northeast-2' },
+  { id: 'ap-northeast-3', name: 'ap-northeast-3' },
+  { id: 'ap-southeast-1', name: 'ap-southeast-1' },
+  { id: 'ap-southeast-2', name: 'ap-southeast-2' },
+  { id: 'ap-southeast-3', name: 'ap-southeast-3' },
+  { id: 'ap-southeast-4', name: 'ap-southeast-4' },
+  { id: 'ap-southeast-5', name: 'ap-southeast-5' },
+  { id: 'ap-southeast-6', name: 'ap-southeast-6' },
+  { id: 'ap-southeast-7', name: 'ap-southeast-7' },
+  { id: 'ap-south-1', name: 'ap-south-1' },
+  { id: 'ap-south-2', name: 'ap-south-2' },
+  { id: 'ap-east-1', name: 'ap-east-1' },
+  { id: 'ap-east-2', name: 'ap-east-2' },
   // Mexico
-  { id: 'mx-central-1', name: 'Mexico (Central)' },
+  { id: 'mx-central-1', name: 'mx-central-1' },
 ];
 
 interface RegionSelectorProps {
@@ -52,20 +54,15 @@ interface RegionSelectorProps {
 
 export function RegionSelector({ value, onChange }: RegionSelectorProps) {
   return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-foreground">Region</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        data-testid="bedrock-region-select"
-        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
-      >
-        {AWS_REGIONS.map((region) => (
-          <option key={region.id} value={region.id}>
-            {region.id}
-          </option>
-        ))}
-      </select>
-    </div>
+    <SearchableSelect
+      items={AWS_REGIONS}
+      value={value}
+      onChange={onChange}
+      label="Region"
+      placeholder="Select region..."
+      searchPlaceholder="Search regions..."
+      emptyMessage="No regions found"
+      testId="bedrock-region-select"
+    />
   );
 }

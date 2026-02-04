@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最終コミット" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
 </p>
 
 # Accomplish™ - オープンソースAIデスクトップエージェント
@@ -23,7 +23,9 @@ Accomplishは、お使いのマシン上でローカルにファイル管理、�
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Mac用Accomplishをダウンロード（Apple Silicon）</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Mac用ダウンロード（Apple Silicon）</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Windows 11用ダウンロード</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplishウェブサイト</a>
   ·
@@ -157,7 +159,7 @@ Accomplishはお使いのマシン上でローカルに実行されます。フ�
 ## システム要件
 
 - macOS（Apple Silicon）
-- Windows対応は近日公開予定
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Accomplishはお使いのマシン上でローカルに実行されます。フ�
 
 <div align="center">
 
-[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
+[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Windows 11用ダウンロード**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -221,7 +223,7 @@ macOSでのAccomplishの概要と、短いデモ動画。
 はい。AccomplishはオープンソースでMITライセンスです。
 
 **どのプラットフォームに対応していますか？**
-macOS（Apple Silicon）は現在利用可能です。Windows対応は近日公開予定です。
+macOS（Apple Silicon）とWindows 11が利用可能です。
 
 <br />
 

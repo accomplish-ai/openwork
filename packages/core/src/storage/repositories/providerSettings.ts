@@ -5,6 +5,7 @@ import type {
   ProviderCredentials,
 } from '@accomplish/shared';
 import { getDatabase } from '../database.js';
+import { safeParseJsonWithFallback } from '../../utils/json.js';
 
 interface ProviderMetaRow {
   id: number;
@@ -27,20 +28,12 @@ function getMetaRow(): ProviderMetaRow {
   return db.prepare('SELECT * FROM provider_meta WHERE id = 1').get() as ProviderMetaRow;
 }
 
-function safeParseJson<T>(json: string | null, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
-  }
-}
 
 function rowToProvider(row: ProviderRow): ConnectedProvider {
-  const credentials = safeParseJson<ProviderCredentials>(
+  const credentials = safeParseJsonWithFallback<ProviderCredentials>(
     row.credentials_data,
     { type: 'api_key', keyPrefix: '' }
-  );
+  )!;
 
   return {
     providerId: row.provider_id as ProviderId,
@@ -48,10 +41,7 @@ function rowToProvider(row: ProviderRow): ConnectedProvider {
     selectedModelId: row.selected_model_id,
     credentials,
     lastConnectedAt: row.last_connected_at || new Date().toISOString(),
-    availableModels: safeParseJson<Array<{ id: string; name: string }>>(
-      row.available_models,
-      undefined as unknown as Array<{ id: string; name: string }>
-    ) || undefined,
+    availableModels: safeParseJsonWithFallback<Array<{ id: string; name: string }>>(row.available_models) ?? undefined,
   };
 }
 

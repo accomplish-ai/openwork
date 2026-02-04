@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Son Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
 </p>
 
 # Accomplish™ - Açık Kaynaklı AI Masaüstü Ajanı
@@ -23,7 +23,9 @@ Accomplish, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>Mac için Accomplish'ü İndirin (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Mac için İndirin (Apple Silicon)</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Windows 11 için İndirin</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplish web sitesi</a>
   ·
@@ -157,7 +159,7 @@ Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazın�
 ## Sistem gereksinimleri
 
 - macOS (Apple Silicon)
-- Windows desteği yakında
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazın�
 
 <div align="center">
 
-[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
+[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Windows 11 için İndirin**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -221,7 +223,7 @@ Kendi API anahtarlarınızı (OpenAI, Anthropic, Google, xAI, vb.) kullanabilir 
 Evet. Accomplish açık kaynaklıdır ve MIT lisanslıdır.
 
 **Hangi platformlar destekleniyor?**
-macOS (Apple Silicon) şu anda mevcut. Windows desteği yakında gelecek.
+macOS (Apple Silicon) ve Windows 11 şu anda mevcut.
 
 <br />
 

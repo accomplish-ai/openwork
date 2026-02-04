@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="نجوم GitHub" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="مشكلات GitHub" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="آخر تحديث" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="تحميل لـ macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="تحميل لـ macOS" /></a>
 </p>
 
 # Accomplish™ - وكيل سطح مكتب ذكاء اصطناعي مفتوح المصدر
@@ -23,7 +23,9 @@ Accomplish هو وكيل سطح مكتب ذكاء اصطناعي مفتوح ال
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>تحميل Accomplish لـ Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>تحميل لـ Mac (Apple Silicon)</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>تحميل لـ Windows 11</strong></a>
   ·
   <a href="https://www.accomplish.ai/">موقع Accomplish</a>
   ·
@@ -157,7 +159,7 @@ Accomplish هو وكيل سطح مكتب ذكاء اصطناعي مفتوح ال
 ## متطلبات النظام
 
 - macOS (Apple Silicon)
-- دعم Windows قادم قريباً
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Accomplish هو وكيل سطح مكتب ذكاء اصطناعي مفتوح ال
 
 <div align="center">
 
-[**تحميل لـ Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
+[**تحميل لـ Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**تحميل لـ Windows 11**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -221,7 +223,7 @@ Accomplish هو وكيل سطح مكتب ذكاء اصطناعي مفتوح ال
 نعم. Accomplish مفتوح المصدر ومرخص بـ MIT.
 
 **ما هي المنصات المدعومة؟**
-macOS (Apple Silicon) متاح الآن. دعم Windows قادم قريباً.
+macOS (Apple Silicon) و Windows 11 متاحان الآن.
 
 <br />
 

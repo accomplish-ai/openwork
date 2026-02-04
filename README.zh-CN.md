@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最近提交" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="下载 macOS 版" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="下载 macOS 版" /></a>
 </p>
 
 # Accomplish™ - 开源 AI 桌面代理
@@ -23,7 +23,9 @@ Accomplish 是一款开源 AI 桌面代理，可在您的本地机器上自动�
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg"><strong>下载 Mac 版 Accomplish（Apple Silicon）</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>下载 Mac 版（Apple Silicon）</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>下载 Windows 11 版</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplish 官网</a>
   ·
@@ -157,7 +159,7 @@ Accomplish 在您的机器上本地运行。您的文件保留在您的设备上
 ## 系统要求
 
 - macOS（Apple Silicon）
-- Windows 支持即将推出
+- Windows 11
 
 <br />
 
@@ -183,7 +185,7 @@ Accomplish 在您的机器上本地运行。您的文件保留在您的设备上
 
 <div align="center">
 
-[**下载 Mac 版（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.6/macos/Accomplish-0.3.6-mac-arm64.dmg)
+[**下载 Mac 版（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**下载 Windows 11 版**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
@@ -221,7 +223,7 @@ Accomplish 在您的机器上本地运行。您的文件保留在您的设备上
 是的。Accomplish 是开源的，采用 MIT 许可证。
 
 **支持哪些平台？**
-macOS（Apple Silicon）现已可用。Windows 支持即将推出。
+macOS（Apple Silicon）和 Windows 11 现已可用。
 
 <br />
 
