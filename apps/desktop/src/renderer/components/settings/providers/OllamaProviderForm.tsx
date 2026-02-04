@@ -112,22 +112,13 @@ function OllamaModelSelector({
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-foreground">Model</label>
-      <select
-        data-testid="model-selector"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-md border px-3 py-2.5 text-sm bg-background ${
-          error ? 'border-destructive' : 'border-input'
-        }`}
-      >
-        <option value="">Select a model...</option>
-        {sortedModels.map((model) => (
-          <option key={model.id} value={model.id}>
-            {model.name} {model.toolSupport === 'supported' ? '✓' : model.toolSupport === 'unsupported' ? '✗' : '?'}
-          </option>
-        ))}
-      </select>
+      <ModelSelector
+        models={selectorModels}
+        value={value}
+        onChange={onChange}
+        error={error}
+        placeholder="Select a model..."
+      />
 
       {/* Warning for unsupported or unknown models */}
       {hasUnsupportedSelected && (

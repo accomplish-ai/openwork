@@ -123,9 +123,7 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
   };
-console.log('OpenAI response', response);
-  console.log('OpenAI response', data);
-  console.log('OpenAI choices', data.choices);
+
   const text = data.choices?.[0]?.message?.content;
   return cleanSummary(text || '');
 }
