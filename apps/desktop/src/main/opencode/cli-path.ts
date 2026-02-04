@@ -3,15 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
 
-/**
- * Get OpenCode package name and platform-specific binary name.
- *
- * On Windows: The binary is in a platform-specific package (opencode-windows-x64)
- * On macOS/Linux: The binary is in the main opencode-ai package
- */
 function getOpenCodePlatformInfo(): { packageName: string; binaryName: string } {
   if (process.platform === 'win32') {
-    // On Windows, use the platform-specific package
     return {
       packageName: 'opencode-windows-x64',
       binaryName: 'opencode.exe',
@@ -23,9 +16,6 @@ function getOpenCodePlatformInfo(): { packageName: string; binaryName: string } 
   };
 }
 
-/**
- * Get all possible nvm OpenCode CLI paths by scanning the nvm versions directory
- */
 function getNvmOpenCodePaths(): string[] {
   const homeDir = process.env.HOME || '';
   const nvmVersionsDir = path.join(homeDir, '.nvm/versions/node');
@@ -42,22 +32,13 @@ function getNvmOpenCodePaths(): string[] {
       }
     }
   } catch {
-    // Ignore errors scanning nvm directory
   }
 
   return paths;
 }
 
-/**
- * Get the path to the bundled OpenCode CLI.
- *
- * In development: uses node_modules/.bin/opencode
- * In packaged app: uses the bundled CLI from unpacked asar
- */
 export function getOpenCodeCliPath(): { command: string; args: string[] } {
   if (app.isPackaged) {
-    // In packaged app, OpenCode is in unpacked asar
-    // process.resourcesPath points to Resources folder in macOS app bundle
     const { packageName, binaryName } = getOpenCodePlatformInfo();
 
     const cliPath = path.join(
@@ -69,24 +50,17 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
       binaryName
     );
 
-    // Verify the file exists
     if (!fs.existsSync(cliPath)) {
       throw new Error(`OpenCode CLI not found at: ${cliPath}`);
     }
 
-    // OpenCode binary can be run directly
     return {
       command: cliPath,
       args: [],
     };
   } else {
-    // In development, prefer the bundled CLI (node_modules) to keep behavior
-    // consistent with the packaged app and avoid schema/version mismatches.
-    // Opt into global with ACCOMPLISH_USE_GLOBAL_OPENCODE=1 if needed.
     const preferGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE === '1';
 
-    // Try bundled CLI in node_modules first (unless preferGlobal)
-    // Use app.getAppPath() instead of process.cwd() as cwd is unpredictable in Electron IPC handlers
     const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
     const devCliPath = path.join(app.getAppPath(), 'node_modules', '.bin', binName);
     if (!preferGlobal && fs.existsSync(devCliPath)) {
@@ -94,24 +68,19 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
       return { command: devCliPath, args: [] };
     }
 
-    // Check nvm installations (dynamically scan all versions)
     const nvmPaths = getNvmOpenCodePaths();
     for (const opencodePath of nvmPaths) {
       console.log('[CLI Path] Using nvm OpenCode CLI:', opencodePath);
       return { command: opencodePath, args: [] };
     }
 
-    // Check other global installations (platform-specific)
     const globalOpenCodePaths = process.platform === 'win32'
       ? [
-          // Windows: npm global installs
           path.join(process.env.APPDATA || '', 'npm', 'opencode.cmd'),
           path.join(process.env.LOCALAPPDATA || '', 'npm', 'opencode.cmd'),
         ]
       : [
-          // macOS/Linux: Global npm
           '/usr/local/bin/opencode',
-          // Homebrew
           '/opt/homebrew/bin/opencode',
         ];
 
@@ -122,22 +91,16 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
       }
     }
 
-    // Try bundled CLI in node_modules as a fallback (when preferGlobal is true)
     if (fs.existsSync(devCliPath)) {
       console.log('[CLI Path] Using bundled CLI:', devCliPath);
       return { command: devCliPath, args: [] };
     }
 
-    // Final fallback: try 'opencode' on PATH
-    // This handles cases where opencode is installed globally but in a non-standard location
     console.log('[CLI Path] Falling back to opencode command on PATH');
     return { command: 'opencode', args: [] };
   }
 }
 
-/**
- * Check if opencode is available on the system PATH
- */
 function isOpenCodeOnPath(): boolean {
   try {
     const command = process.platform === 'win32' ? 'where opencode' : 'which opencode';
@@ -148,13 +111,9 @@ function isOpenCodeOnPath(): boolean {
   }
 }
 
-/**
- * Check if the bundled OpenCode CLI is available
- */
 export function isOpenCodeBundled(): boolean {
   try {
     if (app.isPackaged) {
-      // In packaged mode, check if opencode exists
       const { packageName, binaryName } = getOpenCodePlatformInfo();
 
       const cliPath = path.join(
@@ -167,32 +126,24 @@ export function isOpenCodeBundled(): boolean {
       );
       return fs.existsSync(cliPath);
     } else {
-      // In dev mode, actually verify the CLI exists
-
-      // Prefer bundled CLI for dev consistency.
       const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
       const devCliPath = path.join(app.getAppPath(), 'node_modules', '.bin', binName);
       if (fs.existsSync(devCliPath)) {
         return true;
       }
 
-      // Check nvm installations (dynamically scan all versions)
       const nvmPaths = getNvmOpenCodePaths();
       if (nvmPaths.length > 0) {
         return true;
       }
 
-      // Check other global installations (platform-specific)
       const globalOpenCodePaths = process.platform === 'win32'
         ? [
-            // Windows: npm global installs
             path.join(process.env.APPDATA || '', 'npm', 'opencode.cmd'),
             path.join(process.env.LOCALAPPDATA || '', 'npm', 'opencode.cmd'),
           ]
         : [
-            // macOS/Linux: Global npm
             '/usr/local/bin/opencode',
-            // Homebrew
             '/opt/homebrew/bin/opencode',
           ];
 
@@ -202,13 +153,10 @@ export function isOpenCodeBundled(): boolean {
         }
       }
 
-      // Final fallback: check if opencode is available on PATH
-      // This handles installations in non-standard locations
       if (isOpenCodeOnPath()) {
         return true;
       }
 
-      // No CLI found
       return false;
     }
   } catch {
@@ -216,13 +164,9 @@ export function isOpenCodeBundled(): boolean {
   }
 }
 
-/**
- * Get the version of the bundled OpenCode CLI
- */
 export function getBundledOpenCodeVersion(): string | null {
   try {
     if (app.isPackaged) {
-      // In packaged mode, read from package.json
       const { packageName } = getOpenCodePlatformInfo();
 
       const packageJsonPath = path.join(
@@ -239,7 +183,6 @@ export function getBundledOpenCodeVersion(): string | null {
       }
       return null;
     } else {
-      // In dev mode, run the CLI to get version
       const { command, args } = getOpenCodeCliPath();
       const fullCommand = args.length > 0
         ? `"${command}" ${args.map(a => `"${a}"`).join(' ')} --version`
@@ -251,7 +194,6 @@ export function getBundledOpenCodeVersion(): string | null {
         stdio: ['pipe', 'pipe', 'pipe']
       }).trim();
 
-      // Parse version from output (e.g., "opencode 1.0.0" or just "1.0.0")
       const versionMatch = output.match(/(\d+\.\d+\.\d+)/);
       return versionMatch ? versionMatch[1] : output;
     }

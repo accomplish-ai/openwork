@@ -1,4 +1,3 @@
-// Main adapter
 export {
   OpenCodeAdapter,
   createAdapter,

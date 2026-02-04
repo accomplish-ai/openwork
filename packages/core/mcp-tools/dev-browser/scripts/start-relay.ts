@@ -1,6 +1,5 @@
 import { serveRelay } from "@/relay.js";
 
-// Accomplish uses port 9224 to avoid conflicts with Claude Code's dev-browser (9222)
 const PORT = parseInt(process.env.PORT || "9224", 10);
 const HOST = process.env.HOST || "127.0.0.1";
 

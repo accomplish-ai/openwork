@@ -42,10 +42,6 @@ function getFilesToMigrate(legacyDbName?: string): Array<{ src: string; dest: st
   ];
 }
 
-/**
- * Check for and migrate data from legacy userData paths.
- * We COPY (not move) to preserve original as a backup.
- */
 export function migrateLegacyData(): boolean {
   try {
     const currentPath = app.getPath('userData');

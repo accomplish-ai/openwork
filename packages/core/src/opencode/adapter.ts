@@ -188,8 +188,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const safeCwd = config.workingDirectory || this.options.tempPath;
     const cwdMsg = `Working directory: ${safeCwd}`;
 
-    // Create a minimal package.json so OpenCode finds it and stops searching upward.
-    // This prevents EPERM errors on Windows when traversing to protected directories.
     if (this.options.isPackaged && this.options.platform === 'win32') {
       const dummyPackageJson = path.join(safeCwd, 'package.json');
       if (!fs.existsSync(dummyPackageJson)) {
@@ -225,7 +223,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
       this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
         name: 'xterm-256color',
-        cols: 32000, // Wide columns to minimize PTY line wrapping on Windows
+        cols: 32000,
         rows: 30,
         cwd: safeCwd,
         env: env as { [key: string]: string },
@@ -238,9 +236,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
       this.ptyProcess.onData((data: string) => {
         const cleanData = data
-          .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences
-          .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences with BEL terminator
-          .replace(/\x1B\][^\x1B]*\x1B\\/g, '');    // OSC sequences with ST terminator
+          .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
+          .replace(/\x1B\][^\x07]*\x07/g, '')
+          .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
         if (cleanData.trim()) {
           const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
           console.log('[OpenCode CLI stdout]:', truncated);
@@ -299,10 +297,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     this.wasInterrupted = true;
 
-    this.ptyProcess.write('\x03'); // Ctrl+C (ASCII 0x03)
+    this.ptyProcess.write('\x03');
     console.log('[OpenCode CLI] Sent Ctrl+C interrupt signal');
 
-    // On Windows, batch files prompt for confirmation
     if (this.options.platform === 'win32') {
       setTimeout(() => {
         if (this.ptyProcess) {
@@ -456,7 +453,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
         this.handleToolCall(toolUseName, toolUseInput, toolUseMessage.part.sessionID);
 
-        // For models that don't emit text messages, synthesize one from the tool description
         const toolDescription = (toolUseInput as { description?: string })?.description;
         if (toolDescription) {
           const syntheticTextMessage: OpenCodeMessage = {
@@ -766,7 +762,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private getPlatformShell(): string {
     if (this.options.platform === 'win32') {
       return 'cmd.exe';
-    // Packaged macOS app must use /bin/sh since user's shell may not be available
     } else if (this.options.isPackaged && this.options.platform === 'darwin') {
       return '/bin/sh';
     } else {

@@ -14,7 +14,6 @@ const reasoningContentCache = new Map<string, string>();
 function hashMessageContent(msg: Record<string, unknown>): string {
   const content = String(msg.content || '');
   const toolCalls = JSON.stringify(msg.tool_calls || []);
-  // Use truncated content + tool calls as key since full content can be very large
   return `${content.slice(0, 100)}::${toolCalls.slice(0, 200)}`;
 }
 
@@ -145,12 +144,6 @@ function shouldTransformBody(contentType: string | undefined): boolean {
   return !!contentType && contentType.toLowerCase().includes('application/json');
 }
 
-/**
- * Transform request body for Moonshot compatibility:
- * - Strips thinking/reasoning flags (Moonshot requires reasoning_content in responses)
- * - Adds reasoning_content to assistant messages (Moonshot API requirement)
- * - Converts max_completion_tokens to max_tokens
- */
 export function transformMoonshotRequestBody(body: Buffer): Buffer {
   const text = body.toString('utf8');
   try {
@@ -168,7 +161,6 @@ export function transformMoonshotRequestBody(body: Buffer): Buffer {
       }
     }
 
-    // Only strip from top-level to avoid removing legitimate tool parameter names like 'reasoning'
     const topLevelDisallowedKeys = ['enable_thinking', 'reasoning', 'reasoning_effort'];
     for (const key of topLevelDisallowedKeys) {
       if (key in parsed) {

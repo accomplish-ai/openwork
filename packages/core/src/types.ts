@@ -35,12 +35,6 @@ export interface StorageConfig {
   secureStoragePath: string;
 }
 
-/**
- * The OpenCodeAdapter uses an event-based architecture rather than direct handler injection.
- * Consumers should listen to adapter events and bridge them to their handler implementations.
- * - Desktop: Forward events to renderer via IPC
- * - CLI: Write events as NDJSON to stdout
- */
 export interface CliResolverConfig {
   isPackaged: boolean;
   resourcesPath?: string;

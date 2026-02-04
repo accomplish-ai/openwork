@@ -1,6 +1,5 @@
 import type { SnapshotElement } from './types';
 
-// Claude tokenizer approximations
 const CHARS_PER_TOKEN = 2;
 const YAML_OVERHEAD = 5;
 const ATTRIBUTE_TOKENS = 2;

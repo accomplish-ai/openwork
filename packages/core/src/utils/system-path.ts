@@ -1,8 +1,3 @@
-/**
- * macOS GUI apps launched from /Applications don't inherit the user's terminal PATH.
- * This module builds a proper PATH without loading shell profiles to avoid TCC permission prompts.
- */
-
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -150,7 +145,6 @@ export function findCommandInPath(command: string, searchPath: string): string |
               fs.accessSync(fullPath, fs.constants.X_OK);
               return fullPath;
             } catch {
-              // Not executable
             }
           } else {
             return fullPath;
@@ -158,7 +152,6 @@ export function findCommandInPath(command: string, searchPath: string): string |
         }
       }
     } catch {
-      // Directory doesn't exist or other error
     }
   }
 

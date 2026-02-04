@@ -383,13 +383,11 @@ export function registerIPCHandlers(): void {
 
         updateTaskStatus(taskId, taskStatus, new Date().toISOString());
 
-        // Session ID needed for interrupted tasks to allow continuation
         const sessionId = result.sessionId || taskManager.getSessionId(taskId);
         if (sessionId) {
           updateTaskSessionId(taskId, sessionId);
         }
 
-        // Keep todos for failed/interrupted tasks so user can see what was incomplete
         if (result.status === 'success') {
           clearTodosForTask(taskId);
         }
@@ -613,13 +611,11 @@ export function registerIPCHandlers(): void {
 
         updateTaskStatus(taskId, taskStatus, new Date().toISOString());
 
-        // Session ID needed for interrupted tasks to allow continuation
         const newSessionId = result.sessionId || taskManager.getSessionId(taskId);
         if (newSessionId) {
           updateTaskSessionId(taskId, newSessionId);
         }
 
-        // Keep todos for failed/interrupted tasks so user can see what was incomplete
         if (result.status === 'success') {
           clearTodosForTask(taskId);
         }
@@ -976,7 +972,6 @@ export function registerIPCHandlers(): void {
                  }
                  entraToken = tokenResult.token;
              } else {
-                 // Skip validation for existing entra-id config to avoid overhead
                  return { valid: true };
              }
           }
@@ -1005,7 +1000,6 @@ export function registerIPCHandlers(): void {
              headers['api-key'] = sanitizedKey;
           }
 
-          // Try max_completion_tokens first, fall back to max_tokens for older models
           response = await fetchWithTimeout(
             testUrl,
             {
@@ -1185,7 +1179,6 @@ export function registerIPCHandlers(): void {
         const command = new ListFoundationModelsCommand({});
         const response = await bedrockClient.send(command);
 
-        // Use modelId for display name to avoid duplicates (multiple versions share the same modelName)
         const models = (response.modelSummaries || [])
           .filter(m => m.outputModalities?.includes('TEXT'))
           .map(m => ({
@@ -1336,7 +1329,7 @@ export function registerIPCHandlers(): void {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(`${baseUrl}/v1/chat/completions`, {
         method: 'POST',
@@ -1461,7 +1454,7 @@ export function registerIPCHandlers(): void {
         }
       } catch (e) {
         if (e instanceof Error && e.message.includes('http')) {
-          throw e; // Re-throw our protocol error
+          throw e;
         }
         throw new Error('Invalid base URL format');
       }
@@ -1714,9 +1707,9 @@ export function registerIPCHandlers(): void {
         const provider = m.id.split('/')[0] || m.owned_by || 'unknown';
         return {
           id: m.id,
-          name: m.id, // LiteLLM uses id as name
+          name: m.id,
           provider,
-          contextLength: 0, // LiteLLM doesn't provide this in /v1/models
+          contextLength: 0,
         };
       });
 
@@ -1809,7 +1802,7 @@ export function registerIPCHandlers(): void {
         }
       } catch (e) {
         if (e instanceof Error && e.message.includes('http')) {
-          throw e; // Re-throw our protocol error
+          throw e;
         }
         throw new Error('Invalid base URL format');
       }
@@ -1864,7 +1857,7 @@ export function registerIPCHandlers(): void {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(`${baseUrl}/v1/chat/completions`, {
         method: 'POST',
@@ -2050,7 +2043,7 @@ export function registerIPCHandlers(): void {
         }
       } catch (e) {
         if (e instanceof Error && e.message.includes('http')) {
-          throw e; // Re-throw our protocol error
+          throw e;
         }
         throw new Error('Invalid base URL format');
       }
@@ -2157,7 +2150,6 @@ export function registerIPCHandlers(): void {
       return true;
     }
 
-    // Existing users (has task history) skip onboarding wizard
     const tasks = getTasks();
     if (tasks.length > 0) {
       setOnboardingComplete(true);

@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// Hardcode userData path to ensure consistent data location across all versions
 const APP_DATA_NAME = 'Accomplish';
 app.setPath('userData', path.join(app.getPath('appData'), APP_DATA_NAME));
 
@@ -29,7 +28,6 @@ import { getApiKey } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
 
-// E2E flags must be detected synchronously at module load time before app.whenReady()
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
 }
@@ -37,7 +35,6 @@ if (process.argv.includes('--e2e-mock-tasks') || process.env.E2E_MOCK_TASK_EVENT
   (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS = true;
 }
 
-// Use CLEAN_START env var since CLI args don't pass through vite to Electron
 if (process.env.CLEAN_START === '1') {
   const userDataPath = app.getPath('userData');
   console.log('[Clean Mode] Clearing userData directory:', userDataPath);
@@ -127,7 +124,6 @@ function createWindow() {
   }
 }
 
-// Log to file only to avoid recursive EIO errors when stdout is unavailable
 process.on('uncaughtException', (error) => {
   try {
     const collector = getLogCollector();
@@ -206,7 +202,6 @@ if (!gotTheLock) {
       throw err;
     }
 
-    // Clear provider settings if DB says api_key auth but key is missing from secure storage
     try {
       const settings = getProviderSettings();
       for (const [providerId, provider] of Object.entries(settings.connectedProviders)) {
@@ -270,7 +265,6 @@ app.on('before-quit', () => {
   shutdownLogCollector();
 });
 
-// On Windows in dev mode, pass the script path for protocol registration
 if (process.platform === 'win32' && !app.isPackaged) {
   app.setAsDefaultProtocolClient('accomplish', process.execPath, [
     path.resolve(process.argv[1]),

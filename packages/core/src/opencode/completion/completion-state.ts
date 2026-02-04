@@ -71,8 +71,6 @@ export class CompletionState {
   }
 
   scheduleContinuation(): boolean {
-    // Allow from CONTINUATION_PENDING because OpenCode CLI's auto-continue keeps
-    // process alive, so handleProcessExit/startContinuation may never reset to IDLE
     if (this.state !== CompletionFlowState.IDLE &&
         this.state !== CompletionFlowState.CONTINUATION_PENDING) {
       return false;

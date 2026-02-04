@@ -260,16 +260,12 @@ export function clearHistory(): void {
   db.prepare('DELETE FROM tasks').run();
 }
 
-export function setMaxHistoryItems(_max: number): void {
-  // Deprecated: MAX_HISTORY_ITEMS is a constant. Kept for API compatibility.
-  console.log('[TaskHistory] setMaxHistoryItems is deprecated, using constant limit');
-}
+export function setMaxHistoryItems(_max: number): void {}
 
 export function clearTaskHistoryStore(): void {
   clearHistory();
 }
 
-// No-op: SQLite writes are immediate. Kept for API compatibility.
 export function flushPendingTasks(): void {}
 
 export function getTodosForTask(taskId: string): TodoItem[] {

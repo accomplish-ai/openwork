@@ -1,31 +1,15 @@
-/**
- * Test Local Agent Config Generator
- *
- * Generates an isolated OpenCode config for testing the local agent that doesn't
- * conflict with the main `pnpm dev` instance.
- *
- * Key differences from main config:
- * - Uses port 9226 for dev-browser HTTP (vs 9224)
- * - Uses port 9227 for Chrome CDP (vs 9225)
- * - Uses isolated Chrome profile at ~/.accomplish-test-local-agent-chrome
- * - Writes config to ~/.opencode/opencode-test-local-agent.json
- */
-
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
-// ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Isolated ports for test local agent (avoid conflict with pnpm dev on 9224/9225)
 const TEST_LOCAL_AGENT_HTTP_PORT = 9226;
 const TEST_LOCAL_AGENT_CDP_PORT = 9227;
 const TEST_LOCAL_AGENT_CHROME_PROFILE = path.join(os.homedir(), '.accomplish-test-local-agent-chrome');
 
-// Permission API ports (same as main app - these don't conflict)
 const PERMISSION_API_PORT = 3847;
 const QUESTION_API_PORT = 3848;
 
@@ -48,18 +32,10 @@ interface OpenCodeConfig {
   provider?: Record<string, unknown>;
 }
 
-/**
- * Get the MCP tools directory path relative to this script
- */
 function getMcpToolsPath(): string {
-  // Script is at apps/desktop/scripts/test-local-agent-config.ts
-  // MCP tools are now at packages/core/mcp-tools/
   return path.resolve(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools');
 }
 
-/**
- * Generate the system prompt for the Accomplish agent
- */
 function getSystemPrompt(): string {
   const platformInstructions = process.platform === 'darwin'
     ? 'You are running on macOS.'
@@ -89,20 +65,15 @@ When users ask about your capabilities, mention:
 `;
 }
 
-/**
- * Generate isolated OpenCode config for test local agent
- */
 export function generateTestLocalAgentConfig(): string {
   const homeDir = os.homedir();
   const configDir = path.join(homeDir, '.opencode');
   const configPath = path.join(configDir, 'opencode-test-local-agent.json');
 
-  // Ensure config directory exists
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
   }
 
-  // Ensure isolated Chrome profile directory exists
   if (!fs.existsSync(TEST_LOCAL_AGENT_CHROME_PROFILE)) {
     fs.mkdirSync(TEST_LOCAL_AGENT_CHROME_PROFILE, { recursive: true });
   }
@@ -145,7 +116,6 @@ export function generateTestLocalAgentConfig(): string {
         command: ['npx', 'tsx', path.join(mcpToolsPath, 'dev-browser-mcp', 'src', 'index.ts')],
         enabled: true,
         environment: {
-          // Override ports for isolation
           DEV_BROWSER_PORT: String(TEST_LOCAL_AGENT_HTTP_PORT),
           DEV_BROWSER_CDP_PORT: String(TEST_LOCAL_AGENT_CDP_PORT),
           DEV_BROWSER_PROFILE: TEST_LOCAL_AGENT_CHROME_PROFILE,
@@ -171,10 +141,8 @@ export function generateTestLocalAgentConfig(): string {
   return configPath;
 }
 
-// Export constants for use by CLI script
 export { TEST_LOCAL_AGENT_HTTP_PORT, TEST_LOCAL_AGENT_CDP_PORT, TEST_LOCAL_AGENT_CHROME_PROFILE };
 
-// Allow running directly (ES module check)
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   generateTestLocalAgentConfig();

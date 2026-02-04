@@ -5,10 +5,7 @@ interface CachedToken {
 
 let tokenCache: CachedToken | null = null;
 
-// Refresh tokens 5 minutes before expiry to avoid race conditions
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
-
-// Fallback when Azure doesn't provide expiry timestamp
 const DEFAULT_TOKEN_LIFETIME_MS = 60 * 60 * 1000;
 
 export async function getAzureEntraToken(): Promise<

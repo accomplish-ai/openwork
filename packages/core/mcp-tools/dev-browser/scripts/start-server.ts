@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Use a user-writable location (app bundle is read-only when installed)
 function getDataDir(): string {
   const homeDir = process.env.HOME || process.env.USERPROFILE || "";
   if (process.platform === "darwin") {
@@ -26,7 +25,6 @@ console.log(`Creating data directory: ${dataDir}`);
 mkdirSync(tmpDir, { recursive: true });
 mkdirSync(profileDir, { recursive: true });
 
-// Accomplish uses ports 9224/9225 to avoid conflicts with Claude Code's dev-browser (9222/9223)
 const ACCOMPLISH_HTTP_PORT = parseInt(process.env.DEV_BROWSER_PORT || '9224', 10);
 const ACCOMPLISH_CDP_PORT = parseInt(process.env.DEV_BROWSER_CDP_PORT || '9225', 10);
 
@@ -60,10 +58,8 @@ try {
             execSync(`kill -9 ${pid}`);
           }
         }
-        // Wait for port to be released
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch {
-        // Let serve() fail with clear error if kill failed
       }
     } else {
       console.log(`Launch server already running on port ${ACCOMPLISH_HTTP_PORT}`);
@@ -71,10 +67,8 @@ try {
     }
   }
 } catch {
-  // Server not running
 }
 
-// Clean up stale CDP port (crash recovery: Node crashed but Chrome is still running)
 try {
   if (process.platform === 'win32') {
     const output = execSync(`netstat -ano | findstr :${ACCOMPLISH_CDP_PORT}`, { encoding: "utf-8" });
@@ -92,10 +86,8 @@ try {
     }
   }
 } catch {
-  // Expected when no stale process exists
 }
 
-// Clean up stale Chrome lock files (crash recovery: Chrome leaves SingletonLock files that block new instances)
 const profileDirs = [
   join(profileDir, "chrome-profile"),
   join(profileDir, "playwright-profile"),
@@ -143,7 +135,7 @@ function installPlaywrightChromium(): void {
   }
 
   console.log(`Using ${pm.name} to install Playwright Chromium...`);
-  execSync(pm.command, { stdio: "inherit" }); // inherit shows download progress
+  execSync(pm.command, { stdio: "inherit" });
   console.log("\nBrowser installed successfully!\n");
 }
 
@@ -157,7 +149,7 @@ async function startServer(retry = false): Promise<void> {
       cdpPort: ACCOMPLISH_CDP_PORT,
       headless,
       profileDir,
-      useSystemChrome: true, // Try system Chrome first for faster startup
+      useSystemChrome: true,
     });
 
     console.log(`Dev browser server started`);
@@ -171,7 +163,6 @@ async function startServer(retry = false): Promise<void> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Check if error is about missing Playwright browsers
     const isBrowserMissing =
       errorMessage.includes("Executable doesn't exist") ||
       errorMessage.includes("browserType.launchPersistentContext") ||

@@ -1,22 +1,4 @@
 #!/usr/bin/env node
-/**
- * start-task MCP Server
- *
- * PURPOSE: Provides a `start_task` tool that agents MUST call before executing any task.
- *
- * WHY THIS EXISTS:
- * - Agents often skip outputting a plan before executing tools
- * - Prompt-based instructions ("output Plan text first") are unreliable
- * - Requiring an explicit tool call with schema-enforced fields guarantees plan capture
- * - The adapter enforces this by blocking other tools until start_task is called
- *
- * HOW IT WORKS WITH THE ADAPTER:
- * 1. Agent calls start_task with original_request, goal, and steps
- * 2. Adapter detects the tool call and marks session as "started"
- * 3. Adapter emits the plan as a synthetic chat message (user sees it)
- * 4. Other tool calls are now allowed
- * 5. If agent tries to call other tools first, adapter blocks with error
- */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {

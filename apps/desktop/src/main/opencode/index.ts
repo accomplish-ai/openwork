@@ -72,7 +72,6 @@ export function createAdapter(taskId?: string): OpenCodeAdapter {
   return new OpenCodeAdapter(createElectronAdapterOptions(), taskId);
 }
 
-/** @deprecated Use isCliAvailable() instead */
 export async function isOpenCodeCliInstalled(): Promise<boolean> {
   return isCliAvailable();
 }

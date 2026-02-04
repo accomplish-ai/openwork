@@ -73,7 +73,6 @@ export async function installPlaywrightChromium(
       const line = data.toString().trim();
       if (line) {
         console.log(`[Playwright Install] ${line}`);
-        // Send progress info: percentage updates and "Downloading X" messages
         if (line.includes('%') || line.toLowerCase().startsWith('downloading')) {
           onProgress?.(line);
         }
@@ -221,7 +220,6 @@ export async function startDevBrowserServer(
   };
 }
 
-// Downloads Playwright Chromium if no browser is available, then starts the server
 export async function ensureDevBrowserServer(
   config: BrowserServerConfig,
   onProgress?: (progress: { stage: string; message?: string }) => void

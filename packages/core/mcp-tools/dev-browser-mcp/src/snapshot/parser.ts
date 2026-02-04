@@ -1,6 +1,5 @@
 import type { SnapshotElement, ParsedSnapshot } from './types.js';
 
-// Parses YAML lines like: - button "Submit" [ref=e5] [disabled]:
 export function parseSnapshot(
   yamlSnapshot: string,
   url: string,

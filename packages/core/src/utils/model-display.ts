@@ -2,7 +2,6 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'claude-opus-4-5': 'Claude Opus',
   'claude-sonnet-4': 'Claude Sonnet',
   'claude-haiku-3-5': 'Claude Haiku',
-  // OpenAI
   'gpt-4o': 'GPT-4o',
   'gpt-4o-mini': 'GPT-4o Mini',
   'gpt-4-turbo': 'GPT-4 Turbo',
@@ -10,17 +9,13 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'o1-mini': 'o1 Mini',
   'o1-preview': 'o1 Preview',
   'o3-mini': 'o3 Mini',
-  // Google
   'gemini-2.0-flash': 'Gemini Flash',
   'gemini-2.0-flash-thinking': 'Gemini Flash Thinking',
   'gemini-1.5-pro': 'Gemini Pro',
-  // xAI
   'grok-2': 'Grok 2',
   'grok-beta': 'Grok Beta',
-  // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
-  // Moonshot
   'kimi-k2.5': 'Kimi K2.5',
   'kimi-k2-turbo-preview': 'Kimi K2 Turbo (Preview)',
   'kimi-latest': 'Kimi Latest',

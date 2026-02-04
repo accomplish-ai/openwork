@@ -1,27 +1,4 @@
 #!/usr/bin/env node
-/**
- * complete-task MCP Server
- *
- * PURPOSE: Provides a `complete_task` tool that agents MUST call to signal task completion.
- *
- * WHY THIS EXISTS:
- * - Agents often stop mid-task without signaling completion
- * - Requiring an explicit tool call creates a checkpoint the system can monitor
- * - The `original_request_summary` field forces the agent to re-read the request
- *   before claiming completion—acts as a self-check mechanism
- *
- * HOW IT WORKS WITH THE ADAPTER:
- * 1. Agent calls complete_task with status/summary
- * 2. Adapter detects the tool call via stream parsing (see adapter.ts)
- * 3. CompletionEnforcer tracks the call and determines next action
- * 4. If status="success", task ends (or continues if incomplete todos detected)
- * 5. If status="partial", system auto-continues with remaining work context
- *
- * STATUSES:
- * - success: All parts of request completed
- * - blocked: Hit unresolvable blocker, cannot continue
- * - partial: Completed some parts but not all (triggers auto-continuation)
- */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {

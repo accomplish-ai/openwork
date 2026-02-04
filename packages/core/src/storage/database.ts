@@ -84,7 +84,6 @@ export function resetDatabase(databasePath: string): void {
     fs.renameSync(databasePath, backupPath);
   }
 
-  // WAL mode creates auxiliary files that must also be removed
   const walPath = `${databasePath}-wal`;
   const shmPath = `${databasePath}-shm`;
   if (fs.existsSync(walPath)) fs.unlinkSync(walPath);

@@ -1,15 +1,9 @@
-/**
- * OpenCode CLI message types
- * Based on --format json output from `opencode run`
- */
-
 export interface OpenCodeMessageBase {
   type: string;
   timestamp?: number;
   sessionID?: string;
 }
 
-/** Step start event */
 export interface OpenCodeStepStartMessage extends OpenCodeMessageBase {
   type: 'step_start';
   part: {
@@ -21,7 +15,6 @@ export interface OpenCodeStepStartMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Text content event */
 export interface OpenCodeTextMessage extends OpenCodeMessageBase {
   type: 'text';
   part: {
@@ -37,7 +30,6 @@ export interface OpenCodeTextMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Tool call event (legacy format) */
 export interface OpenCodeToolCallMessage extends OpenCodeMessageBase {
   type: 'tool_call';
   part: {
@@ -54,7 +46,6 @@ export interface OpenCodeToolCallMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Tool use event - combined tool call and result from OpenCode CLI */
 export interface OpenCodeToolUseMessage extends OpenCodeMessageBase {
   type: 'tool_use';
   part: {
@@ -76,7 +67,6 @@ export interface OpenCodeToolUseMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Tool result event */
 export interface OpenCodeToolResultMessage extends OpenCodeMessageBase {
   type: 'tool_result';
   part: {
@@ -94,7 +84,6 @@ export interface OpenCodeToolResultMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Step finish event */
 export interface OpenCodeStepFinishMessage extends OpenCodeMessageBase {
   type: 'step_finish';
   part: {
@@ -117,14 +106,12 @@ export interface OpenCodeStepFinishMessage extends OpenCodeMessageBase {
   };
 }
 
-/** Error event */
 export interface OpenCodeErrorMessage extends OpenCodeMessageBase {
   type: 'error';
   error: string;
   code?: string;
 }
 
-/** All OpenCode message types */
 export type OpenCodeMessage =
   | OpenCodeStepStartMessage
   | OpenCodeTextMessage
@@ -134,9 +121,6 @@ export type OpenCodeMessage =
   | OpenCodeStepFinishMessage
   | OpenCodeErrorMessage;
 
-/**
- * Normalized message format for internal use
- */
 export interface NormalizedMessage {
   type: 'init' | 'assistant' | 'user' | 'tool_use' | 'tool_result' | 'result';
   sessionId?: string;
@@ -157,6 +141,5 @@ export interface NormalizedMessage {
   };
 }
 
-// Re-export as ClaudeMessage for backward compatibility during migration
 export type ClaudeMessage = OpenCodeMessage;
 export type ClaudeMessageBase = OpenCodeMessageBase;

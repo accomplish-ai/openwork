@@ -57,6 +57,5 @@ export function resolveAppPath(config: PlatformConfig, ...segments: string[]): s
 
 export function getMcpToolsPath(): string {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
-  // Navigate from dist/utils/ to package root, then to mcp-tools
   return path.join(currentDir, '..', '..', 'mcp-tools');
 }

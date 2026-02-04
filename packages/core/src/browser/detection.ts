@@ -19,8 +19,8 @@ export function isSystemChromeInstalled(): boolean {
 export function isPlaywrightInstalled(): boolean {
   const homeDir = os.homedir();
   const possiblePaths = [
-    path.join(homeDir, 'Library', 'Caches', 'ms-playwright'), // macOS
-    path.join(homeDir, '.cache', 'ms-playwright'), // Linux
+    path.join(homeDir, 'Library', 'Caches', 'ms-playwright'),
+    path.join(homeDir, '.cache', 'ms-playwright'),
   ];
 
   if (process.platform === 'win32' && process.env.LOCALAPPDATA) {

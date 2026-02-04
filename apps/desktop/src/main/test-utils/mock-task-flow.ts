@@ -1,14 +1,6 @@
-/**
- * Mock task flow utilities for E2E testing.
- * Simulates IPC events without spawning real PTY processes.
- */
 import { BrowserWindow } from 'electron';
 import type { Task, TaskMessage, TaskStatus } from '@accomplish/shared';
 import { updateTaskStatus } from '@accomplish/core';
-
-// ============================================================================
-// Types
-// ============================================================================
 
 export type MockScenario =
   | 'success'
@@ -22,18 +14,9 @@ export interface MockTaskConfig {
   taskId: string;
   prompt: string;
   scenario: MockScenario;
-  /** Delay between events in milliseconds */
   delayMs?: number;
 }
 
-// ============================================================================
-// E2E Mode Detection
-// ============================================================================
-
-/**
- * Check if mock task events mode is enabled.
- * Can be set via global flag, CLI arg, or environment variable.
- */
 export function isMockTaskEventsEnabled(): boolean {
   return (
     (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
@@ -41,14 +24,6 @@ export function isMockTaskEventsEnabled(): boolean {
   );
 }
 
-// ============================================================================
-// Scenario Detection
-// ============================================================================
-
-/**
- * Keywords that trigger specific test scenarios.
- * Using explicit prefixes to avoid false positives from natural language.
- */
 const SCENARIO_KEYWORDS: Record<MockScenario, string[]> = {
   success: ['__e2e_success__', 'test success'],
   'with-tool': ['__e2e_tool__', 'use tool', 'search files'],
@@ -58,14 +33,9 @@ const SCENARIO_KEYWORDS: Record<MockScenario, string[]> = {
   interrupted: ['__e2e_interrupt__', 'stop task', 'cancel task'],
 };
 
-/**
- * Detect the appropriate mock scenario from the prompt text.
- * Checks for explicit keywords in priority order.
- */
 export function detectScenarioFromPrompt(prompt: string): MockScenario {
   const promptLower = prompt.toLowerCase();
 
-  // Check scenarios in priority order (error/interrupt first to handle edge cases)
   const priorityOrder: MockScenario[] = [
     'error',
     'interrupted',
@@ -82,13 +52,8 @@ export function detectScenarioFromPrompt(prompt: string): MockScenario {
     }
   }
 
-  // Default to success
   return 'success';
 }
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
 
 function createMessageId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -98,21 +63,12 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ============================================================================
-// Mock Task Execution
-// ============================================================================
-
-/**
- * Execute a mock task flow by emitting simulated IPC events.
- * This allows E2E tests to verify UI behavior without real API calls.
- */
 export async function executeMockTaskFlow(
   window: BrowserWindow,
   config: MockTaskConfig
 ): Promise<void> {
   const { taskId, prompt, scenario, delayMs = 100 } = config;
 
-  // Verify window is still valid
   if (window.isDestroyed()) {
     console.warn('[MockTaskFlow] Window destroyed, skipping mock flow');
     return;
@@ -124,11 +80,9 @@ export async function executeMockTaskFlow(
     }
   };
 
-  // Initial progress event
   sendEvent('task:progress', { taskId, stage: 'init' });
   await sleep(delayMs);
 
-  // Assistant acknowledgment message
   sendEvent('task:update', {
     taskId,
     type: 'message',
@@ -141,13 +95,9 @@ export async function executeMockTaskFlow(
   });
   await sleep(delayMs);
 
-  // Execute scenario-specific flow
   await executeScenario(sendEvent, taskId, scenario, delayMs);
 }
 
-/**
- * Execute the scenario-specific event sequence.
- */
 async function executeScenario(
   sendEvent: (channel: string, data: unknown) => void,
   taskId: string,
@@ -198,7 +148,6 @@ async function executeSuccessScenario(
   });
   await sleep(delayMs);
 
-  // Update task history status before sending completion event
   updateTaskStatus(taskId, 'completed', new Date().toISOString());
 
   sendEvent('task:update', {
@@ -213,7 +162,6 @@ async function executeToolScenario(
   taskId: string,
   delayMs: number
 ): Promise<void> {
-  // Simulate tool usage
   sendEvent('task:update:batch', {
     taskId,
     messages: [
@@ -247,7 +195,6 @@ async function executeToolScenario(
   });
   await sleep(delayMs);
 
-  // Update task history status before sending completion event
   updateTaskStatus(taskId, 'completed', new Date().toISOString());
 
   sendEvent('task:update', {
@@ -261,8 +208,6 @@ function executePermissionScenario(
   sendEvent: (channel: string, data: unknown) => void,
   taskId: string
 ): void {
-  // Send permission request - task waits for user response
-  // Tests should call permission:respond to continue the flow
   sendEvent('permission:request', {
     id: `perm_${Date.now()}`,
     taskId,
@@ -279,7 +224,6 @@ function executeQuestionScenario(
   sendEvent: (channel: string, data: unknown) => void,
   taskId: string
 ): void {
-  // Send question permission request - task waits for user to select an option
   sendEvent('permission:request', {
     id: `perm_${Date.now()}`,
     taskId,
@@ -300,7 +244,6 @@ function executeErrorScenario(
   sendEvent: (channel: string, data: unknown) => void,
   taskId: string
 ): void {
-  // Update task history status before sending error event
   updateTaskStatus(taskId, 'failed', new Date().toISOString());
 
   sendEvent('task:update', {
@@ -327,7 +270,6 @@ async function executeInterruptedScenario(
   });
   await sleep(delayMs);
 
-  // Update task history status before sending completion event
   updateTaskStatus(taskId, 'interrupted', new Date().toISOString());
 
   sendEvent('task:update', {
@@ -337,13 +279,6 @@ async function executeInterruptedScenario(
   });
 }
 
-// ============================================================================
-// Task Creation
-// ============================================================================
-
-/**
- * Create a mock Task object for immediate return from task:start handler.
- */
 export function createMockTask(taskId: string, prompt: string): Task {
   const initialMessage: TaskMessage = {
     id: createMessageId(),

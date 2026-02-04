@@ -1,9 +1,3 @@
-/**
- * CDP Relay Server: bridges Playwright clients and a Chrome extension.
- * Instead of launching a browser, it waits for the extension to connect and
- * forwards CDP commands/events between them.
- */
-
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
@@ -91,7 +85,6 @@ interface CDPEvent {
 }
 
 export async function serveRelay(options: RelayOptions = {}): Promise<RelayServer> {
-  // Accomplish uses port 9224 to avoid conflicts with Claude Code's dev-browser (9222)
   const port = options.port ?? 9224;
   const host = options.host ?? "127.0.0.1";
 
@@ -128,7 +121,6 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
     }
   }
 
-  // Deduplicates to prevent "Duplicate target" errors
   function sendAttachedToTarget(
     target: ConnectedTarget,
     clientId?: string,
@@ -219,7 +211,6 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
         return {};
 
       case "Target.setAutoAttach":
-        // Forward to extension for child frames when sessionId present
         if (sessionId) break;
         return {};
 
@@ -227,11 +218,9 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
         return {};
 
       case "Target.attachToBrowserTarget":
-        // Fake session since we only proxy tabs, not the browser
         return { sessionId: "browser" };
 
       case "Target.detachFromTarget":
-        // Our fake "browser" session
         if (sessionId === "browser" || params?.sessionId === "browser") {
           return {};
         }
@@ -352,7 +341,6 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
         params: { method: "Target.createTarget", params: { url: "about:blank" } },
       })) as { targetId: string };
 
-      // Wait for Target.attachedToTarget event to register the target
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       for (const [sessionId, target] of connectedTargets) {
@@ -381,7 +369,6 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
     }
   });
 
-  // Removes the name mapping without closing the tab
   app.delete("/pages/:name", (c) => {
     const name = c.req.param("name");
     const deleted = namedPages.delete(name);

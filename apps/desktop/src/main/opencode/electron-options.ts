@@ -32,7 +32,6 @@ export async function buildEnvironment(): Promise<NodeJS.ProcessEnv> {
   };
 
   if (app.isPackaged) {
-    // Electron acts as Node for bundled CLI (no system Node required)
     env.ELECTRON_RUN_AS_NODE = '1';
 
     logBundledNodeInfo();

@@ -2,9 +2,7 @@ export interface ServeOptions {
   port?: number;
   headless?: boolean;
   cdpPort?: number;
-  /** Directory to store persistent browser profiles (cookies, localStorage, etc.) */
   profileDir?: string;
-  /** Try to use system Chrome first before falling back to Playwright Chromium */
   useSystemChrome?: boolean;
 }
 
@@ -15,7 +13,6 @@ export interface ViewportSize {
 
 export interface GetPageRequest {
   name: string;
-  /** Optional viewport size for new pages */
   viewport?: ViewportSize;
 }
 

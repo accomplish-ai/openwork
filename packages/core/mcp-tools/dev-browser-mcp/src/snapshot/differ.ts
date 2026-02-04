@@ -1,6 +1,5 @@
 import type { ParsedSnapshot, SnapshotDiff, ElementChange, SnapshotElement } from './types.js';
 
-// Returns null if >70% of elements changed (not worth diffing)
 export function diffSnapshots(
   previous: ParsedSnapshot,
   current: ParsedSnapshot
@@ -142,7 +141,6 @@ function formatChange(change: ElementChange): string {
   return lines.join('\n');
 }
 
-// Compress ['e1', 'e2', 'e3', 'e5', 'e6'] into 'e1-e3, e5-e6'
 export function compressRefList(refs: string[]): string {
   if (refs.length === 0) return '';
 

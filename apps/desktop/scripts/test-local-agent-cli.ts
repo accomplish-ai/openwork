@@ -1,14 +1,4 @@
 #!/usr/bin/env npx tsx
-/**
- * Test Local Agent CLI
- *
- * Runs OpenCode CLI tasks with isolated browser instance.
- *
- * Usage:
- *   pnpm test:local-agent "Your task prompt here"
- *   pnpm test:local-agent --model anthropic/claude-sonnet-4-20250514 "Your prompt"
- *   pnpm test:local-agent --cwd /path/to/dir "Your prompt"
- */
 
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
@@ -21,11 +11,9 @@ import {
   TEST_LOCAL_AGENT_CHROME_PROFILE,
 } from './test-local-agent-config.js';
 
-// ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ANSI colors for output
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -45,9 +33,6 @@ function logError(message: string): void {
   console.error(`${colors.red}[error]${colors.reset} ${message}`);
 }
 
-/**
- * Parse command line arguments
- */
 function parseArgs(): { prompt: string; model?: string; cwd?: string } {
   const args = process.argv.slice(2);
 
@@ -100,9 +85,6 @@ ${colors.yellow}Examples:${colors.reset}
   return { prompt, model, cwd };
 }
 
-/**
- * Check for required environment variables
- */
 function checkEnvironment(): void {
   if (!process.env.ANTHROPIC_API_KEY) {
     logError('ANTHROPIC_API_KEY environment variable is required.');
@@ -114,27 +96,20 @@ Set it with:
   }
 }
 
-/**
- * Find the OpenCode CLI path
- */
 function findOpenCodeCli(): string {
-  // Check node_modules/.bin first
   const localBin = path.resolve(__dirname, '..', 'node_modules', '.bin', 'opencode');
   if (fs.existsSync(localBin)) {
     return localBin;
   }
 
-  // Check if globally installed
   try {
     const globalPath = execSync('which opencode', { encoding: 'utf-8' }).trim();
     if (globalPath && fs.existsSync(globalPath)) {
       return globalPath;
     }
   } catch {
-    // Not found globally
   }
 
-  // Try common nvm paths
   const homeDir = process.env.HOME || '';
   const nvmDir = path.join(homeDir, '.nvm', 'versions', 'node');
   if (fs.existsSync(nvmDir)) {
@@ -151,17 +126,12 @@ function findOpenCodeCli(): string {
   process.exit(1);
 }
 
-/**
- * Start the dev-browser server for test local agent
- */
 async function startDevBrowserServer(): Promise<ChildProcess> {
-  // MCP tools are now in packages/core/mcp-tools
   const devBrowserDir = path.resolve(__dirname, '..', '..', '..', 'packages', 'core', 'mcp-tools', 'dev-browser');
   const serverScript = path.join(devBrowserDir, 'scripts', 'start-server.ts');
 
   log('test-local-agent', `Starting dev-browser server on port ${TEST_LOCAL_AGENT_HTTP_PORT}...`);
 
-  // Run from dev-browser directory so tsconfig paths resolve correctly
   const serverProcess = spawn('npx', ['tsx', serverScript], {
     cwd: devBrowserDir,
     env: {
@@ -174,11 +144,10 @@ async function startDevBrowserServer(): Promise<ChildProcess> {
     detached: false,
   });
 
-  // Wait for server to be ready by polling the HTTP endpoint
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('Dev-browser server startup timeout'));
-    }, 60000); // 60s timeout for first run (Playwright may download browsers)
+    }, 60000);
 
     serverProcess.on('error', (err) => {
       clearTimeout(timeout);
@@ -192,7 +161,6 @@ async function startDevBrowserServer(): Promise<ChildProcess> {
       }
     });
 
-    // Poll the HTTP endpoint until it responds
     const pollInterval = 500;
     const poll = async () => {
       try {
@@ -203,12 +171,10 @@ async function startDevBrowserServer(): Promise<ChildProcess> {
           return;
         }
       } catch {
-        // Server not ready yet, continue polling
       }
       setTimeout(poll, pollInterval);
     };
 
-    // Start polling after a brief delay to let the process start
     setTimeout(poll, 500);
   });
 
@@ -216,9 +182,6 @@ async function startDevBrowserServer(): Promise<ChildProcess> {
   return serverProcess;
 }
 
-/**
- * Run the OpenCode CLI
- */
 async function runOpenCode(
   cliPath: string,
   configPath: string,
@@ -247,7 +210,6 @@ async function runOpenCode(
     stdio: ['inherit', 'pipe', 'pipe'],
   });
 
-  // Stream and parse output
   cliProcess.stdout?.on('data', (data: Buffer) => {
     const lines = data.toString().split('\n').filter(Boolean);
     for (const line of lines) {
@@ -255,7 +217,6 @@ async function runOpenCode(
         const parsed = JSON.parse(line);
         formatOutput(parsed);
       } catch {
-        // Not JSON, print as-is
         console.log(line);
       }
     }
@@ -280,9 +241,6 @@ async function runOpenCode(
   });
 }
 
-/**
- * Format OpenCode JSON output for readability
- */
 function formatOutput(message: { type: string; part?: { text?: string; tool?: string; input?: unknown; output?: string } }): void {
   switch (message.type) {
     case 'text':
@@ -310,18 +268,13 @@ function formatOutput(message: { type: string; part?: { text?: string; tool?: st
       break;
 
     case 'step_finish':
-      // Silent
       break;
 
     default:
-      // Log unknown types for debugging
       console.log(colors.dim + JSON.stringify(message) + colors.reset);
   }
 }
 
-/**
- * Cleanup function for graceful shutdown
- */
 function setupCleanup(serverProcess: ChildProcess | null): void {
   const cleanup = () => {
     log('test-local-agent', 'Cleaning up...');
@@ -335,36 +288,27 @@ function setupCleanup(serverProcess: ChildProcess | null): void {
   process.on('SIGTERM', cleanup);
 }
 
-/**
- * Main entry point
- */
 async function main(): Promise<void> {
   console.log(`${colors.bright}Test Local Agent CLI${colors.reset}\n`);
 
-  // Parse arguments and check environment
   const { prompt, model, cwd } = parseArgs();
   checkEnvironment();
 
-  // Generate isolated config
   const configPath = generateTestLocalAgentConfig();
 
-  // Find OpenCode CLI
   const cliPath = findOpenCodeCli();
   log('test-local-agent', `Using OpenCode CLI: ${cliPath}`);
 
-  // Start dev-browser server
   let serverProcess: ChildProcess | null = null;
   try {
     serverProcess = await startDevBrowserServer();
     setupCleanup(serverProcess);
 
-    // Run the task
     await runOpenCode(cliPath, configPath, prompt, model, cwd);
   } catch (error) {
     logError(error instanceof Error ? error.message : String(error));
     process.exit(1);
   } finally {
-    // Cleanup
     if (serverProcess && !serverProcess.killed) {
       serverProcess.kill('SIGTERM');
     }

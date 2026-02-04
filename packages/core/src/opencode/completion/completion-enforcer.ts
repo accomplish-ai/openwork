@@ -53,8 +53,6 @@ export class CompletionEnforcer {
       remaining_work: args?.remaining_work,
     };
 
-    // Downgrade success to partial if there are incomplete todos - ensures state machine
-    // enters partial continuation path instead of completing prematurely
     if (completeTaskArgs.status === 'success' && this.hasIncompleteTodos()) {
       this.callbacks.onDebug(
         'incomplete_todos',
@@ -91,7 +89,6 @@ export class CompletionEnforcer {
     }
 
     if (!this.state.isCompleteTaskCalled()) {
-      // No tools used = conversational response (e.g., "hey") - don't force continuation
       if (!this.toolsWereUsed) {
         this.callbacks.onDebug(
           'skip_continuation',
@@ -108,7 +105,6 @@ export class CompletionEnforcer {
         return 'pending';
       }
 
-      // Max retries reached or invalid state
       console.warn(`[CompletionEnforcer] Agent stopped without complete_task. State: ${CompletionFlowState[this.state.getState()]}, attempts: ${this.state.getContinuationAttempts()}/${this.state.getMaxContinuationAttempts()}`);
     }
 

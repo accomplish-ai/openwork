@@ -1,6 +1,4 @@
 import express, { type Express, type Request, type Response } from "express";
-// Using rebrowser-playwright (via npm alias) for better anti-detection
-// Rebrowser patches fix CDP-level detection leaks (Runtime.Enable) that stealth plugins can't fix
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { mkdirSync } from "fs";
 import { join } from "path";
@@ -113,7 +111,6 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
 
   console.log("Browser launched with persistent profile...");
 
-  // Exit server when user closes browser so it can be restarted fresh
   context.on('close', () => {
     console.log('Browser context closed (user may have closed Chrome). Exiting server...');
     process.exit(0);
@@ -179,7 +176,6 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     if (!entry) {
       const page = await withTimeout(context.newPage(), 30000, "Page creation timed out after 30s");
 
-      // Apply viewport if provided
       if (viewport) {
         await page.setViewportSize(viewport);
       }
@@ -238,7 +234,6 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
       try {
         await entry.page.close();
       } catch {
-        // Already closed
       }
     }
     registry.clear();
@@ -246,7 +241,6 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     try {
       await context.close();
     } catch {
-      // Already closed
     }
 
     server.close();
@@ -257,7 +251,6 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     try {
       context.close();
     } catch {
-      // Best effort
     }
   };
 

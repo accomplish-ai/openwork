@@ -8,8 +8,6 @@ export interface StreamParserEvents {
 
 const MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
-// Handles Windows PTY buffering where JSON may be fragmented across chunks.
-// Uses brace counting instead of newline detection.
 export class StreamParser extends EventEmitter<StreamParserEvents> {
   private buffer: string = '';
 
@@ -90,9 +88,7 @@ export class StreamParser extends EventEmitter<StreamParserEvents> {
     return -1;
   }
 
-  // Windows PTY injects raw CR/LF that corrupts JSON strings; safe to remove since we use brace counting
   private sanitizeJson(str: string): string {
-    // eslint-disable-next-line no-control-regex
     return str.replace(/[\r\n]/g, '');
   }
 

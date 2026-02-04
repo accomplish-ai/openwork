@@ -9,7 +9,6 @@ interface OpenCodeOauthAuthEntry {
   expires?: number;
 }
 
-// OpenCode CLI uses XDG convention (.local/share) on ALL platforms including Windows
 export function getOpenCodeDataHome(): string {
   return process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
 }
@@ -39,7 +38,6 @@ export function getOpenAiOauthStatus(): { connected: boolean; expires?: number }
   const oauth = entry as OpenCodeOauthAuthEntry;
   if (oauth.type !== 'oauth') return { connected: false };
 
-  // Non-empty refresh token indicates completed OAuth (more durable than access token)
   const refresh = oauth.refresh;
   const connected = typeof refresh === 'string' && refresh.trim().length > 0;
   return { connected, expires: oauth.expires };

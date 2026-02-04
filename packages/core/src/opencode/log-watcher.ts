@@ -105,7 +105,6 @@ export interface LogWatcherEvents {
   'log-line': [string];
 }
 
-// Watches log files because CLI doesn't output errors as JSON to stdout
 export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
   private logDir: string;
   private watcher: fs.FSWatcher | null = null;
@@ -193,7 +192,6 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
 
       this.currentLogFile = latestLog;
 
-      // Seek to end since we only care about new errors after watching starts
       this.fileHandle = await fs.promises.open(latestLog, 'r');
       const stat = await this.fileHandle.stat();
       this.readPosition = stat.size;

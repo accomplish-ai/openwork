@@ -19,11 +19,8 @@ interface SkillRow {
 }
 
 export interface SkillsManagerOptions {
-  /** Path to bundled (official) skills directory */
   bundledSkillsPath: string;
-  /** Path to user skills directory */
   userSkillsPath: string;
-  /** SQLite database instance */
   database: Database;
 }
 
@@ -91,7 +88,6 @@ export class SkillsManager {
 
       const existingByFilePath = existingByPath.get(skill.filePath);
       if (existingByFilePath) {
-        // Preserve existing ID to prevent duplicates when name changes
         skill.id = existingByFilePath.id;
         skill.isEnabled = existingByFilePath.isEnabled;
         if (existingByFilePath.githubUrl) {

@@ -1,7 +1,3 @@
-/**
- * Authentication and user types
- */
-
 export interface User {
   id: string;
   email: string;
@@ -40,7 +36,7 @@ export interface BedrockAccessKeyCredentials {
   authType: 'accessKeys';
   accessKeyId: string;
   secretAccessKey: string;
-  sessionToken?: string;  // Optional: for temporary credentials (STS)
+  sessionToken?: string;
   region: string;
 }
 

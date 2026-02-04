@@ -22,7 +22,6 @@ const DEV_BROWSER_PORT = parseInt(process.env.DEV_BROWSER_PORT || '9224', 10);
 const DEV_BROWSER_URL = `http://localhost:${DEV_BROWSER_PORT}`;
 const TASK_ID = process.env.ACCOMPLISH_TASK_ID || 'default';
 
-// Based on Vercel agent-browser pattern: https://github.com/vercel-labs/agent-browser/blob/main/src/actions.ts
 function toAIFriendlyError(error: unknown, selector: string): Error {
   const message = error instanceof Error ? error.message : String(error);
 
@@ -186,7 +185,6 @@ async function removeActiveTabGlow(page: Page): Promise<void> {
       document.getElementById('__dev-browser-active-glow-style')?.remove();
     });
   } catch {
-    // Page may have been closed or navigated, ignore errors
   }
 
   if (glowingPage === page) {
@@ -300,7 +298,6 @@ async function findPageByTargetId(b: Browser, targetId: string): Promise<Page | 
           try {
             await cdpSession.detach();
           } catch {
-            // Ignore detach errors
           }
         }
       }
@@ -375,7 +372,6 @@ async function waitForPageLoad(page: Page, timeout = 3000): Promise<void> {
   try {
     await page.waitForLoadState('domcontentloaded', { timeout });
   } catch {
-    // Page may be slow but still usable
   }
 }
 
@@ -383,7 +379,6 @@ const SNAPSHOT_SCRIPT = `
 (function() {
   if (window.__devBrowser_getAISnapshot) return;
 
-  // === domUtils ===
   let cacheStyle;
   let cachesCounter = 0;
 
@@ -490,7 +485,6 @@ const SNAPSHOT_SCRIPT = `
     ).join("\\u00A0").trim();
   }
 
-  // === yaml ===
   function yamlEscapeKeyIfNeeded(str) {
     if (!yamlStringNeedsQuotes(str)) return str;
     return "'" + str.replace(/'/g, "''") + "'";
@@ -529,7 +523,6 @@ const SNAPSHOT_SCRIPT = `
     return false;
   }
 
-  // === roleUtils ===
   const validRoles = ["alert","alertdialog","application","article","banner","blockquote","button","caption","cell","checkbox","code","columnheader","combobox","complementary","contentinfo","definition","deletion","dialog","directory","document","emphasis","feed","figure","form","generic","grid","gridcell","group","heading","img","insertion","link","list","listbox","listitem","log","main","mark","marquee","math","meter","menu","menubar","menuitem","menuitemcheckbox","menuitemradio","navigation","none","note","option","paragraph","presentation","progressbar","radio","radiogroup","region","row","rowgroup","rowheader","scrollbar","search","searchbox","separator","slider","spinbutton","status","strong","subscript","superscript","switch","tab","table","tablist","tabpanel","term","textbox","time","timer","toolbar","tooltip","tree","treegrid","treeitem"];
 
   let cacheAccessibleName;
@@ -947,7 +940,6 @@ const SNAPSHOT_SCRIPT = `
     return undefined;
   }
 
-  // === ariaSnapshot ===
   let lastRef = 0;
 
   function generateAriaTree(rootElement) {
@@ -1106,10 +1098,8 @@ const SNAPSHOT_SCRIPT = `
 
   function hasPointerCursor(ariaNode) { return ariaNode.box.cursor === "pointer"; }
 
-  // Interactive ARIA roles that agents typically want to interact with
   const INTERACTIVE_ROLES = ['button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'listbox', 'option', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'searchbox', 'slider', 'spinbutton', 'switch', 'dialog', 'alertdialog', 'menu', 'navigation', 'form'];
 
-  // === Token optimization: Priority scoring and truncation ===
   const ROLE_PRIORITIES = {
     button: 100, textbox: 95, searchbox: 95,
     checkbox: 90, radio: 90, switch: 90,
@@ -1167,7 +1157,7 @@ const SNAPSHOT_SCRIPT = `
 
     for (const el of sorted) {
       if (included.length >= maxElements) { truncationReason = 'maxElements'; break; }
-      const elementTokens = 15; // Estimate per element
+      const elementTokens = 15;
       if (maxTokens && tokenCount + elementTokens > maxTokens) { truncationReason = 'maxTokens'; break; }
       included.push(el);
       tokenCount += elementTokens;
@@ -1190,19 +1180,15 @@ const SNAPSHOT_SCRIPT = `
     const lines = [];
     let nodesToRender = ariaSnapshot.root.role === "fragment" ? ariaSnapshot.root.children : [ariaSnapshot.root];
 
-    // Collect and score all elements
     const scoredElements = collectScoredElements(ariaSnapshot.root, snapshotOptions);
 
-    // Truncate with token budget
     const truncateResult = truncateWithBudget(scoredElements, maxElements, maxTokens);
 
-    // Build set of refs to include
     const includedRefs = {};
     for (const el of truncateResult.elements) {
       if (el.node.ref) includedRefs[el.node.ref] = true;
     }
 
-    // Add header with truncation info
     if (truncateResult.truncated) {
       const reason = truncateResult.truncationReason === 'maxTokens' ? 'token budget' : 'element limit';
       lines.push("# Elements: " + truncateResult.elements.length + " of " + truncateResult.totalElements + " (truncated: " + reason + ")");
@@ -1212,7 +1198,6 @@ const SNAPSHOT_SCRIPT = `
     const isInteractiveRole = (role) => INTERACTIVE_ROLES.includes(role);
 
     const visitText = (text, indent) => {
-      // Skip text nodes in interactive_only mode
       if (snapshotOptions.interactiveOnly) return;
       const escaped = yamlEscapeValueIfNeeded(text);
       if (escaped) lines.push(indent + "- text: " + escaped);
@@ -1249,18 +1234,15 @@ const SNAPSHOT_SCRIPT = `
 
     const visit = (ariaNode, indent, renderCursorPointer) => {
       const isInteractive = isInteractiveRole(ariaNode.role);
-      // In interactive_only mode, skip non-interactive elements but still recurse into children
       if (snapshotOptions.interactiveOnly && !isInteractive) {
-        // Still visit children to find nested interactive elements
         const childIndent = indent;
         for (const child of ariaNode.children) {
-          if (typeof child === "string") continue; // Skip text in interactive_only mode
+          if (typeof child === "string") continue;
           else visit(child, childIndent, renderCursorPointer);
         }
         return;
       }
 
-      // Skip elements not in included refs (truncation), but still visit children
       if (ariaNode.ref && !includedRefs[ariaNode.ref]) {
         for (const child of ariaNode.children) {
           if (typeof child === "string") continue;
@@ -1621,13 +1603,11 @@ interface BrowserHighlightInput {
   page_name?: string;
 }
 
-// Create MCP server
 const server = new Server(
   { name: 'dev-browser-mcp', version: '1.0.0' },
   { capabilities: { tools: {} } }
 );
 
-// List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
@@ -2524,7 +2504,6 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         const { ref, selector, x, y, position, button, click_count, page_name } = args as BrowserClickInput;
         const page = await getPage(page_name);
 
-        // Build click options
         const clickOptions: { button?: 'left' | 'right' | 'middle'; clickCount?: number } = {};
         if (button) clickOptions.button = button;
         if (click_count) clickOptions.clickCount = click_count;
@@ -2642,8 +2621,6 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         const { page_name, full_page } = args as BrowserScreenshotInput;
         const page = await getPage(page_name);
 
-        // Use JPEG with 80% quality to keep screenshots under 5MB API limit
-        // PNG screenshots of image-heavy pages can exceed 6MB after base64 encoding
         const screenshotBuffer = await page.screenshot({
           fullPage: full_page ?? false,
           type: 'jpeg',
@@ -2740,13 +2717,11 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
 
         const results: string[] = [];
 
-        // Type text if provided
         if (text) {
           await page.keyboard.type(text, { delay: typing_delay ?? 20 });
           results.push(`Typed: "${text}"`);
         }
 
-        // Press key if provided
         if (key) {
           await page.keyboard.press(key);
           results.push(`Pressed: ${key}`);

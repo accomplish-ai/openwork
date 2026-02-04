@@ -9,7 +9,6 @@ export interface SnapshotManagerOptions {
   interactiveOnly?: boolean;
 }
 
-// Singleton per MCP server session - tracks the last snapshot to enable diffing
 export class SnapshotManager {
   private lastSnapshot: ParsedSnapshot | null = null;
   private lastTimestamp: number = 0;
@@ -72,7 +71,6 @@ export class SnapshotManager {
     return normalizedCurrent === normalizedLast;
   }
 
-  // Remove hash fragment for SPA comparison
   private normalizeUrl(url: string): string {
     try {
       const parsed = new URL(url);

@@ -7,11 +7,8 @@ export interface ValidationResult {
 }
 
 export interface ValidationOptions {
-  /** Custom base URL for the API (e.g., for OpenAI-compatible endpoints) */
   baseUrl?: string;
-  /** Timeout in milliseconds (default: 10000) */
   timeout?: number;
-  /** Z.AI region: 'china' or 'international' */
   zaiRegion?: ZaiRegion;
 }
 
@@ -186,7 +183,6 @@ export async function validateApiKey(
         );
         break;
 
-      // These providers use alternative auth (AWS credentials, local servers, etc.)
       case 'ollama':
       case 'bedrock':
       case 'azure-foundry':

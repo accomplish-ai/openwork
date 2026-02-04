@@ -17,10 +17,6 @@ interface SecureStorageSchema {
 
 export type { ApiKeyProvider };
 
-/**
- * AES-256-GCM encryption using machine-derived keys. Less secure than OS Keychain
- * (key derivation is reversible) but avoids prompts. Suitable for rotatable API keys.
- */
 export class SecureStorage {
   private storagePath: string;
   private appId: string;
@@ -79,7 +75,6 @@ export class SecureStorage {
     return Buffer.from(data.salt, 'base64');
   }
 
-  // Hostname excluded from derivation as users can rename their machine
   private getDerivedKey(): Buffer {
     if (this.derivedKey) {
       return this.derivedKey;

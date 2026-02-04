@@ -1,11 +1,3 @@
-/**
- * Legacy electron-store data import.
- *
- * Imports data from the pre-SQLite electron-store format into SQLite.
- * Tracked via schema_meta to ensure it only runs once per database,
- * preventing duplicate inserts and stale data overwrites.
- */
-
 import type { Database } from 'better-sqlite3';
 import Store from 'electron-store';
 import { app } from 'electron';
@@ -247,13 +239,6 @@ function importTaskHistory(db: Database): void {
   }
 }
 
-/**
- * Import legacy electron-store data into SQLite database.
- *
- * If we detect an existing database without the import flag, the user upgraded
- * from a version where import was baked into v001 migration. Mark complete
- * WITHOUT running to prevent overwriting current settings with stale JSON data.
- */
 export function importLegacyElectronStoreData(db: Database): void {
   if (wasLegacyImportAttempted(db)) {
     console.log('[LegacyImport] Legacy import already completed, skipping');

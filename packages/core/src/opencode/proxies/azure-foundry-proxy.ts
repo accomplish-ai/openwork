@@ -37,11 +37,6 @@ function shouldTransformBody(contentType: string | undefined): boolean {
   return !!contentType && contentType.toLowerCase().includes('application/json');
 }
 
-/**
- * Transform request body for Azure AI Foundry compatibility.
- * - Strips 'reasoning_effort' (not supported by Azure)
- * - Converts 'max_tokens' to 'max_completion_tokens' (required by gpt-5.2, o1, o3)
- */
 export function transformRequestBody(body: Buffer): Buffer {
   const text = body.toString('utf8');
   try {
