@@ -80,6 +80,7 @@ interface TaskState {
   interruptTask: () => Promise<void>;
   setPermissionRequest: (request: PermissionRequest | null) => void;
   respondToPermission: (response: PermissionResponse) => Promise<void>;
+  addTask: (task: Task) => void;
   addTaskUpdate: (event: TaskUpdateEvent) => void;
   addTaskUpdateBatch: (event: TaskUpdateBatchEvent) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -349,6 +350,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ permissionRequest: null });
   },
 
+  // Add a new task to the list (e.g., from scheduler creating a task)
+  addTask: (task: Task) => {
+    set((state) => {
+      // Only add if task doesn't already exist in the list
+      const exists = state.tasks.some((t) => t.id === task.id);
+      if (exists) {
+        return state;
+      }
+      return {
+        tasks: [task, ...state.tasks],
+      };
+    });
+  },
+
   addTaskUpdate: (event: TaskUpdateEvent) => {
     const accomplish = getAccomplish();
     void accomplish.logEvent({
@@ -367,10 +382,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
       // Handle message events - only if viewing this task
       if (event.type === 'message' && event.message && isCurrentTask && state.currentTask) {
-        updatedCurrentTask = {
-          ...state.currentTask,
-          messages: [...state.currentTask.messages, event.message],
-        };
+        // Skip if message already exists (prevents duplicates from race conditions)
+        if (state.currentTask.messages.some((m) => m.id === event.message!.id)) {
+          // Message already exists, don't add duplicate
+        } else {
+          updatedCurrentTask = {
+            ...state.currentTask,
+            messages: [...state.currentTask.messages, event.message],
+          };
+        }
       }
 
       // Handle complete events
@@ -451,10 +471,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         return state;
       }
 
-      // Add all messages in a single state update
+      // Deduplicate: only add messages that don't already exist (prevents race condition
+      // where messages are both loaded from DB and received via IPC batch)
+      const existingIds = new Set(state.currentTask.messages.map((m) => m.id));
+      const newMessages = event.messages.filter((m) => !existingIds.has(m.id));
+
+      if (newMessages.length === 0) {
+        return state; // No new messages to add
+      }
+
       const updatedTask = {
         ...state.currentTask,
-        messages: [...state.currentTask.messages, ...event.messages],
+        messages: [...state.currentTask.messages, ...newMessages],
       };
 
       return { currentTask: updatedTask, isLoading: false };
@@ -624,6 +652,12 @@ if (typeof window !== 'undefined' && window.accomplish) {
       state.clearStartupStage(updateEvent.taskId);
       // Note: todos are cleared in addTaskUpdate() based on interrupt status
     }
+  });
+
+  // Subscribe to task created events (e.g., from scheduler)
+  // This ensures sidebar updates when scheduled tasks start
+  window.accomplish.onTaskCreated?.((task: unknown) => {
+    useTaskStore.getState().addTask(task as Task);
   });
 
   // Subscribe to task summary updates
