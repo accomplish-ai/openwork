@@ -2,7 +2,17 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Repeat, Pause, CheckCircle2, XCircle, ChevronDown, ChevronUp, ExternalLink, AlertCircle } from 'lucide-react';
+import {
+  Clock,
+  Repeat,
+  Pause,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  AlertCircle,
+} from 'lucide-react';
 import cronstrue from 'cronstrue';
 import type { ScheduledTask, Task, TaskStatus } from '@accomplish/shared';
 import { Badge } from '@/components/ui/badge';
@@ -113,15 +123,19 @@ export function ScheduleCard({
 
   // Get status icon and color
   const StatusIcon = useMemo(() => {
-    if (schedule.status === 'completed') return CheckCircle2;
     if (schedule.status === 'cancelled') return XCircle;
+    if (schedule.executionStatus === 'running') return Clock;
+    if (schedule.executionStatus === 'failed') return AlertCircle;
+    if (schedule.status === 'completed') return CheckCircle2;
     if (!schedule.enabled || schedule.status === 'paused') return Pause;
     return schedule.scheduleType === 'recurring' ? Repeat : Clock;
   }, [schedule]);
 
   const statusColor = useMemo(() => {
-    if (schedule.status === 'completed') return 'text-green-500';
     if (schedule.status === 'cancelled') return 'text-red-500';
+    if (schedule.executionStatus === 'running') return 'text-blue-500';
+    if (schedule.executionStatus === 'failed') return 'text-red-500';
+    if (schedule.status === 'completed') return 'text-green-500';
     if (!schedule.enabled || schedule.status === 'paused') return 'text-muted-foreground';
     return 'text-blue-500';
   }, [schedule]);
@@ -148,6 +162,21 @@ export function ScheduleCard({
 
           {/* Next run / Status badges */}
           <div className="flex items-center gap-2 mt-2">
+            {schedule.executionStatus === 'running' && (
+              <Badge variant="default" className="text-xs">
+                Running
+              </Badge>
+            )}
+            {schedule.executionStatus === 'failed' && (
+              <Badge variant="destructive" className="text-xs">
+                Failed
+              </Badge>
+            )}
+            {schedule.status === 'active' && schedule.executionStatus === 'completed' && schedule.lastRunAt && (
+              <Badge variant="secondary" className="text-xs">
+                Last: Completed
+              </Badge>
+            )}
             {schedule.status === 'active' && schedule.enabled && nextRunText && (
               <Badge variant="secondary" className="text-xs">
                 Next: {nextRunText}

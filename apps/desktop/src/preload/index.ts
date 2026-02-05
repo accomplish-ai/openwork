@@ -8,6 +8,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   CreateScheduleConfig,
+  MissedScheduleInfo,
   ScheduledTask,
   Skill,
   TodoItem,
@@ -347,6 +348,8 @@ const accomplishAPI = {
       ipcRenderer.invoke('schedule:toggle', id, enabled),
     runScheduleNow: (id: string): Promise<void> =>
       ipcRenderer.invoke('schedule:run-now', id),
+    dismissMissedSchedule: (id: string): Promise<void> =>
+      ipcRenderer.invoke('schedule:dismiss-missed', id),
     getActiveCount: (): Promise<number> =>
       ipcRenderer.invoke('schedule:active-count'),
   },
@@ -356,6 +359,12 @@ const accomplishAPI = {
     const listener = (_: unknown, data: { scheduleId: string }) => callback(data);
     ipcRenderer.on('schedule:updated', listener);
     return () => ipcRenderer.removeListener('schedule:updated', listener);
+  },
+  // Missed one-time schedules notification (sent on app start when schedules were due while offline)
+  onScheduleMissed: (callback: (missedSchedules: MissedScheduleInfo[]) => void) => {
+    const listener = (_: unknown, missedSchedules: MissedScheduleInfo[]) => callback(missedSchedules);
+    ipcRenderer.on('schedule:missed', listener);
+    return () => ipcRenderer.removeListener('schedule:missed', listener);
   },
 };
 

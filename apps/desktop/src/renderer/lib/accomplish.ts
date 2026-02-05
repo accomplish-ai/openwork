@@ -25,6 +25,7 @@ import type {
   ScheduledTask,
   CreateScheduleConfig,
   UpdateScheduleConfig,
+  MissedScheduleInfo,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -220,9 +221,11 @@ interface AccomplishAPI {
     deleteSchedule(id: string): Promise<void>;
     toggleSchedule(id: string, enabled: boolean): Promise<void>;
     runScheduleNow(id: string): Promise<void>;
+    dismissMissedSchedule(id: string): Promise<void>;
     getActiveCount(): Promise<number>;
   };
   onScheduleUpdated?(callback: (data: { scheduleId: string }) => void): () => void;
+  onScheduleMissed?(callback: (missedSchedules: MissedScheduleInfo[]) => void): () => void;
 }
 
 interface AccomplishShell {

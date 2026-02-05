@@ -10,6 +10,7 @@ import type {
   CreateScheduleConfig,
   UpdateScheduleConfig,
   ScheduleStatus,
+  ScheduleExecutionStatus,
 } from '@accomplish/shared';
 
 // In-memory storage for mock
@@ -48,6 +49,7 @@ vi.mock('@main/store/repositories/scheduledTasks', () => ({
       lastRunAt: undefined,
       lastTaskId: undefined,
       status: 'active',
+      executionStatus: 'pending',
       enabled: true,
       createdAt: now,
       updatedAt: now,
@@ -85,7 +87,14 @@ vi.mock('@main/store/repositories/scheduledTasks', () => ({
 
   getSchedulesReadyToRun: vi.fn((now: string): ScheduledTask[] => {
     return Array.from(mockScheduleStore.values())
-      .filter((s) => s.status === 'active' && s.enabled && s.nextRunAt && s.nextRunAt <= now)
+      .filter(
+        (s) =>
+          s.status === 'active' &&
+          s.enabled &&
+          s.nextRunAt &&
+          s.nextRunAt <= now &&
+          s.executionStatus !== 'running'
+      )
       .sort((a, b) => {
         if (!a.nextRunAt || !b.nextRunAt) return 0;
         return a.nextRunAt.localeCompare(b.nextRunAt);
@@ -140,6 +149,62 @@ vi.mock('@main/store/repositories/scheduledTasks', () => ({
       schedule.updatedAt = new Date().toISOString();
     }
   }),
+
+  updateScheduleExecutionStatus: vi.fn(
+    (id: string, executionStatus: ScheduleExecutionStatus, executionError?: string | null): void => {
+      const schedule = mockScheduleStore.get(id);
+      if (schedule) {
+        schedule.executionStatus = executionStatus;
+        schedule.executionError = executionError ?? undefined;
+        schedule.updatedAt = new Date().toISOString();
+      }
+    }
+  ),
+
+  claimDueScheduleExecution: vi.fn(
+    (params: {
+      id: string;
+      now: string;
+      nextRunAt: string | null;
+      nextScheduleStatus?: string;
+    }): boolean => {
+      const schedule = mockScheduleStore.get(params.id);
+      if (!schedule) return false;
+      if (schedule.executionStatus === 'running') return false;
+      if (schedule.status !== 'active' || !schedule.enabled) return false;
+
+      schedule.executionStatus = 'running';
+      schedule.lastRunAt = params.now;
+      schedule.nextRunAt = params.nextRunAt ?? undefined;
+      if (params.nextScheduleStatus) {
+        schedule.status = params.nextScheduleStatus as ScheduleStatus;
+      }
+      schedule.updatedAt = new Date().toISOString();
+      return true;
+    }
+  ),
+
+  claimManualScheduleExecution: vi.fn(
+    (params: {
+      id: string;
+      now: string;
+      nextRunAt: string | null;
+      nextScheduleStatus?: string;
+    }): boolean => {
+      const schedule = mockScheduleStore.get(params.id);
+      if (!schedule) return false;
+      if (schedule.executionStatus === 'running') return false;
+
+      schedule.executionStatus = 'running';
+      schedule.lastRunAt = params.now;
+      schedule.nextRunAt = params.nextRunAt ?? undefined;
+      if (params.nextScheduleStatus) {
+        schedule.status = params.nextScheduleStatus as ScheduleStatus;
+      }
+      schedule.updatedAt = new Date().toISOString();
+      return true;
+    }
+  ),
 
   deleteScheduledTask: vi.fn((id: string): void => {
     mockScheduleStore.delete(id);
@@ -650,6 +715,164 @@ describe('scheduledTasks Integration', () => {
 
       // Assert
       expect(result).toBe(0);
+    });
+  });
+
+  describe('updateScheduleExecutionStatus', () => {
+    it('should update execution status to running', async () => {
+      const { createScheduledTask, getScheduledTask, updateScheduleExecutionStatus } = await import(
+        '@main/store/repositories/scheduledTasks'
+      );
+      const schedule = createScheduledTask(createOneTimeConfig('Task'));
+      expect(schedule.executionStatus).toBe('pending');
+
+      updateScheduleExecutionStatus(schedule.id, 'running');
+      const result = getScheduledTask(schedule.id);
+
+      expect(result?.executionStatus).toBe('running');
+      expect(result?.executionError).toBeUndefined();
+    });
+
+    it('should set execution error when status is failed', async () => {
+      const { createScheduledTask, getScheduledTask, updateScheduleExecutionStatus } = await import(
+        '@main/store/repositories/scheduledTasks'
+      );
+      const schedule = createScheduledTask(createOneTimeConfig('Task'));
+
+      updateScheduleExecutionStatus(schedule.id, 'failed', 'Something went wrong');
+      const result = getScheduledTask(schedule.id);
+
+      expect(result?.executionStatus).toBe('failed');
+      expect(result?.executionError).toBe('Something went wrong');
+    });
+
+    it('should clear execution error when status becomes completed', async () => {
+      const { createScheduledTask, getScheduledTask, updateScheduleExecutionStatus } = await import(
+        '@main/store/repositories/scheduledTasks'
+      );
+      const schedule = createScheduledTask(createOneTimeConfig('Task'));
+
+      // First fail it
+      updateScheduleExecutionStatus(schedule.id, 'failed', 'Error msg');
+      // Then complete it
+      updateScheduleExecutionStatus(schedule.id, 'completed', null);
+      const result = getScheduledTask(schedule.id);
+
+      expect(result?.executionStatus).toBe('completed');
+      expect(result?.executionError).toBeUndefined();
+    });
+  });
+
+  describe('claimDueScheduleExecution', () => {
+    it('should claim a pending schedule for execution', async () => {
+      const { createScheduledTask, getScheduledTask, claimDueScheduleExecution } = await import(
+        '@main/store/repositories/scheduledTasks'
+      );
+      const schedule = createScheduledTask(createOneTimeConfig('Task', '2026-02-01T09:00:00.000Z'));
+
+      const claimed = claimDueScheduleExecution({
+        id: schedule.id,
+        now: '2026-02-04T12:00:00.000Z',
+        nextRunAt: null,
+        nextScheduleStatus: 'completed',
+      });
+
+      expect(claimed).toBe(true);
+      const result = getScheduledTask(schedule.id);
+      expect(result?.executionStatus).toBe('running');
+      expect(result?.status).toBe('completed');
+      expect(result?.nextRunAt).toBeUndefined();
+    });
+
+    it('should reject claiming an already running schedule', async () => {
+      const { createScheduledTask, claimDueScheduleExecution, updateScheduleExecutionStatus } =
+        await import('@main/store/repositories/scheduledTasks');
+      const schedule = createScheduledTask(createOneTimeConfig('Task', '2026-02-01T09:00:00.000Z'));
+
+      // Set to running first
+      updateScheduleExecutionStatus(schedule.id, 'running');
+
+      const claimed = claimDueScheduleExecution({
+        id: schedule.id,
+        now: '2026-02-04T12:00:00.000Z',
+        nextRunAt: null,
+      });
+
+      expect(claimed).toBe(false);
+    });
+
+    it('should advance nextRunAt for recurring schedules', async () => {
+      const { createScheduledTask, getScheduledTask, claimDueScheduleExecution, updateNextRunTime } =
+        await import('@main/store/repositories/scheduledTasks');
+      const schedule = createScheduledTask(createRecurringConfig('Recurring'));
+      updateNextRunTime(schedule.id, '2026-02-04T09:00:00.000Z');
+
+      const claimed = claimDueScheduleExecution({
+        id: schedule.id,
+        now: '2026-02-04T09:01:00.000Z',
+        nextRunAt: '2026-02-05T09:00:00.000Z',
+      });
+
+      expect(claimed).toBe(true);
+      const result = getScheduledTask(schedule.id);
+      expect(result?.executionStatus).toBe('running');
+      expect(result?.nextRunAt).toBe('2026-02-05T09:00:00.000Z');
+      expect(result?.status).toBe('active'); // Recurring stays active
+    });
+  });
+
+  describe('claimManualScheduleExecution', () => {
+    it('should claim a schedule for manual execution', async () => {
+      const { createScheduledTask, getScheduledTask, claimManualScheduleExecution } = await import(
+        '@main/store/repositories/scheduledTasks'
+      );
+      const schedule = createScheduledTask(createOneTimeConfig('Task', '2026-03-01T09:00:00.000Z'));
+
+      const claimed = claimManualScheduleExecution({
+        id: schedule.id,
+        now: '2026-02-04T12:00:00.000Z',
+        nextRunAt: null,
+        nextScheduleStatus: 'completed',
+      });
+
+      expect(claimed).toBe(true);
+      const result = getScheduledTask(schedule.id);
+      expect(result?.executionStatus).toBe('running');
+    });
+
+    it('should reject claiming an already running schedule', async () => {
+      const { createScheduledTask, claimManualScheduleExecution, updateScheduleExecutionStatus } =
+        await import('@main/store/repositories/scheduledTasks');
+      const schedule = createScheduledTask(createOneTimeConfig('Task', '2026-02-01T09:00:00.000Z'));
+
+      updateScheduleExecutionStatus(schedule.id, 'running');
+
+      const claimed = claimManualScheduleExecution({
+        id: schedule.id,
+        now: '2026-02-04T12:00:00.000Z',
+        nextRunAt: null,
+      });
+
+      expect(claimed).toBe(false);
+    });
+  });
+
+  describe('getSchedulesReadyToRun (executionStatus filtering)', () => {
+    it('should exclude running schedules from ready-to-run', async () => {
+      const {
+        createScheduledTask,
+        getSchedulesReadyToRun,
+        updateScheduleExecutionStatus,
+      } = await import('@main/store/repositories/scheduledTasks');
+
+      const ready = createScheduledTask(createOneTimeConfig('Ready', '2026-02-01T09:00:00.000Z'));
+      const running = createScheduledTask(createOneTimeConfig('Running', '2026-02-01T09:00:00.000Z'));
+      updateScheduleExecutionStatus(running.id, 'running');
+
+      const result = getSchedulesReadyToRun('2026-02-04T12:00:00.000Z');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(ready.id);
     });
   });
 });

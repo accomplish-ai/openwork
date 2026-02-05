@@ -34,6 +34,7 @@ export function registerSchedulerHandlers(): void {
   handle('schedule:delete', handlers.deleteSchedule);
   handle('schedule:toggle', handlers.toggleSchedule);
   handle('schedule:run-now', handlers.runScheduleNow);
+  handle('schedule:dismiss-missed', handlers.dismissMissedSchedule);
   handle('schedule:active-count', handlers.getActiveScheduleCount);
 
   console.log('[Scheduler IPC] Handlers registered');

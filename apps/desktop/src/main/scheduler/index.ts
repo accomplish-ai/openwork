@@ -7,7 +7,7 @@
 
 import { CronExpressionParser } from 'cron-parser';
 import { BrowserWindow } from 'electron';
-import type { ScheduledTask, TaskConfig, TaskMessage, Task, TaskStatus, OpenCodeMessage } from '@accomplish/shared';
+import type { ScheduledTask, MissedScheduleInfo, TaskConfig, TaskMessage, Task, TaskStatus, OpenCodeMessage } from '@accomplish/shared';
 import * as repo from '../store/repositories/scheduledTasks';
 import { getTaskManager } from '../opencode/task-manager';
 import * as taskHistoryRepo from '../store/repositories/taskHistory';
@@ -99,6 +99,7 @@ function toTaskMessage(msg: OpenCodeMessage): TaskMessage | null {
 export class TaskScheduler {
   private checkInterval: NodeJS.Timeout | null = null;
   private isRunning = false;
+  private isChecking = false;
 
   /**
    * Start the scheduler loop
@@ -148,11 +149,21 @@ export class TaskScheduler {
    * For recurring schedules, computes the next future run time
    * For one-time schedules that are past due, marks them as completed
    */
-  handleMissedSchedules(): void {
+  /**
+   * Check for schedules that were due while the app was offline.
+   *
+   * - **One-time schedules**: collected and returned so the UI can prompt
+   *   the user to run or dismiss them (not auto-completed).
+   * - **Recurring schedules**: silently advanced to the next future run time.
+   *
+   * @returns An array of missed one-time schedules awaiting user decision.
+   */
+  handleMissedSchedules(): MissedScheduleInfo[] {
     console.log('[TaskScheduler] Checking for missed schedules');
     const now = new Date();
 
     const activeSchedules = repo.getActiveScheduledTasks();
+    const missedOneTime: MissedScheduleInfo[] = [];
 
     for (const schedule of activeSchedules) {
       if (!schedule.nextRunAt) continue;
@@ -164,58 +175,145 @@ export class TaskScheduler {
         );
 
         if (schedule.scheduleType === 'one-time') {
-          // Mark one-time schedules as completed if missed
-          console.log(`[TaskScheduler] Marking one-time schedule ${schedule.id} as completed`);
-          repo.updateScheduleStatus(schedule.id, 'completed');
+          // Collect missed one-time schedules so the renderer can notify the user.
+          console.log(
+            `[TaskScheduler] Missed one-time schedule ${schedule.id} — deferring to user`
+          );
+          missedOneTime.push({
+            schedule,
+            missedAt: schedule.nextRunAt,
+          });
         } else if (schedule.cronExpression) {
-          // Compute next future run for recurring schedules
+          // Silently advance recurring schedules to the next future run.
           const nextRun = this.computeNextRun(schedule.cronExpression, schedule.timezone);
           if (nextRun) {
             console.log(
               `[TaskScheduler] Updating recurring schedule ${schedule.id} next run to ${nextRun}`
             );
             repo.updateNextRunTime(schedule.id, nextRun);
+          } else {
+            console.error(
+              `[TaskScheduler] Disabling recurring schedule ${schedule.id}: failed to compute next run time`
+            );
+            repo.updateScheduledTask(schedule.id, { enabled: false });
+            repo.updateNextRunTime(schedule.id, null);
+            repo.updateScheduleExecutionStatus(
+              schedule.id,
+              'failed',
+              'Invalid cron expression for timezone (failed to compute next run)'
+            );
           }
         }
       }
     }
+
+    return missedOneTime;
   }
 
   /**
    * Check for due schedules and execute them
    */
   private async checkSchedules(): Promise<void> {
-    const now = new Date().toISOString();
-    const dueSchedules = repo.getSchedulesReadyToRun(now);
-
-    if (dueSchedules.length === 0) {
+    if (this.isChecking) {
+      // Prevent overlapping checks (setInterval doesn't await).
       return;
     }
 
-    console.log(`[TaskScheduler] Found ${dueSchedules.length} due schedule(s)`);
+    this.isChecking = true;
+    const now = new Date().toISOString();
+    try {
+      const dueSchedules = repo.getSchedulesReadyToRun(now);
 
-    for (const schedule of dueSchedules) {
-      await this.executeSchedule(schedule);
+      if (dueSchedules.length === 0) {
+        return;
+      }
+
+      console.log(`[TaskScheduler] Found ${dueSchedules.length} due schedule(s)`);
+
+      for (const schedule of dueSchedules) {
+        await this.executeSchedule(schedule, 'due');
+      }
+    } finally {
+      this.isChecking = false;
     }
   }
 
   /**
    * Execute a scheduled task
    */
-  private async executeSchedule(schedule: ScheduledTask): Promise<void> {
+  private async executeSchedule(schedule: ScheduledTask, trigger: 'due' | 'manual'): Promise<void> {
     console.log(`[TaskScheduler] Executing schedule ${schedule.id}: "${schedule.prompt}"`);
+
+    const sendToRenderer = (channel: string, data: unknown) => {
+      const window = BrowserWindow.getAllWindows()[0];
+      if (!window || window.isDestroyed() || window.webContents.isDestroyed()) {
+        return;
+      }
+      window.webContents.send(channel, data);
+    };
+
+    const now = new Date().toISOString();
+
+    // Compute next run time up-front (and claim atomically) so a schedule can't execute twice.
+    let nextRunAt: string | null = null;
+    if (schedule.scheduleType === 'recurring') {
+      if (!schedule.cronExpression) {
+        console.error(`[TaskScheduler] Recurring schedule ${schedule.id} missing cronExpression`);
+        repo.updateScheduleExecutionStatus(schedule.id, 'failed', 'Missing cron expression');
+        sendToRenderer('schedule:updated', { scheduleId: schedule.id });
+        return;
+      }
+
+      const computed = this.computeNextRun(schedule.cronExpression, schedule.timezone);
+      if (!computed) {
+        // Prevent infinite retry loops: disable the schedule and clear next_run_at.
+        console.error(
+          `[TaskScheduler] Disabling schedule ${schedule.id}: failed to compute next run time`
+        );
+        repo.updateScheduledTask(schedule.id, { enabled: false });
+        repo.updateNextRunTime(schedule.id, null);
+        repo.updateScheduleExecutionStatus(
+          schedule.id,
+          'failed',
+          'Invalid cron expression for timezone (failed to compute next run)'
+        );
+        sendToRenderer('schedule:updated', { scheduleId: schedule.id });
+        return;
+      }
+      nextRunAt = computed;
+    }
+
+    // One-time schedules are considered complete once they're claimed for execution.
+    const nextScheduleStatus = schedule.scheduleType === 'one-time' ? 'completed' : undefined;
+
+    const claimed =
+      trigger === 'due'
+        ? repo.claimDueScheduleExecution({
+            id: schedule.id,
+            now,
+            nextRunAt: schedule.scheduleType === 'one-time' ? null : nextRunAt,
+            nextScheduleStatus,
+          })
+        : repo.claimManualScheduleExecution({
+            id: schedule.id,
+            now,
+            nextRunAt: schedule.scheduleType === 'one-time' ? null : nextRunAt,
+            nextScheduleStatus,
+          });
+
+    if (!claimed) {
+      console.log(
+        `[TaskScheduler] Skipping schedule ${schedule.id}: already running or no longer eligible`
+      );
+      return;
+    }
+
+    // Notify UI immediately (shows running state + updated next run time)
+    sendToRenderer('schedule:updated', { scheduleId: schedule.id });
 
     try {
       const taskId = createTaskId();
       const taskManager = getTaskManager();
-
-      const sendToRenderer = (channel: string, data: unknown) => {
-        const window = BrowserWindow.getAllWindows()[0];
-        if (!window || window.isDestroyed() || window.webContents.isDestroyed()) {
-          return;
-        }
-        window.webContents.send(channel, data);
-      };
 
       // Create task config
       const config: TaskConfig = {
@@ -262,12 +360,28 @@ export class TaskScheduler {
 
           taskHistoryRepo.updateTaskStatus(taskId, status, completedAt);
           sendToRenderer('task:update', { taskId, type: 'complete', result });
+
+          // Reflect execution status on the schedule itself
+          const scheduleExecutionStatus =
+            result.status === 'error' || result.status === 'interrupted' ? 'failed' : 'completed';
+          const executionError =
+            scheduleExecutionStatus === 'failed'
+              ? result.status === 'interrupted'
+                ? 'Task interrupted'
+                : 'Task failed'
+              : null;
+
+          repo.updateScheduleExecutionStatus(schedule.id, scheduleExecutionStatus, executionError);
+          sendToRenderer('schedule:updated', { scheduleId: schedule.id });
         },
         onError: (error) => {
           const completedAt = new Date().toISOString();
           console.error(`[TaskScheduler] Task ${taskId} error:`, error);
           taskHistoryRepo.updateTaskStatus(taskId, 'failed', completedAt);
           sendToRenderer('task:update', { taskId, type: 'error', error: error.message });
+
+          repo.updateScheduleExecutionStatus(schedule.id, 'failed', error.message);
+          sendToRenderer('schedule:updated', { scheduleId: schedule.id });
         },
         onStatusChange: (status) => {
           taskHistoryRepo.updateTaskStatus(taskId, status);
@@ -310,25 +424,16 @@ export class TaskScheduler {
 
       // Mark schedule as executed
       repo.markScheduleExecuted(schedule.id, taskId);
-
-      // Handle schedule type
-      if (schedule.scheduleType === 'one-time') {
-        // Mark as completed
-        repo.updateScheduleStatus(schedule.id, 'completed');
-        console.log(`[TaskScheduler] One-time schedule ${schedule.id} marked as completed`);
-      } else if (schedule.cronExpression) {
-        // Compute and set next run time
-        const nextRun = this.computeNextRun(schedule.cronExpression, schedule.timezone);
-        if (nextRun) {
-          repo.updateNextRunTime(schedule.id, nextRun);
-          console.log(`[TaskScheduler] Next run for schedule ${schedule.id}: ${nextRun}`);
-        }
-      }
-
-      // Notify UI about schedule update
+      // Notify UI about schedule update (lastTaskId, lastRunAt)
       sendToRenderer('schedule:updated', { scheduleId: schedule.id });
     } catch (error) {
       console.error(`[TaskScheduler] Failed to execute schedule ${schedule.id}:`, error);
+      repo.updateScheduleExecutionStatus(
+        schedule.id,
+        'failed',
+        error instanceof Error ? error.message : String(error)
+      );
+      sendToRenderer('schedule:updated', { scheduleId: schedule.id });
     }
   }
 
@@ -345,7 +450,25 @@ export class TaskScheduler {
       throw new Error(`Schedule ${scheduleId} is not active`);
     }
 
-    await this.executeSchedule(schedule);
+    if (schedule.executionStatus === 'running') {
+      throw new Error(`Schedule ${scheduleId} is already running`);
+    }
+
+    await this.executeSchedule(schedule, 'manual');
+  }
+
+  /**
+   * Dismiss a missed one-time schedule without running it.
+   * Marks it as completed with a failed execution status.
+   */
+  dismissMissedSchedule(scheduleId: string): void {
+    console.log(`[TaskScheduler] Dismissing missed schedule ${scheduleId}`);
+    repo.updateScheduleStatus(scheduleId, 'completed');
+    repo.updateScheduleExecutionStatus(
+      scheduleId,
+      'failed',
+      'Missed scheduled time (dismissed by user)'
+    );
   }
 
   /**
@@ -358,6 +481,16 @@ export class TaskScheduler {
         repo.updateNextRunTime(schedule.id, nextRun);
         console.log(
           `[TaskScheduler] Computed initial next run for schedule ${schedule.id}: ${nextRun}`
+        );
+      } else {
+        console.error(
+          `[TaskScheduler] Disabling schedule ${schedule.id}: failed to compute initial next run time`
+        );
+        repo.updateScheduledTask(schedule.id, { enabled: false });
+        repo.updateScheduleExecutionStatus(
+          schedule.id,
+          'failed',
+          'Invalid cron expression for timezone (failed to compute next run)'
         );
       }
     }

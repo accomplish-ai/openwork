@@ -5,6 +5,7 @@
 
 export type ScheduleType = 'one-time' | 'recurring';
 export type ScheduleStatus = 'active' | 'paused' | 'completed' | 'cancelled';
+export type ScheduleExecutionStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 /**
  * A scheduled task configuration stored in the database
@@ -41,11 +42,33 @@ export interface ScheduledTask {
   /** Schedule status */
   status: ScheduleStatus;
 
+  /**
+   * Last known execution status for this schedule.
+   * - `pending`: schedule has never run yet (or legacy schedule with unknown last status)
+   * - `running`: schedule is currently executing
+   * - `completed` / `failed`: outcome of the last execution
+   */
+  executionStatus: ScheduleExecutionStatus;
+
+  /** Optional error message from the last failed execution */
+  executionError?: string;
+
   /** Whether the schedule is enabled (can be toggled without changing status) */
   enabled: boolean;
 
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Information about a missed one-time schedule that the user should be notified about.
+ * Returned by the scheduler when a one-time schedule was due while the app was offline.
+ */
+export interface MissedScheduleInfo {
+  /** The schedule that was missed */
+  schedule: ScheduledTask;
+  /** When the schedule was supposed to run (ISO timestamp) */
+  missedAt: string;
 }
 
 /**

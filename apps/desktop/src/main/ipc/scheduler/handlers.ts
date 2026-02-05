@@ -59,6 +59,17 @@ export function updateSchedule(id: string, updates: UpdateScheduleConfig): void 
       );
       if (nextRun) {
         repo.updateNextRunTime(id, nextRun);
+        // Keep last execution status, but clear any config-related error.
+        repo.updateScheduleExecutionStatus(id, schedule.executionStatus, null);
+      } else {
+        // Validation should prevent this, but guard against corrupted/legacy data.
+        repo.updateNextRunTime(id, null);
+        repo.updateScheduledTask(id, { enabled: false });
+        repo.updateScheduleExecutionStatus(
+          id,
+          'failed',
+          'Invalid cron expression for timezone (failed to compute next run)'
+        );
       }
     }
   }
@@ -83,6 +94,13 @@ export function toggleSchedule(id: string, enabled: boolean): void {
  */
 export async function runScheduleNow(id: string): Promise<void> {
   await getScheduler().executeScheduleNow(id);
+}
+
+/**
+ * Dismiss a missed one-time schedule (user chose not to run it)
+ */
+export function dismissMissedSchedule(id: string): void {
+  getScheduler().dismissMissedSchedule(id);
 }
 
 /**

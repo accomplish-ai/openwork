@@ -144,6 +144,13 @@ export function ScheduleDialog({
   }, [prompt, scheduleType, scheduledAt, cronState, timezone, validation, onSubmit, onOpenChange]);
 
   const isEditing = !!editingSchedule;
+  let submitButtonText = 'Schedule';
+  if (isEditing) {
+    submitButtonText = 'Save Changes';
+  }
+  if (isSubmitting) {
+    submitButtonText = 'Saving...';
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -218,7 +225,7 @@ export function ScheduleDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting || !validation.valid}>
-            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Schedule'}
+            {submitButtonText}
           </Button>
         </DialogFooter>
       </DialogContent>

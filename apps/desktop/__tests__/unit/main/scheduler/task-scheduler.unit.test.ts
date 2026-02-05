@@ -61,8 +61,12 @@ const mockScheduledTasksRepo = {
   getSchedulesReadyToRun: vi.fn(() => []),
   getScheduledTask: vi.fn(),
   updateScheduleStatus: vi.fn(),
+  updateScheduleExecutionStatus: vi.fn(),
   updateNextRunTime: vi.fn(),
   markScheduleExecuted: vi.fn(),
+  updateScheduledTask: vi.fn(),
+  claimDueScheduleExecution: vi.fn(() => true),
+  claimManualScheduleExecution: vi.fn(() => true),
 };
 
 vi.mock('@main/store/repositories/scheduledTasks', () => mockScheduledTasksRepo);
@@ -218,7 +222,7 @@ describe('TaskScheduler', () => {
   });
 
   describe('handleMissedSchedules()', () => {
-    it('should mark missed one-time schedules as completed', () => {
+    it('should return missed one-time schedules instead of auto-completing them', () => {
       // Arrange
       const scheduler = new TaskScheduler();
       const missedSchedule: ScheduledTask = {
@@ -229,6 +233,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-01T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -239,13 +244,16 @@ describe('TaskScheduler', () => {
       vi.setSystemTime(new Date('2026-02-05T00:00:00.000Z'));
 
       // Act
-      scheduler.handleMissedSchedules();
+      const result = scheduler.handleMissedSchedules();
 
-      // Assert
-      expect(mockScheduledTasksRepo.updateScheduleStatus).toHaveBeenCalledWith('sched_1', 'completed');
+      // Assert – no longer auto-completed; returned for user decision
+      expect(result).toHaveLength(1);
+      expect(result[0].schedule.id).toBe('sched_1');
+      expect(result[0].missedAt).toBe('2026-02-01T09:00:00.000Z');
+      expect(mockScheduledTasksRepo.updateScheduleStatus).not.toHaveBeenCalled();
     });
 
-    it('should compute next run for missed recurring schedules', () => {
+    it('should silently advance missed recurring schedules and not return them', () => {
       // Arrange
       const scheduler = new TaskScheduler();
       const missedSchedule: ScheduledTask = {
@@ -256,6 +264,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-01T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -266,9 +275,10 @@ describe('TaskScheduler', () => {
       vi.setSystemTime(new Date('2026-02-05T00:00:00.000Z'));
 
       // Act
-      scheduler.handleMissedSchedules();
+      const result = scheduler.handleMissedSchedules();
 
-      // Assert
+      // Assert – recurring schedules silently advance, not returned
+      expect(result).toHaveLength(0);
       expect(mockScheduledTasksRepo.updateNextRunTime).toHaveBeenCalledWith(
         'sched_2',
         '2026-02-05T09:00:00.000Z'
@@ -287,6 +297,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-10T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -297,9 +308,10 @@ describe('TaskScheduler', () => {
       vi.setSystemTime(new Date('2026-02-05T00:00:00.000Z'));
 
       // Act
-      scheduler.handleMissedSchedules();
+      const result = scheduler.handleMissedSchedules();
 
       // Assert
+      expect(result).toHaveLength(0);
       expect(mockScheduledTasksRepo.updateScheduleStatus).not.toHaveBeenCalled();
       expect(mockScheduledTasksRepo.updateNextRunTime).not.toHaveBeenCalled();
     });
@@ -315,6 +327,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: undefined,
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -322,9 +335,10 @@ describe('TaskScheduler', () => {
       mockScheduledTasksRepo.getActiveScheduledTasks.mockReturnValue([scheduleWithoutNextRun]);
 
       // Act
-      scheduler.handleMissedSchedules();
+      const result = scheduler.handleMissedSchedules();
 
       // Assert
+      expect(result).toHaveLength(0);
       expect(mockScheduledTasksRepo.updateScheduleStatus).not.toHaveBeenCalled();
       expect(mockScheduledTasksRepo.updateNextRunTime).not.toHaveBeenCalled();
     });
@@ -334,8 +348,32 @@ describe('TaskScheduler', () => {
       const scheduler = new TaskScheduler();
       mockScheduledTasksRepo.getActiveScheduledTasks.mockReturnValue([]);
 
-      // Act & Assert - should not throw
-      scheduler.handleMissedSchedules();
+      // Act
+      const result = scheduler.handleMissedSchedules();
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('dismissMissedSchedule()', () => {
+    it('should mark schedule as completed with failed execution status', () => {
+      // Arrange
+      const scheduler = new TaskScheduler();
+
+      // Act
+      scheduler.dismissMissedSchedule('sched_dismiss_1');
+
+      // Assert
+      expect(mockScheduledTasksRepo.updateScheduleStatus).toHaveBeenCalledWith(
+        'sched_dismiss_1',
+        'completed'
+      );
+      expect(mockScheduledTasksRepo.updateScheduleExecutionStatus).toHaveBeenCalledWith(
+        'sched_dismiss_1',
+        'failed',
+        'Missed scheduled time (dismissed by user)'
+      );
     });
   });
 
@@ -360,6 +398,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-03-01T09:00:00.000Z',
         status: 'paused',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -368,6 +407,28 @@ describe('TaskScheduler', () => {
 
       // Act & Assert
       await expect(scheduler.executeScheduleNow('sched_paused')).rejects.toThrow('not active');
+    });
+
+    it('should throw if schedule is already running', async () => {
+      // Arrange
+      const scheduler = new TaskScheduler();
+      const runningSchedule: ScheduledTask = {
+        id: 'sched_running',
+        prompt: 'Running task',
+        scheduleType: 'one-time',
+        scheduledAt: '2026-03-01T09:00:00.000Z',
+        timezone: 'UTC',
+        nextRunAt: '2026-03-01T09:00:00.000Z',
+        status: 'active',
+        executionStatus: 'running',
+        enabled: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      };
+      mockScheduledTasksRepo.getScheduledTask.mockReturnValue(runningSchedule);
+
+      // Act & Assert
+      await expect(scheduler.executeScheduleNow('sched_running')).rejects.toThrow('already running');
     });
 
     it('should execute active schedule', async () => {
@@ -381,6 +442,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-03-01T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -390,7 +452,13 @@ describe('TaskScheduler', () => {
       // Act
       await scheduler.executeScheduleNow('sched_active');
 
-      // Assert
+      // Assert – manual trigger uses claimManualScheduleExecution
+      expect(mockScheduledTasksRepo.claimManualScheduleExecution).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'sched_active',
+          nextScheduleStatus: 'completed',
+        })
+      );
       expect(mockTaskHistoryRepo.saveTask).toHaveBeenCalled();
       expect(mockStartTask).toHaveBeenCalled();
     });
@@ -408,6 +476,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: undefined,
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -434,6 +503,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-03-01T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -457,6 +527,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-03-01T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -603,6 +674,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -614,10 +686,13 @@ describe('TaskScheduler', () => {
       scheduler.start();
       await vi.advanceTimersByTimeAsync(0);
 
-      // Assert
-      expect(mockScheduledTasksRepo.updateScheduleStatus).toHaveBeenCalledWith(
-        'sched_onetime_exec',
-        'completed'
+      // Assert – the atomic claim sets the schedule to completed and executionStatus to running
+      expect(mockScheduledTasksRepo.claimDueScheduleExecution).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'sched_onetime_exec',
+          nextRunAt: null,
+          nextScheduleStatus: 'completed',
+        })
       );
 
       // Cleanup
@@ -635,6 +710,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -646,14 +722,13 @@ describe('TaskScheduler', () => {
       scheduler.start();
       await vi.advanceTimersByTimeAsync(0);
 
-      // Assert
-      expect(mockScheduledTasksRepo.updateNextRunTime).toHaveBeenCalledWith(
-        'sched_recurring_exec',
-        expect.any(String)
-      );
-      expect(mockScheduledTasksRepo.updateScheduleStatus).not.toHaveBeenCalledWith(
-        'sched_recurring_exec',
-        'completed'
+      // Assert – the atomic claim advances nextRunAt and does NOT set nextScheduleStatus for recurring
+      expect(mockScheduledTasksRepo.claimDueScheduleExecution).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'sched_recurring_exec',
+          nextRunAt: expect.any(String),
+          nextScheduleStatus: undefined,
+        })
       );
 
       // Cleanup
@@ -671,6 +746,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -703,6 +779,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -744,6 +821,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -780,6 +858,7 @@ describe('TaskScheduler', () => {
         timezone: 'UTC',
         nextRunAt: '2026-02-04T09:00:00.000Z',
         status: 'active',
+        executionStatus: 'pending',
         enabled: true,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',

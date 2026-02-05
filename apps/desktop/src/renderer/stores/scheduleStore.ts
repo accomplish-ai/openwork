@@ -119,7 +119,12 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
         const wasCounted = current.status === 'active' && current.enabled;
         const isCounted = current.status === 'active' && enabled;
-        const delta = !wasCounted && isCounted ? 1 : wasCounted && !isCounted ? -1 : 0;
+        let delta = 0;
+        if (!wasCounted && isCounted) {
+          delta = 1;
+        } else if (wasCounted && !isCounted) {
+          delta = -1;
+        }
 
         return {
           schedules: state.schedules.map((s) => (s.id === id ? { ...s, enabled } : s)),

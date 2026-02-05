@@ -16,6 +16,7 @@ import ScheduledPage from './pages/Scheduled';
 import Sidebar from './components/layout/Sidebar';
 import { TaskLauncher } from './components/TaskLauncher';
 import { AuthErrorToast } from './components/AuthErrorToast';
+import { MissedScheduleDialog } from './components/schedule/MissedScheduleDialog';
 import SettingsDialog from './components/layout/SettingsDialog';
 import { useTaskStore } from './stores/taskStore';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -171,6 +172,9 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
         </AnimatePresence>
       </main>
       <TaskLauncher />
+
+      {/* Missed Schedule Dialog - shown on app start when one-time schedules were due while offline */}
+      <MissedScheduleDialog />
 
       {/* Auth Error Toast - shown when OAuth session expires */}
       <AuthErrorToast

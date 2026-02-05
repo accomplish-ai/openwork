@@ -283,9 +283,27 @@ if (!gotTheLock) {
 
     // Start the task scheduler
     const scheduler = getScheduler();
-    scheduler.handleMissedSchedules();
+    const missedSchedules = scheduler.handleMissedSchedules();
     scheduler.start();
     console.log('[Main] Task scheduler started');
+
+    // Notify the renderer about missed one-time schedules so the user can decide
+    if (missedSchedules.length > 0) {
+      console.log(
+        `[Main] ${missedSchedules.length} missed one-time schedule(s) found — notifying renderer`
+      );
+      const window = BrowserWindow.getAllWindows()[0];
+      if (window && !window.isDestroyed()) {
+        // Wait for the renderer to be ready before sending
+        window.webContents.once('did-finish-load', () => {
+          window.webContents.send('schedule:missed', missedSchedules);
+        });
+        // Also send immediately in case the window already loaded
+        if (!window.webContents.isLoading()) {
+          window.webContents.send('schedule:missed', missedSchedules);
+        }
+      }
+    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
