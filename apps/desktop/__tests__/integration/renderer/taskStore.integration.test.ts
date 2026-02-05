@@ -77,11 +77,13 @@ vi.mock('@/lib/accomplish', () => ({
 // Mock window.accomplish for global subscriptions
 const mockOnTaskProgress = vi.fn();
 const mockOnTaskUpdate = vi.fn();
+const mockOnTaskCreated = vi.fn();
 
 vi.stubGlobal('window', {
   accomplish: {
     onTaskProgress: mockOnTaskProgress,
     onTaskUpdate: mockOnTaskUpdate,
+    onTaskCreated: mockOnTaskCreated,
     onTodoUpdate: vi.fn(),
     onTaskSummary: vi.fn(),
   },
@@ -790,6 +792,70 @@ describe('taskStore Integration', () => {
       // Assert
       expect(state.currentTask?.status).toBe('running'); // Unchanged
       expect(state.tasks.find(t => t.id === 'task-other')?.status).toBe('running');
+    });
+  });
+
+  describe('onTaskCreated global subscription', () => {
+    it('should add scheduler-created task to the tasks list', async () => {
+      // Arrange – import the module so the global subscription fires
+      const { useTaskStore } = await import('@/stores/taskStore');
+      useTaskStore.setState({ tasks: [createMockTask('existing-1', 'Existing')] });
+
+      // The module-level code calls window.accomplish.onTaskCreated(callback)
+      // Grab the callback that was registered
+      const onTaskCreatedCallback = mockOnTaskCreated.mock.calls[0]?.[0];
+      expect(onTaskCreatedCallback).toBeDefined();
+
+      const schedulerTask = createMockTask('sched-task-1', 'Scheduled prompt', 'running');
+
+      // Act – simulate the main process sending a task:created event
+      onTaskCreatedCallback(schedulerTask);
+      const state = useTaskStore.getState();
+
+      // Assert – new task is prepended, existing task preserved
+      expect(state.tasks).toHaveLength(2);
+      expect(state.tasks[0].id).toBe('sched-task-1');
+      expect(state.tasks[1].id).toBe('existing-1');
+    });
+
+    it('should deduplicate if task with same ID already exists', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const existingTask = createMockTask('sched-task-1', 'Old prompt', 'pending');
+      useTaskStore.setState({ tasks: [existingTask] });
+
+      const onTaskCreatedCallback = mockOnTaskCreated.mock.calls[0]?.[0];
+      expect(onTaskCreatedCallback).toBeDefined();
+
+      const updatedTask = createMockTask('sched-task-1', 'Updated prompt', 'running');
+
+      // Act
+      onTaskCreatedCallback(updatedTask);
+      const state = useTaskStore.getState();
+
+      // Assert – only one task, with updated data
+      expect(state.tasks).toHaveLength(1);
+      expect(state.tasks[0].prompt).toBe('Updated prompt');
+      expect(state.tasks[0].status).toBe('running');
+    });
+
+    it('should work when tasks list is empty', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      useTaskStore.setState({ tasks: [] });
+
+      const onTaskCreatedCallback = mockOnTaskCreated.mock.calls[0]?.[0];
+      expect(onTaskCreatedCallback).toBeDefined();
+
+      const newTask = createMockTask('new-task-1', 'First scheduled task', 'running');
+
+      // Act
+      onTaskCreatedCallback(newTask);
+      const state = useTaskStore.getState();
+
+      // Assert
+      expect(state.tasks).toHaveLength(1);
+      expect(state.tasks[0].id).toBe('new-task-1');
     });
   });
 

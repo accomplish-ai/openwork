@@ -657,4 +657,14 @@ if (typeof window !== 'undefined' && window.accomplish) {
   window.accomplish.onAuthError?.((data: { providerId: string; message: string }) => {
     useTaskStore.getState().setAuthError(data);
   });
+
+  // Subscribe to task:created events (e.g., from scheduler)
+  window.accomplish.onTaskCreated?.((task: unknown) => {
+    const newTask = task as Task;
+    const currentTasks = useTaskStore.getState().tasks;
+    // Prepend to list, dedup by id
+    useTaskStore.setState({
+      tasks: [newTask, ...currentTasks.filter((t) => t.id !== newTask.id)],
+    });
+  });
 }
