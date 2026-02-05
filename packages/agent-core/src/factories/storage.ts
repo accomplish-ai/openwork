@@ -61,12 +61,14 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     databasePath,
     runMigrations = true,
     userDataPath,
+    secureStorageFileName,
   } = options;
 
   const storagePath = userDataPath || process.cwd();
   const secureStorage = new SecureStorage({
     storagePath,
-    appId: 'agent-core',
+    appId: 'ai.accomplish.desktop',
+    ...(secureStorageFileName && { fileName: secureStorageFileName }),
   });
 
   let initialized = false;

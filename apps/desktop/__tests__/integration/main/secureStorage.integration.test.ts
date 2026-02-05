@@ -193,10 +193,13 @@ describe('secureStorage Integration', () => {
         deepseek: null,
         moonshot: null,
         zai: null,
+        'azure-foundry': null,
         openrouter: null,
         bedrock: null,
         litellm: null,
         minimax: null,
+        lmstudio: null,
+        elevenlabs: null,
         custom: null,
       });
     });
@@ -286,10 +289,13 @@ describe('secureStorage Integration', () => {
         deepseek: null,
         moonshot: null,
         zai: null,
+        'azure-foundry': null,
         openrouter: null,
         bedrock: null,
         litellm: null,
         minimax: null,
+        lmstudio: null,
+        elevenlabs: null,
         custom: null,
       });
     });

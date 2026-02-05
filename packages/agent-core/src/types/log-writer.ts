@@ -11,10 +11,6 @@ export interface LogEntry {
 
 export interface LogWriterOptions {
   logDir: string;
-  maxFileSizeBytes?: number;
-  retentionDays?: number;
-  bufferFlushIntervalMs?: number;
-  bufferMaxEntries?: number;
 }
 
 export interface LogWriterAPI {

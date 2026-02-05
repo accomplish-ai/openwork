@@ -18,6 +18,7 @@ export interface StorageOptions {
   runMigrations?: boolean;
   verbose?: boolean;
   userDataPath?: string;
+  secureStorageFileName?: string;
 }
 
 export interface StoredTask {

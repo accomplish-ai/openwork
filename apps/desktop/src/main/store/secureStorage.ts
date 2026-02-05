@@ -10,6 +10,7 @@ export function getStorage(): StorageAPI {
   if (!_storage) {
     _storage = createStorage({
       userDataPath: app.getPath('userData'),
+      secureStorageFileName: app.isPackaged ? 'secure-storage.json' : 'secure-storage-dev.json',
     });
   }
   return _storage;
