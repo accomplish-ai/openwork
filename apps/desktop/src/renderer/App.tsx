@@ -10,6 +10,7 @@ import type { ProviderId } from '@accomplish/shared';
 // Pages
 import HomePage from './pages/Home';
 import ExecutionPage from './pages/Execution';
+import ScheduledPage from './pages/Scheduled';
 
 // Components
 import Sidebar from './components/layout/Sidebar';
@@ -147,6 +148,21 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
                   transition={springs.gentle}
                 >
                   <ExecutionPage />
+                </motion.div>
+              }
+            />
+            <Route
+              path="/scheduled"
+              element={
+                <motion.div
+                  className="h-full"
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={variants.fadeUp}
+                  transition={springs.gentle}
+                >
+                  <ScheduledPage />
                 </motion.div>
               }
             />

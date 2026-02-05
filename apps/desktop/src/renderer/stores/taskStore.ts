@@ -367,10 +367,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
       // Handle message events - only if viewing this task
       if (event.type === 'message' && event.message && isCurrentTask && state.currentTask) {
-        updatedCurrentTask = {
-          ...state.currentTask,
-          messages: [...state.currentTask.messages, event.message],
-        };
+        // Skip if message already exists (prevents duplicates from race conditions)
+        if (state.currentTask.messages.some((m) => m.id === event.message!.id)) {
+          // Message already exists, don't add duplicate
+        } else {
+          updatedCurrentTask = {
+            ...state.currentTask,
+            messages: [...state.currentTask.messages, event.message],
+          };
+        }
       }
 
       // Handle complete events
@@ -451,10 +456,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         return state;
       }
 
-      // Add all messages in a single state update
+      // Deduplicate: only add messages that don't already exist (prevents race condition
+      // where messages are both loaded from DB and received via IPC batch)
+      const existingIds = new Set(state.currentTask.messages.map((m) => m.id));
+      const newMessages = event.messages.filter((m) => !existingIds.has(m.id));
+
+      if (newMessages.length === 0) {
+        return state; // No new messages to add
+      }
+
       const updatedTask = {
         ...state.currentTask,
-        messages: [...state.currentTask.messages, ...event.messages],
+        messages: [...state.currentTask.messages, ...newMessages],
       };
 
       return { currentTask: updatedTask, isLoading: false };

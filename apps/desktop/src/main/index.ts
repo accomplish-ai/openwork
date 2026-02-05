@@ -14,6 +14,8 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
+import { registerSchedulerHandlers } from './ipc/scheduler';
+import { getScheduler, disposeScheduler } from './scheduler';
 import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
 import { oauthBrowserFlow } from './opencode/auth-browser';
@@ -274,9 +276,16 @@ if (!gotTheLock) {
 
     // Register IPC handlers before creating window
     registerIPCHandlers();
+    registerSchedulerHandlers();
     console.log('[Main] IPC handlers registered');
 
     createWindow();
+
+    // Start the task scheduler
+    const scheduler = getScheduler();
+    scheduler.handleMissedSchedules();
+    scheduler.start();
+    console.log('[Main] Task scheduler started');
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -300,6 +309,8 @@ app.on('before-quit', () => {
   flushPendingTasks();
   // Dispose all active tasks and cleanup PTY processes
   disposeTaskManager();
+  // Stop the task scheduler
+  disposeScheduler();
   // Cancel any active OAuth flow
   oauthBrowserFlow.dispose();
   // Stop Azure Foundry proxy server if running

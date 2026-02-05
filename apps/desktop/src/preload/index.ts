@@ -6,7 +6,13 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Skill, TodoItem } from '@accomplish/shared';
+import type {
+  CreateScheduleConfig,
+  ScheduledTask,
+  Skill,
+  TodoItem,
+  UpdateScheduleConfig,
+} from '@accomplish/shared';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -260,6 +266,12 @@ const accomplishAPI = {
     ipcRenderer.on('task:status-change', listener);
     return () => ipcRenderer.removeListener('task:status-change', listener);
   },
+  // Task created (e.g., from scheduler) - allows sidebar to update with new tasks
+  onTaskCreated: (callback: (task: unknown) => void) => {
+    const listener = (_: unknown, task: unknown) => callback(task);
+    ipcRenderer.on('task:created', listener);
+    return () => ipcRenderer.removeListener('task:created', listener);
+  },
   // Task summary updates (AI-generated summary)
   onTaskSummary: (callback: (data: { taskId: string; summary: string }) => void) => {
     const listener = (_: unknown, data: { taskId: string; summary: string }) => callback(data);
@@ -318,6 +330,33 @@ const accomplishAPI = {
   resyncSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:resync'),
   openSkillInEditor: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:open-in-editor', filePath),
   showSkillInFolder: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:show-in-folder', filePath),
+
+  // Scheduler API
+  scheduler: {
+    createSchedule: (config: CreateScheduleConfig): Promise<ScheduledTask> =>
+      ipcRenderer.invoke('schedule:create', config),
+    listSchedules: (): Promise<ScheduledTask[]> =>
+      ipcRenderer.invoke('schedule:list'),
+    getSchedule: (id: string): Promise<ScheduledTask | null> =>
+      ipcRenderer.invoke('schedule:get', id),
+    updateSchedule: (id: string, updates: UpdateScheduleConfig): Promise<void> =>
+      ipcRenderer.invoke('schedule:update', id, updates),
+    deleteSchedule: (id: string): Promise<void> =>
+      ipcRenderer.invoke('schedule:delete', id),
+    toggleSchedule: (id: string, enabled: boolean): Promise<void> =>
+      ipcRenderer.invoke('schedule:toggle', id, enabled),
+    runScheduleNow: (id: string): Promise<void> =>
+      ipcRenderer.invoke('schedule:run-now', id),
+    getActiveCount: (): Promise<number> =>
+      ipcRenderer.invoke('schedule:active-count'),
+  },
+
+  // Schedule update events
+  onScheduleUpdated: (callback: (data: { scheduleId: string }) => void) => {
+    const listener = (_: unknown, data: { scheduleId: string }) => callback(data);
+    ipcRenderer.on('schedule:updated', listener);
+    return () => ipcRenderer.removeListener('schedule:updated', listener);
+  },
 };
 
 // Expose the API to the renderer

@@ -22,6 +22,9 @@ import type {
   TodoItem,
   ToolSupportStatus,
   Skill,
+  ScheduledTask,
+  CreateScheduleConfig,
+  UpdateScheduleConfig,
 } from '@accomplish/shared';
 
 // Define the API interface
@@ -174,6 +177,7 @@ interface AccomplishAPI {
   onDebugLog(callback: (log: unknown) => void): () => void;
   onDebugModeChange?(callback: (data: { enabled: boolean }) => void): () => void;
   onTaskStatusChange?(callback: (data: { taskId: string; status: TaskStatus }) => void): () => void;
+  onTaskCreated?(callback: (task: Task) => void): () => void;
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
@@ -206,6 +210,19 @@ interface AccomplishAPI {
   resyncSkills(): Promise<Skill[]>;
   openSkillInEditor(filePath: string): Promise<void>;
   showSkillInFolder(filePath: string): Promise<void>;
+
+  // Scheduler
+  scheduler: {
+    createSchedule(config: CreateScheduleConfig): Promise<ScheduledTask>;
+    listSchedules(): Promise<ScheduledTask[]>;
+    getSchedule(id: string): Promise<ScheduledTask | null>;
+    updateSchedule(id: string, updates: UpdateScheduleConfig): Promise<void>;
+    deleteSchedule(id: string): Promise<void>;
+    toggleSchedule(id: string, enabled: boolean): Promise<void>;
+    runScheduleNow(id: string): Promise<void>;
+    getActiveCount(): Promise<number>;
+  };
+  onScheduleUpdated?(callback: (data: { scheduleId: string }) => void): () => void;
 }
 
 interface AccomplishShell {

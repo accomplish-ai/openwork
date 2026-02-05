@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
+import { useScheduleStore } from '../stores/scheduleStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish/shared';
+import { ScheduleDialog } from '@/components/schedule';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -84,8 +86,10 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { createSchedule, loadActiveCount } = useScheduleStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
 
@@ -162,6 +166,21 @@ export default function HomePage() {
     setPrompt(examplePrompt);
   };
 
+  const handleSchedule = useCallback(() => {
+    if (!prompt.trim()) return;
+    setShowScheduleDialog(true);
+  }, [prompt]);
+
+  const handleScheduleSubmit = useCallback(async (config: Parameters<typeof createSchedule>[0]) => {
+    await createSchedule(config);
+    // Refresh the sidebar count
+    loadActiveCount();
+    // Clear the prompt
+    setPrompt('');
+    // Navigate to scheduled page to see the new schedule
+    navigate('/scheduled');
+  }, [createSchedule, loadActiveCount, navigate]);
+
   return (
     <>
       <SettingsDialog
@@ -209,6 +228,7 @@ export default function HomePage() {
                 }}
                 onOpenModelSettings={handleOpenModelSettings}
                 hideModelWhenNoModel={true}
+                onSchedule={handleSchedule}
               />
             </CardContent>
 
@@ -285,6 +305,14 @@ export default function HomePage() {
         </motion.div>
       </div>
     </div>
+
+      {/* Schedule Dialog */}
+      <ScheduleDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        defaultPrompt={prompt}
+        onSubmit={handleScheduleSubmit}
+      />
     </>
   );
 }

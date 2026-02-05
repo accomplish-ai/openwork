@@ -14,7 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, CalendarClock } from 'lucide-react';
+import { ScheduleDialog } from '@/components/schedule';
+import { useScheduleStore } from '@/stores/scheduleStore';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
@@ -198,9 +200,13 @@ export default function ExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customResponse, setCustomResponse] = useState('');
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills'>('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
+
+  // Schedule store
+  const { createSchedule, loadActiveCount } = useScheduleStore();
 
   // Scroll behavior state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -565,6 +571,13 @@ export default function ExecutionPage() {
     setShowSettingsDialog(true);
   }, []);
 
+  const handleScheduleSubmit = useCallback(async (config: Parameters<typeof createSchedule>[0]) => {
+    await createSchedule(config);
+    loadActiveCount();
+    setShowScheduleDialog(false);
+    navigate('/scheduled');
+  }, [createSchedule, loadActiveCount, navigate]);
+
   useEffect(() => {
     if (!pendingSpeechFollowUpRef.current) {
       return;
@@ -713,6 +726,14 @@ export default function ExecutionPage() {
         onOpenChange={handleSettingsDialogClose}
         onApiKeySaved={handleApiKeySaved}
         initialTab={settingsInitialTab}
+      />
+
+      {/* Schedule Dialog - for "Run Again" functionality */}
+      <ScheduleDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        defaultPrompt={currentTask?.prompt}
+        onSubmit={handleScheduleSubmit}
       />
 
     <div className="h-full flex flex-col bg-background relative">
@@ -1418,9 +1439,15 @@ export default function ExecutionPage() {
           <p className="text-sm text-muted-foreground mb-3">
             Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
           </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => navigate('/')}>
+              Start New Task
+            </Button>
+            <Button variant="outline" onClick={() => setShowScheduleDialog(true)}>
+              <CalendarClock className="h-4 w-4 mr-2" />
+              Run Again
+            </Button>
+          </div>
         </div>
       )}
 

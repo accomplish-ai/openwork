@@ -2,7 +2,14 @@
 
 import { useRef, useEffect } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
-import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
+import { CornerDownLeft, Loader2, AlertCircle, ChevronDown, CalendarClock } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { ModelIndicator } from '../ui/ModelIndicator';
@@ -39,6 +46,10 @@ interface TaskInputBarProps {
    * Automatically submit after a successful transcription.
    */
   autoSubmitOnTranscription?: boolean;
+  /**
+   * Called when user wants to schedule the task instead of starting immediately
+   */
+  onSchedule?: () => void;
 }
 
 export default function TaskInputBar({
@@ -55,6 +66,7 @@ export default function TaskInputBar({
   onOpenModelSettings,
   hideModelWhenNoModel = false,
   autoSubmitOnTranscription = true,
+  onSchedule,
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -209,28 +221,66 @@ export default function TaskInputBar({
             size="md"
           />
 
-          {/* Submit button */}
-          <button
-            data-testid="task-input-submit"
-            type="button"
-            onClick={() => {
-              accomplish.logEvent({
-                level: 'info',
-                message: 'Task input submit clicked',
-                context: { prompt: value },
-              });
-              onSubmit();
-            }}
-            disabled={!value.trim() || isDisabled || speechInput.isRecording}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Submit"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CornerDownLeft className="h-4 w-4" />
+          {/* Submit button with schedule dropdown */}
+          <div className="flex items-center">
+            <button
+              data-testid="task-input-submit"
+              type="button"
+              onClick={() => {
+                accomplish.logEvent({
+                  level: 'info',
+                  message: 'Task input submit clicked',
+                  context: { prompt: value },
+                });
+                onSubmit();
+              }}
+              disabled={!value.trim() || isDisabled || speechInput.isRecording}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center ${
+                onSchedule ? 'rounded-l-lg' : 'rounded-lg'
+              } bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40`}
+              title="Start Now"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CornerDownLeft className="h-4 w-4" />
+              )}
+            </button>
+            {onSchedule && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!value.trim() || isDisabled || speechInput.isRecording}
+                    className="flex h-9 w-5 shrink-0 items-center justify-center rounded-r-lg border-l border-primary-foreground/20 bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="More options"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      accomplish.logEvent({
+                        level: 'info',
+                        message: 'Task input submit clicked',
+                        context: { prompt: value },
+                      });
+                      onSubmit();
+                    }}
+                  >
+                    <CornerDownLeft className="h-4 w-4 mr-2" />
+                    Start Now
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onSchedule}>
+                    <CalendarClock className="h-4 w-4 mr-2" />
+                    Schedule...
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-          </button>
+          </div>
           </div>
         </div>
       </div>

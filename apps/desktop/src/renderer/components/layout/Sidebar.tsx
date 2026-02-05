@@ -10,18 +10,22 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ConversationListItem from './ConversationListItem';
 import SettingsDialog from './SettingsDialog';
-import { Settings, MessageSquarePlus, Search } from 'lucide-react';
+import { Settings, MessageSquarePlus, Search, CalendarClock } from 'lucide-react';
+import { useScheduleStore } from '@/stores/scheduleStore';
+import { Badge } from '@/components/ui/badge';
 import logoImage from '/assets/logo-1.png';
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher } = useTaskStore();
+  const { activeCount, loadActiveCount } = useScheduleStore();
   const accomplish = getAccomplish();
 
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    loadActiveCount();
+  }, [loadTasks, loadActiveCount]);
 
   // Subscribe to task status changes (queued -> running) and task updates (complete/error)
   // This ensures sidebar always reflects current task status
@@ -48,26 +52,42 @@ export default function Sidebar() {
     <>
       <div className="flex h-screen w-[260px] flex-col border-r border-border bg-card pt-12">
         {/* Action Buttons */}
-        <div className="px-3 py-3 border-b border-border flex gap-2">
+        <div className="px-3 py-3 border-b border-border space-y-2">
+          <div className="flex gap-2">
+            <Button
+              data-testid="sidebar-new-task-button"
+              onClick={handleNewConversation}
+              variant="default"
+              size="sm"
+              className="flex-1 justify-center gap-2"
+              title="New Task"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              New Task
+            </Button>
+            <Button
+              onClick={openLauncher}
+              variant="outline"
+              size="sm"
+              className="px-2"
+              title="Search Tasks (⌘K)"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
           <Button
-            data-testid="sidebar-new-task-button"
-            onClick={handleNewConversation}
-            variant="default"
+            onClick={() => navigate('/scheduled')}
+            variant="ghost"
             size="sm"
-            className="flex-1 justify-center gap-2"
-            title="New Task"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
           >
-            <MessageSquarePlus className="h-4 w-4" />
-            New Task
-          </Button>
-          <Button
-            onClick={openLauncher}
-            variant="outline"
-            size="sm"
-            className="px-2"
-            title="Search Tasks (⌘K)"
-          >
-            <Search className="h-4 w-4" />
+            <CalendarClock className="h-4 w-4" />
+            Scheduled
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-xs">
+                {activeCount}
+              </Badge>
+            )}
           </Button>
         </div>
 

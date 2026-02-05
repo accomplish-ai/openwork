@@ -16,6 +16,7 @@ import { migration as v003 } from './v003-lmstudio';
 import { migration as v004 } from './v004-openai-base-url';
 import { migration as v005 } from './v005-task-todos';
 import { migration as v006 } from './v006-skills';
+import { migration as v007 } from './v007-scheduled-tasks';
 
 // Migrations array
 const migrations: Migration[] = [
@@ -25,6 +26,7 @@ const migrations: Migration[] = [
   v004,
   v005,
   v006,
+  v007,
 ];
 
 /**
@@ -40,7 +42,7 @@ export function registerMigration(migration: Migration): void {
  * Current schema version supported by this app.
  * Increment this when adding new migrations.
  */
-export const CURRENT_VERSION = 6;
+export const CURRENT_VERSION = 7;
 
 /**
  * Get the stored schema version from the database.
