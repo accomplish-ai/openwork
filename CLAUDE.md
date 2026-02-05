@@ -36,7 +36,7 @@ pnpm clean                                      # Clean build outputs and node_m
 
 ## Publishing Packages (Changesets)
 
-The `@accomplish/agent-core` package is published to npm as `@accomplish_ai/agent-core` using [Changesets](https://github.com/changesets/changesets).
+The `@accomplish_ai/agent-core` package is published to npm using [Changesets](https://github.com/changesets/changesets).
 
 ### Creating a Changeset
 When making changes to the agent-core package, create a changeset:
@@ -44,7 +44,7 @@ When making changes to the agent-core package, create a changeset:
 pnpm changeset
 ```
 This prompts you to:
-1. Select `@accomplish/agent-core`
+1. Select `@accomplish_ai/agent-core`
 2. Choose bump type (patch/minor/major)
 3. Write a summary for the changelog
 

@@ -1,8 +1,8 @@
 ---
-"@accomplish/agent-core": minor
+"@accomplish_ai/agent-core": minor
 ---
 
-Enable npm publishing for @accomplish/agent-core package
+Enable npm publishing for @accomplish_ai/agent-core package
 
 - Package now published to npm as @accomplish_ai/agent-core
 - Added changesets for version management
