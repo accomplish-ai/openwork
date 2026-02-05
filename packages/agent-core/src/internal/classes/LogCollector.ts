@@ -6,9 +6,9 @@
  * a LogFileWriter instance to be injected.
  */
 
-import { type LogLevel, type LogSource } from '../common/types/logging.js';
-import { detectLogSource } from '../common/utils/log-source-detector.js';
-import type { LogWriterAPI } from '../types/log-writer.js';
+import { type LogLevel, type LogSource } from '../../common/types/logging.js';
+import { detectLogSource } from '../../common/utils/log-source-detector.js';
+import type { LogWriterAPI } from '../../types/log-writer.js';
 
 // Store original console methods
 const originalConsole = {

@@ -10,9 +10,9 @@
 
 import { app } from 'electron';
 import {
-  SpeechService,
   createSpeechService,
   createSecureStorage,
+  type SpeechServiceAPI,
   type TranscriptionResult,
   type TranscriptionError,
 } from '@accomplish/agent-core';
@@ -23,16 +23,16 @@ export type { TranscriptionResult, TranscriptionError };
 const getFileName = () =>
   app.isPackaged ? 'secure-storage.json' : 'secure-storage-dev.json';
 
-let _speechService: SpeechService | null = null;
+let _speechService: SpeechServiceAPI | null = null;
 
-function getSpeechService(): SpeechService {
+function getSpeechService(): SpeechServiceAPI {
   if (!_speechService) {
     const storage = createSecureStorage({
       storagePath: app.getPath('userData'),
       appId: 'ai.accomplish.desktop',
       fileName: getFileName(),
     });
-    _speechService = createSpeechService(storage);
+    _speechService = createSpeechService({ storage });
   }
   return _speechService;
 }

@@ -5,17 +5,17 @@
  * LogFileWriter that injects the correct userData path.
  */
 
-import { LogCollector } from '@accomplish/agent-core';
+import { createLogCollector, type LogCollectorAPI } from '@accomplish/agent-core';
 import { getLogFileWriter, shutdownLogFileWriter } from './log-file-writer';
 
 // Re-export types from shared package for backward compatibility
 export type { LogLevel, LogSource } from '@accomplish/agent-core';
 
-let instance: LogCollector | null = null;
+let instance: LogCollectorAPI | null = null;
 
-export function getLogCollector(): LogCollector {
+export function getLogCollector(): LogCollectorAPI {
   if (!instance) {
-    instance = new LogCollector(getLogFileWriter());
+    instance = createLogCollector(getLogFileWriter());
   }
   return instance;
 }

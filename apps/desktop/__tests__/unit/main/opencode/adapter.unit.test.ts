@@ -674,6 +674,8 @@ vi.mock('@accomplish/agent-core', async () => {
     CompletionEnforcer: MockCompletionEnforcer,
     OpenCodeCliNotFoundError: MockOpenCodeCliNotFoundError,
     OpenCodeAdapter: MockOpenCodeAdapter,
+    // Factory function for creating OpenCodeAdapter instances
+    createOpenCodeAdapter: vi.fn((options: AdapterOptionsMock, taskId?: string) => new MockOpenCodeAdapter(options, taskId)),
     getSelectedModel: vi.fn(() => ({ model: 'claude-3-opus-20240229' })),
     getAzureFoundryConfig: vi.fn(() => null),
     getOpenAiBaseUrl: vi.fn(() => ''),
@@ -1686,8 +1688,14 @@ describe('OpenCode Adapter Module', () => {
         // Act
         const adapter = createAdapter('task-123');
 
-        // Assert
-        expect(adapter).toBeInstanceOf(OpenCodeAdapter);
+        // Assert - check that the adapter implements the expected interface methods
+        expect(adapter).toBeDefined();
+        expect(typeof adapter.startTask).toBe('function');
+        expect(typeof adapter.cancelTask).toBe('function');
+        expect(typeof adapter.interruptTask).toBe('function');
+        expect(typeof adapter.sendResponse).toBe('function');
+        expect(typeof adapter.getSessionId).toBe('function');
+        expect(typeof adapter.getTaskId).toBe('function');
         expect(adapter.getTaskId()).toBe('task-123');
       });
     });

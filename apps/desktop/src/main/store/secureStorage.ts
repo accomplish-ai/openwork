@@ -1,14 +1,14 @@
 import { app } from 'electron';
-import { SecureStorage, createSecureStorage } from '@accomplish/agent-core';
+import { createSecureStorage, type SecureStorageAPI } from '@accomplish/agent-core';
 import type { ApiKeyProvider } from '@accomplish/agent-core';
 
 export type { ApiKeyProvider };
 
 const getFileName = () => (app.isPackaged ? 'secure-storage.json' : 'secure-storage-dev.json');
 
-let _storage: SecureStorage | null = null;
+let _storage: SecureStorageAPI | null = null;
 
-function getStorage(): SecureStorage {
+function getStorage(): SecureStorageAPI {
   if (!_storage) {
     _storage = createSecureStorage({
       storagePath: app.getPath('userData'),

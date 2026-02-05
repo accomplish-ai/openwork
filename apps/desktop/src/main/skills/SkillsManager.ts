@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import path from 'path';
-import { SkillsManager as CoreSkillsManager } from '@accomplish/agent-core';
+import { createSkillsManager, type SkillsManagerAPI } from '@accomplish/agent-core';
 import { getDatabase } from '../store/db';
 
 function getBundledSkillsPath(): string {
@@ -15,7 +15,7 @@ function getUserSkillsPath(): string {
 }
 
 export class SkillsManager {
-  private coreManager: CoreSkillsManager | null = null;
+  private coreManager: SkillsManagerAPI | null = null;
   private initialized = false;
 
   getBundledSkillsPath(): string {
@@ -26,9 +26,9 @@ export class SkillsManager {
     return getUserSkillsPath();
   }
 
-  private getCoreManager(): CoreSkillsManager {
+  private getCoreManager(): SkillsManagerAPI {
     if (!this.coreManager) {
-      this.coreManager = new CoreSkillsManager({
+      this.coreManager = createSkillsManager({
         bundledSkillsPath: getBundledSkillsPath(),
         userSkillsPath: getUserSkillsPath(),
         database: getDatabase(),

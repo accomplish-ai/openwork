@@ -6,6 +6,87 @@
 // =============================================================================
 
 // -----------------------------------------------------------------------------
+// Factory Functions (NEW - Preferred API)
+// -----------------------------------------------------------------------------
+// Use these factory functions instead of directly instantiating classes.
+// Factories return interfaces, hiding internal implementation details.
+
+// Factory functions - new encapsulated API
+export {
+  createTaskManager,
+  createStorage,
+  createSecureStorage,
+  createPermissionHandler,
+  createThoughtStreamHandler,
+  createLogWriter,
+  createLogCollector,
+  createOpenCodeAdapter,
+  createSkillsManager,
+  createSpeechService,
+} from './factories/index.js';
+
+// Additional factory types
+export type {
+  SecureStorageAPI,
+  SecureStorageOptions,
+  LogCollectorAPI,
+  OpenCodeAdapterAPI,
+  OpenCodeAdapterEvents as OpenCodeAdapterFactoryEvents,
+} from './factories/index.js';
+
+// -----------------------------------------------------------------------------
+// API Interfaces (NEW - Public contracts)
+// -----------------------------------------------------------------------------
+// These interfaces define the public API contracts returned by factory functions.
+
+export type {
+  // Task Manager API
+  TaskManagerAPI,
+  TaskManagerOptions as TaskManagerFactoryOptions,
+  TaskAdapterOptions,
+  TaskCallbacks as TaskManagerCallbacks,
+  TaskProgressEvent as TaskManagerProgressEvent,
+  // Also export original names for backward compatibility
+  TaskManagerOptions,
+  TaskCallbacks,
+  TaskProgressEvent,
+  // Storage API
+  StorageAPI,
+  StorageOptions,
+  StoredTask,
+  AppSettings,
+  // Permission Handler API
+  PermissionHandlerAPI,
+  PermissionHandlerOptions,
+  FilePermissionRequestData as PermissionFileRequestData,
+  QuestionRequestData as PermissionQuestionRequestData,
+  QuestionResponseData as PermissionQuestionResponseData,
+  PermissionValidationResult,
+  // Thought Stream API
+  ThoughtStreamAPI,
+  ThoughtStreamOptions,
+  ThoughtEvent as ThoughtStreamEvent,
+  CheckpointEvent as ThoughtStreamCheckpointEvent,
+  ThoughtCategory,
+  CheckpointStatus,
+  // Log Writer API
+  LogWriterAPI,
+  LogWriterOptions,
+  LogEntry as LogWriterEntry,
+  // Skills Manager API
+  SkillsManagerAPI,
+  SkillsManagerOptions,
+  // Speech Service API
+  SpeechServiceAPI,
+  SpeechServiceOptions,
+  TranscriptionResult as SpeechTranscriptionResult,
+  TranscriptionError as SpeechTranscriptionError,
+  // Also export original names for backward compatibility
+  TranscriptionResult,
+  TranscriptionError,
+} from './types/index.js';
+
+// -----------------------------------------------------------------------------
 // Types (from ./types.ts)
 // -----------------------------------------------------------------------------
 export type {
@@ -22,32 +103,17 @@ export type {
 // OpenCode Module (from ./opencode/)
 // -----------------------------------------------------------------------------
 
-// Classes
-export {
-  OpenCodeAdapter,
-  OpenCodeCliNotFoundError,
-} from './opencode/adapter.js';
+// Error classes (still exported - these are safe)
+export { OpenCodeCliNotFoundError } from './opencode/adapter.js';
 
-export { TaskManager } from './opencode/task-manager.js';
-
-export { OpenCodeLogWatcher, createLogWatcher } from './opencode/log-watcher.js';
-
-export { StreamParser } from './opencode/stream-parser.js';
-
-export { CompletionEnforcer } from './opencode/completion/index.js';
+// Factory functions from legacy module (for backwards compatibility during migration)
+export { createLogWatcher } from './opencode/log-watcher.js';
 
 // Adapter types
 export type {
   AdapterOptions,
   OpenCodeAdapterEvents,
 } from './opencode/adapter.js';
-
-// Task manager types
-export type {
-  TaskManagerOptions,
-  TaskCallbacks,
-  TaskProgressEvent,
-} from './opencode/task-manager.js';
 
 // Log watcher types
 export type { OpenCodeLogError } from './opencode/log-watcher.js';
@@ -93,9 +159,6 @@ export {
 // -----------------------------------------------------------------------------
 // Storage Module (from ./storage/)
 // -----------------------------------------------------------------------------
-
-// Classes
-export { SecureStorage, createSecureStorage } from './storage/secure-storage.js';
 
 // Database functions
 export {
@@ -233,10 +296,7 @@ export { redact } from './utils/redact.js';
 // Task status mapping
 export { mapResultToStatus } from './utils/task-status.js';
 
-// Logging classes
-export { LogFileWriter } from './utils/log-file-writer.js';
-
-export { LogCollector } from './utils/log-collector.js';
+// Logging - use createLogWriter factory from ./factories/log-writer.js instead
 
 // -----------------------------------------------------------------------------
 // Browser Module (from ./browser/)
@@ -250,22 +310,6 @@ export type { BrowserServerConfig } from './browser/server.js';
 // Services Module (from ./services/)
 // -----------------------------------------------------------------------------
 
-// Classes
-export { PermissionRequestHandler } from './services/permission-handler.js';
-
-export { ThoughtStreamHandler } from './services/thought-stream-handler.js';
-
-export { SpeechService, createSpeechService } from './services/speech.js';
-
-// Service types
-export type {
-  FilePermissionRequestData,
-  QuestionRequestData,
-  QuestionResponseData,
-} from './services/permission-handler.js';
-
-export type { TranscriptionResult, TranscriptionError } from './services/speech.js';
-
 // Summarizer functions
 export { generateTaskSummary } from './services/summarizer.js';
 
@@ -275,7 +319,7 @@ export type { GetApiKeyFn } from './services/summarizer.js';
 // Skills Module (from ./skills/)
 // -----------------------------------------------------------------------------
 
-export { SkillsManager } from './skills/skills-manager.js';
+// Use createSkillsManager factory from ./factories/skills-manager.js instead
 
 // -----------------------------------------------------------------------------
 // Shared Module (from ./common/) - Merged from @accomplish/shared
