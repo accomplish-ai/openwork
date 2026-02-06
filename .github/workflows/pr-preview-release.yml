@@ -36,8 +36,10 @@ jobs:
 
       - name: Check npm auth
         id: npm_auth
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+          if [ -z "$NPM_TOKEN" ]; then
             echo "has_auth=false" >> $GITHUB_OUTPUT
             echo "NPM_TOKEN not available (expected for fork PRs)"
           else
