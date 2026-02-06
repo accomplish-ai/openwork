@@ -196,14 +196,6 @@ vi.mock('@main/opencode/config-generator', () => ({
 
 // Mock electron-options to provide mock TaskManagerOptions for singleton functions
 vi.mock('@main/opencode/electron-options', () => ({
-  createElectronAdapterOptions: vi.fn(() => ({
-    platform: 'darwin' as NodeJS.Platform,
-    isPackaged: false,
-    tempPath: '/mock/temp',
-    getCliCommand: () => ({ command: 'opencode', args: [] }),
-    buildEnvironment: async (_taskId: string) => ({}),
-    buildCliArgs: async () => [],
-  })),
   createElectronTaskManagerOptions: vi.fn(() => ({
     adapterOptions: {
       platform: 'darwin' as NodeJS.Platform,

@@ -713,16 +713,6 @@ vi.mock('@main/opencode/config-generator', () => ({
 
 // Mock electron-options - provides adapter options for desktop wrapper
 vi.mock('@main/opencode/electron-options', () => ({
-  createElectronAdapterOptions: vi.fn(() => ({
-    platform: 'darwin',
-    isPackaged: false,
-    tempPath: '/mock/temp',
-    getCliCommand: () => ({ command: '/mock/opencode/cli', args: [] }),
-    buildEnvironment: (_taskId: string) => Promise.resolve({ PATH: '/usr/bin' }),
-    buildCliArgs: (config: { prompt: string; sessionId?: string }) => Promise.resolve(['run', '--format', 'json', config.prompt]),
-    onBeforeStart: () => Promise.resolve(),
-    getModelDisplayName: (model: string) => model,
-  })),
   createElectronTaskManagerOptions: vi.fn(() => ({})),
   buildEnvironment: vi.fn((_taskId: string) => Promise.resolve({ PATH: '/usr/bin' })),
   buildCliArgs: vi.fn((config: { prompt: string }) => Promise.resolve(['run', '--format', 'json', config.prompt])),

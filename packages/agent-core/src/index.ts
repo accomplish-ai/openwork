@@ -84,9 +84,6 @@ export type {
 // -----------------------------------------------------------------------------
 export type {
   PlatformConfig,
-  PermissionHandler,
-  TaskEventHandler,
-  StorageConfig,
   CliResolverConfig,
   ResolvedCliPaths,
   BundledNodePaths,
@@ -99,17 +96,8 @@ export type {
 // Error classes (still exported - these are safe)
 export { OpenCodeCliNotFoundError } from './opencode/adapter.js';
 
-// Factory functions from legacy module (for backwards compatibility during migration)
-export { createLogWatcher } from './opencode/log-watcher.js';
-
-// Adapter types
-export type {
-  AdapterOptions,
-  OpenCodeAdapterEvents,
-} from './opencode/adapter.js';
-
-// Log watcher types
-export type { OpenCodeLogError } from './opencode/log-watcher.js';
+// Adapter types - AdapterOptions/OpenCodeAdapterEvents are internal (use TaskAdapterOptions)
+// createLogWatcher/OpenCodeLogError are internal (used by OpenCodeAdapter internally)
 
 // CLI resolver functions
 export { resolveCliPath, isCliAvailable } from './opencode/cli-resolver.js';
@@ -139,8 +127,7 @@ export {
   flushAndCleanupBatcher,
 } from './opencode/message-processor.js';
 
-// Completion module types
-export type { CompletionEnforcerCallbacks } from './opencode/completion/index.js';
+// CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)
 
 // Proxies
 export {

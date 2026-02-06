@@ -1,24 +1,18 @@
 // Factory functions from agent-core
 export {
   OpenCodeCliNotFoundError,
-  createLogWatcher,
   createTaskManager,
 } from '@accomplish/agent-core';
 
 // Types from agent-core
 export type {
-  AdapterOptions,
-  OpenCodeAdapterEvents,
   TaskManagerOptions,
   TaskCallbacks,
   TaskProgressEvent,
-  OpenCodeLogError,
-  CompletionEnforcerCallbacks,
   TaskManagerAPI,
 } from '@accomplish/agent-core';
 
 export {
-  createElectronAdapterOptions,
   createElectronTaskManagerOptions,
   buildEnvironment,
   buildCliArgs,
@@ -42,7 +36,6 @@ export { loginOpenAiWithChatGpt } from './auth-browser';
 
 import { createTaskManager, type TaskManagerAPI } from '@accomplish/agent-core';
 import {
-  createElectronAdapterOptions,
   createElectronTaskManagerOptions,
   isCliAvailable,
   getBundledOpenCodeVersion,
