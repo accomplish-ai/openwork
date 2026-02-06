@@ -27,6 +27,7 @@ export {
 // -----------------------------------------------------------------------------
 // These interfaces define the public API contracts returned by factory functions.
 
+// Preferred API names (aliased for clarity)
 export type {
   // Task Manager API
   TaskManagerAPI,
@@ -34,10 +35,6 @@ export type {
   TaskAdapterOptions,
   TaskCallbacks as TaskManagerCallbacks,
   TaskProgressEvent as TaskManagerProgressEvent,
-  // Also export original names for backward compatibility
-  TaskManagerOptions,
-  TaskCallbacks,
-  TaskProgressEvent,
   // Storage API
   StorageAPI,
   StorageOptions,
@@ -74,7 +71,13 @@ export type {
   SpeechServiceOptions,
   TranscriptionResult as SpeechTranscriptionResult,
   TranscriptionError as SpeechTranscriptionError,
-  // Also export original names for backward compatibility
+} from './types/index.js';
+
+// Backward-compatible re-exports (original names)
+export type {
+  TaskManagerOptions,
+  TaskCallbacks,
+  TaskProgressEvent,
   TranscriptionResult,
   TranscriptionError,
 } from './types/index.js';

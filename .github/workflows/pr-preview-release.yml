@@ -7,6 +7,10 @@ on:
       - 'packages/**'
       - '.changeset/**'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   preview:
     name: Preview Release
@@ -30,11 +34,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Check npm auth
+        id: npm_auth
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "has_auth=false" >> $GITHUB_OUTPUT
+            echo "NPM_TOKEN not available (expected for fork PRs)"
+          else
+            echo "has_auth=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check for changesets
         id: changesets
         run: |
           # Check if there are any changeset files (excluding README.md and config.json)
-          CHANGESET_COUNT=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null | wc -l | tr -d ' ')
+          CHANGESET_COUNT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '.changeset/*.md' | grep -v README.md | wc -l | tr -d ' ')
           if [ "$CHANGESET_COUNT" -gt "0" ]; then
             echo "has_changesets=true" >> $GITHUB_OUTPUT
             echo "Found $CHANGESET_COUNT changeset(s)"
@@ -44,18 +58,18 @@ jobs:
           fi
 
       - name: Build packages
-        if: steps.changesets.outputs.has_changesets == 'true'
+        if: steps.npm_auth.outputs.has_auth == 'true' && steps.changesets.outputs.has_changesets == 'true'
         run: pnpm build
 
       - name: Create snapshot version
-        if: steps.changesets.outputs.has_changesets == 'true'
+        if: steps.npm_auth.outputs.has_auth == 'true' && steps.changesets.outputs.has_changesets == 'true'
         run: |
           pnpm changeset version --snapshot pr-${{ github.event.pull_request.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish snapshot
-        if: steps.changesets.outputs.has_changesets == 'true'
+        if: steps.npm_auth.outputs.has_auth == 'true' && steps.changesets.outputs.has_changesets == 'true'
         run: |
           pnpm changeset publish --tag pr-${{ github.event.pull_request.number }}
         env:
@@ -63,14 +77,14 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Get published version
-        if: steps.changesets.outputs.has_changesets == 'true'
+        if: steps.npm_auth.outputs.has_auth == 'true' && steps.changesets.outputs.has_changesets == 'true'
         id: version
         run: |
           VERSION=$(node -p "require('./packages/agent-core/package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
-        if: steps.changesets.outputs.has_changesets == 'true'
+        if: steps.npm_auth.outputs.has_auth == 'true' && steps.changesets.outputs.has_changesets == 'true'
         uses: actions/github-script@v7
         with:
           script: |
