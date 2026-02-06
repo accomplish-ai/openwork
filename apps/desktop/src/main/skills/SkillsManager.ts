@@ -1,7 +1,6 @@
 import { app } from 'electron';
 import path from 'path';
 import { createSkillsManager, type SkillsManagerAPI } from '@accomplish_ai/agent-core';
-import { getDatabase } from '../store/db';
 
 function getBundledSkillsPath(): string {
   if (app.isPackaged) {
@@ -31,7 +30,6 @@ export class SkillsManager {
       this.coreManager = createSkillsManager({
         bundledSkillsPath: getBundledSkillsPath(),
         userSkillsPath: getUserSkillsPath(),
-        database: getDatabase(),
       });
     }
     return this.coreManager;

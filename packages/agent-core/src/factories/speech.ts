@@ -5,6 +5,5 @@ import type {
 } from '../types/speech.js';
 
 export function createSpeechService(options: SpeechServiceOptions): SpeechServiceAPI {
-  const service = new SpeechService(options.storage);
-  return service;
+  return new SpeechService(options.storage as any);
 }

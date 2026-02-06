@@ -6,7 +6,7 @@ export type { ApiKeyProvider };
 
 let _storage: StorageAPI | null = null;
 
-export function getStorage(): StorageAPI {
+function getStorage(): StorageAPI {
   if (!_storage) {
     _storage = createStorage({
       userDataPath: app.getPath('userData'),

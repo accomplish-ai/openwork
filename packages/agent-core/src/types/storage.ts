@@ -16,8 +16,8 @@ import type {
 export interface StorageOptions {
   databasePath?: string;
   runMigrations?: boolean;
-  verbose?: boolean;
   userDataPath?: string;
+  secureStorageAppId?: string;
   secureStorageFileName?: string;
 }
 
@@ -44,7 +44,11 @@ export interface AppSettings {
   openaiBaseUrl: string;
 }
 
-export interface StorageAPI {
+// ---------------------------------------------------------------------------
+// Sub-interfaces for focused, slice-level access
+// ---------------------------------------------------------------------------
+
+export interface TaskStorageAPI {
   getTasks(): StoredTask[];
   getTask(taskId: string): StoredTask | undefined;
   saveTask(task: Task): void;
@@ -57,7 +61,9 @@ export interface StorageAPI {
   getTodosForTask(taskId: string): TodoItem[];
   saveTodosForTask(taskId: string, todos: TodoItem[]): void;
   clearTodosForTask(taskId: string): void;
+}
 
+export interface AppSettingsAPI {
   getDebugMode(): boolean;
   setDebugMode(enabled: boolean): void;
   getOnboardingComplete(): boolean;
@@ -76,7 +82,9 @@ export interface StorageAPI {
   setOpenAiBaseUrl(baseUrl: string): void;
   getAppSettings(): AppSettings;
   clearAppSettings(): void;
+}
 
+export interface ProviderSettingsAPI {
   getProviderSettings(): ProviderSettings;
   setActiveProvider(providerId: ProviderId | null): void;
   getActiveProviderId(): ProviderId | null;
@@ -94,7 +102,9 @@ export interface StorageAPI {
   } | null;
   hasReadyProvider(): boolean;
   getConnectedProviderIds(): ProviderId[];
+}
 
+export interface SecureStorageAPI {
   storeApiKey(provider: string, apiKey: string): void;
   getApiKey(provider: string): string | null;
   deleteApiKey(provider: string): boolean;
@@ -102,13 +112,23 @@ export interface StorageAPI {
   storeBedrockCredentials(credentials: string): void;
   getBedrockCredentials(): Record<string, string> | null;
   hasAnyApiKey(): Promise<boolean>;
+  listStoredCredentials(): Array<{ account: string; password: string }>;
   clearSecureStorage(): void;
+}
 
+export interface DatabaseLifecycleAPI {
   initialize(): void;
   close(): void;
   isDatabaseInitialized(): boolean;
   getDatabasePath(): string | null;
 }
+
+export interface StorageAPI
+  extends TaskStorageAPI,
+    AppSettingsAPI,
+    ProviderSettingsAPI,
+    SecureStorageAPI,
+    DatabaseLifecycleAPI {}
 
 export type {
   Task,

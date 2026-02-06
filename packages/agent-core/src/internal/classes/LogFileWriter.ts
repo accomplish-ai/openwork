@@ -11,6 +11,12 @@ import {
 
 import { redact } from '../../utils/redact.js';
 
+/**
+ * LogFileWriter - Writes log entries to rotating daily log files.
+ *
+ * This class is platform-agnostic and requires the log directory to be
+ * injected via constructor (dependency injection pattern).
+ */
 export class LogFileWriter {
   private currentDate: string = '';
   private currentFilePath: string = '';
@@ -67,13 +73,16 @@ export class LogFileWriter {
       return;
     }
 
-    const lines = this.buffer.map((entry) => this.formatLogEntry(entry));
+    const lines = this.buffer.map(
+      (entry) => `[${entry.timestamp}] [${entry.level}] [${entry.source}] ${entry.message}`
+    );
 
     try {
       fs.appendFileSync(this.currentFilePath, lines.join('\n') + '\n');
       this.buffer = [];
     } catch (error) {
       console.error('[LogFileWriter] Failed to write logs:', error);
+      // Don't clear buffer on failure - retry on next flush, but prevent unbounded growth
       if (this.buffer.length > LOG_BUFFER_MAX_ENTRIES * 10) {
         console.error('[LogFileWriter] Buffer overflow - dropping oldest entries');
         this.buffer = this.buffer.slice(-LOG_BUFFER_MAX_ENTRIES);
@@ -103,7 +112,9 @@ export class LogFileWriter {
     if (today !== this.currentDate) {
       // Write buffered entries to old file directly to avoid recursion from calling flush()
       if (this.currentDate && this.buffer.length > 0 && this.currentFilePath) {
-        const lines = this.buffer.map((entry) => this.formatLogEntry(entry));
+        const lines = this.buffer.map(
+          (entry) => `[${entry.timestamp}] [${entry.level}] [${entry.source}] ${entry.message}`
+        );
         try {
           fs.appendFileSync(this.currentFilePath, lines.join('\n') + '\n');
           this.buffer = [];
@@ -116,10 +127,6 @@ export class LogFileWriter {
       this.currentFilePath = path.join(this.logDir, `app-${today}.log`);
       this.fileSizeExceeded = false;
     }
-  }
-
-  private formatLogEntry(entry: LogEntry): string {
-    return `[${entry.timestamp}] [${entry.level}] [${entry.source}] ${entry.message}`;
   }
 
   private checkFileSize(): boolean {

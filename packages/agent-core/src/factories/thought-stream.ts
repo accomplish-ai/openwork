@@ -1,7 +1,11 @@
 import { ThoughtStreamHandler } from '../internal/classes/ThoughtStreamHandler.js';
-import type { ThoughtStreamAPI } from '../types/thought-stream.js';
+import type {
+  ThoughtStreamAPI,
+  ThoughtStreamOptions,
+} from '../types/thought-stream.js';
 
-export function createThoughtStreamHandler(): ThoughtStreamAPI {
-  const handler = new ThoughtStreamHandler();
-  return handler;
+export function createThoughtStreamHandler(
+  _options?: ThoughtStreamOptions
+): ThoughtStreamAPI {
+  return new ThoughtStreamHandler();
 }

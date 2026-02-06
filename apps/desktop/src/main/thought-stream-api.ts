@@ -16,43 +16,62 @@ import {
   type ThoughtStreamCheckpointEvent as CheckpointEvent,
 } from '@accomplish_ai/agent-core';
 
+// Re-export types and constant for backwards compatibility
 export { THOUGHT_STREAM_PORT };
 export type { ThoughtEvent, CheckpointEvent };
 
+// Store reference to main window
 let mainWindow: BrowserWindow | null = null;
 
+// Singleton handler instance for task tracking and event validation
 const thoughtStreamHandler: ThoughtStreamAPI = createThoughtStreamHandler();
 
+/**
+ * Initialize the thought stream API with dependencies
+ */
 export function initThoughtStreamApi(window: BrowserWindow): void {
   mainWindow = window;
 }
 
+/**
+ * Register a task ID as active (called when task starts)
+ */
 export function registerActiveTask(taskId: string): void {
   thoughtStreamHandler.registerTask(taskId);
 }
 
+/**
+ * Unregister a task ID (called when task completes)
+ */
 export function unregisterActiveTask(taskId: string): void {
   thoughtStreamHandler.unregisterTask(taskId);
 }
 
+/**
+ * Create and start the HTTP server for thought streaming
+ */
 export function startThoughtStreamServer(): http.Server {
   const server = http.createServer(async (req, res) => {
+    // CORS headers for local requests
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+    // Handle preflight
     if (req.method === 'OPTIONS') {
       res.writeHead(200);
       res.end();
       return;
     }
 
+    // Only handle POST requests
     if (req.method !== 'POST') {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
       return;
     }
 
+    // Parse request body
     let body = '';
     for await (const chunk of req) {
       body += chunk;
@@ -67,22 +86,20 @@ export function startThoughtStreamServer(): http.Server {
       return;
     }
 
+    // Validate taskId exists and is active
+    const taskId = data.taskId as string;
+    if (!taskId || !thoughtStreamHandler.isTaskActive(taskId)) {
+      // Fire-and-forget: return 200 even for unknown tasks
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    // Route based on endpoint
     if (req.url === '/thought') {
-      const event = thoughtStreamHandler.validateThoughtEvent(data);
-      if (!event) {
-        res.writeHead(200);
-        res.end();
-        return;
-      }
-      handleThought(event, res);
+      handleThought(data as unknown as ThoughtEvent, res);
     } else if (req.url === '/checkpoint') {
-      const event = thoughtStreamHandler.validateCheckpointEvent(data);
-      if (!event) {
-        res.writeHead(200);
-        res.end();
-        return;
-      }
-      handleCheckpoint(event, res);
+      handleCheckpoint(data as unknown as CheckpointEvent, res);
     } else {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
@@ -105,6 +122,7 @@ export function startThoughtStreamServer(): http.Server {
 }
 
 function handleThought(event: ThoughtEvent, res: http.ServerResponse): void {
+  // Forward to renderer via IPC
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('task:thought', event);
   }
@@ -115,6 +133,7 @@ function handleThought(event: ThoughtEvent, res: http.ServerResponse): void {
 }
 
 function handleCheckpoint(event: CheckpointEvent, res: http.ServerResponse): void {
+  // Forward to renderer via IPC
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('task:checkpoint', event);
   }

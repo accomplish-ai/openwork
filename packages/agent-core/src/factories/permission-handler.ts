@@ -7,6 +7,5 @@ import type {
 export function createPermissionHandler(
   options?: PermissionHandlerOptions
 ): PermissionHandlerAPI {
-  const handler = new PermissionRequestHandler(options?.defaultTimeoutMs);
-  return handler;
+  return new PermissionRequestHandler(options?.defaultTimeoutMs);
 }
