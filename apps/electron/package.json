@@ -1,5 +1,5 @@
 {
-  "name": "@accomplish/desktop",
+  "name": "@accomplish/electron",
   "version": "0.3.8",
   "private": true,
   "type": "module",

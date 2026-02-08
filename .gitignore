@@ -39,9 +39,9 @@ yarn-error.log*
 # Playwright
 playwright-report/
 test-results/
-apps/desktop/e2e/test-results/
-apps/desktop/e2e/html-report/
-apps/desktop/e2e/test-results.json
+apps/electron/e2e/test-results/
+apps/electron/e2e/html-report/
+apps/electron/e2e/test-results.json
 
 # Test coverage
 coverage/
@@ -61,7 +61,7 @@ docs/plans/
 .worktrees/
 
 # Bundled Node.js binaries (downloaded via `pnpm -F @accomplish/desktop download:nodejs`)
-apps/desktop/resources/nodejs/
+apps/electron/resources/nodejs/
 
 # Test local agent Chrome profile
 .accomplish-test-local-agent-chrome/
