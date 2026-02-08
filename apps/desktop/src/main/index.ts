@@ -1,3 +1,6 @@
+import fixPath from 'fix-path';
+fixPath();
+
 import { config } from 'dotenv';
 import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
 import path from 'path';

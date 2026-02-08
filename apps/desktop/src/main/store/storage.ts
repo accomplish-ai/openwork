@@ -1,9 +1,7 @@
 import { app } from 'electron';
 import path from 'path';
 import { createStorage, type StorageAPI } from '@accomplish_ai/agent-core';
-// Deep import for legacy migration only — getDatabase is intentionally not part of StorageAPI
-import { getDatabase as coreGetDatabase } from '@accomplish_ai/agent-core/storage/database';
-import type { Database } from 'better-sqlite3';
+import BetterSqlite3, { type Database } from 'better-sqlite3';
 import { importLegacyElectronStoreData } from './electronStoreImport';
 
 let _storage: StorageAPI | null = null;
@@ -37,8 +35,14 @@ export function initializeStorage(): void {
     storage.initialize();
 
     // One-time legacy data import from old electron-store format
-    const db: Database = coreGetDatabase();
-    importLegacyElectronStoreData(db);
+    // Open a separate connection to the same DB for raw SQL access
+    const dbPath = getDatabasePath();
+    const db: Database = new BetterSqlite3(dbPath);
+    try {
+      importLegacyElectronStoreData(db);
+    } finally {
+      db.close();
+    }
   }
 }
 

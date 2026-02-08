@@ -22,7 +22,8 @@ export function getMcpToolsPath(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'mcp-tools');
   } else {
-    return path.join(app.getAppPath(), '..', '..', 'packages', 'agent-core', 'mcp-tools');
+    // In dev mode, use the mcp-tools from the installed npm package
+    return path.join(app.getAppPath(), 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
   }
 }
 
