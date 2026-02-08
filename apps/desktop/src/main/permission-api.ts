@@ -20,9 +20,10 @@ interface PendingPermission {
 // Store pending permission requests waiting for user response
 const pendingPermissions = new Map<string, PendingPermission>();
 
-// Store reference to main window and task manager
+// Store reference to main window, task manager, and HTTP server
 let mainWindow: BrowserWindow | null = null;
 let getActiveTaskId: (() => string | null) | null = null;
+let permissionServer: http.Server | null = null;
 
 /**
  * Initialize the permission API with dependencies
@@ -182,7 +183,31 @@ export function startPermissionApiServer(): http.Server {
     }
   });
 
+  permissionServer = server;
   return server;
+}
+
+/**
+ * Stop the permission API server and clean up pending requests
+ * Called on app quit to ensure clean shutdown
+ */
+export function stopPermissionApiServer(): void {
+  // Reject all pending permission requests
+  for (const [requestId, pending] of pendingPermissions) {
+    clearTimeout(pending.timeoutId);
+    pending.resolve(false);
+    pendingPermissions.delete(requestId);
+  }
+
+  if (permissionServer) {
+    permissionServer.close(() => {
+      console.log('[Permission API] Server closed');
+    });
+    permissionServer = null;
+  }
+
+  mainWindow = null;
+  getActiveTaskId = null;
 }
 
 /**

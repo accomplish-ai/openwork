@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { registerIPCHandlers } from './ipc/handlers';
 import { flushPendingTasks } from './store/taskHistory';
 import { disposeTaskManager } from './opencode/task-manager';
+import { stopPermissionApiServer } from './permission-api';
 import { checkAndCleanupFreshInstall } from './store/freshInstallCleanup';
 
 // Local UI - no longer uses remote URL
@@ -194,6 +195,8 @@ app.on('before-quit', () => {
   flushPendingTasks();
   // Dispose all active tasks and cleanup PTY processes
   disposeTaskManager();
+  // Close the permission API HTTP server
+  stopPermissionApiServer();
 });
 
 // Handle custom protocol (accomplish://)

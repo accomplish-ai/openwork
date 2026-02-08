@@ -18,7 +18,7 @@ const accomplishAPI = {
     ipcRenderer.invoke('shell:open-external', url),
 
   // Task operations
-  startTask: (config: { description: string }): Promise<unknown> =>
+  startTask: (config: { prompt: string; taskId?: string; sessionId?: string; workingDirectory?: string }): Promise<unknown> =>
     ipcRenderer.invoke('task:start', config),
   cancelTask: (taskId: string): Promise<void> =>
     ipcRenderer.invoke('task:cancel', taskId),

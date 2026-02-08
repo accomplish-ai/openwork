@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/taskStore';
-import { getAccomplish } from '@/lib/accomplish';
 import { analytics } from '@/lib/analytics';
 import { staggerContainer } from '@/lib/animations';
 import { Button } from '@/components/ui/button';
@@ -17,29 +16,11 @@ import logoImage from '/assets/logo-1.png';
 export default function Sidebar() {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
-  const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher } = useTaskStore();
-  const accomplish = getAccomplish();
+  const { tasks, loadTasks, openLauncher } = useTaskStore();
 
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
-
-  // Subscribe to task status changes (queued -> running) and task updates (complete/error)
-  // This ensures sidebar always reflects current task status
-  useEffect(() => {
-    const unsubscribeStatusChange = accomplish.onTaskStatusChange?.((data) => {
-      updateTaskStatus(data.taskId, data.status);
-    });
-
-    const unsubscribeTaskUpdate = accomplish.onTaskUpdate((event) => {
-      addTaskUpdate(event);
-    });
-
-    return () => {
-      unsubscribeStatusChange?.();
-      unsubscribeTaskUpdate();
-    };
-  }, [updateTaskStatus, addTaskUpdate, accomplish]);
 
   const handleNewConversation = () => {
     analytics.trackNewTask();

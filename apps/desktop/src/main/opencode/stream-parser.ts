@@ -24,8 +24,15 @@ export class StreamParser extends EventEmitter<StreamParserEvents> {
     // Prevent memory exhaustion from unbounded buffer growth
     if (this.buffer.length > MAX_BUFFER_SIZE) {
       this.emit('error', new Error('Stream buffer size exceeded maximum limit'));
-      // Keep the last portion of the buffer to maintain parsing continuity
-      this.buffer = this.buffer.slice(-MAX_BUFFER_SIZE / 2);
+      // Find the last newline in the first half to discard complete lines only,
+      // preserving message boundaries in the kept portion
+      const discardEnd = this.buffer.lastIndexOf('\n', MAX_BUFFER_SIZE / 2);
+      if (discardEnd > 0) {
+        this.buffer = this.buffer.slice(discardEnd + 1);
+      } else {
+        // No newline found — discard everything and start fresh
+        this.buffer = '';
+      }
     }
 
     this.parseBuffer();

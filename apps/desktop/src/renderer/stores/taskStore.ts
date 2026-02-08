@@ -484,15 +484,24 @@ if (typeof window !== 'undefined' && window.accomplish) {
     }
   });
 
-  // Clear progress when task completes or errors (not on messages - download continues during messages)
+  // Handle task completion/error globally so sidebar always reflects current status
+  // (regardless of which page is mounted)
   window.accomplish.onTaskUpdate((event: unknown) => {
     const updateEvent = event as TaskUpdateEvent;
     if (updateEvent.type === 'complete' || updateEvent.type === 'error') {
+      // Clear setup progress if this task was downloading browser
       const state = useTaskStore.getState();
       if (state.setupProgressTaskId === updateEvent.taskId) {
         state.setSetupProgress(null, null);
       }
+      // Update task status in sidebar list
+      state.addTaskUpdate(updateEvent);
     }
+  });
+
+  // Subscribe to task status changes (e.g., queued -> running)
+  window.accomplish.onTaskStatusChange?.((data: { taskId: string; status: string }) => {
+    useTaskStore.getState().updateTaskStatus(data.taskId, data.status as TaskStatus);
   });
 
   // Subscribe to task summary updates

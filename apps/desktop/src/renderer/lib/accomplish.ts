@@ -65,9 +65,9 @@ interface AccomplishAPI {
   getOnboardingComplete(): Promise<boolean>;
   setOnboardingComplete(complete: boolean): Promise<void>;
 
-  // Claude CLI
-  checkClaudeCli(): Promise<{ installed: boolean; version: string | null; installCommand: string }>;
-  getClaudeVersion(): Promise<string | null>;
+  // OpenCode CLI
+  checkOpenCodeCli(): Promise<{ installed: boolean; version: string | null; installCommand: string }>;
+  getOpenCodeVersion(): Promise<string | null>;
 
   // Model selection
   getSelectedModel(): Promise<{ provider: string; model: string; baseUrl?: string } | null>;

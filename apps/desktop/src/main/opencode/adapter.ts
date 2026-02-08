@@ -241,9 +241,10 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
    */
   async cancelTask(): Promise<void> {
     if (this.ptyProcess) {
-      // Kill the PTY process
+      // Kill the PTY process — don't null ptyProcess here.
+      // The onExit handler will call handleProcessExit() which sets it to null.
+      this.hasCompleted = true;
       this.ptyProcess.kill();
-      this.ptyProcess = null;
     }
   }
 
@@ -630,7 +631,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     }
 
     this.ptyProcess = null;
-    this.currentTaskId = null;
+    // Don't clear currentTaskId here — completion callbacks may still need it.
+    // It gets cleared in dispose() when the adapter is fully cleaned up.
   }
 
   private generateTaskId(): string {
