@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isWaitingForUser } from '../../../../src/renderer/lib/waiting-detection';
+import { isWaitingForUser } from '../../../../src/lib/waiting-detection';
 
 describe('isWaitingForUser', () => {
   describe('should return true for messages indicating waiting', () => {

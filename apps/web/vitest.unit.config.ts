@@ -1,13 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
-      '@main': path.resolve(__dirname, 'src/main'),
+      '@': path.resolve(__dirname, 'src'),
+      '@renderer': path.resolve(__dirname, 'src'),
     },
   },
   test: {
@@ -15,9 +18,9 @@ export default defineConfig({
     globals: true,
     root: __dirname,
     include: ['__tests__/**/*.unit.test.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-electron/**', '**/release/**'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: ['__tests__/setup.ts'],
-    environment: 'node',
+    environment: 'jsdom',
     testTimeout: 5000,
     hookTimeout: 10000,
   },

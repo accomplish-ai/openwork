@@ -15,7 +15,7 @@ import {
   staggerItem,
   cardHover,
   buttonPress,
-} from '@renderer/lib/animations';
+} from '@/lib/animations';
 
 describe('Animation Library', () => {
   describe('Spring Configurations', () => {
