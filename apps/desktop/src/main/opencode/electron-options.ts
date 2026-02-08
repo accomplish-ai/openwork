@@ -150,9 +150,9 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
 }
 
 export async function buildCliArgs(config: TaskConfig, _taskId: string): Promise<string[]> {
-  const storageForArgs = getStorage();
-  const activeModel = storageForArgs.getActiveProviderModel();
-  const selectedModel = activeModel || storageForArgs.getSelectedModel();
+  const storage = getStorage();
+  const activeModel = storage.getActiveProviderModel();
+  const selectedModel = activeModel || storage.getSelectedModel();
 
   return coreBuildCliArgs({
     prompt: config.prompt,
@@ -176,11 +176,11 @@ export async function onBeforeStart(): Promise<void> {
   await syncApiKeysToOpenCodeAuth();
 
   let azureFoundryToken: string | undefined;
-  const storageForStart = getStorage();
-  const activeModel = storageForStart.getActiveProviderModel();
-  const selectedModel = activeModel || storageForStart.getSelectedModel();
-  const azureFoundryConfig = storageForStart.getAzureFoundryConfig();
-  const azureFoundryProvider = storageForStart.getConnectedProvider('azure-foundry');
+  const storage = getStorage();
+  const activeModel = storage.getActiveProviderModel();
+  const selectedModel = activeModel || storage.getSelectedModel();
+  const azureFoundryConfig = storage.getAzureFoundryConfig();
+  const azureFoundryProvider = storage.getConnectedProvider('azure-foundry');
   const azureFoundryCredentials = azureFoundryProvider?.credentials as AzureFoundryCredentials | undefined;
 
   const isAzureFoundryEntraId =

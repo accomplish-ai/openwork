@@ -1,8 +1,3 @@
-// ---------------------------------------------------------------------------
-// Backward-compatible re-exports from the unified storage module.
-// New code should import from './storage' directly.
-// ---------------------------------------------------------------------------
-
 import type { ApiKeyProvider } from '@accomplish_ai/agent-core';
 import { getStorage } from './storage';
 

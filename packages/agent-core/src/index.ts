@@ -102,35 +102,27 @@ export { OpenCodeCliNotFoundError } from './opencode/adapter.js';
 // Adapter types - AdapterOptions/OpenCodeAdapterEvents are internal (use TaskAdapterOptions)
 // createLogWatcher/OpenCodeLogError are internal (used by OpenCodeAdapter internally)
 
-/** @internal Low-level CLI resolver — use TaskManagerOptions.isCliAvailable instead */
+// Low-level OpenCode utilities for advanced integrations
 export { resolveCliPath, isCliAvailable } from './opencode/cli-resolver.js';
 
-/** @internal Low-level config generation — pass via TaskAdapterOptions callbacks instead */
 export {
   generateConfig,
   buildCliArgs,
   ACCOMPLISH_AGENT_NAME,
 } from './opencode/config-generator.js';
 
-/** @internal Low-level environment builder — pass via TaskAdapterOptions.buildEnvironment instead */
 export { buildOpenCodeEnvironment } from './opencode/environment.js';
 
-/** @internal */
 export type { EnvironmentConfig } from './opencode/environment.js';
 
-/** @internal Low-level provider config builder — pass via TaskAdapterOptions.onBeforeStart instead */
 export { buildProviderConfigs, syncApiKeysToOpenCodeAuth } from './opencode/config-builder.js';
 
-/** @internal Low-level auth path and OAuth status */
 export { getOpenCodeAuthPath, getOpenAiOauthStatus } from './opencode/auth.js';
 
 // Message processing is now internal to TaskManager (use onBatchedMessages callback)
-
 // CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)
-
 // Proxy lifecycle is now internal to TaskManager.dispose()
 
-/** @internal Low-level Azure Entra ID token retrieval */
 export {
   getAzureEntraToken,
 } from './opencode/proxies/index.js';
@@ -177,7 +169,7 @@ export {
 // Utils Module (from ./utils/)
 // -----------------------------------------------------------------------------
 
-/** @internal Low-level bundled Node.js binary path resolution */
+// Bundled Node.js binary path resolution
 export {
   getBundledNodePaths,
   isBundledNodeAvailable,
@@ -187,10 +179,9 @@ export {
   logBundledNodeInfo,
 } from './utils/bundled-node.js';
 
-/** @internal */
 export type { BundledNodePathsExtended } from './utils/bundled-node.js';
 
-/** @internal Low-level system PATH resolution */
+// System PATH resolution
 export { getExtendedNodePath, findCommandInPath } from './utils/system-path.js';
 
 // Sanitization functions
@@ -210,7 +201,6 @@ export type { SafeParseResult } from './utils/json.js';
 // Redaction functions
 export { redact } from './utils/redact.js';
 
-/** @internal Maps TaskResult to TaskStatus for storage persistence */
 export { mapResultToStatus } from './utils/task-status.js';
 
 // Logging - use createLogWriter factory from ./factories/log-writer.js instead
@@ -219,10 +209,9 @@ export { mapResultToStatus } from './utils/task-status.js';
 // Browser Module (from ./browser/)
 // -----------------------------------------------------------------------------
 
-/** @internal Low-level browser server for dev-browser MCP tool */
+// Browser server for dev-browser MCP tool
 export { ensureDevBrowserServer } from './browser/server.js';
 
-/** @internal */
 export type { BrowserServerConfig } from './browser/server.js';
 
 // -----------------------------------------------------------------------------
@@ -382,9 +371,8 @@ export {
   isQuestionRequest,
 } from './common/utils/id.js';
 
-/** @internal Low-level shell command building for PTY spawning */
+// Shell and network utilities for PTY spawning
 export { stripAnsi, quoteForShell, getPlatformShell, getShellArgs } from './utils/shell.js';
-/** @internal Low-level port availability checking */
 export { isPortInUse, waitForPortRelease } from './utils/network.js';
 export { isWaitingForUser } from './common/utils/waiting-detection.js';
 export { detectLogSource, LOG_SOURCE_PATTERNS } from './common/utils/log-source-detector.js';

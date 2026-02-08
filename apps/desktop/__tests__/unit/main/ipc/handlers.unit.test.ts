@@ -255,7 +255,6 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     permissionResponseSchema: actual.permissionResponseSchema,
 
     // Utility functions
-    fetchWithTimeout: vi.fn(() => Promise.resolve(new Response('{}'))),
     createTaskId: vi.fn(() => `task_${Date.now()}`),
     createMessageId: vi.fn(() => `msg-${Date.now()}`),
     sanitizeString: vi.fn((input: unknown, fieldName: string, maxLength = 255) => {
