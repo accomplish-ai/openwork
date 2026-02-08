@@ -11,9 +11,10 @@
   },
   "scripts": {
     "predev": "node scripts/check-deps.cjs",
-    "dev": "pnpm -F @accomplish/web dev & wait-on http://localhost:5173 && pnpm -F @accomplish/electron dev",
+    "dev": "node scripts/dev.cjs",
     "predev:clean": "node scripts/check-deps.cjs",
-    "dev:clean": "pnpm -F @accomplish/electron dev:clean",
+    "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
+    "dev:kill": "node -e \"const{execSync}=require('child_process');try{execSync('lsof -ti:5173|xargs kill -9',{stdio:'ignore'})}catch{};console.log('Port 5173 cleared')\"",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r build",
     "build:electron": "pnpm -F @accomplish/electron build",
