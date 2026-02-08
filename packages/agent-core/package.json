@@ -46,6 +46,7 @@
     "dist",
     "mcp-tools/*/dist",
     "mcp-tools/*/package.json",
+    "mcp-tools/*/*.cjs",
     "mcp-tools/*/*.md",
     "mcp-tools/package.json"
   ],
