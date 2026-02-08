@@ -26,46 +26,8 @@ pnpm test                                       # Run all Vitest tests
 pnpm test:unit                                  # Unit tests only
 pnpm test:integration                           # Integration tests only
 pnpm test:coverage                              # Tests with coverage
-pnpm -F @accomplish/desktop test:e2e            # Docker-based E2E tests
-pnpm -F @accomplish/desktop test:e2e:native     # Native Playwright E2E tests
-pnpm -F @accomplish/desktop test:e2e:native:ui  # E2E with Playwright UI
-
 # Cleanup
 pnpm clean                                      # Clean build outputs and node_modules
-```
-
-## Publishing Packages (Changesets)
-
-The `@accomplish_ai/agent-core` package is published to npm using [Changesets](https://github.com/changesets/changesets).
-
-### Creating a Changeset
-When making changes to the agent-core package, create a changeset:
-```bash
-pnpm changeset
-```
-This prompts you to:
-1. Select `@accomplish_ai/agent-core`
-2. Choose bump type (patch/minor/major)
-3. Write a summary for the changelog
-
-Commit the generated `.changeset/*.md` file with your PR.
-
-### Release Process (Automated)
-1. Merge PR with changeset files to `main`
-2. GitHub Action creates a "Version Packages" PR
-3. Review and merge the Version Packages PR
-4. GitHub Action publishes `@accomplish_ai/agent-core` to npm
-
-### PR Preview Releases
-When a PR contains changesets, a snapshot release is automatically published:
-```bash
-npm install @accomplish_ai/agent-core@pr-<PR_NUMBER>
-```
-
-### Manual Release (if needed)
-```bash
-pnpm version-packages  # Apply changesets, bump versions
-pnpm release           # Build and publish
 ```
 
 ## Architecture
@@ -221,17 +183,7 @@ Static assets go in `apps/desktop/public/assets/`.
 ## Environment Variables
 
 - `CLEAN_START=1` - Clear all stored data on app start
-- `E2E_SKIP_AUTH=1` - Skip onboarding flow (for testing)
-- `E2E_MOCK_TASK_EVENTS=1` - Mock task events (for testing)
-
 ## Testing
-
-### E2E Tests (Playwright)
-- Config: `apps/desktop/e2e/playwright.config.ts`
-- Tests: `apps/desktop/e2e/specs/`
-- Page objects: `apps/desktop/e2e/pages/`
-- Serial execution (Electron requirement)
-- Docker support: `apps/desktop/e2e/docker/`
 
 ### Unit/Integration Tests (Vitest)
 - Desktop config: `apps/desktop/vitest.config.ts`
@@ -375,6 +327,6 @@ API keys are stored using AES-256-GCM encryption with machine-derived keys. The 
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:
-- `ci.yml` - Core tests, unit tests, integration tests, typecheck, E2E
+- `ci.yml` - Unit tests, integration tests, typecheck
 - `release.yml` - Version bump, build, publish to GitHub releases
 - `commitlint.yml` - Conventional commit validation
