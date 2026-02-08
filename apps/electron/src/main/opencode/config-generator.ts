@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import {
   generateConfig,
   ACCOMPLISH_AGENT_NAME,
@@ -43,6 +44,15 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 
   console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
   console.log('[OpenCode Config] User data path:', userDataPath);
+
+  // When using agent-core from npm (no src/ files), force bundled MCP mode
+  // so the config generator uses dist/index.mjs instead of src/index.ts
+  if (!app.isPackaged) {
+    const testSrcPath = path.join(mcpToolsPath, 'start-task', 'src', 'index.ts');
+    if (!fs.existsSync(testSrcPath)) {
+      process.env.ACCOMPLISH_BUNDLED_MCP = '1';
+    }
+  }
 
   // Use the extracted buildProviderConfigs from core package
   const { providerConfigs, enabledProviders, modelOverride } = await buildProviderConfigs({
