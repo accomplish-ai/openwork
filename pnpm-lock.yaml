@@ -32,6 +32,82 @@ importers:
       '@azure/identity':
         specifier: ^4.13.0
         version: 4.13.0
+      better-sqlite3:
+        specifier: ^12.6.2
+        version: 12.6.2
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      electron-store:
+        specifier: ^8.2.0
+        version: 8.2.0
+      fix-path:
+        specifier: ^5.0.0
+        version: 5.0.0
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
+      node-pty:
+        specifier: ^1.1.0
+        version: 1.1.0
+      opencode-ai:
+        specifier: 1.1.16
+        version: 1.1.16
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@electron/rebuild':
+        specifier: ^4.0.2
+        version: 4.0.2
+      '@testing-library/dom':
+        specifier: ^10.4.1
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: 6.6.3
+        version: 6.6.3
+      '@testing-library/react':
+        specifier: ^16.3.1
+        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.3
+      '@vitest/coverage-v8':
+        specifier: ^4.0.17
+        version: 4.0.17(vitest@4.0.17(@types/node@22.19.3)(happy-dom@20.1.0)(jiti@1.21.7)(jsdom@27.4.0))
+      electron:
+        specifier: ^35.2.1
+        version: 35.7.5
+      electron-builder:
+        specifier: ^25.1.8
+        version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
+      esbuild:
+        specifier: ^0.24.2
+        version: 0.24.2
+      happy-dom:
+        specifier: ^20.1.0
+        version: 20.1.0
+      jsdom:
+        specifier: ^27.4.0
+        version: 27.4.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.6
+        version: 6.4.1(@types/node@22.19.3)(jiti@1.21.7)
+      vite-plugin-electron:
+        specifier: ^0.28.8
+        version: 0.28.8(vite-plugin-electron-renderer@0.14.6)
+      vitest:
+        specifier: ^4.0.17
+        version: 4.0.17(@types/node@22.19.3)(happy-dom@20.1.0)(jiti@1.21.7)(jsdom@27.4.0)
+
+  apps/web:
+    dependencies:
       '@radix-ui/react-avatar':
         specifier: ^1.1.2
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -59,39 +135,18 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.6
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      better-sqlite3:
-        specifier: ^12.6.2
-        version: 12.6.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      electron-store:
-        specifier: ^8.2.0
-        version: 8.2.0
-      fix-path:
-        specifier: ^5.0.0
-        version: 5.0.0
       framer-motion:
         specifier: ^12.26.2
         version: 12.26.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      gray-matter:
-        specifier: ^4.0.3
-        version: 4.0.3
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@19.2.3)
-      node-pty:
-        specifier: ^1.1.0
-        version: 1.1.0
-      opencode-ai:
-        specifier: 1.1.16
-        version: 1.1.16
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -107,34 +162,13 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.4.0
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.2.7)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
-      '@electron/rebuild':
-        specifier: ^4.0.2
-        version: 4.0.2
       '@tailwindcss/typography':
         specifier: ^0.5.15
         version: 0.5.19(tailwindcss@3.4.19)
-      '@testing-library/dom':
-        specifier: ^10.4.1
-        version: 10.4.1
-      '@testing-library/jest-dom':
-        specifier: 6.6.3
-        version: 6.6.3
-      '@testing-library/react':
-        specifier: ^16.3.1
-        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@types/better-sqlite3':
-        specifier: ^7.6.13
-        version: 7.6.13
-      '@types/node':
-        specifier: ^22.10.2
-        version: 22.19.3
       '@types/react':
         specifier: ^19.0.2
         version: 19.2.7
@@ -144,27 +178,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.1(@types/node@22.19.3)(jiti@1.21.7))
-      '@vitest/coverage-v8':
-        specifier: ^4.0.17
-        version: 4.0.17(vitest@4.0.17(@types/node@22.19.3)(happy-dom@20.1.0)(jiti@1.21.7)(jsdom@27.4.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.23(postcss@8.5.6)
-      electron:
-        specifier: ^35.2.1
-        version: 35.7.5
-      electron-builder:
-        specifier: ^25.1.8
-        version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
-      esbuild:
-        specifier: ^0.24.2
-        version: 0.24.2
-      happy-dom:
-        specifier: ^20.1.0
-        version: 20.1.0
-      jsdom:
-        specifier: ^27.4.0
-        version: 27.4.0
       postcss:
         specifier: ^8.4.49
         version: 8.5.6
@@ -180,12 +196,6 @@ importers:
       vite:
         specifier: ^6.0.6
         version: 6.4.1(@types/node@22.19.3)(jiti@1.21.7)
-      vite-plugin-electron:
-        specifier: ^0.28.8
-        version: 0.28.8(vite-plugin-electron-renderer@0.14.6)
-      vitest:
-        specifier: ^4.0.17
-        version: 4.0.17(@types/node@22.19.3)(happy-dom@20.1.0)(jiti@1.21.7)(jsdom@27.4.0)
 
 packages:
 

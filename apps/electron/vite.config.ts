@@ -1,18 +1,11 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
-import path from 'path';
 import pkg from './package.json';
-
-// Desktop app with local React UI
-// No longer uses remote UI from Vercel
 
 export default defineConfig(() => ({
   plugins: [
-    react(),
     electron([
       {
-        // Main process entry
         entry: 'src/main/index.ts',
         onstart({ startup }) {
           startup();
@@ -27,7 +20,6 @@ export default defineConfig(() => ({
         },
       },
       {
-        // Preload script for local renderer
         entry: 'src/preload/index.ts',
         onstart({ reload }) {
           reload();
@@ -54,26 +46,4 @@ export default defineConfig(() => ({
       },
     ]),
   ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src/renderer'),
-      '@main': path.resolve(__dirname, 'src/main'),
-      '@renderer': path.resolve(__dirname, 'src/renderer'),
-    },
-  },
-  // Build the React renderer
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
-    },
-  },
-  optimizeDeps: {
-    exclude: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
-    // Force exclude in development
-    esbuildOptions: {
-      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
-    },
-  },
 }));
