@@ -14,16 +14,19 @@ import path from 'path';
 const originalPlatform = process.platform;
 const originalEnv = { ...process.env };
 
-// Mock fs module
-const mockFs = {
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-  statSync: vi.fn(),
-  accessSync: vi.fn(),
-  constants: {
-    X_OK: 1,
+// Hoist mock variables so they're available in vi.mock factories (vitest 4.x)
+const { mockFs, mockExecSync } = vi.hoisted(() => ({
+  mockFs: {
+    existsSync: vi.fn(),
+    readdirSync: vi.fn(),
+    statSync: vi.fn(),
+    accessSync: vi.fn(),
+    constants: {
+      X_OK: 1,
+    },
   },
-};
+  mockExecSync: vi.fn(),
+}));
 
 vi.mock('fs', () => ({
   default: mockFs,
@@ -33,9 +36,6 @@ vi.mock('fs', () => ({
   accessSync: mockFs.accessSync,
   constants: mockFs.constants,
 }));
-
-// Mock child_process
-const mockExecSync = vi.fn();
 
 vi.mock('child_process', () => ({
   execSync: mockExecSync,

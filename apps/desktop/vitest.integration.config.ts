@@ -29,5 +29,10 @@ export default defineConfig({
     // Integration tests may need longer timeouts
     testTimeout: 10000,
     hookTimeout: 15000,
+    server: {
+      deps: {
+        inline: ['@accomplish_ai/agent-core'],
+      },
+    },
   },
 });

@@ -221,16 +221,14 @@ describe('OpenCode Config Generator Integration', () => {
     // Create real temp directories for each test
     tempUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-userData-'));
 
-    // Create a monorepo-like structure in temp dir
-    // This simulates the real structure: monorepo/apps/desktop with packages/agent-core/mcp-tools
+    // Create a temp app directory structure
     tempMonorepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-monorepo-'));
     tempAppDir = path.join(tempMonorepoRoot, 'apps', 'desktop');
     fs.mkdirSync(tempAppDir, { recursive: true });
 
-    // Create mcp-tools directory structure at packages/agent-core/mcp-tools
-    // In development, mcp-tools is at packages/agent-core/mcp-tools relative to apps/desktop
-    // path.join(tempAppDir, '..', '..', 'packages', 'agent-core', 'mcp-tools') now resolves correctly
-    const mcpToolsDir = path.join(tempMonorepoRoot, 'packages', 'agent-core', 'mcp-tools');
+    // Create mcp-tools directory structure at node_modules/@accomplish_ai/agent-core/mcp-tools
+    // In development, mcp-tools is inside the installed npm package
+    const mcpToolsDir = path.join(tempAppDir, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
     fs.mkdirSync(mcpToolsDir, { recursive: true });
     fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
     fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
@@ -266,8 +264,8 @@ describe('OpenCode Config Generator Integration', () => {
         const { getMcpToolsPath } = await import('@main/opencode/config-generator');
         const result = getMcpToolsPath();
 
-        // Assert - mcp-tools is now at packages/agent-core/mcp-tools relative to apps/desktop
-        expect(result).toBe(path.join(tempAppDir, '..', '..', 'packages', 'agent-core', 'mcp-tools'));
+        // Assert - mcp-tools is inside the installed npm package
+        expect(result).toBe(path.join(tempAppDir, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools'));
       });
     });
 

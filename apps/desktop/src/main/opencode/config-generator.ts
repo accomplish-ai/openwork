@@ -28,18 +28,6 @@ export function getMcpToolsPath(): string {
 }
 
 /**
- * Returns the OpenCode config directory.
- * Electron-specific: uses app.isPackaged and process.resourcesPath.
- */
-export function getOpenCodeConfigDir(): string {
-  if (app.isPackaged) {
-    return process.resourcesPath;
-  } else {
-    return path.join(app.getAppPath(), '..', '..', 'packages', 'agent-core');
-  }
-}
-
-/**
  * Generates the OpenCode configuration file.
  *
  * @param azureFoundryToken - Optional Azure Foundry token for Entra ID auth
