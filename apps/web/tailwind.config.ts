@@ -5,7 +5,7 @@ import tailwindcssTypography from '@tailwindcss/typography';
 const config: Config = {
   content: [
     './index.html',
-    './src/renderer/**/*.{js,ts,jsx,tsx}',
+    './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {

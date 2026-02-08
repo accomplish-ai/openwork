@@ -158,11 +158,8 @@ async function main() {
     await bundleSkill(bundle);
   }
 
-  const shouldOptimize = process.env.CI === 'true' || process.env.ACCOMPLISH_BUNDLED_MCP === '1';
-  if (shouldOptimize) {
-    console.log('[bundle-skills] Optimizing skill dependencies for packaged build...');
-    reinstallProductionDepsForBundledBuild();
-  }
+  console.log('[bundle-skills] Optimizing skill dependencies for packaged build...');
+  reinstallProductionDepsForBundledBuild();
 
   console.log('[bundle-skills] Done');
 }

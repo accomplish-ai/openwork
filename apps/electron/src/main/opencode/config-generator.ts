@@ -22,8 +22,10 @@ export function getMcpToolsPath(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'mcp-tools');
   } else {
-    // In dev mode, use the mcp-tools from the installed npm package
-    return path.join(app.getAppPath(), 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
+    // In dev mode, use APP_ROOT (set in index.ts to the electron app root)
+    // rather than app.getAppPath() which points to dist-electron/main
+    const appRoot = process.env.APP_ROOT || app.getAppPath();
+    return path.join(appRoot, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
   }
 }
 

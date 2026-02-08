@@ -101,8 +101,8 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
-  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const durationIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAudioDataRef = useRef<ArrayBuffer | null>(null);
 
   const [state, setState] = useState<UseSpeechInputState>({

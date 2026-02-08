@@ -11,7 +11,7 @@
   },
   "scripts": {
     "predev": "node scripts/check-deps.cjs",
-    "dev": "pnpm -F @accomplish/electron dev",
+    "dev": "pnpm -F @accomplish/web dev & wait-on http://localhost:5173 && pnpm -F @accomplish/electron dev",
     "predev:clean": "node scripts/check-deps.cjs",
     "dev:clean": "pnpm -F @accomplish/electron dev:clean",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
@@ -31,6 +31,7 @@
   "devDependencies": {
     "next": "^15.1.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "wait-on": "^9.0.3"
   }
 }
