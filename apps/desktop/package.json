@@ -1,0 +1,220 @@
+{
+  "name": "@accomplish/desktop",
+  "version": "0.3.8",
+  "private": true,
+  "type": "module",
+  "description": "Accomplish Desktop App",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "postinstall": "node scripts/postinstall.cjs",
+    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && vite",
+    "dev:clean": "CLEAN_START=1 vite",
+    "build": "tsc && vite build && node scripts/bundle-skills.cjs",
+    "build:electron": "tsc && vite build && node scripts/package.cjs",
+    "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
+    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "release": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
+    "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "clean": "node -e \"const fs=require('fs');['dist','dist-electron','release'].forEach(d=>fs.rmSync(d,{recursive:true,force:true}))\"",
+    "download:nodejs": "node scripts/download-nodejs.cjs",
+    "test": "vitest run",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:e2e": "docker compose -f e2e/docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from e2e-tests",
+    "test:e2e:build": "docker compose -f e2e/docker/docker-compose.yml build",
+    "test:e2e:clean": "docker compose -f e2e/docker/docker-compose.yml down --rmi local -v",
+    "test:e2e:report": "playwright show-report e2e/html-report",
+    "test:e2e:native": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:native:ui": "playwright test --config=e2e/playwright.config.ts --ui",
+    "test:e2e:native:debug": "playwright test --config=e2e/playwright.config.ts --debug",
+    "test:e2e:native:fast": "playwright test --config=e2e/playwright.config.ts --project=electron-fast",
+    "test:e2e:native:integration": "playwright test --config=e2e/playwright.config.ts --project=electron-integration",
+    "test:local-agent": "npx tsx scripts/test-local-agent-cli.ts"
+  },
+  "dependencies": {
+    "@accomplish_ai/agent-core": "workspace:*",
+    "@aws-sdk/client-bedrock": "^3.971.0",
+    "@aws-sdk/credential-providers": "^3.971.0",
+    "@azure/identity": "^4.13.0",
+    "@radix-ui/react-avatar": "^1.1.2",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dropdown-menu": "^2.1.4",
+    "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-popover": "^1.1.4",
+    "@radix-ui/react-select": "^2.1.4",
+    "@radix-ui/react-separator": "^1.1.1",
+    "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-tooltip": "^1.1.6",
+    "better-sqlite3": "^12.6.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "electron-store": "^8.2.0",
+    "framer-motion": "^12.26.2",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "^0.454.0",
+    "node-pty": "^1.1.0",
+    "opencode-ai": "1.1.16",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^7.1.1",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
+    "@playwright/test": "^1.57.0",
+    "@tailwindcss/typography": "^0.5.15",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "^16.3.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.0.17",
+    "autoprefixer": "^10.4.20",
+    "electron": "^35.2.1",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "happy-dom": "^20.1.0",
+    "jsdom": "^27.4.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.6",
+    "vite-plugin-electron": "^0.28.8",
+    "vitest": "^4.0.17"
+  },
+  "build": {
+    "npmRebuild": false,
+    "compression": "normal",
+    "appId": "ai.accomplish.desktop",
+    "productName": "Accomplish (formerly Openwork)",
+    "artifactName": "Accomplish-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "node_modules/opencode-ai/**",
+      "node_modules/node-pty/**",
+      "node_modules/electron-store/**",
+      "node_modules/conf/**",
+      "node_modules/env-paths/**",
+      "node_modules/json-schema-typed/**",
+      "node_modules/atomically/**",
+      "node_modules/debounce-fn/**",
+      "!node_modules/@accomplish_ai/**",
+      "!node_modules/opencode-darwin-*/**",
+      "!node_modules/opencode-linux-*/**"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/opencode-ai/bin/opencode",
+      "node_modules/opencode-ai/bin/opencode.exe",
+      "node_modules/opencode-ai/package.json",
+      "node_modules/opencode-windows-x64/bin/opencode.exe",
+      "node_modules/opencode-windows-x64/package.json",
+      "node_modules/opencode-windows-x64-baseline/bin/opencode.exe",
+      "node_modules/opencode-windows-x64-baseline/package.json",
+      "node_modules/node-pty/build/**/*.node",
+      "node_modules/node-pty/package.json",
+      "node_modules/better-sqlite3/build/**/*.node",
+      "node_modules/better-sqlite3/package.json",
+      "dist-electron/main/mcp/*.js"
+    ],
+    "afterPack": "./scripts/after-pack.cjs",
+    "extraResources": [
+      {
+        "from": "resources/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "../../packages/agent-core/mcp-tools",
+        "to": "mcp-tools",
+        "filter": [
+          "**/*",
+          "!**/profiles/**",
+          "!**/tmp/**",
+          "!**/.git/**",
+          "!**/.browser-data/**",
+          "!**/.ignored_*/**",
+          "!**/bun.lock",
+          "!**/*.test.ts",
+          "!**/vitest.config.ts"
+        ]
+      },
+      {
+        "from": "bundled-skills",
+        "to": "bundled-skills",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "accomplish-ai",
+      "repo": "accomplish"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "resources/entitlements.mac.plist",
+      "entitlementsInherit": "resources/entitlements.mac.plist",
+      "icon": "resources/icon.png",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Accomplish",
+      "runAfterFinish": true,
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

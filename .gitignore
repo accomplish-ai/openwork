@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+release/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# Vercel
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Playwright
+playwright-report/
+test-results/
+apps/desktop/e2e/test-results/
+apps/desktop/e2e/html-report/
+apps/desktop/e2e/test-results.json
+
+# Test coverage
+coverage/
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Docs
+docs/plans/
+
+# Misc
+*.pem
+.turbo/
+
+# Git worktrees
+.worktrees/
+
+# Bundled Node.js binaries (downloaded via `pnpm -F @accomplish/desktop download:nodejs`)
+apps/desktop/resources/nodejs/
+
+# Test local agent Chrome profile
+.accomplish-test-local-agent-chrome/
