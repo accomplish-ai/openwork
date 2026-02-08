@@ -28,19 +28,10 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "test:e2e": "docker compose -f e2e/docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from e2e-tests",
-    "test:e2e:build": "docker compose -f e2e/docker/docker-compose.yml build",
-    "test:e2e:clean": "docker compose -f e2e/docker/docker-compose.yml down --rmi local -v",
-    "test:e2e:report": "playwright show-report e2e/html-report",
-    "test:e2e:native": "playwright test --config=e2e/playwright.config.ts",
-    "test:e2e:native:ui": "playwright test --config=e2e/playwright.config.ts --ui",
-    "test:e2e:native:debug": "playwright test --config=e2e/playwright.config.ts --debug",
-    "test:e2e:native:fast": "playwright test --config=e2e/playwright.config.ts --project=electron-fast",
-    "test:e2e:native:integration": "playwright test --config=e2e/playwright.config.ts --project=electron-integration",
     "test:local-agent": "npx tsx scripts/test-local-agent-cli.ts"
   },
   "dependencies": {
-    "@accomplish_ai/agent-core": "workspace:*",
+    "@accomplish_ai/agent-core": "^0.2.1",
     "@aws-sdk/client-bedrock": "^3.971.0",
     "@aws-sdk/credential-providers": "^3.971.0",
     "@azure/identity": "^4.13.0",
@@ -73,7 +64,6 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.2",
-    "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "6.6.3",
@@ -145,7 +135,7 @@
         "to": "icon.png"
       },
       {
-        "from": "../../packages/agent-core/mcp-tools",
+        "from": "node_modules/@accomplish_ai/agent-core/mcp-tools",
         "to": "mcp-tools",
         "filter": [
           "**/*",

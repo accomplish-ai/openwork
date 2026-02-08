@@ -99,7 +99,7 @@ const useBundledMcp = process.env.ACCOMPLISH_BUNDLED_MCP === '1' || process.env.
 
 // Install shared MCP tools runtime dependencies (Playwright) at mcp-tools/ root
 // MCP tools are now in packages/agent-core/mcp-tools
-const mcpToolsPath = path.join(__dirname, '..', '..', '..', 'packages', 'agent-core', 'mcp-tools');
+const mcpToolsPath = path.join(__dirname, '..', 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
 if (useBundledMcp) {
   runCommand(`npm --prefix "${mcpToolsPath}" install --omit=dev`, 'Installing shared MCP tools runtime dependencies');
 }

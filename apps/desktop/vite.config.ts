@@ -18,11 +18,6 @@ export default defineConfig(() => ({
           startup();
         },
         vite: {
-          resolve: {
-            alias: {
-              '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),
-            },
-          },
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
@@ -64,8 +59,6 @@ export default defineConfig(() => ({
       '@': path.resolve(__dirname, 'src/renderer'),
       '@main': path.resolve(__dirname, 'src/main'),
       '@renderer': path.resolve(__dirname, 'src/renderer'),
-      '@accomplish_ai/agent-core/common': path.resolve(__dirname, '../../packages/agent-core/src/common'),
-      '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),
     },
   },
   // Build the React renderer
