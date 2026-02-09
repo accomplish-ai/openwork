@@ -18,7 +18,20 @@
 
 > **📌 Note:** This is a personalized fork of Accomplish rebranded as "WaIA" with Spanish language support by [jivagrisma](https://github.com/jivagrisma/clone-Openwork). The original project is available at [accomplish-ai/accomplish](https://github.com/accomplish-ai/accomplish).
 
-WaIA is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, Z.AI/GLM, xAI) or run local models via Ollama.
+## 🤖 ¿Qué es WaIA?
+
+**WaIA** es un **agente de escritorio de IA** que automatiza la gestión de archivos, la creación de documentos y las tareas del navegador **localmente en tu equipo**.
+
+### Características principales:
+
+- 🖥️ **Ejecución 100% local**: Tus archivos nunca salen de tu máquina
+- 🔑 **Trae tu propia IA**: Usa tus claves API (OpenAI, Anthropic, Google, xAI, Z.AI/GLM) o modelos locales vía Ollama
+- 🌍 **Español por defecto**: Idioma español (Latinoamérica) configurado como predeterminado
+- 📂 **Gestión de archivos inteligente**: Organiza, renombra y mueve archivos según su contenido
+- 📝 **Creación de documentos**: Redacta, resume y reescribe documentos y notas
+- 🌐 **Automatización del navegador**: Automatiza flujos de trabajo en páginas web
+- ⚙️ **Skills personalizados**: Define flujos de trabajo repetibles y guárdalos como skills
+- 🛡️ **Control total**: Aprueba cada acción antes de ejecutarse
 
 **🌍 Default Language:** This version comes with Spanish (Latin America) as the default language, with English available as a fallback.
 
@@ -27,15 +40,11 @@ WaIA is an open source AI desktop agent that automates file management, document
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Download for Mac (Apple Silicon)</strong></a>
+  <strong>Descargas disponibles:</strong>
+  <br><br>
+  <a href="https://github.com/jivagrisma/clone-Openwork/releases"><strong>📥 Releases de WaIA</strong></a>
   ·
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Download for Windows 11</strong></a>
-  ·
-  <a href="https://www.accomplish.ai/">Accomplish website</a>
-  ·
-  <a href="https://www.accomplish.ai/blog/">Accomplish blog</a>
-  ·
-  <a href="https://github.com/accomplish-ai/accomplish/releases">Accomplish releases</a>
+  <a href="https://github.com/jivagrisma/clone-Openwork"><strong>💻 Código Fuente</strong></a>
 </p>
 
 <br />
@@ -156,7 +165,13 @@ WaIA is an open source AI desktop agent that automates file management, document
 
 ## Privacy and local-first
 
-Accomplish runs locally on your machine. Your files stay on your device, and you choose which folders it can access.
+WaIA runs locally on your machine. Your files stay on your device, and you choose which folders it can access.
+
+**WaIA respeta tu privacidad:**
+- ✅ Tus archivos nunca salen de tu máquina
+- ✅ Tú eliges qué carpetas puede acceder
+- ✅ Nada se envía a servicios externos sin tu consentimiento
+- ✅ Código 100% abierto y auditable
 
 <br />
 
@@ -164,6 +179,48 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 - macOS (Apple Silicon)
 - Windows 11
+- **Linux (Ubuntu 24.04+, Debian, Fedora, etc.)** - Disponible como **AppImage** portable
+
+### 📦 Instalar en Linux con AppImage
+
+1. **Descargar el AppImage desde [Releases](https://github.com/jivagrisma/clone-Openwork/releases)**
+
+2. **Hacer el archivo ejecutable:**
+   ```bash
+   chmod +x WaIA-*.AppImage
+   ```
+
+3. **Ejecutar:**
+   ```bash
+   ./WaIA-*.AppImage
+   ```
+
+Opcionalmente, puedes copiarlo a una carpeta en tu PATH:
+```bash
+sudo cp WaIA-*.AppImage /usr/local/bin/waia
+sudo chmod +x /usr/local/bin/waia
+```
+
+### 🛠️ Construir AppImage desde el código fuente
+
+Si prefieres construir el AppImage tú mismo:
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/jivagrisma/clone-Openwork.git
+cd clone-Openwork/apps/desktop
+
+# Instalar dependencias
+pnpm install
+
+# Descargar binarios de Node.js (requerido para el empaquetado)
+pnpm download:nodejs
+
+# Construir AppImage
+pnpm package:linux
+
+# El AppImage se generará en: release/WaIA-0.3.8-linux-x86_64.AppImage
+```
 
 <br />
 
@@ -201,7 +258,7 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 ## Screenshots and Demo
 
-A quick look at Accomplish on macOS, plus a short demo video.
+A quick look at WaIA on macOS, plus a short demo video.
 
 <p align="center">
   <a href="https://youtu.be/UJ0FIufMOlc?si=iFcu3VTG4B4q9VCB">
