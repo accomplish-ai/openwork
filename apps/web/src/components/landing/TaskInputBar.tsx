@@ -41,7 +41,7 @@ interface TaskInputBarProps {
   autoSubmitOnTranscription?: boolean;
 }
 
-export default function TaskInputBar({
+export function TaskInputBar({
   value,
   onChange,
   onSubmit,

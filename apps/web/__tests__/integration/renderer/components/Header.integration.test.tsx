@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import Header from '@/components/layout/Header';
+import { Header } from '@/components/layout/Header';
 
 describe('Header Integration', () => {
   describe('rendering', () => {

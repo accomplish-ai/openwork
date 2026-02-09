@@ -122,21 +122,21 @@ vi.mock('@/stores/taskStore', () => ({
 
 // Mock the Sidebar component
 vi.mock('@/components/layout/Sidebar', () => ({
-  default: () => <div data-testid="sidebar">Sidebar</div>,
+  Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
 }));
 
 // Mock the HomePage
 vi.mock('@/pages/Home', () => ({
-  default: () => <div data-testid="home-page">Home Page Content</div>,
+  HomePage: () => <div data-testid="home-page">Home Page Content</div>,
 }));
 
 // Mock the ExecutionPage
 vi.mock('@/pages/Execution', () => ({
-  default: () => <div data-testid="execution-page">Execution Page Content</div>,
+  ExecutionPage: () => <div data-testid="execution-page">Execution Page Content</div>,
 }));
 
 // Import App after all mocks are set up
-import App from '@/App';
+import { App } from '@/App';
 
 describe('App Integration', () => {
   beforeEach(() => {

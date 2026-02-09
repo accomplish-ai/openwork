@@ -1,7 +1,7 @@
-import Header from '../components/layout/Header';
-import TaskHistory from '../components/history/TaskHistory';
+import { Header } from '../components/layout/Header';
+import { TaskHistory } from '../components/history/TaskHistory';
 
-export default function HistoryPage() {
+export function HistoryPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />

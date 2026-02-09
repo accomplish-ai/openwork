@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router';
 
-export default function Header() {
+export function Header() {
   const location = useLocation();
   const pathname = location.pathname;
 

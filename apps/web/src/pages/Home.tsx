@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
-import TaskInputBar from '../components/landing/TaskInputBar';
-import SettingsDialog from '../components/layout/SettingsDialog';
+import { TaskInputBar } from '../components/landing/TaskInputBar';
+import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
@@ -80,7 +80,7 @@ const USE_CASE_EXAMPLES = [
   },
 ];
 
-export default function HomePage() {
+export function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);

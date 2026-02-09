@@ -9,11 +9,11 @@ import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
 import { cn } from '@/lib/utils';
 import { springs } from '@/lib/animations';
-import TaskLauncherItem from './TaskLauncherItem';
+import { TaskLauncherItem } from './TaskLauncherItem';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 import {Input} from "@/components/ui/input";
 
-export default function TaskLauncher() {
+export function TaskLauncher() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);

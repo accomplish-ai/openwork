@@ -17,6 +17,8 @@ import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
 import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
+import { AboutTab } from '@/components/settings/AboutTab';
+import { DebugSection } from '@/components/settings/DebugSection';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -32,7 +34,7 @@ interface SettingsDialogProps {
   initialTab?: 'providers' | 'voice' | 'skills' | 'about';
 }
 
-export default function SettingsDialog({
+export function SettingsDialog({
   open,
   onOpenChange,
   onApiKeySaved,
@@ -59,7 +61,6 @@ export default function SettingsDialog({
 
   // Debug mode state - stored in appSettings, not providerSettings
   const [debugMode, setDebugModeState] = useState(false);
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
   const accomplish = getAccomplish();
 
   // Refetch settings and debug mode when dialog opens
@@ -183,29 +184,6 @@ export default function SettingsDialog({
     await accomplish.setDebugMode(newValue);
     setDebugModeState(newValue);
   }, [debugMode, accomplish]);
-
-  // Handle log export
-  const handleExportLogs = useCallback(async () => {
-    setExportStatus('exporting');
-    try {
-      const result = await accomplish.exportLogs();
-      if (result.success) {
-        setExportStatus('success');
-        // Reset to idle after 2 seconds
-        setTimeout(() => setExportStatus('idle'), 2000);
-      } else if (result.reason === 'cancelled') {
-        setExportStatus('idle');
-      } else {
-        console.error('Failed to export logs:', result.error);
-        setExportStatus('error');
-        setTimeout(() => setExportStatus('idle'), 3000);
-      }
-    } catch (error) {
-      console.error('Export logs error:', error);
-      setExportStatus('error');
-      setTimeout(() => setExportStatus('idle'), 3000);
-    }
-  }, [accomplish]);
 
   // Handle done button (close with validation)
   const handleDone = useCallback(() => {
@@ -425,66 +403,7 @@ export default function SettingsDialog({
                     exit="exit"
                     transition={{ ...settingsTransitions.enter, delay: 0.05 }}
                   >
-                    <div className="rounded-lg border border-border bg-card p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">Debug Mode</div>
-                          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                            Show detailed backend logs in the task view.
-                          </p>
-                        </div>
-                        <div className="ml-4 flex items-center gap-3">
-                          {/* Debug Toggle */}
-                          <button
-                            data-testid="settings-debug-toggle"
-                            onClick={handleDebugToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${debugMode ? 'bg-primary' : 'bg-muted'
-                              }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${debugMode ? 'translate-x-6' : 'translate-x-1'
-                                }`}
-                            />
-                          </button>
-                          {/* Export Logs Button */}
-                          <button
-                            onClick={handleExportLogs}
-                            disabled={exportStatus === 'exporting'}
-                            title="Export Logs"
-                            className={`rounded-md p-1.5 transition-colors ${
-                              exportStatus === 'success'
-                                ? 'text-green-500'
-                                : exportStatus === 'error'
-                                ? 'text-destructive'
-                                : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            {exportStatus === 'exporting' ? (
-                              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                              </svg>
-                            ) : exportStatus === 'success' ? (
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      {debugMode && (
-                        <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
-                          <p className="text-sm text-warning">
-                            Debug mode is enabled. Backend logs will appear in the task view
-                            when running tasks.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    <DebugSection debugMode={debugMode} onDebugToggle={handleDebugToggle} />
                   </motion.section>
                 )}
               </AnimatePresence>
@@ -506,41 +425,7 @@ export default function SettingsDialog({
           )}
 
           {/* About Tab */}
-          {activeTab === 'about' && (
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border bg-card p-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Visit us</div>
-                    <a
-                      href="https://www.accomplish.ai"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      www.accomplish.ai
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Have a question?</div>
-                    <a
-                      href="mailto:support@accomplish.ai"
-                      className="text-primary hover:underline"
-                    >
-                      support@accomplish.ai
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Version</div>
-                    <div className="font-medium">{appVersion || 'Loading...'}</div>
-                  </div>
-                </div>
-                <div className="mt-6 pt-4 border-t border-border text-xs text-muted-foreground">
-                  Accomplish™ All rights reserved.
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'about' && <AboutTab appVersion={appVersion} />}
 
           {/* Done Button */}
           <div className="flex justify-end">

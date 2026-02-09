@@ -8,10 +8,10 @@ import { springs, variants } from './lib/animations';
 import type { ProviderId } from '@accomplish_ai/agent-core/common';
 
 // Components
-import Sidebar from './components/layout/Sidebar';
+import { Sidebar } from './components/layout/Sidebar';
 import { TaskLauncher } from './components/TaskLauncher';
 import { AuthErrorToast } from './components/AuthErrorToast';
-import SettingsDialog from './components/layout/SettingsDialog';
+import { SettingsDialog } from './components/layout/SettingsDialog';
 import { useTaskStore } from './stores/taskStore';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
@@ -26,6 +26,16 @@ function AnimatedOutlet() {
   const outlet = useOutlet();
   const location = useLocation();
 
+  // Freeze the outlet so AnimatePresence can hold the previous page during exit.
+  // useOutlet() returns null once the route changes, so we capture it per-location.
+  const [frozenOutlet] = useState(outlet);
+
+  return frozenOutlet;
+}
+
+function AnimatedOutletWrapper() {
+  const location = useLocation();
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -37,13 +47,13 @@ function AnimatedOutlet() {
         variants={variants.fadeUp}
         transition={springs.gentle}
       >
-        {outlet}
+        <AnimatedOutlet key={location.pathname} />
       </motion.div>
     </AnimatePresence>
   );
 }
 
-export default function App() {
+export function App() {
   const [status, setStatus] = useState<AppStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authSettingsOpen, setAuthSettingsOpen] = useState(false);
@@ -139,7 +149,7 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
       <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
       <Sidebar />
       <main className="flex-1 overflow-hidden">
-        <AnimatedOutlet />
+        <AnimatedOutletWrapper />
       </main>
       <TaskLauncher />
 

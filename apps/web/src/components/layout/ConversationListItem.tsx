@@ -10,7 +10,7 @@ interface ConversationListItemProps {
   task: Task;
 }
 
-export default function ConversationListItem({ task }: ConversationListItemProps) {
+export function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname === `/execution/${task.id}`;

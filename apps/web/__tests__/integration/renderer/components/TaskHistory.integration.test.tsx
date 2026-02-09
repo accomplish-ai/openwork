@@ -51,7 +51,7 @@ function createMockTask(
 }
 
 // Need to import after mocks are set up
-import TaskHistory from '@/components/history/TaskHistory';
+import { TaskHistory } from '@/components/history/TaskHistory';
 
 describe('TaskHistory Integration', () => {
   beforeEach(() => {

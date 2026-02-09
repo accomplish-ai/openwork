@@ -1,2 +1,2 @@
-export { default as TaskLauncher } from './TaskLauncher';
-export { default as TaskLauncherItem } from './TaskLauncherItem';
+export { TaskLauncher } from './TaskLauncher';
+export { TaskLauncherItem } from './TaskLauncherItem';

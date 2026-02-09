@@ -102,7 +102,7 @@ vi.mock('framer-motion', () => ({
 
 // Mock SettingsDialog
 vi.mock('@/components/layout/SettingsDialog', () => ({
-  default: ({ open, onOpenChange, onApiKeySaved }: {
+  SettingsDialog: ({ open, onOpenChange, onApiKeySaved }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onApiKeySaved?: () => void;
@@ -119,7 +119,7 @@ vi.mock('@/components/layout/SettingsDialog', () => ({
 }));
 
 // Import after mocks
-import HomePage from '@/pages/Home';
+import { HomePage } from '@/pages/Home';
 
 // Mock images
 vi.mock('/assets/usecases/calendar-prep-notes.png', () => ({ default: 'calendar.png' }));

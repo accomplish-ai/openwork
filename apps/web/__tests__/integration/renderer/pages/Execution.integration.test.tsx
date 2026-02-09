@@ -173,7 +173,7 @@ vi.mock('@/components/ui/streaming-text', () => ({
 vi.mock('/assets/accomplish-icon.png', () => ({ default: 'accomplish-icon.png' }));
 
 // Import after mocks
-import ExecutionPage from '@/pages/Execution';
+import { ExecutionPage } from '@/pages/Execution';
 
 // Wrapper component for routing tests
 function renderWithRouter(taskId: string = 'task-123') {
