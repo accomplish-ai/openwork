@@ -32,7 +32,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
-    "react-router-dom": "^7.1.1",
+    "react-router": "^7.1.1",
     "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.2"
   },

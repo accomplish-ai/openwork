@@ -1,15 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useLocation, useOutlet } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { isRunningInElectron, getAccomplish } from './lib/accomplish';
 import { springs, variants } from './lib/animations';
 import type { ProviderId } from '@accomplish_ai/agent-core/common';
-
-// Pages
-import HomePage from './pages/Home';
-import ExecutionPage from './pages/Execution';
 
 // Components
 import Sidebar from './components/layout/Sidebar';
@@ -21,12 +17,37 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 
 type AppStatus = 'loading' | 'ready' | 'error';
 
+/**
+ * AnimatedOutlet clones the current outlet element so that AnimatePresence
+ * can hold onto the previous page while it animates out (useOutlet returns
+ * null once the route changes, so we freeze it).
+ */
+function AnimatedOutlet() {
+  const outlet = useOutlet();
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        className="h-full"
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={variants.fadeUp}
+        transition={springs.gentle}
+      >
+        {outlet}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   const [status, setStatus] = useState<AppStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authSettingsOpen, setAuthSettingsOpen] = useState(false);
   const [authSettingsProvider, setAuthSettingsProvider] = useState<ProviderId | undefined>(undefined);
-  const location = useLocation();
 
   // Get store state and actions
 const { openLauncher, authError, clearAuthError } = useTaskStore();
@@ -118,41 +139,7 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
       <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
       <Sidebar />
       <main className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route
-              path="/"
-              element={
-                <motion.div
-                  className="h-full"
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={variants.fadeUp}
-                  transition={springs.gentle}
-                >
-                  <HomePage />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/execution/:id"
-              element={
-                <motion.div
-                  className="h-full"
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={variants.fadeUp}
-                  transition={springs.gentle}
-                >
-                  <ExecutionPage />
-                </motion.div>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AnimatePresence>
+        <AnimatedOutlet />
       </main>
       <TaskLauncher />
 
