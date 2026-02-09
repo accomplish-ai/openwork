@@ -30,7 +30,3 @@ export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   minimax: minimaxLogo,
   lmstudio: lmstudioLogo,
 };
-
-export function getProviderLogo(providerId: ProviderId): string | undefined {
-  return PROVIDER_LOGOS[providerId];
-}

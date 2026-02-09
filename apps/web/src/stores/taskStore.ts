@@ -26,7 +26,7 @@ interface SetupProgressEvent {
   modelName?: string;
 }
 
-export interface StartupStageInfo {
+interface StartupStageInfo {
   stage: string;
   message: string;
   modelName?: string;

@@ -1,11 +1,11 @@
 // apps/desktop/src/renderer/components/settings/ProviderGrid.tsx
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ProviderId, ProviderSettings } from '@accomplish_ai/agent-core/common';
 import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
 import { ProviderCard } from './ProviderCard';
-import { settingsVariants, settingsTransitions } from '@/lib/animations';
+
 
 // Provider order matching Figma design (4 columns per row)
 const PROVIDER_ORDER: ProviderId[] = [

@@ -256,27 +256,3 @@ export function isRunningInElectron(): boolean {
   return window.accomplishShell?.isElectron === true;
 }
 
-/**
- * Get shell version if available
- */
-export function getShellVersion(): string | null {
-  return window.accomplishShell?.version ?? null;
-}
-
-/**
- * Get shell platform if available
- */
-export function getShellPlatform(): string | null {
-  return window.accomplishShell?.platform ?? null;
-}
-
-/**
- * React hook to use the accomplish API
- */
-export function useAccomplish(): AccomplishAPI {
-  const api = window.accomplish;
-  if (!api) {
-    throw new Error('Accomplish API not available - not running in Electron');
-  }
-  return api;
-}

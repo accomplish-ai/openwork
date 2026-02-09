@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
+
 
 interface StreamingTextProps {
   text: string;
@@ -118,7 +118,7 @@ export function StreamingText({
  * Hook to track whether a message should be streamed
  * (only the latest assistant message while task is running)
  */
-export function useStreamingState(
+function useStreamingState(
   messageId: string,
   isLatestAssistantMessage: boolean,
   isTaskRunning: boolean

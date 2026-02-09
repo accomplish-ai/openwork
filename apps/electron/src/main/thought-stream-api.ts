@@ -16,9 +16,6 @@ import {
   type ThoughtStreamCheckpointEvent as CheckpointEvent,
 } from '@accomplish_ai/agent-core';
 
-// Re-export types and constant for backwards compatibility
-export { THOUGHT_STREAM_PORT };
-export type { ThoughtEvent, CheckpointEvent };
 
 // Store reference to main window
 let mainWindow: BrowserWindow | null = null;
@@ -36,14 +33,14 @@ export function initThoughtStreamApi(window: BrowserWindow): void {
 /**
  * Register a task ID as active (called when task starts)
  */
-export function registerActiveTask(taskId: string): void {
+function registerActiveTask(taskId: string): void {
   thoughtStreamHandler.registerTask(taskId);
 }
 
 /**
  * Unregister a task ID (called when task completes)
  */
-export function unregisterActiveTask(taskId: string): void {
+function unregisterActiveTask(taskId: string): void {
   thoughtStreamHandler.unregisterTask(taskId);
 }
 

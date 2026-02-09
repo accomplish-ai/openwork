@@ -27,7 +27,6 @@ export default defineConfig({
         '**/node_modules/**',
         'src/main/test-utils/**',
         'src/main/permission-api.ts',
-        'src/main/store/freshInstallCleanup.ts',
       ],
       thresholds: {
         statements: 80,
