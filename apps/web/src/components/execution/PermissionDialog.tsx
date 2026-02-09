@@ -34,22 +34,7 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
   return [];
 }
 
-interface PermissionRequest {
-  id: string;
-  taskId: string;
-  type: 'tool' | 'file' | 'question';
-  toolName?: string;
-  toolInput?: unknown;
-  filePath?: string;
-  filePaths?: string[];
-  fileOperation?: string;
-  targetPath?: string;
-  contentPreview?: string;
-  question?: string;
-  header?: string;
-  options?: Array<{ label: string; description?: string }>;
-  multiSelect?: boolean;
-}
+import type { PermissionRequest } from '@accomplish_ai/agent-core/common';
 
 interface PermissionDialogProps {
   permissionRequest: PermissionRequest;
@@ -264,6 +249,7 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                       }}
                       placeholder="Enter a different option..."
                       aria-label="Custom response"
+                      maxLength={10000}
                       rows={1}
                       className="w-full resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                       style={{ minHeight: '38px', maxHeight: '150px' }}

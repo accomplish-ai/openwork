@@ -26,6 +26,16 @@ function AnimatedOutlet() {
   const outlet = useOutlet();
   const location = useLocation();
 
+  // Freeze the outlet so AnimatePresence can hold the previous page during exit.
+  // useOutlet() returns null once the route changes, so we capture it per-location.
+  const [frozenOutlet] = useState(outlet);
+
+  return frozenOutlet;
+}
+
+function AnimatedOutletWrapper() {
+  const location = useLocation();
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -37,7 +47,7 @@ function AnimatedOutlet() {
         variants={variants.fadeUp}
         transition={springs.gentle}
       >
-        {outlet}
+        <AnimatedOutlet key={location.pathname} />
       </motion.div>
     </AnimatePresence>
   );
@@ -139,7 +149,7 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
       <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
       <Sidebar />
       <main className="flex-1 overflow-hidden">
-        <AnimatedOutlet />
+        <AnimatedOutletWrapper />
       </main>
       <TaskLauncher />
 
