@@ -3,7 +3,7 @@ import type { Task, TaskMessage, TaskStatus } from '@accomplish_ai/agent-core';
 import { createMessageId } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
 
-export type MockScenario =
+type MockScenario =
   | 'success'
   | 'with-tool'
   | 'permission-required'
@@ -11,7 +11,7 @@ export type MockScenario =
   | 'error'
   | 'interrupted';
 
-export interface MockTaskConfig {
+interface MockTaskConfig {
   taskId: string;
   prompt: string;
   scenario: MockScenario;

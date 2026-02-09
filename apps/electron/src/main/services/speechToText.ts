@@ -17,8 +17,6 @@ import {
   type TranscriptionError,
 } from '@accomplish_ai/agent-core';
 
-// Re-export types from core
-export type { TranscriptionResult, TranscriptionError };
 
 let _speechService: SpeechServiceAPI | null = null;
 
@@ -30,13 +28,6 @@ function getSpeechService(): SpeechServiceAPI {
     _speechService = createSpeechService({ storage });
   }
   return _speechService;
-}
-
-/**
- * Get the configured ElevenLabs API key
- */
-export function getElevenLabsApiKey(): string | null {
-  return getSpeechService().getElevenLabsApiKey();
 }
 
 /**

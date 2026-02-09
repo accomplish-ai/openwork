@@ -94,8 +94,6 @@ export function getOpenCodeConfigPath(): string {
   return path.join(app.getPath('userData'), 'opencode', 'opencode.json');
 }
 
-// Re-export getOpenCodeAuthPath from core for consumers that import from this module
-export { getOpenCodeAuthPath };
 
 /**
  * Syncs API keys to the OpenCode auth.json file.

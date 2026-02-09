@@ -15,7 +15,7 @@ import { getAccomplish } from '../lib/accomplish';
 /**
  * Speech recognition error
  */
-export class SpeechRecognitionError extends Error {
+class SpeechRecognitionError extends Error {
   constructor(
     public code: string,
     message: string,
@@ -26,7 +26,7 @@ export class SpeechRecognitionError extends Error {
   }
 }
 
-export interface UseSpeechInputOptions {
+interface UseSpeechInputOptions {
   /**
    * Callback when transcription is complete
    */
@@ -48,7 +48,7 @@ export interface UseSpeechInputOptions {
   maxDuration?: number;
 }
 
-export interface UseSpeechInputState {
+interface UseSpeechInputState {
   /**
    * Is currently recording
    */

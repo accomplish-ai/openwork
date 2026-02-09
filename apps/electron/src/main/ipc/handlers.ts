@@ -40,13 +40,13 @@ import {
   validateLMStudioConfig,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
-import { safeParseJson } from '@accomplish_ai/agent-core';
+
 import {
   getOpenAiOauthStatus,
 } from '@accomplish_ai/agent-core';
 import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
 import type { ProviderId, ConnectedProvider, BedrockCredentials } from '@accomplish_ai/agent-core';
-import { getDesktopConfig } from '../config';
+
 import {
   startPermissionApiServer,
   startQuestionApiServer,
@@ -73,7 +73,7 @@ import type {
   LMStudioConfig,
   ToolSupportStatus,
 } from '@accomplish_ai/agent-core';
-import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS } from '@accomplish_ai/agent-core';
+import { ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS } from '@accomplish_ai/agent-core';
 import {
   normalizeIpcError,
   permissionResponseSchema,

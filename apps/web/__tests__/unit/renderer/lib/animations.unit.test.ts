@@ -13,8 +13,6 @@ import {
   variants,
   staggerContainer,
   staggerItem,
-  cardHover,
-  buttonPress,
 } from '@/lib/animations';
 
 describe('Animation Library', () => {
@@ -110,32 +108,12 @@ describe('Animation Library', () => {
     });
   });
 
-  describe('Interaction Presets', () => {
-    it('should have correct cardHover scale values', () => {
-      expect(cardHover.rest).toEqual({ scale: 1 });
-      expect(cardHover.hover).toEqual({ scale: 1.02 });
-      expect(cardHover.tap).toEqual({ scale: 0.98 });
-    });
-
-    it('should have correct buttonPress scale values', () => {
-      expect(buttonPress.rest).toEqual({ scale: 1 });
-      expect(buttonPress.hover).toEqual({ scale: 1.02 });
-      expect(buttonPress.tap).toEqual({ scale: 0.95 });
-    });
-
-    it('should have button tap more pronounced than card tap', () => {
-      expect(buttonPress.tap.scale).toBeLessThan(cardHover.tap.scale);
-    });
-  });
-
   describe('Export Structure', () => {
     it('should export all required animations', () => {
       expect(Object.keys(springs)).toEqual(['bouncy', 'gentle', 'snappy']);
       expect(Object.keys(variants)).toEqual(['fadeUp', 'fadeIn', 'scaleIn', 'slideInRight', 'slideInLeft']);
       expect(staggerContainer).toBeDefined();
       expect(staggerItem).toBeDefined();
-      expect(cardHover).toBeDefined();
-      expect(buttonPress).toBeDefined();
     });
   });
 });

@@ -10,7 +10,7 @@ import { getTaskManager } from '../opencode';
 import type { TaskCallbacks } from '../opencode';
 import { getStorage } from '../store/storage';
 
-export interface TaskCallbacksOptions {
+interface TaskCallbacksOptions {
   taskId: string;
   window: BrowserWindow;
   sender: Electron.WebContents;

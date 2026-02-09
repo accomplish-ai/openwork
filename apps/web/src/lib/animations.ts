@@ -65,20 +65,6 @@ export const staggerItem: Variants = {
   animate: { opacity: 1, y: 0 },
 };
 
-// Card hover animation
-export const cardHover = {
-  rest: { scale: 1 },
-  hover: { scale: 1.02 },
-  tap: { scale: 0.98 },
-};
-
-// Button press animation
-export const buttonPress = {
-  rest: { scale: 1 },
-  hover: { scale: 1.02 },
-  tap: { scale: 0.95 },
-};
-
 // Settings-specific variants
 export const settingsVariants = {
   // Panel slide down - for ProviderSettingsPanel

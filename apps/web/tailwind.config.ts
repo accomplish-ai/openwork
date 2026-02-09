@@ -46,28 +46,19 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        // Legacy aliases for backward compatibility
         'background-card': 'hsl(var(--card))',
-        'background-subtle': 'hsl(var(--muted))',
-        'background-muted': 'hsl(var(--muted))',
         'text': 'hsl(var(--foreground))',
         'text-secondary': 'hsl(var(--foreground))',
         'text-muted': 'hsl(var(--muted-foreground))',
-        'text-subtle': 'hsl(var(--muted-foreground))',
-        'border-strong': 'hsl(var(--border))',
-        // Keep danger/warning/success for compatibility
         danger: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
-          subtle: 'hsl(var(--destructive) / 0.1)',
         },
         warning: {
           DEFAULT: '#EE7909',
-          subtle: '#fef4e6',
         },
         success: {
           DEFAULT: '#019E55',
-          subtle: '#e6f7ef',
         },
       },
       boxShadow: {
@@ -77,9 +68,6 @@ const config: Config = {
         lg: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10)',
         xl: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10)',
         '2xl': '0 1px 3px 0px hsl(0 0% 0% / 0.25)',
-        // Legacy shadows for backward compatibility
-        input: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-        'input-focus': '0 0 0 2px hsl(var(--ring) / 0.2)',
         card: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10)',
         'card-hover': '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10)',
       },
@@ -89,11 +77,7 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         lg: 'var(--radius)',
         xl: 'calc(var(--radius) + 4px)',
-        // Legacy border radius for backward compatibility
-        input: 'var(--radius)',
         card: 'var(--radius)',
-        chip: '9999px',
-        button: 'var(--radius)',
       },
       fontFamily: {
         sans: [
@@ -113,21 +97,10 @@ const config: Config = {
         'accomplish': 'cubic-bezier(0.64, 0, 0.78, 0)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.2s ease-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s infinite',
         'spin-ccw': 'spinCcw 1s linear infinite',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },

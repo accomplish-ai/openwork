@@ -1,8 +1,6 @@
 import type { ApiKeyProvider } from '@accomplish_ai/agent-core';
 import { getStorage } from './storage';
 
-export type { ApiKeyProvider };
-
 export function storeApiKey(provider: string, apiKey: string): void {
   getStorage().storeApiKey(provider, apiKey);
 }
