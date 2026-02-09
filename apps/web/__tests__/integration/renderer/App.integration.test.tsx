@@ -16,7 +16,8 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { Navigate } from 'react-router';
 
 // Create mock functions for accomplish API
 const mockSetOnboardingComplete = vi.fn();
@@ -154,13 +155,23 @@ describe('App Integration', () => {
     mockSetOnboardingComplete.mockResolvedValue(undefined);
   });
 
-  // Helper to render App with router
+  // Helper to render App with data router (App uses useOutlet)
   const renderApp = (initialRoute = '/') => {
-    return render(
-      <MemoryRouter initialEntries={[initialRoute]}>
-        <App />
-      </MemoryRouter>
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          Component: App,
+          children: [
+            { index: true, element: <div data-testid="home-page">Home Page Content</div> },
+            { path: 'execution/:id', element: <div data-testid="execution-page">Execution Page Content</div> },
+            { path: '*', element: <Navigate to="/" replace /> },
+          ],
+        },
+      ],
+      { initialEntries: [initialRoute] }
     );
+    return render(<RouterProvider router={router} />);
   };
 
   describe('router setup', () => {

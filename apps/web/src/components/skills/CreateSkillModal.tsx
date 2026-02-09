@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTaskStore } from '@/stores/taskStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { getAccomplish } from '@/lib/accomplish';
 
 interface CreateSkillModalProps {
