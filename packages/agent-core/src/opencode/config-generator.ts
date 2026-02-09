@@ -314,15 +314,17 @@ function resolveMcpCommand(
   nodePath?: string
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
+  const sourcePath = path.join(mcpDir, sourceRelPath);
   const distPath = path.join(mcpDir, distRelPath);
 
-  if ((isPackaged || process.env.ACCOMPLISH_BUNDLED_MCP === '1') && fs.existsSync(distPath)) {
+  // Use compiled dist entry when packaged OR when source files don't exist
+  // (e.g. agent-core installed from npm where only dist/ is published)
+  if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
     const nodeExe = nodePath || 'node';
     console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodeExe, distPath];
   }
 
-  const sourcePath = path.join(mcpDir, sourceRelPath);
   console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
   return [...tsxCommand, sourcePath];
 }
