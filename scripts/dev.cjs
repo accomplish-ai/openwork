@@ -26,7 +26,7 @@ let electron;
 waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
   .then(() => {
     const electronCmd = isClean ? 'dev:clean' : 'dev';
-    electron = spawn('pnpm', ['-F', '@accomplish/electron', electronCmd], {
+    electron = spawn('pnpm', ['-F', '@accomplish/desktop', electronCmd], {
       stdio: 'inherit',
       env,
       detached: true,

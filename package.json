@@ -17,7 +17,7 @@
     "dev:kill": "node -e \"const{execSync}=require('child_process');try{execSync('lsof -ti:5173|xargs kill -9',{stdio:'ignore'})}catch{};console.log('Port 5173 cleared')\"",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r build",
-    "build:electron": "pnpm -F @accomplish/electron build",
+    "build:desktop": "pnpm -F @accomplish/desktop build",
     "build:web": "pnpm -F @accomplish/web build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

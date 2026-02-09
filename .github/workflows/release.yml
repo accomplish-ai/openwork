@@ -77,7 +77,7 @@ jobs:
         id: bump
         run: |
           # Read current version from package.json
-          CURRENT_VERSION=$(node -p "require('./apps/electron/package.json').version")
+          CURRENT_VERSION=$(node -p "require('./apps/desktop/package.json').version")
           echo "Current version: $CURRENT_VERSION"
 
           # Parse version components
@@ -105,7 +105,7 @@ jobs:
 
       - name: Update package.json version
         run: |
-          cd apps/electron
+          cd apps/desktop
           npm version ${{ steps.bump.outputs.new_version }} --no-git-tag-version
 
       - name: Validate no previous release artifacts
@@ -159,7 +159,7 @@ jobs:
 
           # Check if version bump is already on main (PR merged in a previous run)
           git fetch origin main
-          MAIN_VERSION=$(git show origin/main:apps/electron/package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+          MAIN_VERSION=$(git show origin/main:apps/desktop/package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
           if [ "$MAIN_VERSION" == "$VERSION" ]; then
             echo "Version ${VERSION} already on main — PR was merged in a previous run, skipping"
             exit 0
@@ -170,7 +170,7 @@ jobs:
 
           # Create release branch
           git checkout -b "$BRANCH"
-          git add apps/electron/package.json
+          git add apps/desktop/package.json
           git commit -m "chore(release): bump version to ${VERSION}"
           git push origin "$BRANCH"
 
@@ -265,7 +265,7 @@ jobs:
 
       - name: Package (unsigned)
         run: node scripts/package.cjs --mac --arm64 --publish never
-        working-directory: apps/electron
+        working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
@@ -276,8 +276,8 @@ jobs:
         with:
           name: Accomplish-macOS-arm64
           path: |
-            apps/electron/release/*-arm64.dmg
-            apps/electron/release/*-arm64.zip
+            apps/desktop/release/*-arm64.dmg
+            apps/desktop/release/*-arm64.zip
           retention-days: 30
 
   build-mac-x64:
@@ -316,7 +316,7 @@ jobs:
 
       - name: Package (unsigned)
         run: node scripts/package.cjs --mac --x64 --publish never
-        working-directory: apps/electron
+        working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
@@ -327,8 +327,8 @@ jobs:
         with:
           name: Accomplish-macOS-x64
           path: |
-            apps/electron/release/*-x64.dmg
-            apps/electron/release/*-x64.zip
+            apps/desktop/release/*-x64.dmg
+            apps/desktop/release/*-x64.zip
           retention-days: 30
 
   # build-windows-x64:
@@ -362,7 +362,7 @@ jobs:
   #
   #     - name: Package (unsigned)
   #       run: node scripts/package.cjs --win --x64 --publish never
-  #       working-directory: apps/electron
+  #       working-directory: apps/desktop
   #       env:
   #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #         CSC_IDENTITY_AUTO_DISCOVERY: false
@@ -371,7 +371,7 @@ jobs:
   #       uses: actions/upload-artifact@v4
   #       with:
   #         name: Accomplish-Windows-x64
-  #         path: apps/electron/release/*.exe
+  #         path: apps/desktop/release/*.exe
   #         retention-days: 30
 
   create-release:
