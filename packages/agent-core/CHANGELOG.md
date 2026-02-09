@@ -1,5 +1,11 @@
 # @accomplish_ai/agent-core
 
+## 0.3.1
+
+### Patch Changes
+
+- 7ab95c7: Auto-detect MCP entry point by checking if source files exist on disk instead of relying on ACCOMPLISH_BUNDLED_MCP env var
+
 ## 0.3.0
 
 ### Minor Changes
