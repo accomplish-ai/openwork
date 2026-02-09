@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Accomplish is an Electron desktop application ("The open source AI coworker that lives on your desktop") with a React web UI. It's a pnpm workspace monorepo with two apps:
+Accomplish is an Electron desktop application ("The open source AI coworker that lives on your desktop") with a React web UI. It's a pnpm workspace monorepo with two apps and a core package:
 
-- **`apps/electron`** (`@accomplish/electron`) — Electron main/preload process: IPC handlers, task management, OpenCode integration, storage (better-sqlite3), skills system
-- **`apps/web`** (`@accomplish/web`) — React 19 UI rendered in Electron's renderer process (also runs standalone in browser via Vite dev server on port 5173)
+- **`@accomplish_ai/agent-core`** — The central package containing all agent/AI logic: OpenCode adapter, task management, storage (better-sqlite3), skills manager, provider configuration, logging, MCP tools, and shared types. This is where all agent and OpenCode-related implementation lives.
+- **`apps/electron`** (`@accomplish/electron`) — Electron shell: IPC handlers, preload bridge, and platform integration. Wires agent-core APIs into the desktop app. Does NOT implement agent logic directly.
+- **`apps/web`** (`@accomplish/web`) — React 19 UI rendered in Electron's renderer process (also runs standalone via Vite dev server on port 5173). Imports only from `@accomplish_ai/agent-core/common` (shared types and utilities).
 
 ## Commands
 
@@ -82,7 +83,9 @@ pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 The preload script (`apps/electron/src/preload/index.ts`) exposes `accomplishAPI` via `contextBridge`. The web app calls this API (`apps/web/src/lib/accomplish.ts`), which routes through IPC handlers in `apps/electron/src/main/ipc/handlers.ts` to the main process.
 
 ### Boundary Rules
+- **NEVER implement OpenCode, agent, or AI logic in `apps/electron`.** All agent-related implementation (task management, OpenCode adapter, provider validation, storage, skills, logging) belongs in `@accomplish_ai/agent-core`. The electron app only wires agent-core APIs into IPC handlers — it does not contain its own implementations.
 - Do NOT import from `@accomplish/electron` in `@accomplish/web` — the web app communicates with electron exclusively through the IPC bridge.
+- The web app imports only from `@accomplish_ai/agent-core/common` (shared types/utilities), never from the full `@accomplish_ai/agent-core` package (which contains Node.js-only code).
 - Electron main process code must never import React or browser APIs; web code must never import Node.js modules directly.
 
 ### State Management
@@ -93,8 +96,7 @@ The preload script (`apps/electron/src/preload/index.ts`) exposes `accomplishAPI
 Bundled skills live in `apps/electron/bundled-skills/` as directories with `SKILL.md` files (YAML frontmatter + markdown body). Each skill defines a slash command.
 
 ### Key Dependencies
-- `@accomplish_ai/agent-core` — shared agent package with bundled MCP tools
-- `opencode-ai` — task execution engine
+- `opencode-ai` — underlying task execution engine (consumed by agent-core)
 - Radix UI primitives + Tailwind CSS + Framer Motion for UI
 
 ## Testing Conventions
