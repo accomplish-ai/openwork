@@ -8,10 +8,10 @@ import { springs, variants } from './lib/animations';
 import type { ProviderId } from '@accomplish_ai/agent-core/common';
 
 // Components
-import Sidebar from './components/layout/Sidebar';
+import { Sidebar } from './components/layout/Sidebar';
 import { TaskLauncher } from './components/TaskLauncher';
 import { AuthErrorToast } from './components/AuthErrorToast';
-import SettingsDialog from './components/layout/SettingsDialog';
+import { SettingsDialog } from './components/layout/SettingsDialog';
 import { useTaskStore } from './stores/taskStore';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
@@ -43,7 +43,7 @@ function AnimatedOutlet() {
   );
 }
 
-export default function App() {
+export function App() {
   const [status, setStatus] = useState<AppStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authSettingsOpen, setAuthSettingsOpen] = useState(false);

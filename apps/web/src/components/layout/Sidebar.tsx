@@ -8,12 +8,12 @@ import { getAccomplish } from '@/lib/accomplish';
 import { staggerContainer } from '@/lib/animations';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import ConversationListItem from './ConversationListItem';
-import SettingsDialog from './SettingsDialog';
+import { ConversationListItem } from './ConversationListItem';
+import { SettingsDialog } from './SettingsDialog';
 import { Settings, MessageSquarePlus, Search } from 'lucide-react';
 import logoImage from '/assets/logo-1.png';
 
-export default function Sidebar() {
+export function Sidebar() {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const { tasks, loadTasks, updateTaskStatus, addTaskUpdate, openLauncher } = useTaskStore();

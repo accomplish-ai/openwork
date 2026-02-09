@@ -113,7 +113,7 @@ vi.mock('@radix-ui/react-dialog', () => ({
 }));
 
 // Need to import after mocks are set up
-import SettingsDialog from '@/components/layout/SettingsDialog';
+import { SettingsDialog } from '@/components/layout/SettingsDialog';
 
 describe('SettingsDialog Integration', () => {
   const defaultProps = {

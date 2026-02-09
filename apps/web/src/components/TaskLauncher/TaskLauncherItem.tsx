@@ -39,7 +39,7 @@ function getStatusIcon(status: Task['status']) {
   }
 }
 
-export default function TaskLauncherItem({ task, isSelected, onClick }: TaskLauncherItemProps) {
+export function TaskLauncherItem({ task, isSelected, onClick }: TaskLauncherItemProps) {
   return (
     <button
       onClick={onClick}

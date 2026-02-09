@@ -8,7 +8,7 @@ interface TaskHistoryProps {
   showTitle?: boolean;
 }
 
-export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
+export function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
   const { tasks, loadTasks, deleteTask, clearHistory } = useTaskStore();
 
   useEffect(() => {

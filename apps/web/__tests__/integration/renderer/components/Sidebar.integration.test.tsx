@@ -83,7 +83,7 @@ vi.mock('@/stores/taskStore', () => ({
 
 // Mock the SettingsDialog to simplify testing
 vi.mock('@/components/layout/SettingsDialog', () => ({
-  default: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  SettingsDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
     open ? (
       <div data-testid="settings-dialog">
         <button onClick={() => onOpenChange(false)}>Close Settings</button>
@@ -106,7 +106,7 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Need to import after mocks are set up
-import Sidebar from '@/components/layout/Sidebar';
+import { Sidebar } from '@/components/layout/Sidebar';
 
 describe('Sidebar Integration', () => {
   beforeEach(() => {

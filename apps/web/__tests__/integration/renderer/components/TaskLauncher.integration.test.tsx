@@ -88,8 +88,8 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Need to import after mocks are set up
-import TaskLauncher from '@/components/TaskLauncher/TaskLauncher';
-import TaskLauncherItem from '@/components/TaskLauncher/TaskLauncherItem';
+import { TaskLauncher } from '@/components/TaskLauncher/TaskLauncher';
+import { TaskLauncherItem } from '@/components/TaskLauncher/TaskLauncherItem';
 
 describe('TaskLauncherItem', () => {
   const mockOnClick = vi.fn();
