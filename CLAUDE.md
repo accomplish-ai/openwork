@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Accomplish is an Electron desktop application ("The open source AI coworker that lives on your desktop") with a React web UI. It's a pnpm workspace monorepo with two apps and a core package:
 
-- **`@accomplish_ai/agent-core`** — The central package containing all agent/AI logic: OpenCode adapter, task management, storage (better-sqlite3), skills manager, provider configuration, logging, MCP tools, and shared types. This is where all agent and OpenCode-related implementation lives.
 - **`apps/electron`** (`@accomplish/electron`) — Electron shell: IPC handlers, preload bridge, and platform integration. Wires agent-core APIs into the desktop app. Does NOT implement agent logic directly.
 - **`apps/web`** (`@accomplish/web`) — React 19 UI rendered in Electron's renderer process (also runs standalone via Vite dev server on port 5173). Imports only from `@accomplish_ai/agent-core/common` (shared types and utilities).
+- **`@accomplish_ai/agent-core`** — External npm package (not part of the workspace) containing all agent/AI logic: OpenCode adapter, task management, storage (better-sqlite3), skills manager, provider configuration, logging, MCP tools, and shared types. This is where all agent and OpenCode-related implementation lives.
 
 ## Commands
 
