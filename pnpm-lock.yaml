@@ -12,7 +12,7 @@ importers:
         specifier: ^9.0.3
         version: 9.0.3
 
-  apps/electron:
+  apps/desktop:
     dependencies:
       '@accomplish_ai/agent-core':
         specifier: ^0.2.2

@@ -1,5 +1,5 @@
 {
-  "name": "@accomplish/electron",
+  "name": "@accomplish/desktop",
   "version": "0.3.8",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_DEV_SERVER_URL=http://localhost:5173 vite",
     "dev:clean": "CLEAN_START=1 vite",
     "build": "pnpm -F @accomplish/web build && tsc && vite build && node -e \"require('fs').cpSync('../web/dist','./dist',{recursive:true})\" && node scripts/bundle-skills.cjs",
-    "build:electron": "tsc && vite build && node scripts/package.cjs",
+    "build:desktop": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
     "package": "pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:mac": "pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",

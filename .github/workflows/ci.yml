@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/electron/**'
+      - 'apps/desktop/**'
       - 'apps/web/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'apps/electron/**'
+      - 'apps/desktop/**'
       - 'apps/web/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
@@ -46,14 +46,14 @@ jobs:
         run: pnpm build
 
       - name: Run unit tests
-        run: pnpm -F @accomplish/electron test:unit
+        run: pnpm -F @accomplish/desktop test:unit
 
       - name: Upload unit test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: apps/electron/coverage/
+          path: apps/desktop/coverage/
           retention-days: 7
 
   integration-tests:
@@ -80,14 +80,14 @@ jobs:
         run: pnpm build
 
       - name: Run integration tests
-        run: pnpm -F @accomplish/electron test:integration
+        run: pnpm -F @accomplish/desktop test:integration
 
       - name: Upload integration test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
-          path: apps/electron/coverage/
+          path: apps/desktop/coverage/
           retention-days: 7
 
   web-unit-tests:
@@ -191,7 +191,7 @@ jobs:
         run: pnpm build
 
       - name: Run unit tests
-        run: pnpm -F @accomplish/electron test:unit
+        run: pnpm -F @accomplish/desktop test:unit
 
       - name: Run typecheck
         run: pnpm typecheck
@@ -201,5 +201,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-results
-          path: apps/electron/coverage/
+          path: apps/desktop/coverage/
           retention-days: 7

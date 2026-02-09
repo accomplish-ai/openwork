@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Accomplish is an Electron desktop application ("The open source AI coworker that lives on your desktop") with a React web UI. It's a pnpm workspace monorepo with two apps and a core package:
 
-- **`apps/electron`** (`@accomplish/electron`) — Electron shell: IPC handlers, preload bridge, and platform integration. Wires agent-core APIs into the desktop app. Does NOT implement agent logic directly.
+- **`apps/desktop`** (`@accomplish/desktop`) — Electron shell: IPC handlers, preload bridge, and platform integration. Wires agent-core APIs into the desktop app. Does NOT implement agent logic directly.
 - **`apps/web`** (`@accomplish/web`) — React 19 UI rendered in Electron's renderer process (also runs standalone via Vite dev server on port 5173). Imports only from `@accomplish_ai/agent-core/common` (shared types and utilities).
 - **[`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish)** — External npm package (not part of the workspace) containing all agent/AI logic: OpenCode adapter, task management, storage (better-sqlite3), skills manager, provider configuration, logging, MCP tools, and shared types. This is where all agent and OpenCode-related implementation lives.
 
@@ -23,7 +23,7 @@ pnpm dev:kill           # kill orphaned process on port 5173
 
 # Build
 pnpm build              # build all workspaces
-pnpm build:electron     # electron only
+pnpm build:desktop      # desktop only
 pnpm build:web          # web only
 
 # Quality
@@ -31,13 +31,13 @@ pnpm lint               # tsc --noEmit across all workspaces
 pnpm typecheck          # same as lint
 
 # Tests (vitest)
-pnpm -F @accomplish/electron test          # all electron tests
-pnpm -F @accomplish/electron test:unit     # unit only
+pnpm -F @accomplish/desktop test          # all electron tests
+pnpm -F @accomplish/desktop test:unit     # unit only
 pnpm -F @accomplish/web test               # all web tests
 pnpm -F @accomplish/web test:unit          # unit only
 
 # Single test file
-pnpm -F @accomplish/electron exec vitest run path/to/file.unit.test.ts
+pnpm -F @accomplish/desktop exec vitest run path/to/file.unit.test.ts
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 ```
 
@@ -47,7 +47,7 @@ pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 - IMPORTANT: Always use `pnpm`, never `npm` or `yarn`.
 - Start new tasks with `/clear` to avoid context pollution from unrelated prior work.
 - When stuck after 2 failed attempts at the same approach, stop and propose an alternative rather than brute-forcing.
-- After completing changes, verify with: `pnpm typecheck && pnpm -F @accomplish/electron test:unit && pnpm -F @accomplish/web test:unit`
+- After completing changes, verify with: `pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit`
 
 ## Code Quality
 
@@ -80,11 +80,11 @@ pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 ## Architecture
 
 ### IPC Bridge
-The preload script (`apps/electron/src/preload/index.ts`) exposes `accomplishAPI` via `contextBridge`. The web app calls this API (`apps/web/src/lib/accomplish.ts`), which routes through IPC handlers in `apps/electron/src/main/ipc/handlers.ts` to the main process.
+The preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via `contextBridge`. The web app calls this API (`apps/web/src/lib/accomplish.ts`), which routes through IPC handlers in `apps/desktop/src/main/ipc/handlers.ts` to the main process.
 
 ### Boundary Rules
-- **NEVER implement OpenCode, agent, or AI logic in `apps/electron`.** All agent-related implementation (task management, OpenCode adapter, provider validation, storage, skills, logging) belongs in `@accomplish_ai/agent-core`. The electron app only wires agent-core APIs into IPC handlers — it does not contain its own implementations.
-- Do NOT import from `@accomplish/electron` in `@accomplish/web` — the web app communicates with electron exclusively through the IPC bridge.
+- **NEVER implement OpenCode, agent, or AI logic in `apps/desktop`.** All agent-related implementation (task management, OpenCode adapter, provider validation, storage, skills, logging) belongs in `@accomplish_ai/agent-core`. The desktop app only wires agent-core APIs into IPC handlers — it does not contain its own implementations.
+- Do NOT import from `@accomplish/desktop` in `@accomplish/web` — the web app communicates with electron exclusively through the IPC bridge.
 - The web app imports only from `@accomplish_ai/agent-core/common` (shared types/utilities), never from the full `@accomplish_ai/agent-core` package (which contains Node.js-only code).
 - Electron main process code must never import React or browser APIs; web code must never import Node.js modules directly.
 
@@ -93,7 +93,7 @@ The preload script (`apps/electron/src/preload/index.ts`) exposes `accomplishAPI
 - **Electron main**: electron-store for settings, better-sqlite3 for structured data
 
 ### Skills System
-Bundled skills live in `apps/electron/bundled-skills/` as directories with `SKILL.md` files (YAML frontmatter + markdown body). Each skill defines a slash command.
+Bundled skills live in `apps/desktop/bundled-skills/` as directories with `SKILL.md` files (YAML frontmatter + markdown body). Each skill defines a slash command.
 
 ### Key Dependencies
 - `opencode-ai` — underlying task execution engine (consumed by agent-core)
@@ -104,11 +104,11 @@ Bundled skills live in `apps/electron/bundled-skills/` as directories with `SKIL
 - **Naming**: `*.unit.test.ts(x)` for unit tests, `*.integration.test.ts(x)` for integration tests
 - **Electron tests**: Node environment (main process logic)
 - **Web tests**: jsdom environment (React components)
-- **Coverage thresholds** (electron): 80% statements, 70% branches, 80% functions/lines
+- **Coverage thresholds** (desktop): 80% statements, 70% branches, 80% functions/lines
 
 ## Path Aliases
 
-- Electron: `@main/*` → `src/main/*`
+- Desktop: `@main/*` → `src/main/*`
 - Web: `@/*` → `src/*`
 
 ## Commit Convention
