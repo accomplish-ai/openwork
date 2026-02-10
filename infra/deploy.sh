@@ -3,13 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-WEB_PKG="$REPO_ROOT/apps/web/package.json"
 DIST_DIR="$REPO_ROOT/apps/web/dist"
-export CLOUDFLARE_ACCOUNT_ID="ab43a89c284963fce47460305a945611"
-
-get_version() {
-  node -p "JSON.parse(require('fs').readFileSync('$WEB_PKG','utf8')).version"
-}
+source "$SCRIPT_DIR/lib.sh"
+: "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID must be set}"
+R2_BUCKET="${R2_BUCKET:-accomplish-assets}"
 
 upload_to_r2() {
   local prefix="$1"
@@ -19,42 +16,14 @@ upload_to_r2() {
     local relative="${file#$DIST_DIR/}"
     local key="${prefix}/${relative}"
 
-    local ct="application/octet-stream"
-    case "$file" in
-      *.html) ct="text/html; charset=utf-8" ;;
-      *.js)   ct="application/javascript; charset=utf-8" ;;
-      *.css)  ct="text/css; charset=utf-8" ;;
-      *.json) ct="application/json; charset=utf-8" ;;
-      *.svg)  ct="image/svg+xml" ;;
-      *.png)  ct="image/png" ;;
-      *.jpg|*.jpeg) ct="image/jpeg" ;;
-      *.gif)  ct="image/gif" ;;
-      *.ico)  ct="image/x-icon" ;;
-      *.webp) ct="image/webp" ;;
-      *.woff) ct="font/woff" ;;
-      *.woff2) ct="font/woff2" ;;
-      *.ttf)  ct="font/ttf" ;;
-      *.map)  ct="application/json" ;;
-      *.txt)  ct="text/plain; charset=utf-8" ;;
-      *.xml)  ct="application/xml; charset=utf-8" ;;
-      *.webmanifest) ct="application/manifest+json" ;;
-    esac
+    local ct
+    ct="$(get_content_type "$file")"
 
     echo "  $key ($ct)"
-    npx wrangler r2 object put "accomplish-assets/$key" \
+    npx wrangler r2 object put "${R2_BUCKET}/$key" \
       --file "$file" \
       --content-type "$ct"
   done < <(find "$DIST_DIR" -type f)
-}
-
-build_web() {
-  echo "Building web app..."
-  (cd "$REPO_ROOT" && pnpm build:web)
-
-  if [ ! -d "$DIST_DIR" ]; then
-    echo "ERROR: $DIST_DIR does not exist after build"
-    exit 1
-  fi
 }
 
 deploy_app_worker() {
@@ -71,6 +40,13 @@ deploy_app_worker() {
     --var "R2_PREFIX:$r2_prefix")
 }
 
+gen_preview_router_config() {
+  local pr="$1"
+  local config="wrangler.preview-pr-${pr}.toml"
+  sed "s/PLACEHOLDER/${pr}/g" "$SCRIPT_DIR/router/wrangler.preview.toml" > "$SCRIPT_DIR/router/$config"
+  echo "$config"
+}
+
 deploy_workers() {
   local mode="$1"
   local pr="${2:-}"
@@ -78,25 +54,24 @@ deploy_workers() {
   local version
   version="$(get_version)"
 
-  local lite_name="accomplish-app-lite"
-  local enterprise_name="accomplish-app-enterprise"
-  local lite_r2="builds/v${version}-lite/"
-  local enterprise_r2="builds/v${version}-enterprise/"
   local router_config="wrangler.toml"
 
   if [ "$mode" = "preview" ]; then
-    lite_name="accomplish-pr-${pr}-lite"
-    enterprise_name="accomplish-pr-${pr}-enterprise"
+    router_config="$(gen_preview_router_config "$pr")"
     version="pr-${pr}"
-    lite_r2="builds/pr-${pr}-lite/"
-    enterprise_r2="builds/pr-${pr}-enterprise/"
-
-    router_config="wrangler.preview-pr-${pr}.toml"
-    sed "s/PLACEHOLDER/${pr}/g" "$SCRIPT_DIR/router/wrangler.preview.toml" > "$SCRIPT_DIR/router/$router_config"
   fi
 
-  deploy_app_worker "$lite_name" "lite" "$version" "$lite_r2"
-  deploy_app_worker "$enterprise_name" "enterprise" "$version" "$enterprise_r2"
+  for tier in "${TIERS[@]}"; do
+    local name r2_prefix
+    if [ "$mode" = "preview" ]; then
+      name="$(preview_worker_name "$pr" "$tier")"
+      r2_prefix="$(r2_preview_prefix "$pr" "$tier")/"
+    else
+      name="$(worker_name "$tier")"
+      r2_prefix="$(r2_prod_prefix "$version" "$tier")/"
+    fi
+    deploy_app_worker "$name" "$tier" "$version" "$r2_prefix"
+  done
 
   echo "Deploying router worker..."
   (cd "$SCRIPT_DIR/router" && npx wrangler deploy --config "$router_config")
@@ -120,20 +95,22 @@ usage() {
 
 case "${1:-}" in
   production)
-    VERSION="$(get_version)"
-    echo "Deploying version: $VERSION"
+    version="$(get_version)"
+    echo "Deploying version: $version"
 
-    build_web
+    build_web "$REPO_ROOT" "$DIST_DIR"
 
-    upload_to_r2 "builds/v${VERSION}-lite"
-    upload_to_r2 "builds/v${VERSION}-enterprise"
+    for tier in "${TIERS[@]}"; do
+      upload_to_r2 "$(r2_prod_prefix "$version" "$tier")"
+    done
     deploy_workers production
 
-    echo "Deploy complete! Version: $VERSION"
+    echo "Deploy complete! Version: $version"
     echo ""
     echo "Verify:"
-    echo "  curl https://accomplish-app-lite.accomplish.workers.dev/health"
-    echo "  curl https://accomplish-app-enterprise.accomplish.workers.dev/health"
+    for tier in "${TIERS[@]}"; do
+      echo "  curl https://$(worker_name "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
+    done
     ;;
 
   preview)
@@ -142,22 +119,23 @@ case "${1:-}" in
 
     echo "Deploying PR preview: #${PR_NUMBER}"
 
-    build_web
+    build_web "$REPO_ROOT" "$DIST_DIR"
 
-    upload_to_r2 "builds/pr-${PR_NUMBER}-lite"
-    upload_to_r2 "builds/pr-${PR_NUMBER}-enterprise"
+    for tier in "${TIERS[@]}"; do
+      upload_to_r2 "$(r2_preview_prefix "$PR_NUMBER" "$tier")"
+    done
     deploy_workers preview "$PR_NUMBER"
 
     echo "Preview deployed!"
-    echo "Router:     https://accomplish-pr-${PR_NUMBER}-router.accomplish.workers.dev"
-    echo "App Lite:   https://accomplish-pr-${PR_NUMBER}-lite.accomplish.workers.dev"
-    echo "App Enterprise: https://accomplish-pr-${PR_NUMBER}-enterprise.accomplish.workers.dev"
+    echo "Router:     https://$(preview_worker_name "$PR_NUMBER" router).${WORKERS_SUBDOMAIN}.workers.dev"
+    echo "App Lite:   https://$(preview_worker_name "$PR_NUMBER" lite).${WORKERS_SUBDOMAIN}.workers.dev"
+    echo "App Enterprise: https://$(preview_worker_name "$PR_NUMBER" enterprise).${WORKERS_SUBDOMAIN}.workers.dev"
     ;;
 
   upload)
     tier="${2:?Usage: deploy.sh upload <tier>}"
     version="$(get_version)"
-    upload_to_r2 "builds/v${version}-${tier}"
+    upload_to_r2 "$(r2_prod_prefix "$version" "$tier")"
     ;;
 
   deploy-workers)

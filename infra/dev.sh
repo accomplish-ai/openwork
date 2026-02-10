@@ -3,43 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-WEB_PKG="$REPO_ROOT/apps/web/package.json"
 DIST_DIR="$REPO_ROOT/apps/web/dist"
 PERSIST_DIR="$SCRIPT_DIR/.wrangler/state"
-
-get_version() {
-  node -p "JSON.parse(require('fs').readFileSync('$WEB_PKG','utf8')).version"
-}
-
-get_content_type() {
-  local file="$1"
-  case "$file" in
-    *.html) echo "text/html; charset=utf-8" ;;
-    *.js)   echo "application/javascript; charset=utf-8" ;;
-    *.css)  echo "text/css; charset=utf-8" ;;
-    *.json) echo "application/json; charset=utf-8" ;;
-    *.svg)  echo "image/svg+xml" ;;
-    *.png)  echo "image/png" ;;
-    *.jpg|*.jpeg) echo "image/jpeg" ;;
-    *.gif)  echo "image/gif" ;;
-    *.ico)  echo "image/x-icon" ;;
-    *.webp) echo "image/webp" ;;
-    *.woff) echo "font/woff" ;;
-    *.woff2) echo "font/woff2" ;;
-    *.ttf)  echo "font/ttf" ;;
-    *.map)  echo "application/json" ;;
-    *.txt)  echo "text/plain; charset=utf-8" ;;
-    *.xml)  echo "application/xml; charset=utf-8" ;;
-    *.webmanifest) echo "application/manifest+json" ;;
-    *)      echo "application/octet-stream" ;;
-  esac
-}
+source "$SCRIPT_DIR/lib.sh"
+R2_BUCKET="${R2_BUCKET:-accomplish-assets}"
 
 seed_local_r2() {
   local tier="$1"
   local version
   version="$(get_version)"
-  local prefix="builds/v${version}-${tier}"
+  local prefix="$(r2_prod_prefix "$version" "$tier")"
   echo "Seeding local R2: $prefix/"
 
   find "$DIST_DIR" -type f | while read -r file; do
@@ -48,13 +21,12 @@ seed_local_r2() {
     local ct
     ct="$(get_content_type "$file")"
 
-    npx wrangler r2 object put "accomplish-assets/$key" \
+    npx wrangler r2 object put "${R2_BUCKET}/$key" \
       --file "$file" \
       --content-type "$ct" \
       --local \
       --persist-to "$PERSIST_DIR" 2>/dev/null || {
-        # Fallback: if --local flag not supported, try without it
-        npx wrangler r2 object put "accomplish-assets/$key" \
+        npx wrangler r2 object put "${R2_BUCKET}/$key" \
           --file "$file" \
           --content-type "$ct" \
           --persist-to "$PERSIST_DIR" 2>/dev/null || true
@@ -77,7 +49,7 @@ gen_app_dev_config() {
     echo "[vars]"
     echo "TIER = \"$tier\""
     echo "VERSION = \"$version\""
-    echo "R2_PREFIX = \"builds/v${version}-${tier}/\""
+    echo "R2_PREFIX = \"$(r2_prod_prefix "$version" "$tier")/\""
   } > "$output"
 }
 
@@ -85,8 +57,8 @@ start_local_workers() {
   local lite_config="$SCRIPT_DIR/app/.wrangler.dev-lite.toml"
   local ent_config="$SCRIPT_DIR/app/.wrangler.dev-enterprise.toml"
 
-  gen_app_dev_config "accomplish-app-lite" "lite" "$lite_config"
-  gen_app_dev_config "accomplish-app-enterprise" "enterprise" "$ent_config"
+  gen_app_dev_config "$(worker_name lite)" "lite" "$lite_config"
+  gen_app_dev_config "$(worker_name enterprise)" "enterprise" "$ent_config"
 
   trap 'rm -f "$lite_config" "$ent_config"' EXIT
 
@@ -102,19 +74,12 @@ start_local_workers() {
 TIER="${1:-}"
 case "$TIER" in
   lite|enterprise)
-    # Full: build + seed + start
-    VERSION="$(get_version)"
+    version="$(get_version)"
     echo "=== Local Workers Dev (${TIER}) ==="
-    echo "Version: $VERSION"
+    echo "Version: $version"
 
     echo ""
-    echo "Building web app..."
-    (cd "$REPO_ROOT" && pnpm build:web)
-
-    if [ ! -d "$DIST_DIR" ]; then
-      echo "ERROR: $DIST_DIR does not exist after build"
-      exit 1
-    fi
+    build_web "$REPO_ROOT" "$DIST_DIR"
 
     echo ""
     seed_local_r2 "$TIER"
@@ -123,7 +88,6 @@ case "$TIER" in
     start_local_workers
     ;;
   start)
-    # Just start workers (assumes R2 already seeded)
     start_local_workers
     ;;
   *)
