@@ -15,7 +15,7 @@ cleanup_preview() {
     if output=$(npx wrangler delete --name "$name" --force 2>&1); then
       echo "Deleted worker: ${name}"
     else
-      if echo "$output" | grep -qiE "not found|10007"; then
+      if echo "$output" | grep -qiE "not found|does not exist|10007|10090"; then
         echo "Worker ${name} not found (already deleted)"
       else
         echo "ERROR: Failed to delete worker ${name}:"
