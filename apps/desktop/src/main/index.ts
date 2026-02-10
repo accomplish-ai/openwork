@@ -118,23 +118,43 @@ function createWindow() {
         ...details.responseHeaders,
         'X-Frame-Options': [],
         'Content-Security-Policy': [
-          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+          "default-src 'self' https:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
         ],
       },
     });
   });
 
   // Prevent navigation away from the app origin
+  const allowedOrigin = new URL(ROUTER_URL).origin;
+
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    const parsed = new URL(url);
-    const allowed = new URL(ROUTER_URL).origin;
-    if (parsed.origin !== allowed) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.origin !== allowedOrigin) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {
       event.preventDefault();
-      shell.openExternal(url);
+    }
+  });
+
+  mainWindow.webContents.on('will-redirect', (event, url) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.origin !== allowedOrigin) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {
+      event.preventDefault();
     }
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+      return { action: 'deny' };
+    }
     if (url.startsWith('https:') || url.startsWith('http:')) {
       shell.openExternal(url);
     }
@@ -156,6 +176,11 @@ function createWindow() {
   remoteUrl.searchParams.set('platform', process.platform);
   console.log('[Main] Loading from:', remoteUrl.toString());
   mainWindow.loadURL(remoteUrl.toString());
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error(`[Main] Failed to load: ${errorDescription} (code: ${errorCode})`);
+    mainWindow?.loadFile(path.join(RENDERER_DIST, 'index.html'));
+  });
 }
 
 process.on('uncaughtException', (error) => {

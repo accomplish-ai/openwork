@@ -73,37 +73,42 @@ export default {
     const assetPath = pathname === "/" ? "index.html" : pathname.replace(/^\//, "");
     const r2Key = env.R2_PREFIX + assetPath;
 
-    let object = await env.ASSETS.get(r2Key);
+    try {
+      let object = await env.ASSETS.get(r2Key);
 
-    // SPA fallback: if not found and no file extension, serve index.html
-    if (!object && !hasFileExtension(assetPath)) {
-      const fallbackKey = env.R2_PREFIX + "index.html";
-      object = await env.ASSETS.get(fallbackKey);
-      if (object) {
-        return new Response(object.body, {
-          status: 200,
-          headers: {
-            "content-type": "text/html; charset=utf-8",
-            "cache-control": "no-cache",
-            ...(object.etag ? { etag: object.etag } : {}),
-          },
-        });
+      // SPA fallback: if not found and no file extension, serve index.html
+      if (!object && !hasFileExtension(assetPath)) {
+        const fallbackKey = env.R2_PREFIX + "index.html";
+        object = await env.ASSETS.get(fallbackKey);
+        if (object) {
+          return new Response(object.body, {
+            status: 200,
+            headers: {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              ...(object.etag ? { etag: object.etag } : {}),
+            },
+          });
+        }
       }
-    }
 
-    // 404 for missing files
-    if (!object) {
-      return new Response("Not Found", { status: 404 });
-    }
+      // 404 for missing files
+      if (!object) {
+        return new Response("Not Found", { status: 404 });
+      }
 
-    // Serve the asset
-    return new Response(object.body, {
-      status: 200,
-      headers: {
-        "content-type": getContentType(assetPath),
-        "cache-control": getCacheControl(assetPath),
-        ...(object.etag ? { etag: object.etag } : {}),
-      },
-    });
+      // Serve the asset
+      return new Response(object.body, {
+        status: 200,
+        headers: {
+          "content-type": getContentType(assetPath),
+          "cache-control": getCacheControl(assetPath),
+          ...(object.etag ? { etag: object.etag } : {}),
+        },
+      });
+    } catch (err) {
+      console.error("R2 asset fetch failed:", err);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   },
 } satisfies ExportedHandler<Env>;
