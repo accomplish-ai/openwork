@@ -101,6 +101,10 @@
         "to": "icon.png"
       },
       {
+        "from": "resources/error.html",
+        "to": "error.html"
+      },
+      {
         "from": "node_modules/@accomplish_ai/agent-core/mcp-tools",
         "to": "mcp-tools",
         "filter": [
