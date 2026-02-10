@@ -45,27 +45,33 @@ jobs:
       platforms: ${{ steps.inputs.outputs.platforms }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
 
       - name: Determine bump type
         id: inputs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
+          INPUT_BUMP_TYPE: ${{ inputs.bump_type }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
         run: |
           # Support both repository_dispatch and workflow_dispatch
-          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            BUMP_TYPE="${{ github.event.client_payload.bump_type }}"
+          if [ "$EVENT_NAME" == "repository_dispatch" ]; then
+            BUMP_TYPE="$DISPATCH_BUMP_TYPE"
             DRY_RUN="false"
             PLATFORMS="all"
           else
-            BUMP_TYPE="${{ inputs.bump_type }}"
-            DRY_RUN="${{ inputs.dry_run }}"
-            PLATFORMS="${{ inputs.platforms }}"
+            BUMP_TYPE="$INPUT_BUMP_TYPE"
+            DRY_RUN="$INPUT_DRY_RUN"
+            PLATFORMS="$INPUT_PLATFORMS"
           fi
 
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
@@ -75,6 +81,8 @@ jobs:
 
       - name: Calculate new version
         id: bump
+        env:
+          BUMP_TYPE: ${{ steps.inputs.outputs.bump_type }}
         run: |
           # Read current version from package.json
           CURRENT_VERSION=$(node -p "require('./apps/desktop/package.json').version")
@@ -84,7 +92,7 @@ jobs:
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
           # Bump based on type
-          case "${{ steps.inputs.outputs.bump_type }}" in
+          case "$BUMP_TYPE" in
             major)
               NEW_VERSION="$((MAJOR + 1)).0.0"
               ;;
@@ -95,7 +103,7 @@ jobs:
               NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
               ;;
             *)
-              echo "Error: Invalid bump_type: ${{ steps.inputs.outputs.bump_type }}"
+              echo "Error: Invalid bump_type: $BUMP_TYPE"
               exit 1
               ;;
           esac
@@ -104,15 +112,18 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Update package.json version
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
         run: |
           cd apps/desktop
-          npm version ${{ steps.bump.outputs.new_version }} --no-git-tag-version
+          npm version "$NEW_VERSION" --no-git-tag-version
 
       - name: Validate no previous release artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
         run: |
-          VERSION="${{ steps.bump.outputs.new_version }}"
+          VERSION="$NEW_VERSION"
           echo "=== Validating no stale artifacts exist for v${VERSION} ==="
 
           CONFLICTS=""
@@ -153,8 +164,9 @@ jobs:
         if: steps.inputs.outputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
         run: |
-          VERSION="${{ steps.bump.outputs.new_version }}"
+          VERSION="$NEW_VERSION"
           BRANCH="release/v${VERSION}"
 
           # Check if version bump is already on main (PR merged in a previous run)
@@ -210,9 +222,11 @@ jobs:
           fi
 
       - name: Create and push release tag
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          DRY_RUN: ${{ steps.inputs.outputs.dry_run }}
         run: |
-          VERSION="${{ steps.bump.outputs.new_version }}"
-          DRY_RUN="${{ steps.inputs.outputs.dry_run }}"
+          VERSION="$NEW_VERSION"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -236,21 +250,21 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -272,7 +286,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Accomplish-macOS-arm64
           path: |
@@ -287,21 +301,21 @@ jobs:
     runs-on: macos-15-large
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -323,7 +337,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Accomplish-macOS-x64
           path: |
@@ -338,15 +352,15 @@ jobs:
   #   runs-on: windows-latest
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
   #       with:
   #         ref: v${{ needs.version-bump.outputs.new_version }}
   #
   #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v4
+  #       uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
   #
   #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
+  #       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
   #       with:
   #         node-version: '20'
   #         cache: 'pnpm'
@@ -368,7 +382,7 @@ jobs:
   #         CSC_IDENTITY_AUTO_DISCOVERY: false
   #
   #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v4
+  #       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
   #       with:
   #         name: Accomplish-Windows-x64
   #         path: apps/desktop/release/*.exe
@@ -381,10 +395,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check build results
+        env:
+          PLATFORMS: ${{ needs.version-bump.outputs.platforms }}
+          MAC_ARM64: ${{ needs.build-mac-arm64.result }}
+          MAC_X64: ${{ needs.build-mac-x64.result }}
         run: |
-          PLATFORMS="${{ needs.version-bump.outputs.platforms }}"
-          MAC_ARM64="${{ needs.build-mac-arm64.result }}"
-          MAC_X64="${{ needs.build-mac-x64.result }}"
 
           echo "Requested platforms: $PLATFORMS"
           echo "Build results: macOS-arm64=$MAC_ARM64, macOS-x64=$MAC_X64"
@@ -411,36 +426,39 @@ jobs:
           echo "All requested platform builds succeeded"
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
       - name: Determine if dry run
         id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+          if [ "$EVENT_NAME" == "repository_dispatch" ]; then
             echo "dry_run=false" >> $GITHUB_OUTPUT
           else
-            echo "dry_run=${{ inputs.dry_run }}" >> $GITHUB_OUTPUT
+            echo "dry_run=$INPUT_DRY_RUN" >> $GITHUB_OUTPUT
           fi
 
       - name: Download macOS ARM64 artifacts
         if: needs.build-mac-arm64.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: Accomplish-macOS-arm64
           path: ./release/arm64
 
       - name: Download macOS x64 artifacts
         if: needs.build-mac-x64.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: Accomplish-macOS-x64
           path: ./release/x64
 
       # - name: Download Windows x64 artifacts
       #   if: needs.build-windows-x64.result == 'success'
-      #   uses: actions/download-artifact@v4
+      #   uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       #   with:
       #     name: Accomplish-Windows-x64
       #     path: ./release/win-x64
@@ -451,7 +469,7 @@ jobs:
           find ./release -type f 2>/dev/null || echo "No artifacts found"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           tag_name: v${{ needs.version-bump.outputs.new_version }}
           name: ${{ steps.check.outputs.dry_run == 'true' && '[TEST] ' || '' }}Accomplish v${{ needs.version-bump.outputs.new_version }}
@@ -468,9 +486,11 @@ jobs:
         if: success() && steps.check.outputs.dry_run != 'true'
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}
+          NEW_VERSION: ${{ needs.version-bump.outputs.new_version }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          VERSION="${{ needs.version-bump.outputs.new_version }}"
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/v${VERSION}"
+          VERSION="$NEW_VERSION"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
 
           # Build Slack message payload
           PAYLOAD=$(jq -n \

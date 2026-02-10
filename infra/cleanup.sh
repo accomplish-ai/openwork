@@ -11,7 +11,18 @@ cleanup_preview() {
   for suffix in router lite enterprise; do
     local name="$(preview_worker_name "$pr" "$suffix")"
     echo "Deleting worker: ${name}..."
-    npx wrangler delete --name "$name" --force 2>/dev/null || echo "Worker not found (may already be deleted)"
+    local output
+    if output=$(npx wrangler delete --name "$name" --force 2>&1); then
+      echo "Deleted worker: ${name}"
+    else
+      if echo "$output" | grep -qiE "not found|10007"; then
+        echo "Worker ${name} not found (already deleted)"
+      else
+        echo "ERROR: Failed to delete worker ${name}:"
+        echo "$output"
+        exit 1
+      fi
+    fi
   done
 
   for tier in "${TIERS[@]}"; do

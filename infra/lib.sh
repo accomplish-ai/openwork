@@ -3,8 +3,10 @@
 LIB_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIB_WEB_PKG="$LIB_REPO_ROOT/apps/web/package.json"
 
+command -v jq >/dev/null 2>&1 || { echo "Error: jq is required. Install with: brew install jq" >&2; exit 1; }
+
 get_version() {
-  node -p "JSON.parse(require('fs').readFileSync('$LIB_WEB_PKG','utf8')).version"
+  jq -r '.version' "$LIB_WEB_PKG"
 }
 
 get_content_type() {
