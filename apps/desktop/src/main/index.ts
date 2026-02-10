@@ -65,9 +65,6 @@ config({ path: envPath });
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
 const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
-const VITE_DEV_SERVER_URL = process.env.ACCOMPLISH_DEV_SERVER_URL || process.env.VITE_DEV_SERVER_URL;
-
-// Cloudflare routing worker URL for production
 const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
 
 function getMachineId(): string {
@@ -130,9 +127,7 @@ function createWindow() {
   // Prevent navigation away from the app origin
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const parsed = new URL(url);
-    const allowed = VITE_DEV_SERVER_URL
-      ? new URL(VITE_DEV_SERVER_URL).origin
-      : new URL(ROUTER_URL).origin;
+    const allowed = new URL(ROUTER_URL).origin;
     if (parsed.origin !== allowed) {
       event.preventDefault();
       shell.openExternal(url);
@@ -153,19 +148,14 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
-  if (VITE_DEV_SERVER_URL) {
-    console.log('[Main] Loading from Vite dev server:', VITE_DEV_SERVER_URL);
-    mainWindow.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    const remoteUrl = new URL(ROUTER_URL);
-    remoteUrl.searchParams.set('build', app.getVersion());
-    remoteUrl.searchParams.set('type', 'lite');
-    remoteUrl.searchParams.set('machineId', getMachineId());
-    remoteUrl.searchParams.set('arch', process.arch);
-    remoteUrl.searchParams.set('platform', process.platform);
-    console.log('[Main] Loading from Cloudflare router:', remoteUrl.toString());
-    mainWindow.loadURL(remoteUrl.toString());
-  }
+  const remoteUrl = new URL(ROUTER_URL);
+  remoteUrl.searchParams.set('build', app.getVersion());
+  remoteUrl.searchParams.set('type', 'lite');
+  remoteUrl.searchParams.set('machineId', getMachineId());
+  remoteUrl.searchParams.set('arch', process.arch);
+  remoteUrl.searchParams.set('platform', process.platform);
+  console.log('[Main] Loading from:', remoteUrl.toString());
+  mainWindow.loadURL(remoteUrl.toString());
 }
 
 process.on('uncaughtException', (error) => {
