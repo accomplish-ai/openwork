@@ -1,0 +1,14 @@
+name = "accomplish-router"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+[[services]]
+binding = "APP_LITE"
+service = "accomplish-v__VERSION__-lite"
+
+[[services]]
+binding = "APP_ENTERPRISE"
+service = "accomplish-v__VERSION__-enterprise"

@@ -9,6 +9,22 @@ get_version() {
   jq -r '.version' "$LIB_WEB_PKG"
 }
 
+get_build_id() {
+  local version=$1
+  local build_number=$2
+  echo "${version}-${build_number}"
+}
+
+resolve_build_id() {
+  local version=$1
+  local build_number=$2
+  if [ -n "$build_number" ]; then
+    get_build_id "$version" "$build_number"
+  else
+    echo "$version"
+  fi
+}
+
 get_content_type() {
   local file="$1"
   case "$file" in
@@ -41,6 +57,8 @@ WORKERS_SUBDOMAIN="${CF_SUBDOMAIN:-}"
 # --- Naming helpers ---
 worker_name() { echo "${WORKER_PREFIX}-app-$1"; }
 preview_worker_name() { echo "${WORKER_PREFIX}-pr-$1-$2"; }
+slugify() { echo "$1" | tr '.+' '--'; }
+versioned_worker_name() { echo "${WORKER_PREFIX}-v$(slugify "$1")-$2"; }
 
 # --- R2 path helpers ---
 r2_prod_prefix() { echo "builds/v$1-$2"; }

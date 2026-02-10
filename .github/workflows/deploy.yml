@@ -69,23 +69,36 @@ jobs:
       - name: Build web app
         run: pnpm build:web
 
+      - name: Get deploy info
+        id: deploy-info
+        run: |
+          source infra/lib.sh
+          BUILD_ID="$(get_build_id "$(get_version)" "${{ github.run_number }}")"
+          BUILD_SLUG="$(slugify "$BUILD_ID")"
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "build_slug=$BUILD_SLUG" >> "$GITHUB_OUTPUT"
+
       - name: Upload to R2 (lite)
         run: cd infra && bash deploy.sh upload lite
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Upload to R2 (enterprise)
         run: cd infra && bash deploy.sh upload enterprise
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Deploy workers
         run: cd infra && bash deploy.sh deploy-workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Verify health (lite)
         run: |
-          sleep 5
-          curl -sf https://accomplish-app-lite.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .
+          curl -sf --retry 3 --retry-delay 5 https://accomplish-v${{ steps.deploy-info.outputs.build_slug }}-lite.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .
 
       - name: Verify health (enterprise)
         run: |
-          curl -sf https://accomplish-app-enterprise.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .
+          curl -sf --retry 3 --retry-delay 5 https://accomplish-v${{ steps.deploy-info.outputs.build_slug }}-enterprise.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .
