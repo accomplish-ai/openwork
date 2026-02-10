@@ -1,0 +1,13 @@
+{
+  "name": "accomplish-infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "bash deploy.sh"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4",
+    "typescript": "^5.9.3",
+    "wrangler": "^3"
+  }
+}

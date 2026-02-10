@@ -1,0 +1,18 @@
+name = "accomplish-router"
+account_id = "ab43a89c284963fce47460305a945611"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Custom domain — configure in Cloudflare dashboard first
+# routes = [{ pattern = "app-router.accomplish.ai", custom_domain = true }]
+
+[observability]
+enabled = true
+
+[[services]]
+binding = "APP_LITE"
+service = "accomplish-app-lite"
+
+[[services]]
+binding = "APP_ENTERPRISE"
+service = "accomplish-app-enterprise"

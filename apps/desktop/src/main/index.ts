@@ -1,6 +1,8 @@
 import fixPath from 'fix-path';
 fixPath();
 
+import { createHash } from 'node:crypto';
+import os from 'node:os';
 import { config } from 'dotenv';
 import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
 import path from 'path';
@@ -65,6 +67,16 @@ process.env.APP_ROOT = path.join(__dirname, '../..');
 const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 const VITE_DEV_SERVER_URL = process.env.ACCOMPLISH_DEV_SERVER_URL || process.env.VITE_DEV_SERVER_URL;
 
+// Cloudflare routing worker URL for production
+const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
+
+function getMachineId(): string {
+  return createHash('sha256')
+    .update(os.hostname() + os.userInfo().username)
+    .digest('hex')
+    .substring(0, 16);
+}
+
 let mainWindow: BrowserWindow | null = null;
 
 function getPreloadPath(): string {
@@ -102,6 +114,31 @@ function createWindow() {
     },
   });
 
+  // Allow the remote origin to load in the BrowserWindow
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'X-Frame-Options': [],
+        'Content-Security-Policy': [
+          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+        ],
+      },
+    });
+  });
+
+  // Prevent navigation away from the app origin
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const parsed = new URL(url);
+    const allowed = VITE_DEV_SERVER_URL
+      ? new URL(VITE_DEV_SERVER_URL).origin
+      : new URL(ROUTER_URL).origin;
+    if (parsed.origin !== allowed) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:') || url.startsWith('http:')) {
       shell.openExternal(url);
@@ -120,9 +157,14 @@ function createWindow() {
     console.log('[Main] Loading from Vite dev server:', VITE_DEV_SERVER_URL);
     mainWindow.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    const indexPath = path.join(RENDERER_DIST, 'index.html');
-    console.log('[Main] Loading from file:', indexPath);
-    mainWindow.loadFile(indexPath);
+    const remoteUrl = new URL(ROUTER_URL);
+    remoteUrl.searchParams.set('build', app.getVersion());
+    remoteUrl.searchParams.set('type', 'lite');
+    remoteUrl.searchParams.set('machineId', getMachineId());
+    remoteUrl.searchParams.set('arch', process.arch);
+    remoteUrl.searchParams.set('platform', process.platform);
+    console.log('[Main] Loading from Cloudflare router:', remoteUrl.toString());
+    mainWindow.loadURL(remoteUrl.toString());
   }
 }
 

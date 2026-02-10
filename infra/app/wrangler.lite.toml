@@ -1,0 +1,16 @@
+name = "accomplish-app-lite"
+account_id = "ab43a89c284963fce47460305a945611"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+[vars]
+TIER = "lite"
+VERSION = "0.3.8"
+R2_PREFIX = "builds/v0.3.8-lite/"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "accomplish-assets"
