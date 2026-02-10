@@ -10,19 +10,21 @@ cleanup_preview() {
 
   for suffix in router lite enterprise; do
     local name="$(preview_worker_name "$pr" "$suffix")"
-    echo "Deleting worker: ${name}..."
-    local output
-    if output=$(npx wrangler delete --name "$name" --force 2>&1); then
-      echo "Deleted worker: ${name}"
-    else
-      if echo "$output" | grep -qiE "not found|does not exist|10007|10090"; then
-        echo "Worker ${name} not found (already deleted)"
-      else
-        echo "ERROR: Failed to delete worker ${name}:"
-        echo "$output"
-        exit 1
-      fi
+
+    # Check if worker exists via API before attempting delete
+    local status
+    status=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/services/${name}")
+
+    if [ "$status" = "404" ]; then
+      echo "Worker ${name} does not exist, skipping"
+      continue
     fi
+
+    echo "Deleting worker: ${name}..."
+    npx wrangler delete --name "$name" --force
+    echo "Deleted worker: ${name}"
   done
 
   for tier in "${TIERS[@]}"; do
