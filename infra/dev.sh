@@ -62,6 +62,41 @@ seed_local_r2() {
   done
 }
 
+gen_app_dev_config() {
+  local name="$1"
+  local tier="$2"
+  local output="$3"
+  local version
+  version="$(get_version)"
+
+  {
+    cat "$SCRIPT_DIR/app/wrangler.toml"
+    echo ""
+    echo "name = \"$name\""
+    echo "[vars]"
+    echo "TIER = \"$tier\""
+    echo "VERSION = \"$version\""
+    echo "R2_PREFIX = \"builds/v${version}-${tier}/\""
+  } > "$output"
+}
+
+start_local_workers() {
+  local lite_config="$SCRIPT_DIR/app/.wrangler.dev-lite.toml"
+  local ent_config="$SCRIPT_DIR/app/.wrangler.dev-enterprise.toml"
+
+  gen_app_dev_config "accomplish-app-lite" "lite" "$lite_config"
+  gen_app_dev_config "accomplish-app-enterprise" "enterprise" "$ent_config"
+
+  trap 'rm -f "$lite_config" "$ent_config"' EXIT
+
+  echo "Starting local workers on http://localhost:8787..."
+  (cd "$SCRIPT_DIR" && npx wrangler dev \
+    -c router/wrangler.toml \
+    -c "app/.wrangler.dev-lite.toml" \
+    -c "app/.wrangler.dev-enterprise.toml" \
+    --persist-to "$PERSIST_DIR")
+}
+
 # --- Main ---
 TIER="${1:-}"
 case "$TIER" in
@@ -84,21 +119,11 @@ case "$TIER" in
     seed_local_r2 "$TIER"
 
     echo ""
-    echo "Starting local workers on http://localhost:8787..."
-    (cd "$SCRIPT_DIR" && npx wrangler dev \
-      -c router/wrangler.toml \
-      -c app/wrangler.lite.toml \
-      -c app/wrangler.enterprise.toml \
-      --persist-to "$PERSIST_DIR")
+    start_local_workers
     ;;
   start)
     # Just start workers (assumes R2 already seeded)
-    echo "Starting local workers on http://localhost:8787..."
-    (cd "$SCRIPT_DIR" && npx wrangler dev \
-      -c router/wrangler.toml \
-      -c app/wrangler.lite.toml \
-      -c app/wrangler.enterprise.toml \
-      --persist-to "$PERSIST_DIR")
+    start_local_workers
     ;;
   *)
     echo "Usage: dev.sh <lite|enterprise> | dev.sh start"

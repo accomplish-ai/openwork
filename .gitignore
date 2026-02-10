@@ -68,3 +68,4 @@ apps/desktop/resources/nodejs/
 
 # Cloudflare
 .wrangler/
+.wrangler.dev-*.toml

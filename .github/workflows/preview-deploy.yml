@@ -16,6 +16,7 @@ jobs:
     name: Deploy Preview
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
         run: cd infra && npm ci
 
       - name: Deploy preview
-        run: cd infra && bash preview-deploy.sh ${{ github.event.pull_request.number }}
+        run: cd infra && bash deploy.sh preview ${{ github.event.pull_request.number }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -44,8 +45,20 @@ jobs:
           script: |
             const prNumber = context.payload.pull_request.number;
             const subdomain = '${{ vars.CF_SUBDOMAIN }}';
-            const url = `https://accomplish-pr-${prNumber}.${subdomain}.workers.dev`;
-            const body = `**Preview deployed!** :rocket:\n\n${url}\n\n_Updated at ${new Date().toISOString()}_`;
+            const routerUrl = `https://accomplish-pr-${prNumber}-router.${subdomain}.workers.dev`;
+            const liteUrl = `https://accomplish-pr-${prNumber}-lite.${subdomain}.workers.dev`;
+            const enterpriseUrl = `https://accomplish-pr-${prNumber}-enterprise.${subdomain}.workers.dev`;
+            const body = [
+              `**Preview deployed!** :rocket:`,
+              ``,
+              `| Worker | URL |`,
+              `|--------|-----|`,
+              `| Router | ${routerUrl} |`,
+              `| App Lite | ${liteUrl} |`,
+              `| App Enterprise | ${enterpriseUrl} |`,
+              ``,
+              `_Updated at ${new Date().toISOString()}_`,
+            ].join('\n');
 
             // Find existing bot comment
             const comments = await github.rest.issues.listComments({
