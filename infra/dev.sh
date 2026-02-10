@@ -70,9 +70,10 @@ gen_app_dev_config() {
   version="$(get_version)"
 
   {
+    echo "name = \"$name\""
+    echo ""
     cat "$SCRIPT_DIR/app/wrangler.toml"
     echo ""
-    echo "name = \"$name\""
     echo "[vars]"
     echo "TIER = \"$tier\""
     echo "VERSION = \"$version\""
