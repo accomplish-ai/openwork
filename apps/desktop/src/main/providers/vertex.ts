@@ -91,35 +91,7 @@ export function registerVertexHandlers(handle: IpcHandler): void {
         return { success: true, projectId: project };
       }
     } catch {
-      // gcloud not available or not configured, continue to next method
-    }
-
-    // 3. Use ADC token to query Resource Manager API for projects
-    try {
-      const token = execSync('gcloud auth application-default print-access-token', {
-        timeout: 10000,
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-      }).trim();
-
-      if (token) {
-        const response = await fetch(
-          'https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState%3DACTIVE&pageSize=1',
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: AbortSignal.timeout(10000),
-          }
-        );
-        if (response.ok) {
-          const data = (await response.json()) as { projects?: Array<{ projectId: string }> };
-          const firstProject = data.projects?.[0]?.projectId;
-          if (firstProject) {
-            return { success: true, projectId: firstProject };
-          }
-        }
-      }
-    } catch {
-      // ADC token or API call failed
+      // gcloud not available or not configured
     }
 
     return { success: false, projectId: null };

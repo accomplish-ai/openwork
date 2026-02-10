@@ -24,6 +24,24 @@ import { generateOpenCodeConfig, getMcpToolsPath, syncApiKeysToOpenCodeAuth } fr
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
+const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
+
+/**
+ * Removes the Vertex AI service account key file from disk if it exists.
+ * Called when the Vertex provider is disconnected or the app quits.
+ */
+export function cleanupVertexServiceAccountKey(): void {
+  try {
+    const keyPath = path.join(app.getPath('userData'), VERTEX_SA_KEY_FILENAME);
+    if (fs.existsSync(keyPath)) {
+      fs.unlinkSync(keyPath);
+      console.log('[Vertex] Cleaned up service account key file');
+    }
+  } catch (error) {
+    console.warn('[Vertex] Failed to clean up service account key file:', error);
+  }
+}
+
 function getCliResolverConfig(): CliResolverConfig {
   return {
     isPackaged: app.isPackaged,
@@ -139,7 +157,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
       vertexCredentials = parsed;
       if (parsed.authType === 'serviceAccount' && parsed.serviceAccountJson) {
         const userDataPath = app.getPath('userData');
-        vertexServiceAccountKeyPath = path.join(userDataPath, 'vertex-sa-key.json');
+        vertexServiceAccountKeyPath = path.join(userDataPath, VERTEX_SA_KEY_FILENAME);
         fs.writeFileSync(vertexServiceAccountKeyPath, parsed.serviceAccountJson, { mode: 0o600 });
       }
     } catch {

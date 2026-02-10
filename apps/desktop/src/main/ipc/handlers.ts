@@ -7,6 +7,7 @@ import {
   getOpenCodeCliVersion,
   getTaskManager,
   disposeTaskManager,
+  cleanupVertexServiceAccountKey,
 } from '../opencode';
 import { getLogCollector } from '../logging';
 import {
@@ -945,6 +946,9 @@ export function registerIPCHandlers(): void {
 
   handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
     storage.removeConnectedProvider(providerId);
+    if (providerId === 'vertex') {
+      cleanupVertexServiceAccountKey();
+    }
   });
 
   handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
