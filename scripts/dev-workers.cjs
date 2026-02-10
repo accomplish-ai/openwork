@@ -59,7 +59,7 @@ function cleanup() {
   for (const child of [workers, electron]) {
     if (!child || child.killed) continue;
     try {
-      process.kill(-child.pid, 'SIGTERM');
+      if (child.pid) process.kill(-child.pid, 'SIGTERM');
     } catch {}
   }
   // Kill anything left on 8787

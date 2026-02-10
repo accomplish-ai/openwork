@@ -71,6 +71,9 @@ export default {
 
     // Resolve R2 key
     const assetPath = pathname === "/" ? "index.html" : pathname.replace(/^\//, "");
+    if (assetPath.includes("..")) {
+      return new Response("Bad Request", { status: 400 });
+    }
     const r2Key = env.R2_PREFIX + assetPath;
 
     try {

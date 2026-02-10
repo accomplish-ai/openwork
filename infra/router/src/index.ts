@@ -11,7 +11,7 @@ export default {
 
     const params = {
       build: url.searchParams.get("build"),
-      type: url.searchParams.get("type") as Tier | null,
+      type: url.searchParams.get("type"),
       machineId: url.searchParams.get("machineId"),
       arch: url.searchParams.get("arch"),
       platform: url.searchParams.get("platform"),

@@ -34,7 +34,7 @@ get_content_type() {
 # --- Constants ---
 WORKER_PREFIX="accomplish"
 TIERS=("lite" "enterprise")
-WORKERS_SUBDOMAIN="accomplish"
+WORKERS_SUBDOMAIN="${CF_SUBDOMAIN:-accomplish}"
 
 # --- Naming helpers ---
 worker_name() { echo "${WORKER_PREFIX}-app-$1"; }

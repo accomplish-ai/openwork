@@ -88,9 +88,6 @@ function createWindow() {
     ? path.join(process.resourcesPath, iconFile)
     : path.join(process.env.APP_ROOT!, 'resources', iconFile);
   const icon = nativeImage.createFromPath(iconPath);
-  if (process.platform === 'darwin' && app.dock && !icon.isEmpty()) {
-    app.dock.setIcon(icon);
-  }
 
   const preloadPath = getPreloadPath();
   console.log('[Main] Using preload script:', preloadPath);
@@ -127,7 +124,7 @@ function createWindow() {
   // Prevent navigation away from the app origin
   const allowedOrigin = new URL(ROUTER_URL).origin;
 
-  mainWindow.webContents.on('will-navigate', (event, url) => {
+  const guardNavigation = (event: Electron.Event, url: string) => {
     try {
       const parsed = new URL(url);
       if (parsed.origin !== allowedOrigin) {
@@ -137,19 +134,10 @@ function createWindow() {
     } catch {
       event.preventDefault();
     }
-  });
+  };
 
-  mainWindow.webContents.on('will-redirect', (event, url) => {
-    try {
-      const parsed = new URL(url);
-      if (parsed.origin !== allowedOrigin) {
-        event.preventDefault();
-        shell.openExternal(url);
-      }
-    } catch {
-      event.preventDefault();
-    }
-  });
+  mainWindow.webContents.on('will-navigate', guardNavigation);
+  mainWindow.webContents.on('will-redirect', guardNavigation);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('data:') || url.startsWith('blob:')) {
