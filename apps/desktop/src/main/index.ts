@@ -64,7 +64,6 @@ config({ path: envPath });
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
-const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
 
 function getMachineId(): string {
