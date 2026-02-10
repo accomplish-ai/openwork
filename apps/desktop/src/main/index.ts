@@ -107,14 +107,15 @@ function createWindow() {
     },
   });
 
-  // Allow the remote origin to load in the BrowserWindow
+  // Override CSP for Electron context — the HTML meta CSP is too restrictive
+  // (connect-src 'self' blocks cross-origin API calls needed in Electron).
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'X-Frame-Options': [],
         'Content-Security-Policy': [
-          "default-src 'self' https:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
         ],
       },
     });
@@ -347,6 +348,18 @@ app.on('open-url', (event, url) => {
   event.preventDefault();
   if (url.startsWith('accomplish://callback')) {
     mainWindow?.webContents?.send('auth:callback', url);
+  }
+});
+
+ipcMain.handle('app:retry-load', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const remoteUrl = new URL(ROUTER_URL);
+    remoteUrl.searchParams.set('build', app.getVersion());
+    remoteUrl.searchParams.set('type', 'lite');
+    remoteUrl.searchParams.set('machineId', getMachineId());
+    remoteUrl.searchParams.set('arch', process.arch);
+    remoteUrl.searchParams.set('platform', process.platform);
+    mainWindow.loadURL(remoteUrl.toString());
   }
 });
 

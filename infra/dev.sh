@@ -29,6 +29,7 @@ seed_local_r2() {
         npx wrangler r2 object put "${R2_BUCKET}/$key" \
           --file "$file" \
           --content-type "$ct" \
+          --local \
           --persist-to "$PERSIST_DIR" 2>/dev/null || true
       }
   done
