@@ -5,25 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPO_ROOT/apps/web/dist"
 source "$SCRIPT_DIR/lib.sh"
-: "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID must be set}"
-R2_BUCKET="${R2_BUCKET:-accomplish-assets}"
 
 upload_to_r2() {
   local prefix="$1"
-  echo "Uploading to R2 prefix: $prefix/"
-
-  while read -r file; do
-    local relative="${file#$DIST_DIR/}"
-    local key="${prefix}/${relative}"
-
-    local ct
-    ct="$(get_content_type "$file")"
-
-    echo "  $key ($ct)"
-    npx wrangler r2 object put "${R2_BUCKET}/$key" \
-      --file "$file" \
-      --content-type "$ct"
-  done < <(find "$DIST_DIR" -type f)
+  rclone_upload_to_r2 "$DIST_DIR" "$prefix"
 }
 
 deploy_app_worker() {

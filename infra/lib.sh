@@ -56,16 +56,37 @@ build_web() {
   fi
 }
 
-# --- JSON parsing (for Cloudflare API responses) ---
-parse_json() {
-  node -e "
-    let d='';
-    process.stdin.on('data',c=>d+=c);
-    process.stdin.on('end',()=>{
-      const p=JSON.parse(d);
-      const expr=(${1});
-      if(Array.isArray(expr)) expr.forEach(x=>console.log(x));
-      else if(expr) console.log(expr);
-    });
-  "
+# --- R2 operations (rclone) ---
+rclone_upload_to_r2() {
+  local source_dir="$1"
+  local prefix="$2"
+  local bucket="${R2_BUCKET:-accomplish-assets}"
+
+  echo "Uploading to R2 via rclone: ${bucket}/${prefix}/"
+  rclone copy "$source_dir" "R2:${bucket}/${prefix}/" \
+    --s3-no-check-bucket \
+    --transfers 8 \
+    --checkers 16 \
+    --fast-list \
+    --verbose
+  echo "Upload complete: ${prefix}/"
 }
+
+rclone_delete_r2_prefix() {
+  local prefix="$1"
+  local bucket="${R2_BUCKET:-accomplish-assets}"
+
+  echo "Deleting R2 prefix via rclone: ${bucket}/${prefix}"
+  local output
+  if output=$(rclone purge "R2:${bucket}/${prefix}" 2>&1); then
+    echo "Delete complete: ${prefix}"
+  else
+    if echo "$output" | grep -qiE "directory not found|not found|404"; then
+      echo "Prefix ${prefix} does not exist, nothing to delete"
+    else
+      echo "WARNING: rclone purge failed for ${bucket}/${prefix}:"
+      echo "$output"
+    fi
+  fi
+}
+
