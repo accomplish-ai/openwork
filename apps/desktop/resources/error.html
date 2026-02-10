@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accomplish — Connection Error</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f9f9f9;
+    color: #202020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    -webkit-app-region: drag;
+  }
+  .container {
+    text-align: center;
+    max-width: 420px;
+    padding: 2rem;
+    -webkit-app-region: no-drag;
+  }
+  .icon-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #fef2f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+  }
+  .icon-circle svg {
+    width: 32px;
+    height: 32px;
+    color: #dc4a3a;
+  }
+  h1 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin-bottom: 0.625rem;
+    color: #202020;
+  }
+  p {
+    font-size: 0.9375rem;
+    color: #646464;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  .error-detail {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+    margin-bottom: 1.5rem;
+  }
+  button {
+    background: #213c20;
+    color: #fff;
+    border: none;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #1a3019; }
+  button:active { background: #15260f; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="icon-circle">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+      <path d="M12 9v4"/>
+      <path d="M12 17h.01"/>
+    </svg>
+  </div>
+  <h1>Unable to Connect</h1>
+  <p>Accomplish couldn't reach the server. Check your internet connection and try again.</p>
+  <div class="error-detail" id="error-detail"></div>
+  <button onclick="retry()">Retry</button>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const desc = params.get('desc');
+  if (code || desc) {
+    document.getElementById('error-detail').textContent =
+      (desc || 'Unknown error') + (code ? ' (code: ' + code + ')' : '');
+  }
+  function retry() {
+    if (window.accomplish && window.accomplish.retryLoad) {
+      window.accomplish.retryLoad();
+    } else {
+      window.location.reload();
+    }
+  }
+</script>
+</body>
+</html>

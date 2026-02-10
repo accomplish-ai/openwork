@@ -65,3 +65,7 @@ apps/desktop/resources/nodejs/
 
 # Test local agent Chrome profile
 .accomplish-test-local-agent-chrome/
+
+# Cloudflare
+.wrangler/
+.wrangler.dev-*.toml

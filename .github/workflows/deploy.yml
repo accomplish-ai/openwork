@@ -1,0 +1,85 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'infra/**'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm -F @accomplish/web test:unit
+
+  deploy:
+    name: Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install app dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install infra dependencies
+        run: cd infra && npm ci
+
+      - name: Build web app
+        run: pnpm build:web
+
+      - name: Upload to R2 (lite)
+        run: cd infra && bash deploy.sh upload lite
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Upload to R2 (enterprise)
+        run: cd infra && bash deploy.sh upload enterprise
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy workers
+        run: cd infra && bash deploy.sh deploy-workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify health (lite)
+        run: |
+          sleep 5
+          curl -sf https://accomplish-app-lite.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .
+
+      - name: Verify health (enterprise)
+        run: |
+          curl -sf https://accomplish-app-enterprise.${{ vars.CF_SUBDOMAIN }}.workers.dev/health | jq .

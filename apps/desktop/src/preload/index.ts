@@ -13,6 +13,7 @@ const accomplishAPI = {
   // App info
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   getPlatform: (): Promise<string> => ipcRenderer.invoke('app:platform'),
+  retryLoad: (): Promise<void> => ipcRenderer.invoke('app:retry-load'),
 
   // Shell
   openExternal: (url: string): Promise<void> =>

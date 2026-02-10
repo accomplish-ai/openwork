@@ -1,6 +1,8 @@
 import fixPath from 'fix-path';
 fixPath();
 
+import { createHash } from 'node:crypto';
+import os from 'node:os';
 import { config } from 'dotenv';
 import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
 import path from 'path';
@@ -62,8 +64,14 @@ config({ path: envPath });
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
-const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
-const VITE_DEV_SERVER_URL = process.env.ACCOMPLISH_DEV_SERVER_URL || process.env.VITE_DEV_SERVER_URL;
+const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
+
+function getMachineId(): string {
+  return createHash('sha256')
+    .update(os.hostname() + os.userInfo().username)
+    .digest('hex')
+    .substring(0, 16);
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -79,9 +87,6 @@ function createWindow() {
     ? path.join(process.resourcesPath, iconFile)
     : path.join(process.env.APP_ROOT!, 'resources', iconFile);
   const icon = nativeImage.createFromPath(iconPath);
-  if (process.platform === 'darwin' && app.dock && !icon.isEmpty()) {
-    app.dock.setIcon(icon);
-  }
 
   const preloadPath = getPreloadPath();
   console.log('[Main] Using preload script:', preloadPath);
@@ -102,7 +107,42 @@ function createWindow() {
     },
   });
 
+  // Override CSP for Electron context — the HTML meta CSP is too restrictive
+  // (connect-src 'self' blocks cross-origin API calls needed in Electron).
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'X-Frame-Options': [],
+        'Content-Security-Policy': [
+          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+        ],
+      },
+    });
+  });
+
+  // Prevent navigation away from the app origin
+  const allowedOrigin = new URL(ROUTER_URL).origin;
+
+  const guardNavigation = (event: Electron.Event, url: string) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.origin !== allowedOrigin) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {
+      event.preventDefault();
+    }
+  };
+
+  mainWindow.webContents.on('will-navigate', guardNavigation);
+  mainWindow.webContents.on('will-redirect', guardNavigation);
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+      return { action: 'deny' };
+    }
     if (url.startsWith('https:') || url.startsWith('http:')) {
       shell.openExternal(url);
     }
@@ -116,14 +156,24 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
-  if (VITE_DEV_SERVER_URL) {
-    console.log('[Main] Loading from Vite dev server:', VITE_DEV_SERVER_URL);
-    mainWindow.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    const indexPath = path.join(RENDERER_DIST, 'index.html');
-    console.log('[Main] Loading from file:', indexPath);
-    mainWindow.loadFile(indexPath);
-  }
+  const remoteUrl = new URL(ROUTER_URL);
+  remoteUrl.searchParams.set('build', app.getVersion());
+  remoteUrl.searchParams.set('type', 'lite');
+  remoteUrl.searchParams.set('machineId', getMachineId());
+  remoteUrl.searchParams.set('arch', process.arch);
+  remoteUrl.searchParams.set('platform', process.platform);
+  console.log('[Main] Loading from:', remoteUrl.toString());
+  mainWindow.loadURL(remoteUrl.toString());
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error(`[Main] Failed to load: ${errorDescription} (code: ${errorCode})`);
+    const errorPage = app.isPackaged
+      ? path.join(process.resourcesPath, 'error.html')
+      : path.join(process.env.APP_ROOT!, 'resources', 'error.html');
+    mainWindow?.loadFile(errorPage, {
+      query: { code: String(errorCode), desc: errorDescription },
+    });
+  });
 }
 
 process.on('uncaughtException', (error) => {
@@ -298,6 +348,18 @@ app.on('open-url', (event, url) => {
   event.preventDefault();
   if (url.startsWith('accomplish://callback')) {
     mainWindow?.webContents?.send('auth:callback', url);
+  }
+});
+
+ipcMain.handle('app:retry-load', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const remoteUrl = new URL(ROUTER_URL);
+    remoteUrl.searchParams.set('build', app.getVersion());
+    remoteUrl.searchParams.set('type', 'lite');
+    remoteUrl.searchParams.set('machineId', getMachineId());
+    remoteUrl.searchParams.set('arch', process.arch);
+    remoteUrl.searchParams.set('platform', process.platform);
+    mainWindow.loadURL(remoteUrl.toString());
   }
 });
 

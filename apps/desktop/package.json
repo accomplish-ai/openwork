@@ -7,13 +7,14 @@
   "main": "dist-electron/main/index.js",
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
-    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_DEV_SERVER_URL=http://localhost:5173 vite",
+    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
     "dev:clean": "CLEAN_START=1 vite",
+    "dev:remote": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && vite",
     "build": "pnpm -F @accomplish/web build && tsc && vite build && node -e \"require('fs').cpSync('../web/dist','./dist',{recursive:true})\" && node scripts/bundle-skills.cjs",
     "build:desktop": "tsc && vite build && node scripts/package.cjs",
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
     "package": "pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "package:mac": "pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package:mac": "pnpm download:nodejs && pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "release": "pnpm build && node scripts/package.cjs --mac --publish always",
     "release:mac": "pnpm build && node scripts/package.cjs --mac --publish always",
     "package:win": "pnpm build && node scripts/package.cjs --win --x64 --publish never",
@@ -98,6 +99,10 @@
       {
         "from": "resources/icon.png",
         "to": "icon.png"
+      },
+      {
+        "from": "resources/error.html",
+        "to": "error.html"
       },
       {
         "from": "node_modules/@accomplish_ai/agent-core/mcp-tools",

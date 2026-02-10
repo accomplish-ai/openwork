@@ -1,118 +1,195 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-Accomplish is an Electron desktop application ("The open source AI coworker that lives on your desktop") with a React web UI. It's a pnpm workspace monorepo with two apps and a core package:
+Accomplish is a pnpm workspace monorepo: an Electron desktop app, a React 19 web UI, and Cloudflare Workers infrastructure for serving the web app. The desktop app loads the web UI from Cloudflare Workers (prod) or localhost (dev).
 
-- **`apps/desktop`** (`@accomplish/desktop`) — Electron shell: IPC handlers, preload bridge, and platform integration. Wires agent-core APIs into the desktop app. Does NOT implement agent logic directly.
-- **`apps/web`** (`@accomplish/web`) — React 19 UI rendered in Electron's renderer process (also runs standalone via Vite dev server on port 5173). Imports only from `@accomplish_ai/agent-core/common` (shared types and utilities).
-- **[`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish)** — External npm package (not part of the workspace) containing all agent/AI logic: OpenCode adapter, task management, storage (better-sqlite3), skills manager, provider configuration, logging, MCP tools, and shared types. This is where all agent and OpenCode-related implementation lives.
+### Workspace Structure
+
+```
+apps/desktop    @accomplish/desktop     Electron shell (IPC, preload bridge, platform integration)
+apps/web        @accomplish/web         React 19 SPA (hash router, runs in Electron renderer)
+infra/                                  Cloudflare Workers + R2 (NOT in pnpm workspace, uses npm)
+scripts/                                Dev orchestration scripts (Node.js CJS)
+docs/                                   Architecture plans + review documents
+```
+
+**External dependency**: [`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish) (npm package, not in workspace) — all agent/AI logic.
+- Desktop imports full package (v0.3.1) — validation, providers, task management
+- Web imports ONLY `@accomplish_ai/agent-core/common` (^0.2.2) — types + shared utilities
+
+
+### Infra: Cloudflare Workers
+
+```
+┌─────────┐    service binding    ┌──────────────────┐    R2 GET
+│ Router  │───────────────────────▶│ App Worker (lite) │──────────▶ R2: builds/v{ver}-lite/
+│ Worker  │                       └──────────────────┘            accomplish-assets bucket
+│         │    service binding    ┌──────────────────────┐
+│         │───────────────────────▶│ App Worker (enterprise)│──────▶ R2: builds/v{ver}-enterprise/
+└─────────┘                       └──────────────────────┘
+```
+
+- **Router** (`infra/router/`): reads `?type=` param → forwards to lite (default) or enterprise app worker
+- **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
+- **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
+- App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
+- Cache: `index.html` no-cache, `/assets/*` 1yr immutable, everything else 1hr
+
+### Versioning
+
+- **Source of truth**: `apps/web/package.json` (web deploys) and `apps/desktop/package.json` (desktop releases)
+- Root `package.json` version (`0.1.0`) is NOT used for deployments
+- Desktop `package.json` is for the dmg/exe
+- Web `pacakge.json` is for the App Workers
+- No git tags, no changelog automation, no semantic-release
+- R2 paths use version from `apps/web/package.json` at deploy time
 
 ## Commands
 
 ```bash
 # Setup
-pnpm install
+pnpm install                              # ALWAYS use pnpm, never npm or yarn
 
-# Development (starts web dev server on :5173, then electron)
-pnpm dev                # requires port 5173 to be free
-pnpm dev:clean          # with CLEAN_START=1 (clears user data)
-pnpm dev:kill           # kill orphaned process on port 5173
+# Development
+pnpm dev                                  # Vite dev server on :5173 + Electron
+pnpm dev:clean                            # Same with CLEAN_START=1 (clears user data)
+pnpm dev:kill                             # Kill orphaned process on port 5173
+pnpm dev:workers:lite                     # Build web + seed local R2 + start local workers (lite tier)
+pnpm dev:workers:enterprise               # Same for enterprise tier
+pnpm dev:remote <url>                     # Point desktop app at a remote worker URL
 
 # Build
-pnpm build              # build all workspaces
-pnpm build:desktop      # desktop only
-pnpm build:web          # web only
+pnpm build                                # Build all workspaces
+pnpm build:desktop                        # Desktop only (also builds web + copies dist)
+pnpm build:web                            # Web only → apps/web/dist/
 
 # Quality
-pnpm lint               # tsc --noEmit across all workspaces
-pnpm typecheck          # same as lint
+pnpm typecheck                            # tsc --noEmit across all workspaces (aliased as pnpm lint)
 
 # Tests (vitest)
-pnpm -F @accomplish/desktop test          # all electron tests
-pnpm -F @accomplish/desktop test:unit     # unit only
-pnpm -F @accomplish/web test               # all web tests
-pnpm -F @accomplish/web test:unit          # unit only
+pnpm -F @accomplish/desktop test:unit     # Desktop unit tests
+pnpm -F @accomplish/web test:unit         # Web unit tests
+pnpm -F @accomplish/desktop test:integration
+pnpm -F @accomplish/web test:integration
 
 # Single test file
-pnpm -F @accomplish/desktop exec vitest run path/to/file.unit.test.ts
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
+
+# Infra (run from infra/)
+cd infra && bash deploy.sh production     # Full prod deploy (build + R2 upload + workers)
+cd infra && bash deploy.sh preview <PR>   # PR preview deploy
+cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
+cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
 ```
 
-## Workflow
+### Environment Variables
 
-- Before starting work, run `git status` and `git log --oneline -10` to understand what previous sessions or agents have already done.
-- IMPORTANT: Always use `pnpm`, never `npm` or `yarn`.
-- Start new tasks with `/clear` to avoid context pollution from unrelated prior work.
-- When stuck after 2 failed attempts at the same approach, stop and propose an alternative rather than brute-forcing.
-- After completing changes, verify with: `pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit`
+| Variable | Where | Purpose |
+|---|---|---|
+| `ACCOMPLISH_ROUTER_URL` | Desktop main | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev` |
+| `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
+| `E2E_SKIP_AUTH` | Desktop main | Skips auth for E2E tests |
+| `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
+| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup |
+| `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
+| `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
 
-## Code Quality
+## Verification Command
 
-- **NEVER apply hacks or workarounds.** If a fix feels hacky (dotfile PATH hacks, require.resolve shims in ESM, toggling config values back and forth, monkey-patching), STOP immediately and ask the user how to proceed. Do not apply it silently.
-- **NEVER add fallback defaults (`?? fallback`, `|| default`, `?:`) for values that must exist.** If something is required, let it fail loudly rather than silently swallowing the error with a default. Wrong defaults hide bugs.
-- Do NOT add redundant comments, docstrings, or type annotations to code you didn't change.
-- Do NOT over-engineer: no premature abstractions, no feature flags for one-off changes, no "just in case" error handling.
-- Do NOT create new files when editing an existing one would work — prevents file bloat.
-- Do NOT leave dead code, commented-out code, or `// removed` markers — delete cleanly.
-- Do NOT add `console.log` or debug statements in committed code.
-- When deleting code, delete it completely — no backwards-compatibility shims or re-exports for unused items.
-- Prefer simple, idiomatic solutions over clever ones.
-- Prefer named exports over default exports (matches existing codebase pattern).
-- Keep changes minimal and focused — a bug fix doesn't need surrounding code cleaned up.
-- Read existing code before modifying it. Match the patterns and style already in use.
+Run this after completing any changes:
 
-## Testing & Verification
+```bash
+pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
+```
 
-- Always test scripts, dev servers, and build commands BEFORE committing. Run the actual command and verify output — never commit untested code.
-- If a sub-agent reports success, verify independently before trusting the result.
-- When fixing a bug, write or update a test that reproduces it before implementing the fix.
-- Run only the relevant test file during development, full suite before committing.
+## CI/CD Workflows
 
-## Agent & Task Management
+| Workflow | Trigger | Secrets | What it does |
+|---|---|---|---|
+| `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
+| `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
+| `deploy.yml` | Push to main (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 (both tiers) → deploy workers → health check |
+| `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
+| `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + R2 objects |
+| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
 
-- When launching parallel sub-agents (Task tool), ensure the session will remain active long enough to receive results. For long-running parallel work, prefer sequential execution or batch into fewer agents rather than spawning many that may not complete before session timeout.
-- Provide agents with specific file paths and context rather than asking them to "explore" broadly.
-- For code changes, always use a single agent — splitting edits across agents risks conflicts.
 
 ## Architecture
 
-### IPC Bridge
-The preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via `contextBridge`. The web app calls this API (`apps/web/src/lib/accomplish.ts`), which routes through IPC handlers in `apps/desktop/src/main/ipc/handlers.ts` to the main process.
-
 ### Boundary Rules
-- **NEVER implement OpenCode, agent, or AI logic in `apps/desktop`.** All agent-related implementation (task management, OpenCode adapter, provider validation, storage, skills, logging) belongs in `@accomplish_ai/agent-core`. The desktop app only wires agent-core APIs into IPC handlers — it does not contain its own implementations.
-- Do NOT import from `@accomplish/desktop` in `@accomplish/web` — the web app communicates with electron exclusively through the IPC bridge.
-- The web app imports only from `@accomplish_ai/agent-core/common` (shared types/utilities), never from the full `@accomplish_ai/agent-core` package (which contains Node.js-only code).
-- Electron main process code must never import React or browser APIs; web code must never import Node.js modules directly.
+
+- **NEVER implement agent/AI logic in `apps/desktop`**. All agent logic belongs in `@accomplish_ai/agent-core`. Desktop only wires agent-core APIs into IPC handlers.
+- **`apps/web` must NOT import from `apps/desktop`** — communication is exclusively through the IPC bridge.
+- **`apps/web` imports only from `@accomplish_ai/agent-core/common`** (shared types/utilities), never the full package (Node.js-only code).
+- Electron main process: no React or browser APIs. Web code: no Node.js modules directly.
 
 ### State Management
-- **Web**: Zustand stores (`apps/web/src/stores/taskStore.ts`)
-- **Electron main**: electron-store for settings, better-sqlite3 for structured data
 
-### Skills System
-Bundled skills live in `apps/desktop/bundled-skills/` as directories with `SKILL.md` files (YAML frontmatter + markdown body). Each skill defines a slash command.
+- **Web**: Single Zustand store (`apps/web/src/stores/taskStore.ts`) — tasks, permissions, setup, todos, auth
+- **Electron main**: electron-store (settings), better-sqlite3 (tasks/todos), secure storage (API keys)
 
 ### Key Dependencies
-- `opencode-ai` — underlying task execution engine (consumed by agent-core)
-- Radix UI primitives + Tailwind CSS + Framer Motion for UI
 
-## Testing Conventions
+| Package | Where | Purpose |
+|---|---|---|
+| `@accomplish_ai/agent-core` | Desktop (full), Web (types) | Agent logic, validation, providers |
+| `opencode-ai` | Desktop | Task execution engine (binary in asar) |
+| `better-sqlite3` | Desktop | Structured data storage |
+| `electron-store` | Desktop | Settings persistence |
+| `node-pty` | Desktop | PTY for opencode process |
+| React 19 + react-router v7 | Web | UI framework (hash router) |
+| Zustand v5 | Web | State management |
+| Radix UI | Web | Accessible UI primitives |
+| Tailwind CSS 3 + Framer Motion | Web | Styling + animations |
+| `wrangler` | Infra | Cloudflare Workers CLI |
 
-- **Naming**: `*.unit.test.ts(x)` for unit tests, `*.integration.test.ts(x)` for integration tests
-- **Electron tests**: Node environment (main process logic)
-- **Web tests**: jsdom environment (React components)
-- **Coverage thresholds** (desktop): 80% statements, 70% branches, 80% functions/lines
-
-## Path Aliases
+### Path Aliases
 
 - Desktop: `@main/*` → `src/main/*`
 - Web: `@/*` → `src/*`
 
+### Build Output
+
+- **Web**: `apps/web/dist/` — static SPA with `base: './'` (relative paths for R2/CDN)
+- **Desktop**: `dist-electron/` (main + preload), `dist/` (copied web assets), `release/` (packaged app)
+- **Desktop packaging**: electron-builder → DMG + ZIP (macOS), NSIS (Windows). Published to GitHub Releases (`accomplish-ai/accomplish`)
+
+## Code Quality Rules
+
+- **NEVER apply hacks or workarounds.** If a fix feels hacky, STOP and ask the user.
+- **NEVER add fallback defaults** (`?? fallback`, `|| default`) for values that must exist. Let it fail loudly.
+- Do NOT add comments, docstrings, or type annotations to code you didn't change.
+- Do NOT over-engineer: no premature abstractions, no "just in case" error handling.
+- Do NOT create new files when editing an existing one would work.
+- Do NOT leave dead code, commented-out code, or `console.log` statements.
+- When deleting code, delete completely — no backwards-compat shims.
+- Prefer named exports over default exports.
+- Read existing code before modifying. Match existing patterns and style.
+
+## Testing Conventions
+
+- `*.unit.test.ts(x)` for unit tests, `*.integration.test.ts(x)` for integration tests
+- Electron tests: Node environment. Web tests: jsdom environment.
+- Coverage thresholds (desktop): 80% statements, 70% branches, 80% functions/lines
+- When fixing a bug, write or update a test that reproduces it first.
+
 ## Commit Convention
 
-- PR titles must follow conventional commits: `<type>(<scope>): <description>`
+- Conventional commits: `<type>(<scope>): <description>`
 - Types: feat, fix, docs, chore, refactor, test, perf, ci, build, style
-- Keep commits atomic — one logical change per commit. Do NOT bundle unrelated changes.
+- One logical change per commit. PR titles must also follow this format (enforced by CI).
+
+## Workflow
+
+- Before starting work, run `git status` and `git log --oneline -10`.
+- When stuck after 2 failed attempts, stop and propose an alternative.
+- If a sub-agent reports success, verify independently.
+- For code changes, use a single agent — splitting edits across agents risks conflicts.
+
+## Known Issues / Open Items
+- No staging environment — PR previews serve as staging
+- No deploy rollback mechanism
+- Windows desktop build is disabled in release workflow
+- Router TODOs: KV version resolution, canary routing, A/B experiments, Analytics Engine
+- Manual IaC steps documented in `docs/plans/iac-improvements.md`
