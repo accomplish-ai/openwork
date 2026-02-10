@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@accomplish_ai/agent-core': 0.3.1
+
 importers:
 
   .:
@@ -79,8 +82,8 @@ importers:
   apps/web:
     dependencies:
       '@accomplish_ai/agent-core':
-        specifier: ^0.2.2
-        version: 0.2.2
+        specifier: 0.3.1
+        version: 0.3.1
       '@radix-ui/react-avatar':
         specifier: ^1.1.2
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -186,10 +189,6 @@ packages:
 
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
-
-  '@accomplish_ai/agent-core@0.2.2':
-    resolution: {integrity: sha512-/hqrTGXXXNY8D/nBXSayY1hCsRXuvRM49uOyaeWmwvQXbK8wG7k/ul5vKtLEDQkdv7O5ErSm8AZD0hY23wmYAw==}
-    engines: {node: '>=20.0.0'}
 
   '@accomplish_ai/agent-core@0.3.1':
     resolution: {integrity: sha512-hlXt52G3s5Cu90T9i1i9OeXnlErm/lb2MPg0EDkkpvIO0ftPSkrZTFWHFdQc9e9hOqV46Sq+YPYwDkhRqGaLAg==}
@@ -4585,19 +4584,6 @@ packages:
 snapshots:
 
   7zip-bin@5.2.0: {}
-
-  '@accomplish_ai/agent-core@0.2.2':
-    dependencies:
-      '@aws-sdk/client-bedrock': 3.971.0
-      '@aws-sdk/credential-providers': 3.971.0
-      '@azure/identity': 4.13.0
-      better-sqlite3: 12.6.2
-      gray-matter: 4.0.3
-      node-pty: 1.1.0
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - aws-crt
-      - supports-color
 
   '@accomplish_ai/agent-core@0.3.1':
     dependencies:

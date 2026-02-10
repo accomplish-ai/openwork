@@ -32,6 +32,11 @@
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "@accomplish_ai/agent-core": "0.3.1"
+    }
+  },
   "devDependencies": {
     "wait-on": "^9.0.3"
   }

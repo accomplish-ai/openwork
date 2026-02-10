@@ -2,28 +2,48 @@
 
 ## Project Overview
 
-Accomplish is a pnpm workspace monorepo with a desktop app, web UI, and Cloudflare Workers infrastructure for serving the web app.
+Accomplish is a pnpm workspace monorepo: an Electron desktop app, a React 19 web UI, and Cloudflare Workers infrastructure for serving the web app. The desktop app loads the web UI from Cloudflare Workers (prod) or localhost (dev).
 
 ### Workspace Structure
 
 ```
-apps/desktop    @accomplish/desktop     Electron shell (IPC handlers, preload bridge, platform integration)
-apps/web        @accomplish/web         React 19 UI (runs in Electron renderer or standalone via Vite)
-infra/                                  Cloudflare Workers + R2 deployment infrastructure
+apps/desktop    @accomplish/desktop     Electron shell (IPC, preload bridge, platform integration)
+apps/web        @accomplish/web         React 19 SPA (hash router, runs in Electron renderer)
+infra/                                  Cloudflare Workers + R2 (NOT in pnpm workspace, uses npm)
+scripts/                                Dev orchestration scripts (Node.js CJS)
+docs/                                   Architecture plans + review documents
 ```
 
-**External dependency**: [`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish) (npm package, not in workspace) contains all agent/AI logic.
+**External dependency**: [`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish) (npm package, not in workspace) — all agent/AI logic.
+- Desktop imports full package (v0.3.1) — validation, providers, task management
+- Web imports ONLY `@accomplish_ai/agent-core/common` (^0.2.2) — types + shared utilities
+
 
 ### Infra: Cloudflare Workers
 
 ```
-infra/router/    Router worker — resolves tier (lite/enterprise), forwards to app worker
-infra/app/       App worker — serves static assets from R2 with SPA fallback
+┌─────────┐    service binding    ┌──────────────────┐    R2 GET
+│ Router  │───────────────────────▶│ App Worker (lite) │──────────▶ R2: builds/v{ver}-lite/
+│ Worker  │                       └──────────────────┘            accomplish-assets bucket
+│         │    service binding    ┌──────────────────────┐
+│         │───────────────────────▶│ App Worker (enterprise)│──────▶ R2: builds/v{ver}-enterprise/
+└─────────┘                       └──────────────────────┘
 ```
 
-- **R2 bucket** `accomplish-assets` stores versioned builds at `builds/v{version}-{tier}/`
-- Router uses Cloudflare service bindings to dispatch to `accomplish-app-lite` or `accomplish-app-enterprise`
-- Config files: `infra/app/wrangler.toml` (base, name/vars set via CLI), `infra/router/wrangler.toml`
+- **Router** (`infra/router/`): reads `?type=` param → forwards to lite (default) or enterprise app worker
+- **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
+- **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
+- App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
+- Cache: `index.html` no-cache, `/assets/*` 1yr immutable, everything else 1hr
+
+### Versioning
+
+- **Source of truth**: `apps/web/package.json` (web deploys) and `apps/desktop/package.json` (desktop releases)
+- Root `package.json` version (`0.1.0`) is NOT used for deployments
+- Desktop `package.json` is for the dmg/exe
+- Web `pacakge.json` is for the App Workers
+- No git tags, no changelog automation, no semantic-release
+- R2 paths use version from `apps/web/package.json` at deploy time
 
 ## Commands
 
@@ -41,8 +61,8 @@ pnpm dev:remote <url>                     # Point desktop app at a remote worker
 
 # Build
 pnpm build                                # Build all workspaces
-pnpm build:desktop                        # Desktop only
-pnpm build:web                            # Web only
+pnpm build:desktop                        # Desktop only (also builds web + copies dist)
+pnpm build:web                            # Web only → apps/web/dist/
 
 # Quality
 pnpm typecheck                            # tsc --noEmit across all workspaces (aliased as pnpm lint)
@@ -50,17 +70,30 @@ pnpm typecheck                            # tsc --noEmit across all workspaces (
 # Tests (vitest)
 pnpm -F @accomplish/desktop test:unit     # Desktop unit tests
 pnpm -F @accomplish/web test:unit         # Web unit tests
+pnpm -F @accomplish/desktop test:integration
+pnpm -F @accomplish/web test:integration
 
 # Single test file
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
+
+# Infra (run from infra/)
+cd infra && bash deploy.sh production     # Full prod deploy (build + R2 upload + workers)
+cd infra && bash deploy.sh preview <PR>   # PR preview deploy
+cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
+cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
 ```
 
 ### Environment Variables
 
-| Variable | Purpose |
-|---|---|
-| `ACCOMPLISH_ROUTER_URL` | Controls all routing — points the app at a specific worker URL |
-| `CLEAN_START=1` | Clears user data on dev startup |
+| Variable | Where | Purpose |
+|---|---|---|
+| `ACCOMPLISH_ROUTER_URL` | Desktop main | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev` |
+| `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
+| `E2E_SKIP_AUTH` | Desktop main | Skips auth for E2E tests |
+| `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
+| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup |
+| `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
+| `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
 
 ## Verification Command
 
@@ -70,11 +103,19 @@ Run this after completing any changes:
 pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
 ```
 
+## CI/CD Workflows
+
+| Workflow | Trigger | Secrets | What it does |
+|---|---|---|---|
+| `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
+| `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
+| `deploy.yml` | Push to main (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 (both tiers) → deploy workers → health check |
+| `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
+| `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + R2 objects |
+| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
+
+
 ## Architecture
-
-### IPC Bridge (Desktop)
-
-Preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via `contextBridge`. Web app calls it through `apps/web/src/lib/accomplish.ts`, routing through IPC handlers in `apps/desktop/src/main/ipc/handlers.ts`.
 
 ### Boundary Rules
 
@@ -85,19 +126,34 @@ Preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via
 
 ### State Management
 
-- **Web**: Zustand stores (`apps/web/src/stores/taskStore.ts`)
-- **Electron main**: electron-store for settings, better-sqlite3 for structured data
+- **Web**: Single Zustand store (`apps/web/src/stores/taskStore.ts`) — tasks, permissions, setup, todos, auth
+- **Electron main**: electron-store (settings), better-sqlite3 (tasks/todos), secure storage (API keys)
 
 ### Key Dependencies
 
-- `opencode-ai` — task execution engine (consumed by agent-core)
-- Radix UI + Tailwind CSS + Framer Motion for UI
-- `wrangler` — Cloudflare Workers CLI (in `infra/`)
+| Package | Where | Purpose |
+|---|---|---|
+| `@accomplish_ai/agent-core` | Desktop (full), Web (types) | Agent logic, validation, providers |
+| `opencode-ai` | Desktop | Task execution engine (binary in asar) |
+| `better-sqlite3` | Desktop | Structured data storage |
+| `electron-store` | Desktop | Settings persistence |
+| `node-pty` | Desktop | PTY for opencode process |
+| React 19 + react-router v7 | Web | UI framework (hash router) |
+| Zustand v5 | Web | State management |
+| Radix UI | Web | Accessible UI primitives |
+| Tailwind CSS 3 + Framer Motion | Web | Styling + animations |
+| `wrangler` | Infra | Cloudflare Workers CLI |
 
 ### Path Aliases
 
-- Desktop: `@main/*` -> `src/main/*`
-- Web: `@/*` -> `src/*`
+- Desktop: `@main/*` → `src/main/*`
+- Web: `@/*` → `src/*`
+
+### Build Output
+
+- **Web**: `apps/web/dist/` — static SPA with `base: './'` (relative paths for R2/CDN)
+- **Desktop**: `dist-electron/` (main + preload), `dist/` (copied web assets), `release/` (packaged app)
+- **Desktop packaging**: electron-builder → DMG + ZIP (macOS), NSIS (Windows). Published to GitHub Releases (`accomplish-ai/accomplish`)
 
 ## Code Quality Rules
 
@@ -122,7 +178,7 @@ Preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via
 
 - Conventional commits: `<type>(<scope>): <description>`
 - Types: feat, fix, docs, chore, refactor, test, perf, ci, build, style
-- One logical change per commit.
+- One logical change per commit. PR titles must also follow this format (enforced by CI).
 
 ## Workflow
 
@@ -130,3 +186,10 @@ Preload script (`apps/desktop/src/preload/index.ts`) exposes `accomplishAPI` via
 - When stuck after 2 failed attempts, stop and propose an alternative.
 - If a sub-agent reports success, verify independently.
 - For code changes, use a single agent — splitting edits across agents risks conflicts.
+
+## Known Issues / Open Items
+- No staging environment — PR previews serve as staging
+- No deploy rollback mechanism
+- Windows desktop build is disabled in release workflow
+- Router TODOs: KV version resolution, canary routing, A/B experiments, Analytics Engine
+- Manual IaC steps documented in `docs/plans/iac-improvements.md`
