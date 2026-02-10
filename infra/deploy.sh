@@ -106,11 +106,13 @@ case "${1:-}" in
     deploy_workers production
 
     echo "Deploy complete! Version: $version"
-    echo ""
-    echo "Verify:"
-    for tier in "${TIERS[@]}"; do
-      echo "  curl https://$(worker_name "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
-    done
+    if [[ -n "$WORKERS_SUBDOMAIN" ]]; then
+      echo ""
+      echo "Verify:"
+      for tier in "${TIERS[@]}"; do
+        echo "  curl https://$(worker_name "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
+      done
+    fi
     ;;
 
   preview)
@@ -127,9 +129,11 @@ case "${1:-}" in
     deploy_workers preview "$PR_NUMBER"
 
     echo "Preview deployed!"
-    echo "Router:     https://$(preview_worker_name "$PR_NUMBER" router).${WORKERS_SUBDOMAIN}.workers.dev"
-    echo "App Lite:   https://$(preview_worker_name "$PR_NUMBER" lite).${WORKERS_SUBDOMAIN}.workers.dev"
-    echo "App Enterprise: https://$(preview_worker_name "$PR_NUMBER" enterprise).${WORKERS_SUBDOMAIN}.workers.dev"
+    if [[ -n "$WORKERS_SUBDOMAIN" ]]; then
+      echo "Router:     https://$(preview_worker_name "$PR_NUMBER" router).${WORKERS_SUBDOMAIN}.workers.dev"
+      echo "App Lite:   https://$(preview_worker_name "$PR_NUMBER" lite).${WORKERS_SUBDOMAIN}.workers.dev"
+      echo "App Enterprise: https://$(preview_worker_name "$PR_NUMBER" enterprise).${WORKERS_SUBDOMAIN}.workers.dev"
+    fi
     ;;
 
   upload)
