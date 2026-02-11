@@ -2,7 +2,7 @@ name: PR Preview Deploy
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'apps/web/**'
       - 'infra/**'
