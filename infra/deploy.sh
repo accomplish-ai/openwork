@@ -27,6 +27,7 @@ release() {
 
   local build_id
   build_id="$(get_build_id)"
+  echo "build_id=$build_id" >> "${GITHUB_OUTPUT:-/dev/null}"
   echo "Releasing version: $build_id"
 
   # 1. Build and upload to R2 (per tier)

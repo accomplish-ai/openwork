@@ -138,6 +138,9 @@ test.describe('task execution - local mode', () => {
 // Each describe block gets its own worker, preventing process leaks
 // from one test affecting the next (known Playwright+Electron issue).
 
+const REMOTE_URL = process.env.E2E_REMOTE_URL || PRODUCTION_ORIGIN;
+const remoteOrigin = new URL(REMOTE_URL).origin;
+
 for (const provider of PROVIDERS) {
   test.describe(`task execution - remote ${provider.name}`, () => {
     test(`[remote] ${provider.name} browser automation task completes`, async () => {
@@ -145,9 +148,11 @@ for (const provider of PROVIDERS) {
       const apiKey = process.env[provider.envVar];
       test.skip(!apiKey, `${provider.envVar} not set`);
 
-      const ctx = await setupApp(`task-remote-${provider.id}`);
+      const ctx = await setupApp(`task-remote-${provider.id}`, {
+        ACCOMPLISH_ROUTER_URL: REMOTE_URL,
+      });
       try {
-        await runTaskTest(ctx, PRODUCTION_ORIGIN, provider.id, apiKey!);
+        await runTaskTest(ctx, remoteOrigin, provider.id, apiKey!);
       } finally {
         await teardownApp(ctx);
       }

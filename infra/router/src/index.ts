@@ -96,8 +96,8 @@ function resolveTier(tierParam: string | null, cookieTier: Tier | undefined): Ti
   return cookieTier ?? "lite";
 }
 
-function isNavigation(request: Request, url: URL): boolean {
-  if (url.searchParams.has('build') || url.searchParams.has('type')) return true;
+export function isNavigation(request: Request, url: URL): boolean {
+  if (url.searchParams.has('build') || url.searchParams.has('type') || url.searchParams.has('pin')) return true;
   if (url.pathname === '/') return true;
   if (!url.pathname.includes('.') && request.headers.get('accept')?.includes('text/html')) return true;
   return false;
@@ -110,7 +110,7 @@ function errorResponse(error: string, status: number): Response {
   });
 }
 
-function resolveRoute(
+export function resolveRoute(
   config: RoutingConfig,
   url: URL,
   cookie: { buildId: string; tier: Tier } | null,
@@ -122,6 +122,15 @@ function resolveRoute(
 
   const buildParam = url.searchParams.get("build");
   const tierParam = url.searchParams.get("type");
+
+  const pinParam = url.searchParams.get("pin");
+  if (pinParam) {
+    if (BUILD_ID_PATTERN.test(pinParam) && config.activeVersions.includes(pinParam)) {
+      return { buildId: pinParam, tier: resolveTier(tierParam, cookie?.tier), source: "pin" };
+    }
+    return null;
+  }
+
   const validBuildParam = buildParam && /^\d+\.\d+\.\d+$/.test(buildParam)
     ? buildParam : null;
 

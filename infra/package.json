@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "bash dev.sh",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash deploy.sh",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
     "wrangler": "^4"
   }
 }

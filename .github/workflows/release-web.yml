@@ -40,6 +40,8 @@ jobs:
     name: Release
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      build_id: ${{ steps.release.outputs.build_id }}
     environment: production
     permissions:
       contents: read
@@ -85,6 +87,7 @@ jobs:
           rm rclone.deb
 
       - name: Release
+        id: release
         run: cd infra && bash deploy.sh release
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -133,6 +136,15 @@ jobs:
         run: pnpm exec electron-rebuild -f
         working-directory: apps/desktop
 
+      - name: Validate build_id output
+        run: |
+          if [ -z "$BUILD_ID" ]; then
+            echo "::error::Missing build_id output from release job"
+            exit 1
+          fi
+        env:
+          BUILD_ID: ${{ needs.release.outputs.build_id }}
+
       - name: Run E2E task execution tests
         timeout-minutes: 15
         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm -F @accomplish/desktop test:e2e
@@ -140,6 +152,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          E2E_REMOTE_URL: https://accomplish-router.accomplish.workers.dev?pin=${{ needs.release.outputs.build_id }}&type=lite
 
       - name: Capture system state on failure
         if: failure()
