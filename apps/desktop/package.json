@@ -33,7 +33,7 @@
   "dependencies": {
     "@accomplish_ai/agent-core": "0.3.1",
     "better-sqlite3": "^12.6.2",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.2.4",
     "electron-store": "^8.2.0",
     "fix-path": "^5.0.0",
     "node-pty": "^1.1.0",
@@ -41,18 +41,18 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.2",
+    "@electron/rebuild": "^4.0.3",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^4.0.17",
+    "@vitest/coverage-v8": "^4.0.18",
     "electron": "^35.2.1",
     "electron-builder": "^25.1.8",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.27.3",
     "jsdom": "^27.4.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
-    "vite-plugin-electron": "^0.28.8",
-    "vitest": "^4.0.17"
+    "vite-plugin-electron": "^0.29.0",
+    "vitest": "^4.0.18"
   },
   "build": {
     "npmRebuild": false,
