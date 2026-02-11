@@ -115,6 +115,9 @@ export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';
 export type { ThoughtEvent, CheckpointEvent } from './common/types/thought-stream.js';
 
+// Storage types (needed by renderer for settings UI)
+export type { SandboxConfig } from './types/storage.js';
+
 // === CONSTANTS ===
 export {
   DEV_BROWSER_PORT,

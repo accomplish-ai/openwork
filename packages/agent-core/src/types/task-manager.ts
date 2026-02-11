@@ -68,6 +68,10 @@ export interface TaskAdapterOptions {
   onBeforeStart?: () => Promise<void>;
   /** Function to get display name for a model ID */
   getModelDisplayName?: (modelId: string) => string;
+  /** Wrap the shell command with sandbox restrictions before PTY spawn */
+  wrapCommand?: (command: string, workingDirectory?: string) => Promise<string>;
+  /** Called after a command finishes to clean up sandbox state */
+  onCommandCleanup?: () => void;
 }
 
 /** Options for creating a TaskManager instance */

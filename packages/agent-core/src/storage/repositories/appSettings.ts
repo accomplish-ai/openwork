@@ -5,6 +5,7 @@ import type {
   AzureFoundryConfig,
   LMStudioConfig,
 } from '../../common/types/provider.js';
+import type { SandboxConfig } from '../../types/storage.js';
 import { getDatabase } from '../database.js';
 import { safeParseJsonWithFallback } from '../../utils/json.js';
 
@@ -18,6 +19,7 @@ interface AppSettingsRow {
   azure_foundry_config: string | null;
   lmstudio_config: string | null;
   openai_base_url: string | null;
+  sandbox_config: string | null;
 }
 
 export interface AppSettings {
@@ -29,6 +31,7 @@ export interface AppSettings {
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
+  sandboxConfig: SandboxConfig | null;
 }
 
 function getRow(): AppSettingsRow {
@@ -151,6 +154,22 @@ export function setOpenAiBaseUrl(baseUrl: string): void {
   db.prepare('UPDATE app_settings SET openai_base_url = ? WHERE id = 1').run(baseUrl || '');
 }
 
+export function getSandboxConfig(): SandboxConfig | null {
+  const row = getRow();
+  if (!row.sandbox_config) return null;
+  try {
+    return JSON.parse(row.sandbox_config) as SandboxConfig;
+  } catch {
+    return null;
+  }
+}
+
+export function setSandboxConfig(config: SandboxConfig | null): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET sandbox_config = ? WHERE id = 1').run(
+    config ? JSON.stringify(config) : null
+  );
+}
 
 export function getAppSettings(): AppSettings {
   const row = getRow();
@@ -163,6 +182,7 @@ export function getAppSettings(): AppSettings {
     azureFoundryConfig: safeParseJsonWithFallback<AzureFoundryConfig>(row.azure_foundry_config),
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
     openaiBaseUrl: row.openai_base_url || '',
+    sandboxConfig: safeParseJsonWithFallback<SandboxConfig>(row.sandbox_config),
   };
 }
 
@@ -177,7 +197,8 @@ export function clearAppSettings(): void {
       litellm_config = NULL,
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
-      openai_base_url = ''
+      openai_base_url = '',
+      sandbox_config = NULL
     WHERE id = 1`
   ).run();
 }

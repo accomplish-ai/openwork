@@ -16,6 +16,7 @@ import { useProviderSettings } from '@/components/settings/hooks/useProviderSett
 import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
+import { SecurityPanel } from '@/components/settings/SecurityPanel';
 import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
@@ -29,7 +30,7 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'voice' | 'skills' | 'about';
+  initialTab?: 'providers' | 'voice' | 'skills' | 'security' | 'about';
 }
 
 export default function SettingsDialog({
@@ -43,7 +44,7 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills' | 'about'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills' | 'security' | 'about'>(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
@@ -324,6 +325,16 @@ export default function SettingsDialog({
                 Voice Input
               </button>
               <button
+                onClick={() => setActiveTab('security')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'security'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Security
+              </button>
+              <button
                 onClick={() => setActiveTab('about')}
                 className={`pb-3 px-1 font-medium text-sm transition-colors ${
                   activeTab === 'about'
@@ -502,6 +513,13 @@ export default function SettingsDialog({
           {activeTab === 'voice' && (
             <div className="space-y-6">
               <SpeechSettingsForm onSave={() => {}} onChange={() => {}} />
+            </div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <div className="space-y-6">
+              <SecurityPanel />
             </div>
           )}
 

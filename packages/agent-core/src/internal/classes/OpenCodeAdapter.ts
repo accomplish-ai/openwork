@@ -29,6 +29,8 @@ export interface AdapterOptions {
   buildCliArgs: (config: TaskConfig) => Promise<string[]>;
   onBeforeStart?: () => Promise<void>;
   getModelDisplayName?: (modelId: string) => string;
+  wrapCommand?: (command: string, workingDirectory?: string) => Promise<string>;
+  onCommandCleanup?: () => void;
 }
 
 export interface OpenCodeAdapterEvents {
@@ -205,7 +207,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.emit('debug', { type: 'info', message: cwdMsg });
 
     {
-      const fullCommand = this.buildShellCommand(command, allArgs);
+      let fullCommand = this.buildShellCommand(command, allArgs);
+
+      if (this.options.wrapCommand) {
+        fullCommand = await this.options.wrapCommand(fullCommand, safeCwd);
+      }
 
       const shellCmdMsg = `Full shell command: ${fullCommand}`;
       console.log('[OpenCode CLI]', shellCmdMsg);
@@ -344,6 +350,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       }
       this.ptyProcess = null;
     }
+
+    this.options.onCommandCleanup?.();
 
     this.currentSessionId = null;
     this.currentTaskId = null;
@@ -611,6 +619,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private handleProcessExit(code: number | null): void {
     this.ptyProcess = null;
+    this.options.onCommandCleanup?.();
 
     if (this.wasInterrupted && code === 0 && !this.hasCompleted) {
       console.log('[OpenCode CLI] Task was interrupted by user');
@@ -671,7 +680,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const allArgs = [...baseArgs, ...cliArgs];
     const safeCwd = config.workingDirectory || this.options.tempPath;
 
-    const fullCommand = this.buildShellCommand(command, allArgs);
+    let fullCommand = this.buildShellCommand(command, allArgs);
+
+    if (this.options.wrapCommand) {
+      fullCommand = await this.options.wrapCommand(fullCommand, safeCwd);
+    }
 
     const shellCmd = this.getPlatformShell();
     const shellArgs = this.getShellArgs(fullCommand);

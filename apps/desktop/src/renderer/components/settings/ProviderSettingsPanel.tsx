@@ -34,6 +34,10 @@ export function ProviderSettingsPanel({
 }: ProviderSettingsPanelProps) {
   const meta = PROVIDER_META[providerId];
 
+  if (!meta) {
+    return null;
+  }
+
   // Render form content based on provider category
   const renderForm = () => {
     // Handle Z.AI separately (has region selector)

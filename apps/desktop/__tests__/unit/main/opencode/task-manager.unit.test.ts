@@ -218,6 +218,7 @@ vi.mock('@main/opencode/electron-options', () => ({
   getOpenCodeCliPath: vi.fn(() => ({ command: 'opencode', args: [] })),
   isOpenCodeBundled: vi.fn(() => true),
   getBundledOpenCodeVersion: vi.fn(() => '1.0.0'),
+  shutdownSandbox: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock bundled-node

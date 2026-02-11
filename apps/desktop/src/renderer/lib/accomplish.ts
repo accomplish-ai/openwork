@@ -22,6 +22,7 @@ import type {
   TodoItem,
   ToolSupportStatus,
   Skill,
+  SandboxConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -57,6 +58,8 @@ interface AccomplishAPI {
   getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean }>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;
+  getSandboxConfig(): Promise<SandboxConfig | null>;
+  setSandboxConfig(config: SandboxConfig | null): Promise<void>;
   getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;
   loginOpenAiWithChatGpt(): Promise<{ ok: boolean; openedUrl?: string }>;
 

@@ -15,6 +15,8 @@ export {
   setLMStudioConfig,
   getOpenAiBaseUrl,
   setOpenAiBaseUrl,
+  getSandboxConfig,
+  setSandboxConfig,
   getAppSettings,
   clearAppSettings,
   type AppSettings,

@@ -13,6 +13,18 @@ import type {
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
 
+/** User-configurable sandbox settings */
+export interface SandboxConfig {
+  enabled: boolean;
+  allowedDomains: string[];
+  additionalWritePaths: string[];
+  denyReadPaths: string[];
+  allowPty: boolean;
+  allowLocalBinding: boolean;
+  allowAllUnixSockets: boolean;
+  enableWeakerNestedSandbox: boolean;
+}
+
 /** Options for creating a Storage instance */
 export interface StorageOptions {
   /** Path to the SQLite database file */
@@ -50,6 +62,7 @@ export interface AppSettings {
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
+  sandboxConfig: SandboxConfig | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +131,10 @@ export interface AppSettingsAPI {
   getOpenAiBaseUrl(): string;
   /** Set the custom OpenAI base URL */
   setOpenAiBaseUrl(baseUrl: string): void;
+  /** Get the sandbox configuration */
+  getSandboxConfig(): SandboxConfig | null;
+  /** Set the sandbox configuration */
+  setSandboxConfig(config: SandboxConfig | null): void;
   /** Get all application settings as a snapshot */
   getAppSettings(): AppSettings;
   /** Reset all application settings to defaults */

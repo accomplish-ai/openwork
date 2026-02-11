@@ -18,6 +18,15 @@ import {
 } from '@accomplish_ai/agent-core';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
 import type { AzureFoundryCredentials, BedrockCredentials } from '@accomplish_ai/agent-core';
+import {
+  initializeSandbox,
+  isSandboxActive,
+  wrapCommand as sandboxWrapCommand,
+  cleanupAfterTask,
+  shutdownSandbox,
+  updateSandboxConfig,
+} from '@accomplish_ai/agent-core';
+import type { AccomplishSandboxOptions } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
 import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
 import { generateOpenCodeConfig, getMcpToolsPath, syncApiKeysToOpenCodeAuth } from './config-generator';
@@ -173,10 +182,28 @@ export async function isCliAvailable(): Promise<boolean> {
 }
 
 export async function onBeforeStart(): Promise<void> {
+  const storage = getStorage();
+  const sandboxConfig = storage.getSandboxConfig();
+
+  if (sandboxConfig?.enabled === false) {
+    console.log('[Sandbox] Sandbox disabled by user configuration');
+  } else if (!isSandboxActive()) {
+    const sandboxOptions: AccomplishSandboxOptions = {
+      workingDirectory: app.getPath('temp'),
+      allowPty: sandboxConfig?.allowPty ?? true,
+      allowLocalBinding: sandboxConfig?.allowLocalBinding ?? true,
+      allowAllUnixSockets: sandboxConfig?.allowAllUnixSockets ?? true,
+      enableWeakerNestedSandbox: sandboxConfig?.enableWeakerNestedSandbox ?? false,
+      additionalAllowedDomains: sandboxConfig?.allowedDomains,
+      additionalAllowWrite: sandboxConfig?.additionalWritePaths,
+      additionalDenyRead: sandboxConfig?.denyReadPaths,
+    };
+    await initializeSandbox(sandboxOptions);
+  }
+
   await syncApiKeysToOpenCodeAuth();
 
   let azureFoundryToken: string | undefined;
-  const storage = getStorage();
   const activeModel = storage.getActiveProviderModel();
   const selectedModel = activeModel || storage.getSelectedModel();
   const azureFoundryConfig = storage.getAzureFoundryConfig();
@@ -230,6 +257,8 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       onBeforeStart,
       getModelDisplayName,
       buildCliArgs,
+      wrapCommand: (cmd, cwd) => sandboxWrapCommand(cmd, cwd),
+      onCommandCleanup: () => cleanupAfterTask(),
     },
     defaultWorkingDirectory: app.getPath('temp'),
     maxConcurrentTasks: 10,
@@ -237,3 +266,5 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
     onBeforeTaskStart,
   };
 }
+
+export { shutdownSandbox, isSandboxActive, updateSandboxConfig };

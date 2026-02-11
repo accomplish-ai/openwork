@@ -386,3 +386,18 @@ export {
   resumeSessionSchema,
   validate,
 } from './common/schemas/validation.js';
+
+// -----------------------------------------------------------------------------
+// Sandbox Module (from ./sandbox/)
+// -----------------------------------------------------------------------------
+
+export {
+  initializeSandbox,
+  isSandboxActive,
+  wrapCommand,
+  cleanupAfterTask,
+  updateSandboxConfig,
+  shutdownSandbox,
+} from './sandbox/index.js';
+export type { AccomplishSandboxOptions } from './sandbox/index.js';
+export type { SandboxConfig } from './types/storage.js';

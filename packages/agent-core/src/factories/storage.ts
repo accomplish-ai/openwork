@@ -35,6 +35,8 @@ import {
   setLMStudioConfig,
   getOpenAiBaseUrl,
   setOpenAiBaseUrl,
+  getSandboxConfig,
+  setSandboxConfig,
   getAppSettings,
   clearAppSettings,
 } from '../storage/repositories/appSettings.js';
@@ -106,6 +108,8 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     setLMStudioConfig: (config) => setLMStudioConfig(config),
     getOpenAiBaseUrl: () => getOpenAiBaseUrl(),
     setOpenAiBaseUrl: (baseUrl) => setOpenAiBaseUrl(baseUrl),
+    getSandboxConfig: () => getSandboxConfig(),
+    setSandboxConfig: (config) => setSandboxConfig(config),
     getAppSettings: () => getAppSettings(),
     clearAppSettings: () => clearAppSettings(),
 

@@ -62,6 +62,10 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:openai-base-url:get'),
   setOpenAiBaseUrl: (baseUrl: string): Promise<void> =>
     ipcRenderer.invoke('settings:openai-base-url:set', baseUrl),
+  getSandboxConfig: (): Promise<unknown> =>
+    ipcRenderer.invoke('settings:sandbox-config:get'),
+  setSandboxConfig: (config: unknown): Promise<void> =>
+    ipcRenderer.invoke('settings:sandbox-config:set', config),
   getOpenAiOauthStatus: (): Promise<{ connected: boolean; expires?: number }> =>
     ipcRenderer.invoke('opencode:auth:openai:status'),
   loginOpenAiWithChatGpt: (): Promise<{ ok: boolean; openedUrl?: string }> =>

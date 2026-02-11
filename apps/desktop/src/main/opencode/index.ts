@@ -39,6 +39,7 @@ import {
   createElectronTaskManagerOptions,
   isCliAvailable,
   getBundledOpenCodeVersion,
+  shutdownSandbox,
 } from './electron-options';
 
 let taskManagerInstance: TaskManagerAPI | null = null;
@@ -55,6 +56,9 @@ export function disposeTaskManager(): void {
     taskManagerInstance.dispose();
     taskManagerInstance = null;
   }
+  shutdownSandbox().catch((err) => {
+    console.warn('[OpenCode] Error shutting down sandbox:', err);
+  });
 }
 
 export async function isOpenCodeCliInstalled(): Promise<boolean> {

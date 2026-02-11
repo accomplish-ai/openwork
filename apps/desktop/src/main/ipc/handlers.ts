@@ -8,6 +8,7 @@ import {
   getTaskManager,
   disposeTaskManager,
 } from '../opencode';
+import { isSandboxActive, updateSandboxConfig } from '../opencode/electron-options';
 import { getLogCollector } from '../logging';
 import {
   validateApiKey,
@@ -830,6 +831,28 @@ export function registerIPCHandlers(): void {
 
     validateHttpUrl(trimmed, 'OpenAI base URL');
     storage.setOpenAiBaseUrl(trimmed.replace(/\/+$/, ''));
+  });
+
+  // Sandbox configuration
+  handle('settings:sandbox-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getSandboxConfig();
+  });
+
+  handle('settings:sandbox-config:set', async (_event: IpcMainInvokeEvent, config: unknown) => {
+    storage.setSandboxConfig(config as import('@accomplish_ai/agent-core').SandboxConfig | null);
+
+    if (config && isSandboxActive()) {
+      const cfg = config as import('@accomplish_ai/agent-core').SandboxConfig;
+      updateSandboxConfig({
+        additionalAllowedDomains: cfg.allowedDomains,
+        additionalAllowWrite: cfg.additionalWritePaths,
+        additionalDenyRead: cfg.denyReadPaths,
+        allowPty: cfg.allowPty,
+        allowLocalBinding: cfg.allowLocalBinding,
+        allowAllUnixSockets: cfg.allowAllUnixSockets,
+        enableWeakerNestedSandbox: cfg.enableWeakerNestedSandbox,
+      });
+    }
   });
 
   handle('opencode:auth:openai:status', async (_event: IpcMainInvokeEvent) => {
