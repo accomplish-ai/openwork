@@ -20,11 +20,11 @@ import {
   startThoughtStreamServer,
 } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
-import { disposeTaskManager } from './opencode';
+import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
-import { initializeStorage, closeStorage, getStorage } from './store/storage';
-import { getApiKey } from './store/secureStorage';
+import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
+import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
 
@@ -46,6 +46,11 @@ if (process.env.CLEAN_START === '1') {
   } catch (err) {
     console.error('[Clean Mode] Failed to clear userData:', err);
   }
+  // Clear secure storage first (while singleton still exists), then null the reference.
+  // Reversing this order would cause getStorage() to re-create the singleton.
+  clearSecureStorage();
+  resetStorageSingleton();
+  console.log('[Clean Mode] All singletons reset');
 }
 
 app.setName('Accomplish');
@@ -110,7 +115,8 @@ function createWindow() {
   mainWindow.maximize();
 
   const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
-  if (!app.isPackaged && !isE2EMode) {
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  if (!app.isPackaged && !isE2EMode && !isTestEnv) {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
@@ -178,13 +184,15 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     console.log('[Main] Electron app ready, version:', app.getVersion());
 
-    try {
-      const didMigrate = migrateLegacyData();
-      if (didMigrate) {
-        console.log('[Main] Migrated data from legacy userData path');
+    if (process.env.CLEAN_START !== '1') {
+      try {
+        const didMigrate = migrateLegacyData();
+        if (didMigrate) {
+          console.log('[Main] Migrated data from legacy userData path');
+        }
+      } catch (err) {
+        console.error('[Main] Legacy data migration failed:', err);
       }
-    } catch (err) {
-      console.error('[Main] Legacy data migration failed:', err);
     }
 
     try {
@@ -262,6 +270,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   disposeTaskManager(); // Also cleans up proxies internally
+  cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
   closeStorage();
   shutdownLogCollector();

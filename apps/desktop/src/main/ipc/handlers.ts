@@ -8,6 +8,7 @@ import {
   getOpenCodeCliVersion,
   getTaskManager,
   disposeTaskManager,
+  cleanupVertexServiceAccountKey,
 } from '../opencode';
 import { getLogCollector } from '../logging';
 import {
@@ -97,6 +98,7 @@ import {
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
+import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -364,15 +366,31 @@ export function registerIPCHandlers(): void {
           } else {
             keyPrefix = 'AWS Credentials';
           }
+        } else if (provider === 'vertex') {
+          try {
+            const vertexCreds = apiKey ? JSON.parse(apiKey) : null;
+            if (vertexCreds?.projectId) {
+              keyPrefix = `${vertexCreds.projectId} (${vertexCreds.location || 'unknown'})`;
+            } else {
+              keyPrefix = 'GCP Credentials';
+            }
+          } catch {
+            keyPrefix = 'GCP Credentials';
+          }
         } else {
           keyPrefix =
             apiKey && apiKey.length > 0 ? `${apiKey.substring(0, 8)}...` : '';
         }
 
+        const labelMap: Record<string, string> = {
+          bedrock: 'AWS Credentials',
+          vertex: 'GCP Credentials',
+        };
+
         return {
           id: `local-${provider}`,
           provider,
-          label: provider === 'bedrock' ? 'AWS Credentials' : 'Local API Key',
+          label: labelMap[provider] || 'Local API Key',
           keyPrefix,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -580,6 +598,9 @@ export function registerIPCHandlers(): void {
       return null;
     }
   });
+
+  // Vertex AI handlers
+  registerVertexHandlers(handle);
 
   handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {
     await deleteApiKey('anthropic');
@@ -933,6 +954,9 @@ export function registerIPCHandlers(): void {
 
   handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
     storage.removeConnectedProvider(providerId);
+    if (providerId === 'vertex') {
+      cleanupVertexServiceAccountKey();
+    }
   });
 
   handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
