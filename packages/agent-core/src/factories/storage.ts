@@ -3,7 +3,7 @@ import {
   closeDatabase,
   isDatabaseInitialized,
   getDatabasePath,
-} from '../storage/database.js';
+} from "../storage/database.js";
 import {
   getTasks,
   getTask,
@@ -17,7 +17,7 @@ import {
   getTodosForTask,
   saveTodosForTask,
   clearTodosForTask,
-} from '../storage/repositories/taskHistory.js';
+} from "../storage/repositories/taskHistory.js";
 import {
   getDebugMode,
   setDebugMode,
@@ -37,7 +37,7 @@ import {
   setOpenAiBaseUrl,
   getAppSettings,
   clearAppSettings,
-} from '../storage/repositories/appSettings.js';
+} from "../storage/repositories/appSettings.js";
 import {
   getProviderSettings,
   setActiveProvider,
@@ -52,16 +52,16 @@ import {
   getActiveProviderModel,
   hasReadyProvider,
   getConnectedProviderIds,
-} from '../storage/repositories/providerSettings.js';
-import { SecureStorage } from '../internal/classes/SecureStorage.js';
-import type { StorageAPI, StorageOptions } from '../types/storage.js';
+} from "../storage/repositories/providerSettings.js";
+import { SecureStorage } from "../internal/classes/SecureStorage.js";
+import type { StorageAPI, StorageOptions } from "../types/storage.js";
 
 export function createStorage(options: StorageOptions = {}): StorageAPI {
   const {
     databasePath,
     runMigrations = true,
     userDataPath,
-    secureStorageAppId = 'ai.accomplish.desktop',
+    secureStorageAppId = "ai.accomplish.desktop",
     secureStorageFileName,
   } = options;
 
@@ -76,12 +76,14 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
 
   return {
     // Task History
-    getTasks: () => getTasks(),
+    getTasks: (workspaceId) => getTasks(workspaceId),
     getTask: (taskId) => getTask(taskId),
-    saveTask: (task) => saveTask(task),
-    updateTaskStatus: (taskId, status, completedAt) => updateTaskStatus(taskId, status, completedAt),
+    saveTask: (task, workspaceId) => saveTask(task, workspaceId),
+    updateTaskStatus: (taskId, status, completedAt) =>
+      updateTaskStatus(taskId, status, completedAt),
     addTaskMessage: (taskId, message) => addTaskMessage(taskId, message),
-    updateTaskSessionId: (taskId, sessionId) => updateTaskSessionId(taskId, sessionId),
+    updateTaskSessionId: (taskId, sessionId) =>
+      updateTaskSessionId(taskId, sessionId),
     updateTaskSummary: (taskId, summary) => updateTaskSummary(taskId, summary),
     deleteTask: (taskId) => deleteTask(taskId),
     clearHistory: () => clearHistory(),
@@ -114,9 +116,12 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     setActiveProvider: (providerId) => setActiveProvider(providerId),
     getActiveProviderId: () => getActiveProviderId(),
     getConnectedProvider: (providerId) => getConnectedProvider(providerId),
-    setConnectedProvider: (providerId, provider) => setConnectedProvider(providerId, provider),
-    removeConnectedProvider: (providerId) => removeConnectedProvider(providerId),
-    updateProviderModel: (providerId, modelId) => updateProviderModel(providerId, modelId),
+    setConnectedProvider: (providerId, provider) =>
+      setConnectedProvider(providerId, provider),
+    removeConnectedProvider: (providerId) =>
+      removeConnectedProvider(providerId),
+    updateProviderModel: (providerId, modelId) =>
+      updateProviderModel(providerId, modelId),
     setProviderDebugMode: (enabled) => setProviderDebugMode(enabled),
     getProviderDebugMode: () => getProviderDebugMode(),
     clearProviderSettings: () => clearProviderSettings(),
@@ -125,11 +130,13 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     getConnectedProviderIds: () => getConnectedProviderIds(),
 
     // Secure Storage
-    storeApiKey: (provider, apiKey) => secureStorage.storeApiKey(provider, apiKey),
+    storeApiKey: (provider, apiKey) =>
+      secureStorage.storeApiKey(provider, apiKey),
     getApiKey: (provider) => secureStorage.getApiKey(provider),
     deleteApiKey: (provider) => secureStorage.deleteApiKey(provider),
     getAllApiKeys: () => secureStorage.getAllApiKeys(),
-    storeBedrockCredentials: (credentials) => secureStorage.storeBedrockCredentials(credentials),
+    storeBedrockCredentials: (credentials) =>
+      secureStorage.storeBedrockCredentials(credentials),
     getBedrockCredentials: () => secureStorage.getBedrockCredentials(),
     hasAnyApiKey: () => secureStorage.hasAnyApiKey(),
     listStoredCredentials: () => secureStorage.listStoredCredentials(),

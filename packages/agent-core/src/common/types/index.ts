@@ -4,9 +4,9 @@ export type {
   BedrockProfileCredentials,
   BedrockApiKeyCredentials,
   BedrockCredentials,
-} from './auth.js';
+} from "./auth.js";
 
-export type { LogLevel, LogSource, LogEntry } from './logging.js';
+export type { LogLevel, LogSource, LogEntry } from "./logging.js";
 
 export type {
   OpenCodeMessageBase,
@@ -18,19 +18,19 @@ export type {
   OpenCodeStepFinishMessage,
   OpenCodeErrorMessage,
   OpenCodeMessage,
-} from './opencode.js';
+} from "./opencode.js";
 
 export {
   FILE_OPERATIONS,
   FILE_PERMISSION_REQUEST_PREFIX,
   QUESTION_REQUEST_PREFIX,
-} from './permission.js';
+} from "./permission.js";
 export type {
   FileOperation,
   PermissionRequest,
   PermissionOption,
   PermissionResponse,
-} from './permission.js';
+} from "./permission.js";
 
 export {
   ZAI_ENDPOINTS,
@@ -38,7 +38,7 @@ export {
   STANDARD_VALIDATION_PROVIDERS,
   DEFAULT_PROVIDERS,
   DEFAULT_MODEL,
-} from './provider.js';
+} from "./provider.js";
 export type {
   ProviderType,
   ApiKeyProvider,
@@ -52,7 +52,7 @@ export type {
   LiteLLMConfig,
   LMStudioModel,
   LMStudioConfig,
-} from './provider.js';
+} from "./provider.js";
 
 export {
   PROVIDER_META,
@@ -62,7 +62,7 @@ export {
   DEFAULT_MODELS,
   getDefaultModelForProvider,
   PROVIDER_ID_TO_OPENCODE,
-} from './providerSettings.js';
+} from "./providerSettings.js";
 export type {
   ProviderId,
   ProviderCategory,
@@ -82,11 +82,11 @@ export type {
   ToolSupportStatus,
   ConnectedProvider,
   ProviderSettings,
-} from './providerSettings.js';
+} from "./providerSettings.js";
 
-export type { SkillSource, Skill, SkillFrontmatter } from './skills.js';
+export type { SkillSource, Skill, SkillFrontmatter } from "./skills.js";
 
-export { STARTUP_STAGES } from './task.js';
+export { STARTUP_STAGES } from "./task.js";
 export type {
   TaskStatus,
   TaskConfig,
@@ -97,8 +97,14 @@ export type {
   StartupStage,
   TaskProgress,
   TaskUpdateEvent,
-} from './task.js';
+} from "./task.js";
 
-export type { ThoughtEvent, CheckpointEvent } from './thought-stream.js';
+export type { ThoughtEvent, CheckpointEvent } from "./thought-stream.js";
 
-export type { TodoItem } from './todo.js';
+export type { TodoItem } from "./todo.js";
+
+export type {
+  Workspace,
+  WorkspaceCreateInput,
+  WorkspaceUpdateInput,
+} from "./workspace.js";

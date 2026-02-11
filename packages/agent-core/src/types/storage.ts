@@ -1,17 +1,17 @@
-import type { Task, TaskStatus, TaskMessage } from '../common/types/task.js';
-import type { TodoItem } from '../common/types/todo.js';
+import type { Task, TaskStatus, TaskMessage } from "../common/types/task.js";
+import type { TodoItem } from "../common/types/todo.js";
 import type {
   SelectedModel,
   OllamaConfig,
   LiteLLMConfig,
   AzureFoundryConfig,
   LMStudioConfig,
-} from '../common/types/provider.js';
+} from "../common/types/provider.js";
 import type {
   ProviderId,
   ProviderSettings,
   ConnectedProvider,
-} from '../common/types/providerSettings.js';
+} from "../common/types/providerSettings.js";
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -58,14 +58,18 @@ export interface AppSettings {
 
 /** API for task CRUD operations and todo management */
 export interface TaskStorageAPI {
-  /** Get all stored tasks */
-  getTasks(): StoredTask[];
+  /** Get all stored tasks, optionally filtered by workspace */
+  getTasks(workspaceId?: string | null): StoredTask[];
   /** Get a task by ID, returns undefined if not found */
   getTask(taskId: string): StoredTask | undefined;
-  /** Persist a new task or update an existing one */
-  saveTask(task: Task): void;
+  /** Persist a new task or update an existing one, optionally assigning to a workspace */
+  saveTask(task: Task, workspaceId?: string | null): void;
   /** Update a task's status and optional completion timestamp */
-  updateTaskStatus(taskId: string, status: TaskStatus, completedAt?: string): void;
+  updateTaskStatus(
+    taskId: string,
+    status: TaskStatus,
+    completedAt?: string
+  ): void;
   /** Append a message to a task's message history */
   addTaskMessage(taskId: string, message: TaskMessage): void;
   /** Update the CLI session ID for a task */
@@ -135,7 +139,10 @@ export interface ProviderSettingsAPI {
   /** Get connection details for a specific provider */
   getConnectedProvider(providerId: ProviderId): ConnectedProvider | null;
   /** Store connection details for a provider */
-  setConnectedProvider(providerId: ProviderId, provider: ConnectedProvider): void;
+  setConnectedProvider(
+    providerId: ProviderId,
+    provider: ConnectedProvider
+  ): void;
   /** Remove a provider's connection details */
   removeConnectedProvider(providerId: ProviderId): void;
   /** Update the selected model for a provider */

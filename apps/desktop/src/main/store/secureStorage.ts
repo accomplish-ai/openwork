@@ -1,5 +1,5 @@
-import type { ApiKeyProvider } from '@accomplish_ai/agent-core';
-import { getStorage } from './storage';
+import type { ApiKeyProvider } from "@accomplish_ai/agent-core";
+import { getStorage } from "./storage";
 
 export type { ApiKeyProvider };
 
@@ -15,8 +15,12 @@ export function deleteApiKey(provider: string): boolean {
   return getStorage().deleteApiKey(provider);
 }
 
-export async function getAllApiKeys(): Promise<Record<ApiKeyProvider, string | null>> {
-  return getStorage().getAllApiKeys() as Promise<Record<ApiKeyProvider, string | null>>;
+export async function getAllApiKeys(): Promise<
+  Record<ApiKeyProvider, string | null>
+> {
+  return getStorage().getAllApiKeys() as Promise<
+    Record<ApiKeyProvider, string | null>
+  >;
 }
 
 export function storeBedrockCredentials(credentials: string): void {
