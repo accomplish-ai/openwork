@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { useLocation, useOutlet } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { isRunningInElectron, getAccomplish } from './lib/accomplish';
@@ -14,6 +14,11 @@ import { AuthErrorToast } from './components/AuthErrorToast';
 import { SettingsDialog } from './components/layout/SettingsDialog';
 import { useTaskStore } from './stores/taskStore';
 import { Loader2, AlertTriangle } from 'lucide-react';
+import { isEnterprise } from '@/lib/tier';
+
+const EnterpriseAuthGate = isEnterprise()
+  ? lazy(() => import('@/components/enterprise/AuthGate').then(m => ({ default: m.AuthGate })))
+  : null;
 
 type AppStatus = 'loading' | 'ready' | 'error';
 
@@ -60,7 +65,7 @@ export function App() {
   const [authSettingsProvider, setAuthSettingsProvider] = useState<ProviderId | undefined>(undefined);
 
   // Get store state and actions
-const { openLauncher, authError, clearAuthError } = useTaskStore();
+  const { openLauncher, authError, clearAuthError } = useTaskStore();
 
   // Handle re-login from auth error toast
   const handleAuthReLogin = useCallback(() => {
@@ -143,7 +148,7 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
   }
 
   // Ready - render the app with sidebar
-  return (
+  const appContent = (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Invisible drag region for window dragging (macOS hiddenInset titlebar) */}
       <div className="drag-region fixed top-0 left-0 right-0 h-10 z-50 pointer-events-none" />
@@ -172,4 +177,14 @@ const { openLauncher, authError, clearAuthError } = useTaskStore();
       />
     </div>
   );
+
+  if (EnterpriseAuthGate) {
+    return (
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+        <EnterpriseAuthGate>{appContent}</EnterpriseAuthGate>
+      </Suspense>
+    );
+  }
+
+  return appContent;
 }

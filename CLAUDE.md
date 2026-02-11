@@ -30,7 +30,7 @@ docs/                                   Architecture plans + review documents
 └─────────┘                       └──────────────────────┘
 ```
 
-- **Router** (`infra/router/`): KV-driven version routing. Resolution: cookie → desktop override → default. Reads `RoutingConfig` from KV namespace `ROUTING_CONFIG`. Falls back to `APP_LITE`/`APP_ENTERPRISE` bindings when KV unavailable (preview environments).
+- **Router** (`infra/router/`): KV-driven version routing with two-path model. Navigation requests (page loads) always re-evaluate KV config (override → default), ensuring users get version upgrades. Sub-resource requests (assets) use cookie fast path for performance. Reads `RoutingConfig` from KV namespace `ROUTING_CONFIG`. Falls back to `APP_LITE`/`APP_ENTERPRISE` bindings when KV unavailable (preview environments).
 - **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
 - **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
 - App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
@@ -105,6 +105,7 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 | `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
 | `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
 | `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
+| `APP_TIER` | Web build | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Controls which features are tree-shaken. |
 | `ANTHROPIC_API_KEY` | E2E AI tests | Anthropic provider key for AI task execution tests |
 | `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
 | `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |

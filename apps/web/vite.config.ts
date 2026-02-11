@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const tier = process.env.APP_TIER || 'lite';
 
 export default defineConfig({
   plugins: [react()],
@@ -17,6 +18,9 @@ export default defineConfig({
     strictPort: true,
   },
   base: './',
+  define: {
+    __APP_TIER__: JSON.stringify(tier),
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

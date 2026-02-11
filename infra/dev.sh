@@ -92,7 +92,7 @@ case "$TIER" in
     echo "Build ID: $build_id"
 
     echo ""
-    build_web "$REPO_ROOT" "$DIST_DIR"
+    build_web_tier "$REPO_ROOT" "$DIST_DIR" "$TIER"
 
     echo ""
     seed_local_r2 "$TIER" "$build_id"

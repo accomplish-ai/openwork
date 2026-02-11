@@ -70,6 +70,18 @@ build_web() {
   fi
 }
 
+build_web_tier() {
+  local repo_root="$1"
+  local dist_dir="$2"
+  local tier="$3"
+  echo "Building web app (tier: ${tier})..."
+  (cd "$repo_root" && APP_TIER="$tier" pnpm -F @accomplish/web run "build:${tier}")
+  if [ ! -d "$dist_dir" ]; then
+    echo "ERROR: $dist_dir does not exist after build"
+    exit 1
+  fi
+}
+
 # --- R2 operations (rclone) ---
 rclone_upload_to_r2() {
   local source_dir="$1"

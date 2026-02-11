@@ -2,6 +2,12 @@ import type { Env, RoutingConfig } from "./types";
 
 type Tier = "lite" | "enterprise";
 
+interface Route {
+  buildId: string;
+  tier: Tier;
+  source: string;
+}
+
 const BUILD_ID_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$/;
 const COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
@@ -85,92 +91,116 @@ function resolveOverride(
   return null;
 }
 
+function resolveTier(tierParam: string | null, cookieTier: Tier | undefined): Tier {
+  if (tierParam === "enterprise") return "enterprise";
+  return cookieTier ?? "lite";
+}
+
+function isNavigation(request: Request, url: URL): boolean {
+  if (url.searchParams.has('build') || url.searchParams.has('type')) return true;
+  if (url.pathname === '/') return true;
+  if (!url.pathname.includes('.') && request.headers.get('accept')?.includes('text/html')) return true;
+  return false;
+}
+
+function errorResponse(error: string, status: number): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function resolveRoute(
+  config: RoutingConfig,
+  url: URL,
+  cookie: { buildId: string; tier: Tier } | null,
+  navigation: boolean,
+): Route | null {
+  if (!navigation && cookie && config.activeVersions.includes(cookie.buildId)) {
+    return { buildId: cookie.buildId, tier: cookie.tier, source: "cookie" };
+  }
+
+  const buildParam = url.searchParams.get("build");
+  const tierParam = url.searchParams.get("type");
+  const validBuildParam = buildParam && /^\d+\.\d+\.\d+$/.test(buildParam)
+    ? buildParam : null;
+
+  const overrideBuild = resolveOverride(config, validBuildParam);
+  let buildId: string;
+  let source: string;
+
+  if (overrideBuild && BUILD_ID_PATTERN.test(overrideBuild)) {
+    buildId = overrideBuild;
+    source = "override";
+  } else if (config.default && BUILD_ID_PATTERN.test(config.default)) {
+    buildId = config.default;
+    source = "default";
+  } else {
+    return null;
+  }
+
+  return { buildId, tier: resolveTier(tierParam, cookie?.tier), source };
+}
+
+function logRequest(request: Request, url: URL, route: Route, navigation: boolean): void {
+  console.log(
+    JSON.stringify({
+      url: url.pathname,
+      method: request.method,
+      build: url.searchParams.get("build"),
+      type: url.searchParams.get("type"),
+      machineId: url.searchParams.get("machineId"),
+      userAgent: request.headers.get("user-agent"),
+      country: (request as RequestInit & { cf?: { country?: string; colo?: string } }).cf?.country,
+      colo: (request as RequestInit & { cf?: { country?: string; colo?: string } }).cf?.colo,
+      routeSource: route.source,
+      buildId: route.buildId,
+      tier: route.tier,
+      binding: bindingName(route.buildId, route.tier),
+      navigation,
+      ts: new Date().toISOString(),
+    }),
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const buildParam = url.searchParams.get("build");
-    const tierParam = url.searchParams.get("type");
-
-    const tier: Tier = tierParam === "enterprise" ? "enterprise" : "lite";
+    const cookie = parseCookie(request);
+    const navigation = isNavigation(request, url);
 
     const config = env.ROUTING_CONFIG
       ? await env.ROUTING_CONFIG.get<RoutingConfig>(env.KV_CONFIG_KEY || "config", { type: "json", cacheTtl: 60 })
       : null;
 
     if (!config) {
-      const fallbackBinding = `APP_${tier.toUpperCase()}`;
-      const fallbackWorker = (env as Record<string, Fetcher | undefined>)[fallbackBinding];
+      const tier = resolveTier(url.searchParams.get("type"), cookie?.tier);
+      const fallbackWorker = (env as Record<string, Fetcher | undefined>)[`APP_${tier.toUpperCase()}`];
       if (fallbackWorker) {
-        console.log(JSON.stringify({ routeSource: "fallback", tier, ts: new Date().toISOString() }));
+        console.log(JSON.stringify({ routeSource: "fallback", tier, navigation, ts: new Date().toISOString() }));
         return fallbackWorker.fetch(request);
       }
-      console.log(JSON.stringify({ error: "config_missing", ts: new Date().toISOString() }));
-      return new Response(JSON.stringify({ error: "routing_config_unavailable" }), {
-        status: 503,
-        headers: { "content-type": "application/json" },
-      });
+      return errorResponse("routing_config_unavailable", 503);
     }
 
-    const cookie = parseCookie(request);
-    const validBuildParam = buildParam && /^\d+\.\d+\.\d+$/.test(buildParam) ? buildParam : null;
-    let buildId: string;
-    let routeSource: string;
+    const route = resolveRoute(config, url, cookie, navigation);
+    if (!route) return errorResponse("no_default_version_configured", 503);
 
-    if (cookie && config.activeVersions.includes(cookie.buildId)) {
-      buildId = cookie.buildId;
-      routeSource = "cookie";
-    } else {
-      const overrideBuild = resolveOverride(config, validBuildParam);
-      if (overrideBuild && BUILD_ID_PATTERN.test(overrideBuild)) {
-        buildId = overrideBuild;
-        routeSource = "override";
-      } else if (config.default && BUILD_ID_PATTERN.test(config.default)) {
-        buildId = config.default;
-        routeSource = "default";
-      } else {
-        return new Response(JSON.stringify({ error: "no_default_version_configured" }), {
-          status: 503,
-          headers: { "content-type": "application/json" },
-        });
-      }
-    }
+    const worker = (env as Record<string, Fetcher | undefined>)[bindingName(route.buildId, route.tier)];
+    logRequest(request, url, route, navigation);
 
-    const binding = bindingName(buildId, tier);
-    const worker = (env as Record<string, Fetcher | undefined>)[binding];
-
-    console.log(
-      JSON.stringify({
-        url: url.pathname,
-        method: request.method,
-        build: buildParam,
-        type: tierParam,
-        machineId: url.searchParams.get("machineId"),
-        userAgent: request.headers.get("user-agent"),
-        country: (request as RequestInit & { cf?: { country?: string; colo?: string } }).cf?.country,
-        colo: (request as RequestInit & { cf?: { country?: string; colo?: string } }).cf?.colo,
-        routeSource,
-        buildId,
-        tier,
-        binding,
-        ts: new Date().toISOString(),
-      }),
-    );
-
-    if (!worker) {
-      return new Response(
-        JSON.stringify({ error: "version_not_available" }),
-        { status: 502, headers: { "content-type": "application/json" } },
-      );
-    }
+    if (!worker) return errorResponse("version_not_available", 502);
 
     const response = await worker.fetch(request);
 
-    const needsCookie =
-      !cookie || cookie.buildId !== buildId || cookie.tier !== tier;
+    const needsCookie = navigation
+      || !cookie
+      || cookie.buildId !== route.buildId
+      || cookie.tier !== route.tier;
 
     if (needsCookie) {
       const newResponse = new Response(response.body, response);
-      newResponse.headers.append("set-cookie", setCookieHeader(buildId, tier));
+      newResponse.headers.append("set-cookie", setCookieHeader(route.buildId, route.tier));
       return newResponse;
     }
 

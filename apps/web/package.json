@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:lite": "APP_TIER=lite tsc && APP_TIER=lite vite build",
+    "build:enterprise": "APP_TIER=enterprise tsc && APP_TIER=enterprise vite build",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "preview": "vite preview",

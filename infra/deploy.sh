@@ -29,10 +29,9 @@ release() {
   build_id="$(get_build_id)"
   echo "Releasing version: $build_id"
 
-  [ -d "$DIST_DIR" ] || { echo "ERROR: $DIST_DIR does not exist. Run 'pnpm build:web' first." >&2; exit 1; }
-
-  # 1. Upload to R2 (both tiers)
+  # 1. Build and upload to R2 (per tier)
   for tier in "${TIERS[@]}"; do
+    build_web_tier "$REPO_ROOT" "$DIST_DIR" "$tier"
     rclone_upload_to_r2 "$DIST_DIR" "$(r2_prod_prefix "$build_id" "$tier")"
   done
 
@@ -93,14 +92,13 @@ preview() {
 
   echo "Deploying PR preview: #${pr_number}"
 
-  build_web "$REPO_ROOT" "$DIST_DIR"
-
   local build_id
   build_id="$(get_build_id)"
   echo "Build ID: $build_id"
 
-  # 1. Upload to R2
+  # 1. Build and upload to R2 (per tier)
   for tier in "${TIERS[@]}"; do
+    build_web_tier "$REPO_ROOT" "$DIST_DIR" "$tier"
     rclone_upload_to_r2 "$DIST_DIR" "$(r2_preview_prefix "$pr_number" "$tier")"
   done
 

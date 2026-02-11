@@ -79,9 +79,6 @@ jobs:
           sudo dpkg -i rclone.deb
           rm rclone.deb
 
-      - name: Build web app
-        run: pnpm build:web
-
       - name: Release
         run: cd infra && bash deploy.sh release
         env:

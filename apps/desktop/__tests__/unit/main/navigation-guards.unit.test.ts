@@ -49,42 +49,34 @@ describe('Navigation Guard Logic', () => {
   });
 
   describe('window open handler', () => {
-    function shouldDenyWindowOpen(url: string): boolean {
-      if (url.startsWith('data:') || url.startsWith('blob:')) return true;
-      // All URLs are denied from opening as new windows (external ones get shell.openExternal)
-      return true;
+    // Models the real setWindowOpenHandler logic from index.ts:
+    // - data:/blob: URLs are denied without shell.openExternal
+    // - http(s): URLs trigger shell.openExternal, then denied
+    // - All other URLs are silently denied
+    function classifyWindowOpen(url: string): 'deny-silent' | 'deny-after-external' {
+      if (url.startsWith('data:') || url.startsWith('blob:')) return 'deny-silent';
+      if (url.startsWith('https:') || url.startsWith('http:')) return 'deny-after-external';
+      return 'deny-silent';
     }
 
-    it('denies data: URLs', () => {
-      expect(shouldDenyWindowOpen('data:text/html,<script>alert(1)</script>')).toBe(true);
+    it('silently denies data: URLs (no shell.openExternal)', () => {
+      expect(classifyWindowOpen('data:text/html,<script>alert(1)</script>')).toBe('deny-silent');
     });
 
-    it('denies blob: URLs', () => {
-      expect(shouldDenyWindowOpen('blob:https://example.com/some-guid')).toBe(true);
+    it('silently denies blob: URLs (no shell.openExternal)', () => {
+      expect(classifyWindowOpen('blob:https://example.com/some-guid')).toBe('deny-silent');
     });
 
-    it('denies all new window opens (they go to external browser)', () => {
-      expect(shouldDenyWindowOpen('https://example.com')).toBe(true);
-    });
-  });
-
-  describe('did-fail-load error page path', () => {
-    it('constructs packaged error page path correctly', () => {
-      const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
-      const errorPage = `${resourcesPath}/error.html`;
-      expect(errorPage).toBe('/Applications/Accomplish.app/Contents/Resources/error.html');
+    it('opens https: URLs externally before denying', () => {
+      expect(classifyWindowOpen('https://example.com')).toBe('deny-after-external');
     });
 
-    it('constructs dev error page path correctly', () => {
-      const appRoot = '/Users/dev/accomplish/apps/desktop';
-      const errorPage = `${appRoot}/resources/error.html`;
-      expect(errorPage).toContain('resources/error.html');
+    it('opens http: URLs externally before denying', () => {
+      expect(classifyWindowOpen('http://example.com')).toBe('deny-after-external');
     });
 
-    it('passes error details as query params', () => {
-      const query = { code: String(-106), desc: 'ERR_INTERNET_DISCONNECTED' };
-      expect(query.code).toBe('-106');
-      expect(query.desc).toBe('ERR_INTERNET_DISCONNECTED');
+    it('silently denies unknown protocol URLs', () => {
+      expect(classifyWindowOpen('ftp://example.com')).toBe('deny-silent');
     });
   });
 });

@@ -22,6 +22,8 @@
     "build": "pnpm -r build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
     "build:web": "pnpm -F @accomplish/web build",
+    "build:web:lite": "pnpm -F @accomplish/web run build:lite",
+    "build:web:enterprise": "pnpm -F @accomplish/web run build:enterprise",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean && rm -rf node_modules",
