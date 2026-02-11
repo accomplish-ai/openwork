@@ -13,7 +13,7 @@ import {
 import { VertexServiceAccountTab } from './VertexServiceAccountTab';
 import { VertexAdcTab } from './VertexAdcTab';
 
-import vertexLogo from '/assets/ai-logos/vertex.svg';
+import { PROVIDER_LOGOS } from '@/lib/provider-logos';
 
 interface VertexProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -161,7 +161,7 @@ export function VertexProviderForm({
     const currentModels = connectedProvider?.availableModels || availableModels;
 
     // Don't allow removing curated models (they have known publishers)
-    const curatedPrefixes = ['vertex/google/'];
+    const curatedPrefixes = ['vertex/google/', 'vertex/anthropic/', 'vertex/mistralai/'];
     if (curatedPrefixes.some(p => modelId.startsWith(p))) {
       return;
     }
@@ -183,12 +183,12 @@ export function VertexProviderForm({
   const models = connectedProvider?.availableModels || availableModels;
 
   // Identify custom (non-curated) models for the remove buttons
-  const curatedPrefixes = ['vertex/google/'];
+  const curatedPrefixes = ['vertex/google/', 'vertex/anthropic/', 'vertex/mistralai/'];
   const customModels = models.filter(m => !curatedPrefixes.some(p => m.id.startsWith(p)));
 
   return (
     <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={vertexLogo} providerName="Vertex AI" />
+      <ProviderFormHeader logoSrc={PROVIDER_LOGOS['vertex']} providerName="Vertex AI" />
 
       <div className="space-y-3">
         <AnimatePresence mode="wait">

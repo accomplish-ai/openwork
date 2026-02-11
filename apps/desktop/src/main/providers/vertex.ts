@@ -107,7 +107,7 @@ export function registerVertexHandlers(handle: IpcHandler): void {
 
   handle('vertex:list-projects', async (_event: IpcMainInvokeEvent) => {
     try {
-      const token = await execAsync('gcloud', ['auth', 'application-default', 'print-access-token']);
+      const token = await execAsync('gcloud', ['auth', 'application-default', 'print-access-token'], 20000);
 
       if (!token) {
         return { success: false, projects: [], error: 'No ADC token available' };

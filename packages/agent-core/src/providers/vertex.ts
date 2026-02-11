@@ -1,5 +1,8 @@
 import crypto from 'crypto';
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 import type { VertexCredentials } from '../common/types/auth.js';
 import { safeParseJson } from '../utils/json.js';
 import type { ValidationResult } from './validation.js';
@@ -63,13 +66,14 @@ async function getServiceAccountAccessToken(key: ServiceAccountKey): Promise<str
  * Uses `gcloud auth application-default print-access-token` which reads
  * credentials set up via `gcloud auth application-default login`.
  */
-function getAdcAccessToken(): string {
+async function getAdcAccessToken(): Promise<string> {
   try {
-    const token = execSync('gcloud auth application-default print-access-token', {
-      timeout: VERTEX_TOKEN_TIMEOUT_MS,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
+    const { stdout } = await execFileAsync(
+      'gcloud',
+      ['auth', 'application-default', 'print-access-token'],
+      { timeout: VERTEX_TOKEN_TIMEOUT_MS, encoding: 'utf-8' }
+    );
+    const token = stdout.trim();
     if (!token) {
       throw new Error('Empty token returned from gcloud');
     }
@@ -96,7 +100,7 @@ async function getVertexAccessToken(credentials: VertexCredentials): Promise<str
       return getServiceAccountAccessToken(parseResult.data);
     }
     case 'adc':
-      return getAdcAccessToken();
+      return await getAdcAccessToken();
     default: {
       const _exhaustive: never = credentials;
       throw new Error(`Unknown authType: ${(_exhaustive as VertexCredentials).authType}`);
@@ -162,7 +166,7 @@ export class VertexClient {
 
   /** Quick connectivity + auth test via a lightweight generateContent call */
   async testAccess(): Promise<void> {
-    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/gemini-2.0-flash:generateContent`;
+    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/gemini-2.5-flash:generateContent`;
     const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
