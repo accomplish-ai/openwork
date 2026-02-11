@@ -45,7 +45,7 @@ release() {
   for tier in "${TIERS[@]}"; do
     local url="https://$(versioned_worker_name "$build_id" "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
     echo "Health check: $url"
-    curl -sf --retry 3 --retry-delay 5 "$url" | jq . || { echo "Health check failed: $url"; exit 1; }
+    curl -sf --retry 5 --retry-delay 5 --retry-all-errors "$url" | jq . || { echo "Health check failed: $url"; exit 1; }
   done
 
   # 4. Read current KV config
