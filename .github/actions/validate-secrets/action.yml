@@ -1,0 +1,41 @@
+name: Validate required secrets
+description: Fail fast if required CI secrets are missing
+
+inputs:
+  cloudflare_api_token:
+    required: true
+  cloudflare_account_id:
+    required: true
+  r2_access_key_id:
+    required: true
+  r2_secret_access_key:
+    required: true
+  cf_subdomain:
+    required: false
+    default: ''
+  require_cf_subdomain:
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        missing=()
+        [ -z "$CF_API_TOKEN" ] && missing+=("CLOUDFLARE_API_TOKEN")
+        [ -z "$CF_ACCOUNT_ID" ] && missing+=("CLOUDFLARE_ACCOUNT_ID")
+        [ -z "$R2_AK" ] && missing+=("R2_ACCESS_KEY_ID")
+        [ -z "$R2_SK" ] && missing+=("R2_SECRET_ACCESS_KEY")
+        [ "$REQUIRE_CF_SUB" = "true" ] && [ -z "$CF_SUB" ] && missing+=("CF_SUBDOMAIN")
+        if [ ${#missing[@]} -gt 0 ]; then
+          echo "::error::Missing required configuration (secrets/vars): ${missing[*]}"
+          exit 1
+        fi
+      env:
+        CF_API_TOKEN: ${{ inputs.cloudflare_api_token }}
+        CF_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
+        R2_AK: ${{ inputs.r2_access_key_id }}
+        R2_SK: ${{ inputs.r2_secret_access_key }}
+        CF_SUB: ${{ inputs.cf_subdomain }}
+        REQUIRE_CF_SUB: ${{ inputs.require_cf_subdomain }}

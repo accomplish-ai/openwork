@@ -81,6 +81,7 @@ cd infra && bash deploy.sh production     # Full prod deploy (build + R2 upload 
 cd infra && bash deploy.sh preview <PR>   # PR preview deploy
 cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
 cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
+cd infra && bash setup.sh                 # One-time: create R2 bucket (idempotent)
 ```
 
 ### Environment Variables
@@ -114,6 +115,7 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 | `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + R2 objects |
 | `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
 
+All deploy/preview workflows validate required secrets at startup (`.github/actions/validate-secrets/`).
 
 ## Architecture
 
@@ -192,4 +194,4 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 - No deploy rollback mechanism
 - Windows desktop build is disabled in release workflow
 - Router TODOs: KV version resolution, canary routing, A/B experiments, Analytics Engine
-- Manual IaC steps documented in `docs/plans/iac-improvements.md`
+- Remaining manual setup: Cloudflare API tokens, R2 API credentials, GitHub secrets (see CI validation for required list)
