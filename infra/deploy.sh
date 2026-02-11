@@ -63,13 +63,12 @@ release() {
   for v in $all_versions; do
     [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || { echo "ERROR: Invalid build ID in KV: $v" >&2; exit 1; }
   done
-  mkdir -p "$SCRIPT_DIR/.generated"
   # shellcheck disable=SC2086
-  gen_router_config "$SCRIPT_DIR/.generated/wrangler.router.toml" "$KV_NAMESPACE_ID" $all_versions
+  gen_router_config "$SCRIPT_DIR/router/.generated-release.toml" "$KV_NAMESPACE_ID" $all_versions
 
   # 7. Deploy router
   echo "Deploying router worker..."
-  (cd "$SCRIPT_DIR/router" && npx wrangler deploy --config "$SCRIPT_DIR/.generated/wrangler.router.toml")
+  (cd "$SCRIPT_DIR/router" && npx wrangler deploy --config .generated-release.toml)
 
   # 8. Update KV config (auto-set default if empty — bootstrap case)
   local current_default
