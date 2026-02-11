@@ -49,7 +49,7 @@ export const PROVIDER_TEST_CONFIGS: Record<string, ProviderTestConfig> = {
 
 /**
  * Get a fully resolved provider test config with secrets populated.
- * Returns undefined if the config key is not registered.
+ * Throws if the config key is not registered.
  */
 export function getProviderTestConfig(configKey: string): ResolvedProviderTestConfig {
   const config = PROVIDER_TEST_CONFIGS[configKey];

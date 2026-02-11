@@ -26,38 +26,26 @@ test.describe('Ollama Provider', () => {
     const homePage = new HomePage(window);
     const executionPage = new ExecutionPage(window);
 
-    // Step 1: Open settings via sidebar
     await settingsPage.navigateToSettings();
 
-    // Step 2: Select the Ollama provider — may need to scroll/show-all
     await settingsPage.toggleShowAll();
     await settingsPage.selectProvider('ollama');
 
-    // Step 3: Enter the server URL
     await settingsPage.enterOllamaServerUrl(ollama.serverUrl);
 
-    // Step 4: Click Connect
     await settingsPage.clickConnect();
 
-    // Step 5: Wait for connection to succeed
     // Ollama connection also fetches models, so allow extra time
     await settingsPage.waitForConnection(60000);
 
-    // Step 6: Select the first available model
-    // Ollama uses a custom SearchableSelect, so we use selectFirstModel
     await settingsPage.selectFirstModel();
 
-    // Step 7: Close settings
     await settingsPage.closeDialog();
 
-    // Step 8: Submit a task
     await homePage.enterTask('What is 2 + 2? Reply with just the number.');
     await homePage.submitTask();
 
-    // Step 9: Wait for the task to complete (local inference may be slow)
     await executionPage.waitForComplete(config?.timeout || 300000);
-
-    // Verify it completed (not failed)
     const badgeText = await executionPage.statusBadge.textContent();
     expect(badgeText?.toLowerCase()).toContain('completed');
   });
