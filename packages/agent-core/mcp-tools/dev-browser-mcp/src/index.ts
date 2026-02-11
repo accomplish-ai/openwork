@@ -1187,7 +1187,7 @@ const SNAPSHOT_SCRIPT = `
         key += " [ref=" + ariaNode.ref + "]";
         if (renderCursorPointer && hasPointerCursor(ariaNode)) key += " [cursor=pointer]";
       }
-      if (ariaNode.box?.rect) {
+      if (snapshotOptions.includeBoundingBoxes !== false && ariaNode.box?.rect) {
         const r = ariaNode.box.rect;
         key += " [" + Math.round(r.x) + ", " + Math.round(r.y) + ", " + Math.round(r.width) + ", " + Math.round(r.height) + "]";
       }
@@ -1271,6 +1271,7 @@ interface SnapshotOptions {
   maxTokens?: number;
   fullSnapshot?: boolean;
   rawTree?: boolean;
+  includeBoundingBoxes?: boolean;
 }
 
 const DEFAULT_SNAPSHOT_OPTIONS: SnapshotOptions = {
