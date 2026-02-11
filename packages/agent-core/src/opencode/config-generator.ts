@@ -5,6 +5,17 @@ import type { Skill } from '../common/types/skills.js';
 
 export const ACCOMPLISH_AGENT_NAME = 'accomplish';
 
+export interface BrowserConfig {
+  /** 'builtin' = dev-browser HTTP server (default), 'remote' = connect to CDP endpoint, 'none' = no browser */
+  mode: 'builtin' | 'remote' | 'none';
+  /** For 'remote': the CDP endpoint URL */
+  cdpEndpoint?: string;
+  /** For 'remote': auth headers (e.g. { 'X-CDP-Secret': '...' }) */
+  cdpHeaders?: Record<string, string>;
+  /** For 'builtin': run headless */
+  headless?: boolean;
+}
+
 export interface ConfigGeneratorOptions {
   platform: NodeJS.Platform;
   mcpToolsPath: string;
@@ -26,6 +37,15 @@ export interface ConfigGeneratorOptions {
   model?: string;
   smallModel?: string;
   enabledProviders?: string[];
+  /** Browser configuration. Defaults to { mode: 'builtin' } */
+  browser?: BrowserConfig;
+  /** Connected MCP remote servers with OAuth access tokens */
+  connectors?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    accessToken: string;
+  }>;
 }
 
 export interface ProviderConfig {
@@ -58,6 +78,7 @@ interface McpServerConfig {
   type?: 'local' | 'remote';
   command?: string[];
   url?: string;
+  headers?: Record<string, string>;
   enabled?: boolean;
   environment?: Record<string, string>;
   timeout?: number;
@@ -99,7 +120,7 @@ You are running on ${platform === 'darwin' ? 'macOS' : 'Linux'}.
 }
 
 const ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE = `<identity>
-You are Accomplish, a browser automation assistant.
+You are Accomplish, a {{AGENT_ROLE}} assistant.
 </identity>
 
 {{ENVIRONMENT_INSTRUCTIONS}}
@@ -150,8 +171,7 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons
-- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -220,27 +240,7 @@ See the ask-user-question MCP tool for full documentation and examples.
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
-- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
-- For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
-- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
-
-**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
-- Before each browser action, briefly explain what you're about to do in user terms
-- After navigation: mention the page title and what you see
-- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
-- After typing: confirm what you typed and where
-- When analyzing a snapshot: describe the key elements you found
-- If something unexpected happens, explain what you see and how you'll adapt
-
-Example good narration:
-"I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
-
-Example bad narration (too terse):
-"Done." or "Navigated." or "Clicked."
-
-- After each action, evaluate the result before deciding next steps
-- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
-- Don't announce server checks or startup - proceed directly to the task
+{{BROWSER_BEHAVIOR}}- Don't announce server checks or startup - proceed directly to the task
 - Only use AskUserQuestion when you genuinely need user input or decisions
 
 **DO NOT ASK FOR PERMISSION TO CONTINUE:**
@@ -314,15 +314,17 @@ function resolveMcpCommand(
   nodePath?: string
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
+  const sourcePath = path.join(mcpDir, sourceRelPath);
   const distPath = path.join(mcpDir, distRelPath);
 
-  if ((isPackaged || process.env.ACCOMPLISH_BUNDLED_MCP === '1') && fs.existsSync(distPath)) {
+  // Use compiled dist entry when packaged OR when source files don't exist
+  // (e.g. agent-core installed from npm where only dist/ is published)
+  if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
     const nodeExe = nodePath || 'node';
     console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodeExe, distPath];
   }
 
-  const sourcePath = path.join(mcpDir, sourceRelPath);
   console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
   return [...tsxCommand, sourcePath];
 }
@@ -412,20 +414,6 @@ Use empty array [] if no skills apply to your task.
       },
       timeout: 30000,
     },
-    'dev-browser-mcp': {
-      type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'dev-browser-mcp',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
-      enabled: true,
-      timeout: 30000,
-    },
     'complete-task': {
       type: 'local',
       command: resolveMcpCommand(
@@ -455,6 +443,96 @@ Use empty array [] if no skills apply to your task.
       timeout: 30000,
     },
   };
+
+  // Conditionally register dev-browser-mcp based on browser config
+  const browserConfig = options.browser ?? { mode: 'builtin' };
+
+  if (browserConfig.mode !== 'none') {
+    const browserEnv: Record<string, string> = {};
+
+    if (browserConfig.mode === 'remote') {
+      if (browserConfig.cdpEndpoint) {
+        browserEnv.CDP_ENDPOINT = browserConfig.cdpEndpoint;
+      }
+      if (browserConfig.cdpHeaders) {
+        for (const [key, value] of Object.entries(browserConfig.cdpHeaders)) {
+          if (key === 'X-CDP-Secret') {
+            browserEnv.CDP_SECRET = value;
+          }
+        }
+      }
+    }
+
+    mcpServers['dev-browser-mcp'] = {
+      type: 'local',
+      command: resolveMcpCommand(
+        tsxCommand, mcpToolsPath, 'dev-browser-mcp',
+        'src/index.ts', 'dist/index.mjs', isPackaged, nodePath
+      ),
+      enabled: true,
+      ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
+      timeout: 30000,
+    };
+  }
+
+  // Add connected MCP connectors as remote servers
+  if (options.connectors) {
+    for (const connector of options.connectors) {
+      // Use short sanitized name + ID suffix as key to prevent collisions
+      const sanitized = connector.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 20);
+      const baseName = sanitized || 'mcp-remote';
+      const idSuffix = connector.id.slice(0, 6);
+      let key = `connector-${baseName}-${idSuffix}`;
+      // Guard against unlikely collision with existing keys
+      if (mcpServers[key]) {
+        let i = 1;
+        while (mcpServers[`${key}-${i}`]) i += 1;
+        key = `${key}-${i}`;
+      }
+      mcpServers[key] = {
+        type: 'remote',
+        url: connector.url,
+        headers: { Authorization: `Bearer ${connector.accessToken}` },
+        enabled: true,
+      };
+    }
+  }
+
+  // Fill browser-specific template sections based on mode
+  const hasBrowser = browserConfig.mode !== 'none';
+  systemPrompt = systemPrompt
+    .replace('{{AGENT_ROLE}}', hasBrowser ? 'browser automation' : 'task automation')
+    .replace('{{BROWSER_CAPABILITY}}', hasBrowser
+      ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
+      : '')
+    .replace('{{BROWSER_BEHAVIOR}}', hasBrowser
+      ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
+- For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
+- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
+
+**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
+- Before each browser action, briefly explain what you're about to do in user terms
+- After navigation: mention the page title and what you see
+- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
+- After typing: confirm what you typed and where
+- When analyzing a snapshot: describe the key elements you found
+- If something unexpected happens, explain what you see and how you'll adapt
+
+Example good narration:
+"I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
+
+Example bad narration (too terse):
+"Done." or "Navigated." or "Clicked."
+
+- After each action, evaluate the result before deciding next steps
+- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
+`
+      : '');
 
   const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
@@ -564,6 +642,10 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'lmstudio') {
       const modelId = selectedModel.model.replace(/^lmstudio\//, '');
       args.push('--model', `lmstudio/${modelId}`);
+    } else if (selectedModel.provider === 'vertex') {
+      // Model IDs stored as "vertex/{publisher}/{model}" — strip publisher for @ai-sdk/google-vertex
+      const modelId = selectedModel.model.replace(/^vertex\/[^/]+\//, '');
+      args.push('--model', `vertex/${modelId}`);
     } else {
       args.push('--model', selectedModel.model);
     }

@@ -6,27 +6,41 @@ import type { TaskAdapterOptions, TaskManagerOptions, TaskCallbacks } from '@acc
 import type { TaskConfig } from '@accomplish_ai/agent-core';
 import { DEV_BROWSER_PORT } from '@accomplish_ai/agent-core';
 import {
-  getSelectedModel,
-  getAzureFoundryConfig,
-  getActiveProviderModel,
-  getConnectedProvider,
   getAzureEntraToken,
   ensureDevBrowserServer,
   resolveCliPath,
   isCliAvailable as coreIsCliAvailable,
   buildCliArgs as coreBuildCliArgs,
   buildOpenCodeEnvironment,
-  getOpenAiBaseUrl,
   type BrowserServerConfig,
   type CliResolverConfig,
   type EnvironmentConfig,
 } from '@accomplish_ai/agent-core';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
-import type { AzureFoundryCredentials, BedrockCredentials } from '@accomplish_ai/agent-core';
-import { getAllApiKeys, getBedrockCredentials } from '../store/secureStorage';
+import type { AzureFoundryCredentials, BedrockCredentials, VertexCredentials } from '@accomplish_ai/agent-core';
+import { getStorage } from '../store/storage';
+import { getAllApiKeys, getBedrockCredentials, getApiKey } from '../store/secureStorage';
 import { generateOpenCodeConfig, getMcpToolsPath, syncApiKeysToOpenCodeAuth } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+
+const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
+
+/**
+ * Removes the Vertex AI service account key file from disk if it exists.
+ * Called when the Vertex provider is disconnected or the app quits.
+ */
+export function cleanupVertexServiceAccountKey(): void {
+  try {
+    const keyPath = path.join(app.getPath('userData'), VERTEX_SA_KEY_FILENAME);
+    if (fs.existsSync(keyPath)) {
+      fs.unlinkSync(keyPath);
+      console.log('[Vertex] Cleaned up service account key file');
+    }
+  } catch (error) {
+    console.warn('[Vertex] Failed to clean up service account key file:', error);
+  }
+}
 
 function getCliResolverConfig(): CliResolverConfig {
   return {
@@ -120,11 +134,12 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
   const bundledNode = getBundledNodePaths();
 
   // Determine OpenAI base URL
-  const configuredOpenAiBaseUrl = apiKeys.openai ? getOpenAiBaseUrl().trim() : undefined;
+  const storage = getStorage();
+  const configuredOpenAiBaseUrl = apiKeys.openai ? storage.getOpenAiBaseUrl().trim() : undefined;
 
   // Determine Ollama host
-  const activeModel = getActiveProviderModel();
-  const selectedModel = getSelectedModel();
+  const activeModel = storage.getActiveProviderModel();
+  const selectedModel = storage.getSelectedModel();
   let ollamaHost: string | undefined;
   if (activeModel?.provider === 'ollama' && activeModel.baseUrl) {
     ollamaHost = activeModel.baseUrl;
@@ -132,10 +147,30 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     ollamaHost = selectedModel.baseUrl;
   }
 
+  // Handle Vertex AI credentials
+  let vertexCredentials: VertexCredentials | undefined;
+  let vertexServiceAccountKeyPath: string | undefined;
+  const vertexCredsJson = getApiKey('vertex');
+  if (vertexCredsJson) {
+    try {
+      const parsed = JSON.parse(vertexCredsJson) as VertexCredentials;
+      vertexCredentials = parsed;
+      if (parsed.authType === 'serviceAccount' && parsed.serviceAccountJson) {
+        const userDataPath = app.getPath('userData');
+        vertexServiceAccountKeyPath = path.join(userDataPath, VERTEX_SA_KEY_FILENAME);
+        fs.writeFileSync(vertexServiceAccountKeyPath, parsed.serviceAccountJson, { mode: 0o600 });
+      }
+    } catch {
+      console.warn('[OpenCode CLI] Failed to parse Vertex credentials');
+    }
+  }
+
   // Build environment configuration
   const envConfig: EnvironmentConfig = {
     apiKeys,
     bedrockCredentials: bedrockCredentials || undefined,
+    vertexCredentials,
+    vertexServiceAccountKeyPath,
     bundledNodeBinPath: bundledNode?.binDir,
     taskId: taskId || undefined,
     openAiBaseUrl: configuredOpenAiBaseUrl || undefined,
@@ -153,8 +188,9 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
 }
 
 export async function buildCliArgs(config: TaskConfig, _taskId: string): Promise<string[]> {
-  const activeModel = getActiveProviderModel();
-  const selectedModel = activeModel || getSelectedModel();
+  const storage = getStorage();
+  const activeModel = storage.getActiveProviderModel();
+  const selectedModel = activeModel || storage.getSelectedModel();
 
   return coreBuildCliArgs({
     prompt: config.prompt,
@@ -178,10 +214,11 @@ export async function onBeforeStart(): Promise<void> {
   await syncApiKeysToOpenCodeAuth();
 
   let azureFoundryToken: string | undefined;
-  const activeModel = getActiveProviderModel();
-  const selectedModel = activeModel || getSelectedModel();
-  const azureFoundryConfig = getAzureFoundryConfig();
-  const azureFoundryProvider = getConnectedProvider('azure-foundry');
+  const storage = getStorage();
+  const activeModel = storage.getActiveProviderModel();
+  const selectedModel = activeModel || storage.getSelectedModel();
+  const azureFoundryConfig = storage.getAzureFoundryConfig();
+  const azureFoundryProvider = storage.getConnectedProvider('azure-foundry');
   const azureFoundryCredentials = azureFoundryProvider?.credentials as AzureFoundryCredentials | undefined;
 
   const isAzureFoundryEntraId =
