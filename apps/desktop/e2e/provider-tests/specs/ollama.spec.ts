@@ -20,12 +20,16 @@
 import { test, expect } from '../fixtures';
 import { SettingsPage, HomePage, ExecutionPage } from '../../pages';
 import { getProviderTestConfig } from '../provider-test-configs';
-import { OllamaTestDriver } from '../helpers/ollama-server';
+import { OllamaTestDriver, isOllamaInstalled } from '../helpers/ollama-server';
 
 const config = getProviderTestConfig('ollama');
 
+// Ollama doesn't require API key secrets — it just needs a reachable server.
+// Skip only when there's no env var pointing to a remote server AND no local install.
+const ollamaAvailable = !!process.env.E2E_OLLAMA_SERVER_URL || isOllamaInstalled();
+
 test.describe('Ollama Provider', () => {
-  test.skip(!config, 'No Ollama secrets configured — skipping');
+  test.skip(!ollamaAvailable, 'Ollama not available — skipping');
 
   // OllamaTestDriver handles undefined secrets with sensible defaults
   const ollama = new OllamaTestDriver(config?.secrets as { serverUrl?: string; modelId?: string });

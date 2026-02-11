@@ -99,7 +99,7 @@ async function pullModel(serverUrl: string, modelId: string): Promise<void> {
   }
 }
 
-function isOllamaInstalled(): boolean {
+export function isOllamaInstalled(): boolean {
   try {
     execSync('which ollama', { stdio: 'ignore' });
     return true;
