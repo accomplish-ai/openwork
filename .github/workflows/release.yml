@@ -27,10 +27,6 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: write
-  pull-requests: write
-
 # Prevent concurrent releases - only one release at a time
 concurrency:
   group: release
@@ -40,6 +36,9 @@ jobs:
   version-bump:
     name: Bump Version
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
       platforms: ${{ steps.inputs.outputs.platforms }}
@@ -248,6 +247,8 @@ jobs:
     needs: version-bump
     if: needs.version-bump.outputs.platforms == 'all' || needs.version-bump.outputs.platforms == 'macos-only'
     runs-on: macos-14
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -299,6 +300,8 @@ jobs:
     needs: version-bump
     if: needs.version-bump.outputs.platforms == 'all' || needs.version-bump.outputs.platforms == 'macos-only'
     runs-on: macos-15-large
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -393,6 +396,8 @@ jobs:
     needs: [version-bump, build-mac-arm64, build-mac-x64]
     if: always() && needs.version-bump.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Check build results
         env:

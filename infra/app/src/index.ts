@@ -41,13 +41,33 @@ function getCacheControl(path: string): string {
   if (path.endsWith("/index.html") || path === "index.html") {
     return "no-cache";
   }
-  // Hashed assets (Vite output: assets/index-AbCd1234.js)
-  const ext = getExtension(path);
-  if (path.includes("/assets/") && (ext === ".js" || ext === ".css")) {
+  // Hashed assets (Vite output under /assets/ with content hashes)
+  if (path.includes("/assets/")) {
     return "public, max-age=31536000, immutable";
   }
   // Everything else
   return "public, max-age=3600";
+}
+
+const SECURITY_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+};
+
+// connect-src 'self' https: is intentionally broad — the app connects to various
+// AI provider APIs (OpenAI, Anthropic, Google, etc.) determined at runtime by user config.
+const CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+
+function secureResponse(body: BodyInit | null, init: ResponseInit): Response {
+  const headers = new Headers(init.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+  return new Response(body, { ...init, headers });
 }
 
 function hasFileExtension(path: string): boolean {
@@ -62,17 +82,16 @@ export default {
 
     // Health check
     if (pathname === "/health") {
-      return Response.json({
-        version: env.VERSION,
-        tier: env.TIER,
-        status: "ok",
+      return secureResponse(JSON.stringify({ version: env.VERSION, tier: env.TIER, status: "ok" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
       });
     }
 
     // Resolve R2 key
     const assetPath = pathname === "/" ? "index.html" : pathname.replace(/^\//, "");
     if (assetPath.includes("..")) {
-      return new Response("Bad Request", { status: 400 });
+      return secureResponse("Bad Request", { status: 400 });
     }
     const r2Key = env.R2_PREFIX + assetPath;
 
@@ -84,11 +103,12 @@ export default {
         const fallbackKey = env.R2_PREFIX + "index.html";
         object = await env.ASSETS.get(fallbackKey);
         if (object) {
-          return new Response(object.body, {
+          return secureResponse(object.body, {
             status: 200,
             headers: {
               "content-type": "text/html; charset=utf-8",
               "cache-control": "no-cache",
+              "content-security-policy": CSP,
               ...(object.etag ? { etag: object.etag } : {}),
             },
           });
@@ -97,21 +117,24 @@ export default {
 
       // 404 for missing files
       if (!object) {
-        return new Response("Not Found", { status: 404 });
+        return secureResponse("Not Found", { status: 404 });
       }
 
       // Serve the asset
-      return new Response(object.body, {
+      const contentType = getContentType(assetPath);
+      const isHtml = contentType.startsWith("text/html");
+      return secureResponse(object.body, {
         status: 200,
         headers: {
-          "content-type": getContentType(assetPath),
+          "content-type": contentType,
           "cache-control": getCacheControl(assetPath),
+          ...(isHtml ? { "content-security-policy": CSP } : {}),
           ...(object.etag ? { etag: object.etag } : {}),
         },
       });
     } catch (err) {
       console.error("R2 asset fetch failed:", err);
-      return new Response("Internal Server Error", { status: 500 });
+      return secureResponse("Internal Server Error", { status: 500 });
     }
   },
 } satisfies ExportedHandler<Env>;

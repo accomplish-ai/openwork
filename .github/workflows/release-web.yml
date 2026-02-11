@@ -9,6 +9,9 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -37,6 +40,7 @@ jobs:
     name: Release
     needs: test
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
     env:
@@ -76,6 +80,7 @@ jobs:
       - name: Install rclone
         run: |
           curl -fsSL -o rclone.deb "https://github.com/rclone/rclone/releases/download/v1.73.0/rclone-v1.73.0-linux-amd64.deb"
+          echo "c465f1124d2cc7244560b9d4808c42d96b9025fd7dd1a7933a63e427abfe0133  rclone.deb" | sha256sum -c
           sudo dpkg -i rclone.deb
           rm rclone.deb
 
