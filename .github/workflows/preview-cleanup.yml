@@ -20,6 +20,8 @@ jobs:
           cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          kv_namespace_id: ${{ vars.KV_NAMESPACE_ID }}
+          require_kv_namespace_id: 'true'
 
       - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
@@ -45,3 +47,4 @@ jobs:
           RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}

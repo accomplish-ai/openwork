@@ -8,10 +8,6 @@ compatibility_date = "2024-12-01"
 [observability]
 enabled = true
 
-[[services]]
-binding = "APP_LITE"
-service = "accomplish-app-lite"
-
-[[services]]
-binding = "APP_ENTERPRISE"
-service = "accomplish-app-enterprise"
+[[kv_namespaces]]
+binding = "ROUTING_CONFIG"
+id = "local-dev-placeholder"

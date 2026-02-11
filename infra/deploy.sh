@@ -5,12 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPO_ROOT/apps/web/dist"
 source "$SCRIPT_DIR/lib.sh"
-BUILD_NUMBER="${BUILD_NUMBER:-}"
-
-upload_to_r2() {
-  local prefix="$1"
-  rclone_upload_to_r2 "$DIST_DIR" "$prefix"
-}
 
 deploy_app_worker() {
   local name="$1"
@@ -26,61 +20,124 @@ deploy_app_worker() {
     --var "R2_PREFIX:$r2_prefix")
 }
 
-gen_preview_router_config() {
-  local pr="$1"
-  local config="wrangler.preview-pr-${pr}.toml"
-  sed "s/PLACEHOLDER/${pr}/g" "$SCRIPT_DIR/router/wrangler.preview.toml" > "$SCRIPT_DIR/router/$config"
-  echo "$config"
-}
+release() {
+  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
+  : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
 
-gen_prod_router_config() {
-  local build_id="$1"
-  local slug
-  slug="$(slugify "$build_id")"
-  local config="wrangler.prod-${slug}.toml"
-  sed "s/__VERSION__/${slug}/g" "$SCRIPT_DIR/router/wrangler.prod.template.toml" > "$SCRIPT_DIR/router/$config"
-  echo "$config"
-}
+  local build_id
+  build_id="$(get_build_id)"
+  echo "Releasing version: $build_id"
 
-deploy_workers() {
-  local mode="$1"
-  local pr="${2:-}"
-  local build_number="${3:-}"
+  [ -d "$DIST_DIR" ] || { echo "ERROR: $DIST_DIR does not exist. Run 'pnpm build:web' first." >&2; exit 1; }
 
-  local version
-  version="$(get_version)"
-
-  local deploy_version="$version"
-  local router_config="wrangler.toml"
-
-  if [ "$mode" = "preview" ]; then
-    router_config="$(gen_preview_router_config "$pr")"
-    deploy_version="pr-${pr}"
-  elif [ -n "$build_number" ]; then
-    deploy_version="$(get_build_id "$version" "$build_number")"
-    router_config="$(gen_prod_router_config "$deploy_version")"
-  fi
-
+  # 1. Upload to R2 (both tiers)
   for tier in "${TIERS[@]}"; do
-    local name r2_prefix
-    if [ "$mode" = "preview" ]; then
-      name="$(preview_worker_name "$pr" "$tier")"
-      r2_prefix="$(r2_preview_prefix "$pr" "$tier")/"
-    elif [ -n "$build_number" ]; then
-      name="$(versioned_worker_name "$deploy_version" "$tier")"
-      r2_prefix="$(r2_prod_prefix "$deploy_version" "$tier")/"
-    else
-      name="$(worker_name "$tier")"
-      r2_prefix="$(r2_prod_prefix "$version" "$tier")/"
-    fi
-    deploy_app_worker "$name" "$tier" "$deploy_version" "$r2_prefix"
+    rclone_upload_to_r2 "$DIST_DIR" "$(r2_prod_prefix "$build_id" "$tier")"
   done
 
+  # 2. Deploy app workers (both tiers)
+  for tier in "${TIERS[@]}"; do
+    deploy_app_worker "$(versioned_worker_name "$build_id" "$tier")" "$tier" "$build_id" "$(r2_prod_prefix "$build_id" "$tier")/"
+  done
+
+  # 3. Health check both workers
+  for tier in "${TIERS[@]}"; do
+    local url="https://$(versioned_worker_name "$build_id" "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
+    echo "Health check: $url"
+    curl -sf --retry 3 --retry-delay 5 "$url" | jq . || { echo "Health check failed: $url"; exit 1; }
+  done
+
+  # 4. Read current KV config
+  local current_config
+  current_config="$(kv_read_config)"
+
+  # 5. Add new build ID to activeVersions
+  local active_versions new_active
+  active_versions=$(echo "$current_config" | jq -r '.activeVersions')
+  new_active=$(echo "$active_versions" | jq --arg v "$build_id" '. + [$v] | unique')
+
+  # 6. Generate router config with ALL active versions
+  local all_versions
+  all_versions=$(echo "$new_active" | jq -r '.[]')
+  for v in $all_versions; do
+    [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || { echo "ERROR: Invalid build ID in KV: $v" >&2; exit 1; }
+  done
+  mkdir -p "$SCRIPT_DIR/.generated"
+  # shellcheck disable=SC2086
+  gen_router_config "$SCRIPT_DIR/.generated/wrangler.router.toml" "$KV_NAMESPACE_ID" $all_versions
+
+  # 7. Deploy router
+  echo "Deploying router worker..."
+  (cd "$SCRIPT_DIR/router" && npx wrangler deploy --config "$SCRIPT_DIR/.generated/wrangler.router.toml")
+
+  # 8. Update KV config (auto-set default if empty — bootstrap case)
+  local current_default
+  current_default=$(echo "$current_config" | jq -r '.default')
+  local new_config
+  if [ "${SET_AS_DEFAULT:-}" = "true" ] || [ -z "$current_default" ]; then
+    new_config=$(echo "$current_config" | jq --arg v "$build_id" --argjson av "$new_active" '.activeVersions = $av | .default = $v')
+  else
+    new_config=$(echo "$current_config" | jq --argjson av "$new_active" '.activeVersions = $av')
+  fi
+  kv_write_config "$new_config"
+
+  echo "Release complete! Version: $build_id"
+}
+
+preview() {
+  local pr_number="$1"
+  [[ "$pr_number" =~ ^[0-9]+$ ]] || { echo "ERROR: PR number must be numeric"; exit 1; }
+  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
+  : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
+
+  echo "Deploying PR preview: #${pr_number}"
+
+  build_web "$REPO_ROOT" "$DIST_DIR"
+
+  local build_id
+  build_id="$(get_build_id)"
+  echo "Build ID: $build_id"
+
+  # 1. Upload to R2
+  for tier in "${TIERS[@]}"; do
+    rclone_upload_to_r2 "$DIST_DIR" "$(r2_preview_prefix "$pr_number" "$tier")"
+  done
+
+  # 2. Deploy versioned app workers
+  for tier in "${TIERS[@]}"; do
+    local dns_slug
+    dns_slug="$(slugify "$build_id")"
+    local name="${WORKER_PREFIX}-pr-${pr_number}-v${dns_slug}-${tier}"
+    local r2_prefix="$(r2_preview_prefix "$pr_number" "$tier")/"
+    deploy_app_worker "$name" "$tier" "$build_id" "$r2_prefix"
+  done
+
+  # 3. Generate router config with KV binding + versioned service bindings
+  local router_config="$SCRIPT_DIR/router/.generated-preview.toml"
+  gen_preview_router_config_kv "$router_config" "$pr_number" "$KV_NAMESPACE_ID" "$build_id"
+
+  # 4. Deploy router
   echo "Deploying router worker..."
   (cd "$SCRIPT_DIR/router" && npx wrangler deploy --config "$router_config")
+  rm -f "$router_config"
 
-  if [ "$router_config" != "wrangler.toml" ]; then
-    rm -f "$SCRIPT_DIR/router/$router_config"
+  # 5. Write KV config for this PR
+  local kv_config
+  kv_config=$(jq -n --arg v "$build_id" '{default: $v, overrides: [], activeVersions: [$v]}')
+  kv_write_key "config-pr-${pr_number}" "$kv_config"
+
+  # 6. Health check router
+  if [[ -n "${WORKERS_SUBDOMAIN:-}" ]]; then
+    local router_url="https://accomplish-pr-${pr_number}-router.${WORKERS_SUBDOMAIN}.workers.dev"
+    echo "Health check: $router_url"
+    curl -sf --retry 3 --retry-delay 5 "$router_url" || echo "WARNING: Health check did not return 200 (may need KV propagation)"
+  fi
+
+  echo "Preview deployed!"
+  if [[ -n "${WORKERS_SUBDOMAIN:-}" ]]; then
+    echo "Router: https://accomplish-pr-${pr_number}-router.${WORKERS_SUBDOMAIN}.workers.dev"
   fi
 }
 
@@ -89,72 +146,18 @@ usage() {
   echo "Usage: deploy.sh <command>"
   echo ""
   echo "Commands:"
-  echo "  production           Build + upload + deploy (full production)"
-  echo "  preview <pr-number>  Build + upload + deploy (PR preview)"
-  echo "  upload <tier>        Upload dist to R2 for a tier"
-  echo "  deploy-workers       Deploy production workers"
+  echo "  release              Full release: R2 upload + deploy workers + router + KV update"
+  echo "  preview <pr-number>  PR preview deploy"
   exit 1
 }
 
 case "${1:-}" in
-  production)
-    version="$(get_version)"
-    build_id="$(resolve_build_id "$version" "$BUILD_NUMBER")"
-    echo "Deploying version: $build_id"
-
-    build_web "$REPO_ROOT" "$DIST_DIR"
-
-    for tier in "${TIERS[@]}"; do
-      upload_to_r2 "$(r2_prod_prefix "$build_id" "$tier")"
-    done
-    deploy_workers production "" "$BUILD_NUMBER"
-
-    echo "Deploy complete! Version: $build_id"
-    if [[ -n "$WORKERS_SUBDOMAIN" ]]; then
-      echo ""
-      echo "Verify:"
-      for tier in "${TIERS[@]}"; do
-        if [ -n "$BUILD_NUMBER" ]; then
-          echo "  curl https://$(versioned_worker_name "$build_id" "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
-        else
-          echo "  curl https://$(worker_name "$tier").${WORKERS_SUBDOMAIN}.workers.dev/health"
-        fi
-      done
-    fi
+  release)
+    release
     ;;
-
   preview)
-    PR_NUMBER="${2:?Usage: deploy.sh preview <pr-number>}"
-    [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "ERROR: PR number must be numeric"; exit 1; }
-
-    echo "Deploying PR preview: #${PR_NUMBER}"
-
-    build_web "$REPO_ROOT" "$DIST_DIR"
-
-    for tier in "${TIERS[@]}"; do
-      upload_to_r2 "$(r2_preview_prefix "$PR_NUMBER" "$tier")"
-    done
-    deploy_workers preview "$PR_NUMBER"
-
-    echo "Preview deployed!"
-    if [[ -n "$WORKERS_SUBDOMAIN" ]]; then
-      echo "Router:     https://$(preview_worker_name "$PR_NUMBER" router).${WORKERS_SUBDOMAIN}.workers.dev"
-      echo "App Lite:   https://$(preview_worker_name "$PR_NUMBER" lite).${WORKERS_SUBDOMAIN}.workers.dev"
-      echo "App Enterprise: https://$(preview_worker_name "$PR_NUMBER" enterprise).${WORKERS_SUBDOMAIN}.workers.dev"
-    fi
+    preview "${2:?Usage: deploy.sh preview <pr-number>}"
     ;;
-
-  upload)
-    tier="${2:?Usage: deploy.sh upload <tier>}"
-    version="$(get_version)"
-    build_id="$(resolve_build_id "$version" "$BUILD_NUMBER")"
-    upload_to_r2 "$(r2_prod_prefix "$build_id" "$tier")"
-    ;;
-
-  deploy-workers)
-    deploy_workers production "" "$BUILD_NUMBER"
-    ;;
-
   *)
     usage
     ;;

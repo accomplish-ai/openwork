@@ -10,9 +10,8 @@ R2_BUCKET="${R2_BUCKET:-accomplish-assets}"
 
 seed_local_r2() {
   local tier="$1"
-  local version
-  version="$(get_version)"
-  local prefix="$(r2_prod_prefix "$version" "$tier")"
+  local build_id="$2"
+  local prefix="$(r2_prod_prefix "$build_id" "$tier")"
   echo "Seeding local R2: $prefix/"
 
   find "$DIST_DIR" -type f | while read -r file; do
@@ -39,8 +38,7 @@ gen_app_dev_config() {
   local name="$1"
   local tier="$2"
   local output="$3"
-  local version
-  version="$(get_version)"
+  local build_id="$4"
 
   {
     echo "name = \"$name\""
@@ -49,25 +47,39 @@ gen_app_dev_config() {
     echo ""
     echo "[vars]"
     echo "TIER = \"$tier\""
-    echo "VERSION = \"$version\""
-    echo "R2_PREFIX = \"$(r2_prod_prefix "$version" "$tier")/\""
+    echo "VERSION = \"$build_id\""
+    echo "R2_PREFIX = \"$(r2_prod_prefix "$build_id" "$tier")/\""
   } > "$output"
 }
 
+seed_local_kv() {
+  local build_id="$1"
+  local config_json
+  config_json=$(jq -n --arg v "$build_id" '{default: $v, overrides: [], activeVersions: [$v]}')
+
+  echo "Seeding local KV with config: $config_json"
+  echo "$config_json" | npx wrangler kv key put "config" --stdin \
+    --namespace-id "local-dev-placeholder" \
+    --local \
+    --persist-to "$PERSIST_DIR"
+}
+
 start_local_workers() {
-  local lite_config="$SCRIPT_DIR/app/.wrangler.dev-lite.toml"
-  local ent_config="$SCRIPT_DIR/app/.wrangler.dev-enterprise.toml"
+  local build_id="$1"
 
-  gen_app_dev_config "$(worker_name lite)" "lite" "$lite_config"
-  gen_app_dev_config "$(worker_name enterprise)" "enterprise" "$ent_config"
+  local lite_config="$SCRIPT_DIR/app/.generated-dev-lite.toml"
+  local ent_config="$SCRIPT_DIR/app/.generated-dev-enterprise.toml"
+  local router_config="$SCRIPT_DIR/router/.generated-dev.toml"
 
-  trap 'rm -f "$lite_config" "$ent_config"' EXIT
+  gen_app_dev_config "$(versioned_worker_name "$build_id" lite)" "lite" "$lite_config" "$build_id"
+  gen_app_dev_config "$(versioned_worker_name "$build_id" enterprise)" "enterprise" "$ent_config" "$build_id"
+  gen_router_config "$router_config" "local-dev-placeholder" "$build_id"
 
   echo "Starting local workers on http://localhost:8787..."
   (cd "$SCRIPT_DIR" && npx wrangler dev \
-    -c router/wrangler.toml \
-    -c "app/.wrangler.dev-lite.toml" \
-    -c "app/.wrangler.dev-enterprise.toml" \
+    -c "$router_config" \
+    -c "$lite_config" \
+    -c "$ent_config" \
     --persist-to "$PERSIST_DIR")
 }
 
@@ -75,21 +87,25 @@ start_local_workers() {
 TIER="${1:-}"
 case "$TIER" in
   lite|enterprise)
-    version="$(get_version)"
+    build_id="$(get_build_id)"
     echo "=== Local Workers Dev (${TIER}) ==="
-    echo "Version: $version"
+    echo "Build ID: $build_id"
 
     echo ""
     build_web "$REPO_ROOT" "$DIST_DIR"
 
     echo ""
-    seed_local_r2 "$TIER"
+    seed_local_r2 "$TIER" "$build_id"
 
     echo ""
-    start_local_workers
+    seed_local_kv "$build_id"
+
+    echo ""
+    start_local_workers "$build_id"
     ;;
   start)
-    start_local_workers
+    build_id="$(get_build_id)"
+    start_local_workers "$build_id"
     ;;
   *)
     echo "Usage: dev.sh <lite|enterprise> | dev.sh start"

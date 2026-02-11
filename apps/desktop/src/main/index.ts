@@ -66,6 +66,16 @@ process.env.APP_ROOT = path.join(__dirname, '../..');
 
 const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
 
+function buildRouterUrl(): string {
+  const url = new URL(ROUTER_URL);
+  url.searchParams.set('build', app.getVersion());
+  if (!url.searchParams.has('type')) url.searchParams.set('type', 'lite');
+  url.searchParams.set('machineId', getMachineId());
+  url.searchParams.set('arch', process.arch);
+  url.searchParams.set('platform', process.platform);
+  return url.toString();
+}
+
 function getMachineId(): string {
   return createHash('sha256')
     .update(os.hostname() + os.userInfo().username)
@@ -156,14 +166,9 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
-  const remoteUrl = new URL(ROUTER_URL);
-  remoteUrl.searchParams.set('build', app.getVersion());
-  remoteUrl.searchParams.set('type', 'lite');
-  remoteUrl.searchParams.set('machineId', getMachineId());
-  remoteUrl.searchParams.set('arch', process.arch);
-  remoteUrl.searchParams.set('platform', process.platform);
-  console.log('[Main] Loading from:', remoteUrl.toString());
-  mainWindow.loadURL(remoteUrl.toString());
+  const remoteUrl = buildRouterUrl();
+  console.log('[Main] Loading from:', remoteUrl);
+  mainWindow.loadURL(remoteUrl);
 
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
     console.error(`[Main] Failed to load: ${errorDescription} (code: ${errorCode})`);
@@ -353,13 +358,7 @@ app.on('open-url', (event, url) => {
 
 ipcMain.handle('app:retry-load', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    const remoteUrl = new URL(ROUTER_URL);
-    remoteUrl.searchParams.set('build', app.getVersion());
-    remoteUrl.searchParams.set('type', 'lite');
-    remoteUrl.searchParams.set('machineId', getMachineId());
-    remoteUrl.searchParams.set('arch', process.arch);
-    remoteUrl.searchParams.set('platform', process.platform);
-    mainWindow.loadURL(remoteUrl.toString());
+    mainWindow.loadURL(buildRouterUrl());
   }
 });
 

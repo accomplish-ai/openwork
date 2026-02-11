@@ -30,7 +30,7 @@ docs/                                   Architecture plans + review documents
 └─────────┘                       └──────────────────────┘
 ```
 
-- **Router** (`infra/router/`): reads `?type=` param → forwards to lite (default) or enterprise app worker
+- **Router** (`infra/router/`): KV-driven version routing. Resolution: cookie → desktop override → default. Reads `RoutingConfig` from KV namespace `ROUTING_CONFIG`. Falls back to `APP_LITE`/`APP_ENTERPRISE` bindings when KV unavailable (preview environments).
 - **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
 - **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
 - App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
@@ -43,7 +43,9 @@ docs/                                   Architecture plans + review documents
 - Desktop `package.json` is for the dmg/exe
 - Web `pacakge.json` is for the App Workers
 - No git tags, no changelog automation, no semantic-release
-- R2 paths use version from `apps/web/package.json` at deploy time
+- **Build ID** format: `{semver}-{buildNumber}` (e.g., `0.1.0-27`). Build number = `git rev-list --count HEAD`
+- R2 paths use build ID: `builds/v{buildId}-{tier}/`
+- Deploy ≠ Release: deploying a version makes it available; setting `default` in KV makes it active
 
 ## Commands
 
@@ -77,7 +79,7 @@ pnpm -F @accomplish/web test:integration
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 
 # Infra (run from infra/)
-cd infra && bash deploy.sh production     # Full prod deploy (build + R2 upload + workers)
+cd infra && bash deploy.sh release         # Release: R2 upload + workers + router + KV update
 cd infra && bash deploy.sh preview <PR>   # PR preview deploy
 cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
 cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
@@ -92,7 +94,8 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 | `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
 | `E2E_SKIP_AUTH` | Desktop main | Skips auth for E2E tests |
 | `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
-| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup |
+| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup and KV operations |
+| `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
 | `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
 | `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
 
@@ -110,7 +113,7 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 |---|---|---|---|
 | `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
 | `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
-| `deploy.yml` | Push to main (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 (both tiers) → deploy workers → health check |
+| `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
 | `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + R2 objects |
 | `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
@@ -193,5 +196,5 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 - No staging environment — PR previews serve as staging
 - No deploy rollback mechanism
 - Windows desktop build is disabled in release workflow
-- Router TODOs: KV version resolution, canary routing, A/B experiments, Analytics Engine
+- Router TODOs: canary routing, A/B experiments, Analytics Engine
 - Remaining manual setup: Cloudflare API tokens, R2 API credentials, GitHub secrets (see CI validation for required list)

@@ -6,30 +6,49 @@ source "$SCRIPT_DIR/lib.sh"
 
 cleanup_preview() {
   local pr="$1"
+  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
+  : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
   echo "Cleaning up PR preview: #${pr}"
 
-  for suffix in router lite enterprise; do
-    local name="$(preview_worker_name "$pr" "$suffix")"
+  local kv_key="config-pr-${pr}"
 
-    # Check if worker exists via API before attempting delete
-    local status
-    status=$(curl -s -o /dev/null -w "%{http_code}" \
-      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/services/${name}")
+  # Try to read KV config to discover versioned workers
+  local kv_config build_id dns_slug
+  kv_config=$(kv_read_key "$kv_key" 2>/dev/null) || kv_config=""
 
-    if [ "$status" = "404" ]; then
-      echo "Worker ${name} does not exist, skipping"
-      continue
+  if [ -n "$kv_config" ] && [ "$kv_config" != '{"default":"","overrides":[],"activeVersions":[]}' ]; then
+    # KV-aware path: delete versioned workers
+    build_id=$(echo "$kv_config" | jq -r '.default')
+    if [ -n "$build_id" ] && [ "$build_id" != "" ]; then
+      dns_slug="$(slugify "$build_id")"
+      for tier in "${TIERS[@]}"; do
+        local name="${WORKER_PREFIX}-pr-${pr}-v${dns_slug}-${tier}"
+        echo "Deleting versioned worker: ${name}..."
+        npx wrangler delete --name "$name" --force 2>/dev/null || echo "Worker ${name} not found, skipping"
+      done
     fi
+  else
+    # Fallback: delete old-style non-versioned workers
+    for tier in "${TIERS[@]}"; do
+      local name="$(preview_worker_name "$pr" "$tier")"
+      echo "Deleting worker (fallback): ${name}..."
+      npx wrangler delete --name "$name" --force 2>/dev/null || echo "Worker ${name} not found, skipping"
+    done
+  fi
 
-    echo "Deleting worker: ${name}..."
-    npx wrangler delete --name "$name" --force
-    echo "Deleted worker: ${name}"
-  done
+  # Always delete router
+  local router_name="$(preview_worker_name "$pr" router)"
+  echo "Deleting router: ${router_name}..."
+  npx wrangler delete --name "$router_name" --force 2>/dev/null || echo "Router ${router_name} not found, skipping"
 
+  # Delete R2 prefixes
   for tier in "${TIERS[@]}"; do
     rclone_delete_r2_prefix "$(r2_preview_prefix "$pr" "$tier")/"
   done
+
+  # Delete KV key
+  kv_delete_key "$kv_key"
 
   echo "Preview cleanup complete for PR #${pr}"
 }

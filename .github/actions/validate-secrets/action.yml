@@ -16,6 +16,12 @@ inputs:
   require_cf_subdomain:
     required: false
     default: 'false'
+  kv_namespace_id:
+    required: false
+    default: ''
+  require_kv_namespace_id:
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -28,6 +34,7 @@ runs:
         [ -z "$R2_AK" ] && missing+=("R2_ACCESS_KEY_ID")
         [ -z "$R2_SK" ] && missing+=("R2_SECRET_ACCESS_KEY")
         [ "$REQUIRE_CF_SUB" = "true" ] && [ -z "$CF_SUB" ] && missing+=("CF_SUBDOMAIN")
+        [ "$REQUIRE_KV_NS" = "true" ] && [ -z "$KV_NS" ] && missing+=("KV_NAMESPACE_ID")
         if [ ${#missing[@]} -gt 0 ]; then
           echo "::error::Missing required configuration (secrets/vars): ${missing[*]}"
           exit 1
@@ -39,3 +46,5 @@ runs:
         R2_SK: ${{ inputs.r2_secret_access_key }}
         CF_SUB: ${{ inputs.cf_subdomain }}
         REQUIRE_CF_SUB: ${{ inputs.require_cf_subdomain }}
+        KV_NS: ${{ inputs.kv_namespace_id }}
+        REQUIRE_KV_NS: ${{ inputs.require_kv_namespace_id }}

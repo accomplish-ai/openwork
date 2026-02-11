@@ -30,6 +30,8 @@ jobs:
           r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           cf_subdomain: ${{ vars.CF_SUBDOMAIN }}
           require_cf_subdomain: 'true'
+          kv_namespace_id: ${{ vars.KV_NAMESPACE_ID }}
+          require_kv_namespace_id: 'true'
 
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
 
@@ -50,6 +52,13 @@ jobs:
           sudo dpkg -i rclone.deb
           rm rclone.deb
 
+      - name: Compute build ID
+        id: build-id
+        run: |
+          VERSION=$(jq -r '.version' apps/web/package.json)
+          BUILD_NUM=$(git rev-list --count HEAD)
+          echo "build_id=${VERSION}-${BUILD_NUM}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy preview
         run: cd infra && bash deploy.sh preview "$PR_NUMBER"
         env:
@@ -61,6 +70,8 @@ jobs:
           RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+          CF_SUBDOMAIN: ${{ vars.CF_SUBDOMAIN }}
 
       - name: Comment preview URL
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -68,19 +79,34 @@ jobs:
           script: |
             const prNumber = context.payload.pull_request.number;
             const subdomain = '${{ vars.CF_SUBDOMAIN }}';
+            const kvNamespaceId = '${{ vars.KV_NAMESPACE_ID }}';
+            const buildId = '${{ steps.build-id.outputs.build_id }}';
+            const dnsSlug = buildId.replace(/[.\-]/g, '-');
             const routerUrl = `https://accomplish-pr-${prNumber}-router.${subdomain}.workers.dev`;
-            const liteUrl = `https://accomplish-pr-${prNumber}-lite.${subdomain}.workers.dev`;
-            const enterpriseUrl = `https://accomplish-pr-${prNumber}-enterprise.${subdomain}.workers.dev`;
+            const liteWorker = `accomplish-pr-${prNumber}-v${dnsSlug}-lite`;
+            const entWorker = `accomplish-pr-${prNumber}-v${dnsSlug}-enterprise`;
+            const liteUrl = `https://${liteWorker}.${subdomain}.workers.dev`;
+            const entUrl = `https://${entWorker}.${subdomain}.workers.dev`;
+            const kvKey = `config-pr-${prNumber}`;
             const body = [
               `**Preview deployed!** :rocket:`,
               ``,
-              `| Worker | URL |`,
-              `|--------|-----|`,
-              `| Router | ${routerUrl} |`,
-              `| App Lite | ${liteUrl} |`,
-              `| App Enterprise | ${enterpriseUrl} |`,
+              `### Endpoints`,
+              `| Endpoint | URL |`,
+              `|----------|-----|`,
+              `| Router (lite) | ${routerUrl} |`,
+              `| Router (enterprise) | ${routerUrl}?type=enterprise |`,
               ``,
-              `_Updated at ${new Date().toISOString()}_`,
+              `### Resources`,
+              `| Resource | Details |`,
+              `|----------|---------|`,
+              `| Router Worker | [\`accomplish-pr-${prNumber}-router\`](${routerUrl}) |`,
+              `| App Lite | [\`${liteWorker}\`](${liteUrl}) |`,
+              `| App Enterprise | [\`${entWorker}\`](${entUrl}) |`,
+              `| R2 Prefixes | \`builds/pr-${prNumber}-lite/\`, \`builds/pr-${prNumber}-enterprise/\` |`,
+              `| KV Key | \`${kvKey}\` (namespace: \`${kvNamespaceId}\`) |`,
+              ``,
+              `_Build: \`${buildId}\` · Updated at ${new Date().toISOString()}_`,
             ].join('\n');
 
             // Find existing bot comment
