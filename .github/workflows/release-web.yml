@@ -90,3 +90,94 @@ jobs:
           KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
           CF_SUBDOMAIN: ${{ vars.CF_SUBDOMAIN }}
           SET_AS_DEFAULT: ${{ inputs.set_as_default }}
+
+  e2e:
+    name: E2E Tests
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Validate required secrets
+        run: |
+          missing=""
+          [ -z "$ANTHROPIC_API_KEY" ] && missing="$missing ANTHROPIC_API_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            exit 1
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Rebuild native modules for Electron
+        run: pnpm exec electron-rebuild -f
+        working-directory: apps/desktop
+
+      - name: Run E2E task execution tests
+        timeout-minutes: 15
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm -F @accomplish/desktop test:e2e
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Capture system state on failure
+        if: failure()
+        run: |
+          mkdir -p /tmp/e2e-debug
+          echo "=== Memory ===" > /tmp/e2e-debug/system-state.txt
+          free -h >> /tmp/e2e-debug/system-state.txt
+          echo -e "\n=== Disk ===" >> /tmp/e2e-debug/system-state.txt
+          df -h >> /tmp/e2e-debug/system-state.txt
+          echo -e "\n=== Process Tree ===" >> /tmp/e2e-debug/system-state.txt
+          ps auxf >> /tmp/e2e-debug/system-state.txt 2>/dev/null || ps aux >> /tmp/e2e-debug/system-state.txt
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-playwright-report
+          path: apps/desktop/playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-test-results
+          path: apps/desktop/test-results/
+          retention-days: 7
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-test-artifacts
+          path: apps/desktop/test-artifacts/
+          retention-days: 7
+
+      - name: Upload debug logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-debug-logs
+          path: /tmp/e2e-debug/
+          retention-days: 7

@@ -9,7 +9,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const APP_DATA_NAME = 'Accomplish';
+const APP_DATA_NAME = process.env.ACCOMPLISH_USER_DATA_NAME || 'Accomplish';
+if (APP_DATA_NAME === '.' || APP_DATA_NAME === '..' || APP_DATA_NAME !== path.basename(APP_DATA_NAME)) {
+  throw new Error(`Invalid ACCOMPLISH_USER_DATA_NAME: must not contain path separators`);
+}
 app.setPath('userData', path.join(app.getPath('appData'), APP_DATA_NAME));
 
 if (process.platform === 'win32') {

@@ -75,6 +75,13 @@ pnpm -F @accomplish/web test:unit         # Web unit tests
 pnpm -F @accomplish/desktop test:integration
 pnpm -F @accomplish/web test:integration
 
+# Smoke tests (Playwright + Electron, requires pnpm build first, no API keys)
+pnpm -F @accomplish/desktop test:smoke      # Connectivity tests — local + remote mode
+
+# E2E tests (Playwright + Electron, requires API keys in .env.e2e or env vars)
+cp .env.e2e.example .env.e2e               # Fill in real API keys first
+pnpm -F @accomplish/desktop test:e2e        # Real task execution — local + remote mode
+
 # Single test file
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 
@@ -92,12 +99,15 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 |---|---|---|
 | `ACCOMPLISH_ROUTER_URL` | Desktop main | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev` |
 | `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
-| `E2E_SKIP_AUTH` | Desktop main | Skips auth for E2E tests |
+| `ACCOMPLISH_USER_DATA_NAME` | Desktop main | Override userData dir name (default: `Accomplish`). Used by E2E for isolation |
 | `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
 | `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup and KV operations |
 | `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
 | `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
 | `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
+| `ANTHROPIC_API_KEY` | E2E AI tests | Anthropic provider key for AI task execution tests |
+| `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
+| `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |
 
 ## Verification Command
 

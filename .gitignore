@@ -12,6 +12,7 @@ out/
 .env
 .env.local
 .env*.local
+.env.e2e
 
 # Vercel
 .vercel/
@@ -65,6 +66,9 @@ apps/desktop/resources/nodejs/
 
 # Test local agent Chrome profile
 .accomplish-test-local-agent-chrome/
+
+# E2E test artifacts
+test-artifacts/
 
 # Cloudflare
 .wrangler/
