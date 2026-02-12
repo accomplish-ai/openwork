@@ -4,12 +4,12 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
+    "types": ["@cloudflare/workers-types"],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  "include": ["router/src/**/*.ts", "app/src/**/*.ts", "admin/src/**/*.ts", "router/tests/**/*.ts", "app/tests/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }

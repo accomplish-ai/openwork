@@ -34,6 +34,8 @@ docs/                                   Architecture plans + review documents
 - **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
 - **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
 - App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
+- **Admin Worker** (`infra/admin/`): standalone dashboard for managing KV routing config. Protected by Cloudflare Access (Zero Trust), no build step (vanilla HTML/JS as template literal). API: GET/PUT `/api/config`, POST `/api/deploy` (dispatches release-web workflow). Deployed via `deploy.sh admin` or automatically during `deploy.sh release`.
+- **Build Manifests**: Each release generates a `manifest.json` (via `gen_manifest` in `lib.sh`) containing buildId, version, gitSha, timestamp, and last 20 commits. Uploaded to R2 alongside build assets. Viewable in admin dashboard per-version.
 - Cache: `index.html` no-cache, `/assets/*` 1yr immutable, everything else 1hr
 
 ### Versioning
@@ -90,6 +92,7 @@ cd infra && bash deploy.sh release         # Release: R2 upload + workers + rout
 cd infra && bash deploy.sh preview <PR>   # PR preview deploy
 cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
 cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
+cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 cd infra && bash setup.sh                 # One-time: create R2 bucket (idempotent)
 
 # Infra tests (run from infra/, uses npm not pnpm)
@@ -108,6 +111,8 @@ cd infra && npm run test:integration      # Integration tests only (real minifla
 | `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
 | `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup and KV operations |
 | `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
+| `AUDIT_WEBHOOK_SECRET` | CI / admin worker | Shared secret for CI→admin audit webhook (`x-audit-secret` header) |
+| `GITHUB_REPO` | admin worker | GitHub repo (`owner/repo`) for workflow dispatch from admin dashboard |
 | `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
 | `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
 | `APP_TIER` | Web + Desktop build | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Web: controls feature tree-shaking. Desktop: sets router `type` param and artifact naming (enterprise builds produce `Accomplish-Enterprise-*` DMGs). |

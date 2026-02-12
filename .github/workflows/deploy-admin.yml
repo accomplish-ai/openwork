@@ -1,0 +1,50 @@
+name: Deploy Admin Dashboard
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/admin/**'
+      - 'infra/deploy.sh'
+      - 'infra/lib.sh'
+      - '.github/workflows/deploy-admin.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-admin
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Admin Worker
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '20'
+
+      - name: Install infra dependencies
+        run: cd infra && npm ci
+
+      - name: Deploy admin worker
+        run: cd infra && bash deploy.sh admin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+
+      - name: Set worker secrets
+        working-directory: infra/admin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "${{ secrets.ADMIN_DEPLOY_TOKEN }}" | npx wrangler secret put GITHUB_TOKEN
+          echo "${{ secrets.AUDIT_WEBHOOK_SECRET }}" | npx wrangler secret put AUDIT_WEBHOOK_SECRET
+          echo "${{ github.repository }}" | npx wrangler secret put GITHUB_REPO

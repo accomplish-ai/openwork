@@ -20,6 +20,34 @@ deploy_app_worker() {
     --var "R2_PREFIX:$r2_prefix")
 }
 
+deploy_admin_worker() {
+  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+
+  echo "Deploying admin worker..."
+
+  local toml="$SCRIPT_DIR/admin/.generated-admin.toml"
+  {
+    echo "# AUTO-GENERATED — do not edit manually"
+    echo 'name = "accomplish-admin"'
+    echo 'main = "src/index.ts"'
+    echo 'compatibility_date = "2024-12-01"'
+    echo ""
+    echo "[observability]"
+    echo "enabled = true"
+    echo ""
+    echo "[[kv_namespaces]]"
+    echo 'binding = "ROUTING_CONFIG"'
+    echo "id = \"${KV_NAMESPACE_ID}\""
+    echo ""
+    echo "[[r2_buckets]]"
+    echo 'binding = "ASSETS"'
+    echo 'bucket_name = "accomplish-assets"'
+  } > "$toml"
+
+  (cd "$SCRIPT_DIR/admin" && npx wrangler deploy --config "$toml")
+  rm -f "$toml"
+}
+
 release() {
   : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
   : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
@@ -33,6 +61,7 @@ release() {
   # 1. Build and upload to R2 (per tier)
   for tier in "${TIERS[@]}"; do
     build_web_tier "$REPO_ROOT" "$DIST_DIR" "$tier"
+    gen_manifest "$build_id" "$DIST_DIR"
     rclone_upload_to_r2 "$DIST_DIR" "$(r2_prod_prefix "$build_id" "$tier")"
   done
 
@@ -80,6 +109,9 @@ release() {
     new_config=$(echo "$current_config" | jq --argjson av "$new_active" '.activeVersions = $av')
   fi
   kv_write_config "$new_config"
+
+  # 9. Deploy admin worker
+  deploy_admin_worker
 
   echo "Release complete! Version: $build_id"
 }
@@ -146,6 +178,7 @@ usage() {
   echo "Commands:"
   echo "  release              Full release: R2 upload + deploy workers + router + KV update"
   echo "  preview <pr-number>  PR preview deploy"
+  echo "  admin                Deploy admin dashboard worker"
   exit 1
 }
 
@@ -155,6 +188,9 @@ case "${1:-}" in
     ;;
   preview)
     preview "${2:?Usage: deploy.sh preview <pr-number>}"
+    ;;
+  admin)
+    deploy_admin_worker
     ;;
   *)
     usage

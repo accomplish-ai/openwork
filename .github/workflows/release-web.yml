@@ -102,6 +102,18 @@ jobs:
           CF_SUBDOMAIN: ${{ vars.CF_SUBDOMAIN }}
           SET_AS_DEFAULT: ${{ inputs.set_as_default }}
 
+      - name: Post audit entry
+        if: success()
+        continue-on-error: true
+        run: |
+          curl -sf -X POST \
+            "https://accomplish-admin.${{ vars.CF_SUBDOMAIN }}.workers.dev/api/audit" \
+            -H "Content-Type: application/json" \
+            -H "x-audit-secret: ${{ secrets.AUDIT_WEBHOOK_SECRET }}" \
+            -d "$(jq -n --arg bid "${{ steps.release.outputs.build_id }}" --argjson def "${SET_AS_DEFAULT:-false}" '{action:"release_completed",details:{buildId:$bid,setAsDefault:$def}}')"
+        env:
+          SET_AS_DEFAULT: ${{ inputs.set_as_default }}
+
   e2e:
     name: E2E Tests
     needs: release

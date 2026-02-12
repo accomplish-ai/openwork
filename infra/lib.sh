@@ -47,7 +47,6 @@ TIERS=("lite" "enterprise")
 WORKERS_SUBDOMAIN="${CF_SUBDOMAIN:-}"
 
 # --- Naming helpers ---
-worker_name() { echo "${WORKER_PREFIX}-app-$1"; }
 preview_worker_name() { echo "${WORKER_PREFIX}-pr-$1-$2"; }
 slugify() { echo "$1" | tr '.+' '--'; }
 slugify_binding() { echo "$1" | sed 's/[.\-]/_/g'; }
@@ -254,4 +253,34 @@ gen_preview_router_config_kv() {
     echo "[vars]"
     echo "KV_CONFIG_KEY = \"config-pr-${pr_number}\""
   } > "$output_file"
+}
+
+# --- Build manifest generation ---
+gen_manifest() {
+  local build_id="$1"
+  local dist_dir="$2"
+  local version build_number git_sha timestamp
+
+  build_number="${build_id##*-}"
+  version="${build_id%-*}"
+  git_sha=$(git rev-parse --short HEAD)
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  local commits
+  commits=$(git log -20 --format='%H%x1f%s%x1f%an%x1f%aI' | jq -R -s '
+    split("\n") | map(select(length > 0) | split("\u001f")) |
+    map({sha: .[0][0:7], message: .[1], author: .[2], date: .[3]})
+  ')
+
+  jq -n \
+    --arg bid "$build_id" \
+    --arg ver "$version" \
+    --argjson bn "$build_number" \
+    --arg sha "$git_sha" \
+    --arg ts "$timestamp" \
+    --argjson commits "$commits" \
+    '{buildId:$bid, version:$ver, buildNumber:$bn, gitSha:$sha, timestamp:$ts, commits:$commits}' \
+    > "$dist_dir/manifest.json"
+
+  echo "Generated manifest.json for $build_id ($(echo "$commits" | jq length) commits)"
 }
