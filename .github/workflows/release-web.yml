@@ -36,6 +36,12 @@ jobs:
 
       - run: pnpm -F @accomplish/web test:unit
 
+      - name: Install infra dependencies
+        run: cd infra && npm ci
+
+      - name: Run infra tests
+        run: cd infra && npm test
+
   release:
     name: Release
     needs: test

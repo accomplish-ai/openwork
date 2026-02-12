@@ -91,6 +91,11 @@ cd infra && bash deploy.sh preview <PR>   # PR preview deploy
 cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
 cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
 cd infra && bash setup.sh                 # One-time: create R2 bucket (idempotent)
+
+# Infra tests (run from infra/, uses npm not pnpm)
+cd infra && npm test                      # All infra tests (unit + integration)
+cd infra && npm run test:unit             # Unit tests only (router + app)
+cd infra && npm run test:integration      # Integration tests only (real miniflare KV/R2)
 ```
 
 ### Environment Variables
@@ -115,14 +120,14 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 Run this after completing any changes:
 
 ```bash
-pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
+pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit && cd infra && npm test
 ```
 
 ## CI/CD Workflows
 
 | Workflow | Trigger | Secrets | What it does |
 |---|---|---|---|
-| `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
+| `ci.yml` | PR / push to main | — | 6 parallel test jobs (incl. infra worker tests) + Windows CI |
 | `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
 | `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
