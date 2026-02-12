@@ -5,6 +5,9 @@ interface Env {
   GITHUB_TOKEN: string;
   GITHUB_REPO: string;
   AUDIT_WEBHOOK_SECRET: string;
+  SLACK_WEBHOOK_URL?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  KV_NAMESPACE_ID?: string;
 }
 
 type AuditAction =
@@ -25,6 +28,7 @@ interface AuditEntry {
 
 interface RoutingConfig {
   default: string;
+  previousDefault?: string;
   overrides?: Array<{ desktopRange: string; webBuildId: string }>;
   activeVersions: string[];
 }
@@ -37,8 +41,9 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
 
-const CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; connect-src 'self'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'";
+function buildCsp(nonce: string): string {
+  return `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; connect-src 'self'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'`;
+}
 
 function timingSafeEqual(a: string, b: string): boolean {
   const encoder = new TextEncoder();
@@ -65,10 +70,10 @@ function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-function htmlResponse(body: string): Response {
+function htmlResponse(body: string, nonce: string): Response {
   const headers = new Headers({
     "content-type": "text/html; charset=utf-8",
-    "content-security-policy": CSP,
+    "content-security-policy": buildCsp(nonce),
     ...SECURITY_HEADERS,
   });
   return new Response(body, { status: 200, headers });
@@ -83,6 +88,7 @@ async function parseJsonBody(request: Request): Promise<{ data: unknown } | Resp
 }
 
 const BUILD_ID_PATTERN = /^\d+\.\d+\.\d+-\d+$/;
+const WORKFLOW_POLL_DELAY_MS = 2000;
 
 function validateConfig(data: unknown): data is RoutingConfig {
   if (!data || typeof data !== "object") return false;
@@ -93,6 +99,9 @@ function validateConfig(data: unknown): data is RoutingConfig {
     if (typeof v !== "string" || !BUILD_ID_PATTERN.test(v)) return false;
   }
   if (obj.default !== "" && !BUILD_ID_PATTERN.test(obj.default)) return false;
+  if (obj.previousDefault !== undefined) {
+    if (typeof obj.previousDefault !== "string" || !BUILD_ID_PATTERN.test(obj.previousDefault)) return false;
+  }
   if (obj.overrides !== undefined) {
     if (!Array.isArray(obj.overrides)) return false;
     for (const o of obj.overrides) {
@@ -104,6 +113,15 @@ function validateConfig(data: unknown): data is RoutingConfig {
   return true;
 }
 
+interface AuditMetadata {
+  id: string;
+  kvKey: string;
+  timestamp: string;
+  action: AuditAction;
+  source: "dashboard" | "ci";
+  user?: string;
+}
+
 async function writeAuditEntry(
   env: Env,
   action: AuditAction,
@@ -111,7 +129,8 @@ async function writeAuditEntry(
   source: "dashboard" | "ci",
   user?: string,
 ): Promise<AuditEntry> {
-  const timestamp = new Date().toISOString();
+  const now = Date.now();
+  const timestamp = new Date(now).toISOString();
   const entry: AuditEntry = {
     id: crypto.randomUUID(),
     timestamp,
@@ -120,20 +139,49 @@ async function writeAuditEntry(
     source,
     ...(user && { user }),
   };
-  const sortKey = String(9999999999999 - Date.now()).padStart(13, "0");
-  await env.ROUTING_CONFIG.put(`audit:${sortKey}:${entry.id}`, JSON.stringify(entry));
+  const sortKey = String(9999999999999 - now).padStart(13, "0");
+  const kvKey = `audit:${sortKey}:${entry.id}`;
+  const metadata: AuditMetadata = { id: entry.id, kvKey, timestamp, action, source, ...(user && { user }) };
+  await env.ROUTING_CONFIG.put(kvKey, JSON.stringify(entry), { metadata });
   return entry;
+}
+
+async function handleHealth(env: Env): Promise<Response> {
+  try {
+    await env.ROUTING_CONFIG.get("config");
+    return jsonResponse({ status: "ok", timestamp: Date.now() }, 200);
+  } catch {
+    return jsonResponse({ status: "degraded", timestamp: Date.now() }, 503);
+  }
+}
+
+function buildMeta(env: Env) {
+  return {
+    accountId: env.CLOUDFLARE_ACCOUNT_ID ?? null,
+    kvNamespaceId: env.KV_NAMESPACE_ID ?? null,
+    githubRepo: env.GITHUB_REPO,
+  };
+}
+
+function sendSlackNotification(env: Env, ctx: ExecutionContext, message: string): void {
+  if (!env.SLACK_WEBHOOK_URL) return;
+  const url = env.SLACK_WEBHOOK_URL;
+  ctx.waitUntil(
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: message }),
+    }).catch((err) => console.error("Slack notification failed:", err)),
+  );
 }
 
 async function handleGetConfig(env: Env): Promise<Response> {
   const data = await env.ROUTING_CONFIG.get<RoutingConfig>("config", { type: "json" });
-  if (!data) {
-    return jsonResponse({ default: "", overrides: [], activeVersions: [] }, 200);
-  }
-  return jsonResponse(data, 200);
+  const config = data ?? { default: "", overrides: [], activeVersions: [] };
+  return jsonResponse({ ...config, _meta: buildMeta(env) }, 200);
 }
 
-async function handlePutConfig(request: Request, env: Env): Promise<Response> {
+async function handlePutConfig(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const parsed = await parseJsonBody(request);
   if (parsed instanceof Response) return parsed;
   const body = parsed.data;
@@ -144,8 +192,13 @@ async function handlePutConfig(request: Request, env: Env): Promise<Response> {
 
   const previous = await env.ROUTING_CONFIG.get<RoutingConfig>("config", { type: "json" });
 
+  const defaultChanged = previous && previous.default !== body.default && previous.default !== "";
+  const resolvedPreviousDefault = defaultChanged
+    ? previous.default
+    : body.previousDefault;
   const config: RoutingConfig = {
     default: body.default,
+    ...(resolvedPreviousDefault ? { previousDefault: resolvedPreviousDefault } : {}),
     overrides: body.overrides ?? [],
     activeVersions: body.activeVersions,
   };
@@ -153,10 +206,34 @@ async function handlePutConfig(request: Request, env: Env): Promise<Response> {
   await env.ROUTING_CONFIG.put("config", JSON.stringify(config));
   const user = request.headers.get("Cf-Access-Authenticated-User-Email") || undefined;
   await writeAuditEntry(env, "config_updated", { before: previous, after: config }, "dashboard", user);
+  sendSlackNotification(env, ctx, `Config updated: default → ${config.default}${user ? ` by ${user}` : ""}`);
   return jsonResponse(config, 200);
 }
 
-async function handleDeploy(request: Request, env: Env): Promise<Response> {
+async function findLatestWorkflowRun(env: Env): Promise<string | null> {
+  await new Promise((resolve) => setTimeout(resolve, WORKFLOW_POLL_DELAY_MS));
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/release-web.yml/runs?per_page=1`,
+      {
+        headers: {
+          "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+          "Accept": "application/vnd.github+v3+json",
+          "User-Agent": "accomplish-admin",
+        },
+      },
+    );
+    if (res.ok) {
+      const runs = await res.json() as { workflow_runs?: Array<{ html_url: string }> };
+      return runs.workflow_runs?.[0]?.html_url ?? null;
+    }
+  } catch {
+    // Non-critical — dispatch already succeeded
+  }
+  return null;
+}
+
+async function handleDeploy(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const parsed = await parseJsonBody(request);
   if (parsed instanceof Response) return parsed;
   const body = parsed.data;
@@ -190,20 +267,47 @@ async function handleDeploy(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ error: "github_api_error", status: response.status, message: "Failed to trigger deploy" }, 502);
   }
 
-  const user = request.headers.get("Cf-Access-Authenticated-User-Email") || undefined;
-  await writeAuditEntry(env, "deploy_triggered", { setAsDefault }, "dashboard", user);
+  const runUrl = await findLatestWorkflowRun(env);
 
-  return jsonResponse({ dispatched: true, setAsDefault }, 202);
+  const user = request.headers.get("Cf-Access-Authenticated-User-Email") || undefined;
+  await writeAuditEntry(env, "deploy_triggered", { setAsDefault, runUrl }, "dashboard", user);
+  sendSlackNotification(env, ctx, `Deploy triggered${setAsDefault ? " (set as default)" : ""}${user ? ` by ${user}` : ""}`);
+
+  return jsonResponse({ dispatched: true, setAsDefault, runUrl }, 202);
+}
+
+async function handleGetDeployStatus(env: Env, runId: string): Promise<Response> {
+  if (!/^\d+$/.test(runId)) {
+    return jsonResponse({ error: "invalid_run_id" }, 400);
+  }
+  const response = await fetch(
+    `https://api.github.com/repos/${env.GITHUB_REPO}/actions/runs/${runId}`,
+    {
+      headers: {
+        "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github+v3+json",
+        "User-Agent": "accomplish-admin",
+      },
+    },
+  );
+  if (!response.ok) {
+    return jsonResponse({ error: "github_api_error", status: response.status }, 502);
+  }
+  const run = await response.json() as { status: string; conclusion: string | null; html_url: string };
+  return jsonResponse({ status: run.status, conclusion: run.conclusion, htmlUrl: run.html_url }, 200);
 }
 
 async function handleGetManifest(env: Env, buildId: string): Promise<Response> {
   if (!BUILD_ID_PATTERN.test(buildId)) {
     return jsonResponse({ error: "invalid_build_id" }, 400);
   }
-  const data = await env.ROUTING_CONFIG.get<Record<string, unknown>>(`manifest:${buildId}`, { type: "json" });
-  if (!data) {
+  const object =
+    await env.ASSETS.get(`builds/v${buildId}-lite/manifest.json`) ??
+    await env.ASSETS.get(`builds/v${buildId}-enterprise/manifest.json`);
+  if (!object) {
     return jsonResponse({ error: "not_found" }, 404);
   }
+  const data = await object.json();
   return jsonResponse(data, 200);
 }
 
@@ -212,19 +316,35 @@ async function handleGetAudit(env: Env, url: URL): Promise<Response> {
   const cursor = url.searchParams.get("cursor") ?? undefined;
 
   const listed = await env.ROUTING_CONFIG.list({ prefix: "audit:", limit, cursor });
-  const entries: AuditEntry[] = [];
+  const entries: AuditMetadata[] = [];
   for (const key of listed.keys) {
-    const value = await env.ROUTING_CONFIG.get<AuditEntry>(key.name, { type: "json" });
-    if (value) entries.push(value);
+    const meta = key.metadata as AuditMetadata | undefined;
+    if (meta) {
+      entries.push(meta);
+    } else {
+      const value = await env.ROUTING_CONFIG.get<AuditEntry>(key.name, { type: "json" });
+      if (value) {
+        entries.push({ id: value.id ?? key.name, kvKey: key.name, action: value.action, source: value.source, user: value.user, timestamp: value.timestamp });
+      }
+    }
   }
 
-  entries.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-
-  const result: { entries: AuditEntry[]; cursor?: string } = { entries };
+  const result: { entries: AuditMetadata[]; cursor?: string } = { entries };
   if (!listed.list_complete) {
     result.cursor = listed.cursor;
   }
   return jsonResponse(result, 200);
+}
+
+async function handleGetAuditDetail(env: Env, key: string): Promise<Response> {
+  if (!key.startsWith("audit:")) {
+    return jsonResponse({ error: "invalid_key" }, 400);
+  }
+  const value = await env.ROUTING_CONFIG.get<AuditEntry>(key, { type: "json" });
+  if (!value) {
+    return jsonResponse({ error: "not_found" }, 404);
+  }
+  return jsonResponse(value, 200);
 }
 
 async function handlePostAudit(request: Request, env: Env): Promise<Response> {
@@ -262,54 +382,83 @@ async function handlePostAudit(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleListBuilds(env: Env): Promise<Response> {
-  const config = await env.ROUTING_CONFIG.get<RoutingConfig>("config", { type: "json" });
-  if (!config) {
-    return jsonResponse([], 200);
+  const listed = await env.ASSETS.list({ prefix: "builds/v", delimiter: "/" });
+  const buildMap = new Map<string, string[]>();
+  for (const prefix of listed.delimitedPrefixes) {
+    const match = prefix.match(/^builds\/v(.+)-(lite|enterprise)\/$/);
+    if (match) {
+      const [, buildId, tier] = match;
+      const tiers = buildMap.get(buildId) ?? [];
+      tiers.push(tier);
+      buildMap.set(buildId, tiers);
+    }
   }
-  return jsonResponse([...config.activeVersions].sort(), 200);
+  const builds = [...buildMap.entries()]
+    .map(([buildId, tiers]) => ({ buildId, tiers: tiers.sort() }))
+    .sort((a, b) => a.buildId.localeCompare(b.buildId));
+  return jsonResponse(builds, 200);
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    const { pathname } = url;
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    try {
+      const url = new URL(request.url);
+      const { pathname } = url;
 
-    if (pathname === "/" && request.method === "GET") {
-      return htmlResponse(getDashboardHtml());
-    }
-
-    if (pathname.startsWith("/api/")) {
-      if (pathname === "/api/config" && request.method === "GET") {
-        return handleGetConfig(env);
-      }
-      if (pathname === "/api/config" && request.method === "PUT") {
-        const originErr = checkOrigin(request);
-        if (originErr) return originErr;
-        return handlePutConfig(request, env);
-      }
-      if (pathname === "/api/deploy" && request.method === "POST") {
-        const originErr = checkOrigin(request);
-        if (originErr) return originErr;
-        return handleDeploy(request, env);
-      }
-      if (pathname === "/api/audit" && request.method === "GET") {
-        return handleGetAudit(env, url);
-      }
-      if (pathname === "/api/audit" && request.method === "POST") {
-        return handlePostAudit(request, env);
+      if (pathname === "/" && request.method === "GET") {
+        const nonce = crypto.randomUUID();
+        return htmlResponse(getDashboardHtml(nonce), nonce);
       }
 
-      const buildsMatch = pathname.match(/^\/api\/builds\/([^/]+)\/manifest$/);
-      if (buildsMatch && request.method === "GET") {
-        return handleGetManifest(env, buildsMatch[1]);
+      if (pathname === "/health" && request.method === "GET") {
+        return await handleHealth(env);
       }
-      if (pathname === "/api/builds" && request.method === "GET") {
-        return handleListBuilds(env);
+
+      if (pathname.startsWith("/api/")) {
+        if (pathname === "/api/config" && request.method === "GET") {
+          return await handleGetConfig(env);
+        }
+        if (pathname === "/api/config" && request.method === "PUT") {
+          const originErr = checkOrigin(request);
+          if (originErr) return originErr;
+          return await handlePutConfig(request, env, ctx);
+        }
+        if (pathname === "/api/deploy" && request.method === "POST") {
+          const originErr = checkOrigin(request);
+          if (originErr) return originErr;
+          return await handleDeploy(request, env, ctx);
+        }
+        if (pathname === "/api/deploy/status" && request.method === "GET") {
+          const runId = url.searchParams.get("run_id");
+          if (!runId) return jsonResponse({ error: "missing_run_id" }, 400);
+          return await handleGetDeployStatus(env, runId);
+        }
+        if (pathname === "/api/audit" && request.method === "GET") {
+          return await handleGetAudit(env, url);
+        }
+        if (pathname === "/api/audit" && request.method === "POST") {
+          return await handlePostAudit(request, env);
+        }
+        const auditDetailMatch = pathname.match(/^\/api\/audit\/(.+)$/);
+        if (auditDetailMatch && request.method === "GET") {
+          return await handleGetAuditDetail(env, decodeURIComponent(auditDetailMatch[1]));
+        }
+
+        const buildsMatch = pathname.match(/^\/api\/builds\/([^/]+)\/manifest$/);
+        if (buildsMatch && request.method === "GET") {
+          return await handleGetManifest(env, buildsMatch[1]);
+        }
+        if (pathname === "/api/builds" && request.method === "GET") {
+          return await handleListBuilds(env);
+        }
+
+        return jsonResponse({ error: "not_found" }, 404);
       }
 
       return jsonResponse({ error: "not_found" }, 404);
+    } catch (err) {
+      console.error("Unhandled error in admin worker:", err);
+      return jsonResponse({ error: "internal_server_error" }, 500);
     }
-
-    return jsonResponse({ error: "not_found" }, 404);
   },
 } satisfies ExportedHandler<Env>;

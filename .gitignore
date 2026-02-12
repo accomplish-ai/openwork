@@ -76,3 +76,6 @@ test-artifacts/
 
 # Generated configs
 .generated/
+
+# Internal tracking
+changes-from-plan.md

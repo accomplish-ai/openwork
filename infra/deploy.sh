@@ -20,6 +20,7 @@ deploy_app_worker() {
 
 deploy_admin_worker() {
   : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
 
   echo "Deploying admin worker..."
 
@@ -33,6 +34,10 @@ deploy_admin_worker() {
     echo "[observability]"
     echo "enabled = true"
     echo ""
+    echo "[vars]"
+    echo "CLOUDFLARE_ACCOUNT_ID = \"${CLOUDFLARE_ACCOUNT_ID}\""
+    echo "KV_NAMESPACE_ID = \"${KV_NAMESPACE_ID}\""
+    echo ""
     echo "[[kv_namespaces]]"
     echo 'binding = "ROUTING_CONFIG"'
     echo "id = \"${KV_NAMESPACE_ID}\""
@@ -40,6 +45,17 @@ deploy_admin_worker() {
 
   (cd "$SCRIPT_DIR/admin" && npx wrangler deploy --config "$toml")
   rm -f "$toml"
+
+  # Post-deploy health check
+  local admin_url="https://accomplish-admin.${CF_SUBDOMAIN:-accomplish}.workers.dev"
+  echo "Health check: $admin_url/health"
+  local status
+  status=$(curl -s -o /dev/null -w "%{http_code}" "$admin_url/health" || true)
+  if [ "$status" = "200" ]; then
+    echo "Health check passed"
+  else
+    echo "WARNING: Health check returned $status (expected 200)"
+  fi
 }
 
 release() {

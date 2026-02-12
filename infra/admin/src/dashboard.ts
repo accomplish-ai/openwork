@@ -1,4 +1,4 @@
-export function getDashboardHtml(): string {
+export function getDashboardHtml(nonce: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,6 +30,27 @@ export function getDashboardHtml(): string {
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.10);
     }
 
+    html.dark {
+      --background: #111;
+      --foreground: #e5e5e5;
+      --card: #1a1a1a;
+      --card-foreground: #e5e5e5;
+      --primary: #3a7a37;
+      --primary-foreground: #ffffff;
+      --secondary: #1e2d1d;
+      --secondary-foreground: #a8c0a6;
+      --muted: #252525;
+      --muted-foreground: #888;
+      --accent: #2a2a2a;
+      --border: #333;
+      --input: #333;
+      --ring: #9a8a80;
+      --destructive: #e54d2e;
+      --warning: #EE7909;
+      --success: #019E55;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
@@ -44,23 +65,25 @@ export function getDashboardHtml(): string {
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
     .header h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
     .header p { font-size: 14px; color: var(--muted-foreground); margin-top: 4px; }
-    .header-actions { display: flex; gap: 10px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .header-title-row { display: flex; align-items: center; gap: 10px; }
 
     /* Buttons */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       padding: 0 16px; height: 36px; border-radius: 6px; border: none; cursor: pointer;
       font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
-      transition: all 0.15s; white-space: nowrap;
+      transition: all 0.15s; white-space: nowrap; text-decoration: none;
     }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: var(--primary-foreground); }
-    .btn-primary:hover { background: #2a4d28; }
+    .btn-primary:hover:not(:disabled) { background: #2a4d28; }
     .btn-outline { background: var(--card); color: var(--foreground); border: 1px solid var(--border); }
-    .btn-outline:hover { background: var(--accent); }
+    .btn-outline:hover:not(:disabled) { background: var(--accent); }
     .btn-destructive { background: var(--destructive); color: #fff; }
-    .btn-destructive:hover { opacity: 0.9; }
+    .btn-destructive:hover:not(:disabled) { opacity: 0.9; }
     .btn-ghost { background: transparent; color: var(--muted-foreground); }
-    .btn-ghost:hover { background: var(--accent); color: var(--foreground); }
+    .btn-ghost:hover:not(:disabled) { background: var(--accent); color: var(--foreground); }
     .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
 
     /* Cards */
@@ -77,9 +100,16 @@ export function getDashboardHtml(): string {
     .badge-green { background: #dcfce7; color: #166534; }
     .badge-amber { background: #fef3c7; color: #92400e; }
     .badge-gray { background: var(--muted); color: var(--muted-foreground); }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; }
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
     .badge-green .badge-dot { background: #22c55e; }
     .badge-amber .badge-dot { background: #f59e0b; }
+
+    html.dark .badge-green { background: #14532d; color: #86efac; }
+    html.dark .badge-amber { background: #451a03; color: #fbbf24; }
+    html.dark .badge-blue { background: #1e3a5f; color: #93c5fd; }
+    html.dark .badge-purple { background: #3b1f6e; color: #c4b5fd; }
 
     /* Hero Banner */
     .hero {
@@ -90,6 +120,7 @@ export function getDashboardHtml(): string {
     .hero .ver { font-size: 36px; font-weight: 900; letter-spacing: -0.02em; }
     .hero .label { font-size: 13px; opacity: 0.7; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
     .hero .meta { font-size: 13px; opacity: 0.8; margin-top: 6px; }
+    .hero-actions { display: flex; gap: 8px; }
     .hero .btn-hero { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
     .hero .btn-hero:hover { background: rgba(255,255,255,0.25); }
 
@@ -126,6 +157,7 @@ export function getDashboardHtml(): string {
       border-radius: 12px; font-size: 13px; line-height: 1.6; overflow-x: auto;
       font-family: 'DM Sans', monospace;
     }
+    html.dark .collapsible-body pre { background: #111; border: 1px solid var(--border); }
 
     /* Modal */
     .modal-backdrop {
@@ -156,6 +188,13 @@ export function getDashboardHtml(): string {
       padding: 0 12px; font-family: 'DM Sans', sans-serif; font-size: 13px;
       background: var(--card); color: var(--foreground); margin-bottom: 16px;
     }
+    .modal .confirm-hint { font-size: 12px; color: var(--muted-foreground); margin-top: -12px; margin-bottom: 16px; }
+    .modal .warn-banner {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+      background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px;
+      margin-bottom: 16px; font-size: 13px; color: #92400e;
+    }
+    html.dark .modal .warn-banner { background: #451a03; border-color: #78350f; color: #fbbf24; }
 
     /* Deploy states */
     .deploy-state { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
@@ -176,6 +215,26 @@ export function getDashboardHtml(): string {
       border-radius: 50%; animation: btn-spin 0.6s linear infinite;
     }
     @keyframes btn-spin { to { transform: rotate(360deg); } }
+
+    .result-banner {
+      display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+      border-radius: 8px; margin-bottom: 16px; font-size: 13px; font-weight: 500;
+    }
+    .result-banner.success { background: #dcfce7; border: 1px solid #bbf7d0; color: #166534; }
+    .result-banner.error { background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; }
+    html.dark .result-banner.success { background: #14532d; border-color: #166534; color: #86efac; }
+    html.dark .result-banner.error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+
+    .deploy-run-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 8px; color: var(--primary); text-decoration: none; }
+    .deploy-run-link:hover { text-decoration: underline; }
+    .deploy-status-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 100px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .deploy-status-badge.queued { background: var(--muted); color: var(--muted-foreground); }
+    .deploy-status-badge.in_progress { background: #dbeafe; color: #1e40af; }
+    .deploy-status-badge.completed-success { background: #dcfce7; color: #166534; }
+    .deploy-status-badge.completed-failure { background: #fee2e2; color: #dc2626; }
 
     /* Toast */
     #toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
@@ -230,7 +289,7 @@ export function getDashboardHtml(): string {
       margin: 0;
     }
 
-    /* Audit Log — Editorial Table */
+    /* Audit Log */
     .audit-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     .audit-table thead th {
       font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
@@ -256,8 +315,8 @@ export function getDashboardHtml(): string {
     .audit-time { font-size: 13px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit-source { font-size: 12.5px; color: var(--muted-foreground); font-style: italic; }
     .audit-user { font-size: 12.5px; color: var(--muted-foreground); white-space: nowrap; }
-    .audit-chevron { color: #ccc; font-size: 12px; transition: transform 0.2s, color 0.2s; display: inline-block; }
-    tr.audit-expanded .audit-chevron { transform: rotate(90deg); color: #666; }
+    .audit-chevron { color: var(--muted-foreground); font-size: 12px; transition: transform 0.2s, color 0.2s; display: inline-block; }
+    tr.audit-expanded .audit-chevron { transform: rotate(90deg); color: var(--foreground); }
     .audit-detail-row td {
       padding: 0 16px 14px; background: var(--muted);
       border-bottom: 1px solid var(--border);
@@ -274,9 +333,70 @@ export function getDashboardHtml(): string {
     }
     .diff-tag-rem { background: #fef2f2; color: #dc2626; }
     .diff-tag-add { background: #f0fdf4; color: #16a34a; }
+    html.dark .diff-tag-rem { background: #450a0a; color: #fca5a5; }
+    html.dark .diff-tag-add { background: #052e16; color: #86efac; }
+
+    /* Health indicator */
+    .health-dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+      flex-shrink: 0;
+    }
+    .health-dot.ok { background: #22c55e; }
+    .health-dot.degraded { background: #ef4444; }
+    .health-dot.unknown { background: #9ca3af; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Dark mode toggle */
+    .dark-toggle {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      width: 36px; height: 36px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--foreground); transition: background 0.15s;
+    }
+    .dark-toggle:hover { background: var(--accent); }
+
+    /* Tooltip */
+    .tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+    .tooltip-icon {
+      width: 16px; height: 16px; border-radius: 50%; background: var(--muted);
+      color: var(--muted-foreground); display: inline-flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 700; cursor: help;
+      margin-left: 6px; flex-shrink: 0;
+    }
+    .tooltip-text {
+      display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%); background: #1a1a1a; color: #e0e0e0;
+      padding: 8px 12px; border-radius: 6px; font-size: 12px; line-height: 1.5;
+      width: 260px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      pointer-events: none;
+    }
+    .tooltip-text::after {
+      content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+      border-width: 5px; border-style: solid; border-color: #1a1a1a transparent transparent transparent;
+    }
+    .tooltip-wrap:hover .tooltip-text { display: block; }
+
+    /* Resource links */
+    .resource-links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .resource-link {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+      color: var(--muted-foreground); text-decoration: none; padding: 4px 10px;
+      border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s;
+    }
+    .resource-link:hover { color: var(--foreground); background: var(--accent); }
+
+    /* Version comparison */
+    .compare-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; margin-bottom: 20px; }
+    .compare-arrow { align-self: center; color: var(--muted-foreground); font-size: 18px; margin-bottom: 16px; }
+    .compare-result { max-height: 400px; overflow-y: auto; }
+
+    /* Tier badges inline */
+    .tier-badges { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+    .tier-badge { font-size: 10px; padding: 1px 6px; border-radius: 100px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
     /* Loading */
     .loading { text-align: center; padding: 60px 0; color: var(--muted-foreground); font-size: 14px; }
+    .loading-sm { text-align: center; padding: 16px 0; color: var(--muted-foreground); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -287,11 +407,22 @@ export function getDashboardHtml(): string {
 <div class="wrap">
   <div class="header">
     <div>
-      <h1>Accomplish Releases</h1>
+      <div class="header-title-row">
+        <h1>Accomplish Releases</h1>
+        <span id="health-dot" class="health-dot unknown" title="Checking health..."></span>
+      </div>
       <p>Manage deployed versions, overrides, and routing configuration</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" onclick="showDeployModal()">
+      <a id="github-link" class="btn btn-outline btn-sm" target="_blank" rel="noopener" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button id="dark-toggle" class="dark-toggle" title="Toggle dark mode">
+        <svg id="dark-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="dark-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button id="deploy-btn" class="btn btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         Deploy New Build
       </button>
@@ -301,7 +432,7 @@ export function getDashboardHtml(): string {
   <div id="app-root"><div class="loading">Loading configuration...</div></div>
 </div>
 
-<script>
+<script nonce="${nonce}">
 // ── Escaping ──
 function esc(str) {
   var d = document.createElement('div');
@@ -309,19 +440,28 @@ function esc(str) {
   return d.innerHTML;
 }
 
-// ── API ──
+// ── State ──
 var config = null;
+var meta = null;
 var manifests = {};
 var expandedVersions = {};
 var currentTab = 'releases';
 var auditEntries = null;
 var auditLoading = false;
 var expandedAuditEntries = {};
+var auditDetailCache = {};
+var auditDetailLoading = {};
 var auditPollTimer = null;
+var healthStatus = null;
+var buildsList = null;
+var deployRunUrl = null;
+var deployStatusTimer = null;
 
+// ── API ──
 function loadManifests() {
   var versions = config ? config.activeVersions : [];
   versions.forEach(function(bid) {
+    if (manifests[bid]) return;
     fetch('/api/builds/' + encodeURIComponent(bid) + '/manifest')
       .then(function(r) { return r.ok ? r.json() : null; })
       .then(function(data) { if (data) { manifests[bid] = data; renderAll(); } });
@@ -340,6 +480,11 @@ function loadConfig() {
       return r.json();
     })
     .then(function(data) {
+      if (data._meta) {
+        meta = data._meta;
+        delete data._meta;
+        updateResourceLinks();
+      }
       config = data;
       renderAll();
       loadManifests();
@@ -375,6 +520,51 @@ function triggerDeploy(setAsDefault) {
   });
 }
 
+function checkHealth() {
+  fetch('/health')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      healthStatus = data.status;
+      updateHealthDot();
+    })
+    .catch(function() {
+      healthStatus = 'degraded';
+      updateHealthDot();
+    });
+}
+
+function updateHealthDot() {
+  var dot = document.getElementById('health-dot');
+  if (!dot) return;
+  dot.className = 'health-dot ' + (healthStatus || 'unknown');
+  dot.title = healthStatus === 'ok' ? 'All systems operational' : healthStatus === 'degraded' ? 'System degraded' : 'Checking health...';
+}
+
+function loadBuilds() {
+  fetch('/api/builds')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (data) { buildsList = data; renderAll(); }
+    });
+}
+
+function updateResourceLinks() {
+  var ghLink = document.getElementById('github-link');
+  if (ghLink && meta && meta.githubRepo) {
+    ghLink.href = 'https://github.com/' + meta.githubRepo;
+    ghLink.style.display = '';
+  }
+}
+
+function getBuiltTiers(bid) {
+  if (!buildsList) return [];
+  var entry = null;
+  for (var i = 0; i < buildsList.length; i++) {
+    if (buildsList[i].buildId === bid) { entry = buildsList[i]; break; }
+  }
+  return entry ? entry.tiers : [];
+}
+
 // ── Toast ──
 function showToast(message, type) {
   type = type || 'success';
@@ -392,11 +582,15 @@ function showToast(message, type) {
 // ── Modal ──
 function showModal(html) {
   var root = document.getElementById('modal-root');
-  root.innerHTML = '<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">' + html + '</div></div>';
+  root.innerHTML = '<div class="modal-backdrop"><div class="modal">' + html + '</div></div>';
   var backdrop = root.querySelector('.modal-backdrop');
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { backdrop.classList.add('visible'); });
   });
+  setTimeout(function() {
+    var focusable = root.querySelector('input, select, button');
+    if (focusable) focusable.focus();
+  }, 200);
 }
 
 function closeModal() {
@@ -406,6 +600,30 @@ function closeModal() {
   backdrop.classList.remove('visible');
   backdrop.classList.add('closing');
   setTimeout(function() { root.innerHTML = ''; }, 150);
+  if (deployStatusTimer) { clearInterval(deployStatusTimer); deployStatusTimer = null; }
+}
+
+// ── Dark Mode ──
+function initDarkMode() {
+  var isDark = localStorage.getItem('admin-dark-mode') === 'true';
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  }
+  updateDarkModeIcons();
+}
+
+function toggleDarkMode() {
+  var isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('admin-dark-mode', String(isDark));
+  updateDarkModeIcons();
+}
+
+function updateDarkModeIcons() {
+  var isDark = document.documentElement.classList.contains('dark');
+  var moon = document.getElementById('dark-icon-moon');
+  var sun = document.getElementById('dark-icon-sun');
+  if (moon) moon.style.display = isDark ? 'none' : '';
+  if (sun) sun.style.display = isDark ? '' : 'none';
 }
 
 // ── Helpers ──
@@ -421,6 +639,23 @@ function getRole(buildId) {
   return { label: 'Standby', badge: 'badge-gray', dot: false };
 }
 
+function semverTooltipHtml() {
+  return '<span class="tooltip-wrap">' +
+    '<span class="tooltip-icon">?</span>' +
+    '<span class="tooltip-text">Semver range syntax: ">=1.0.0 &lt;2.0.0", "^1.2.3", "~1.2.0", "1.x". Matches desktop app version to route to a specific web build.</span>' +
+  '</span>';
+}
+
+function auditKvKey(entry) {
+  return entry.kvKey;
+}
+
+function extractRunId(url) {
+  if (!url) return null;
+  var match = url.match(/\\/actions\\/runs\\/(\\d+)/);
+  return match ? match[1] : null;
+}
+
 // ── Render Hero ──
 function renderHero() {
   var versionCount = config.activeVersions ? config.activeVersions.length : 0;
@@ -429,13 +664,19 @@ function renderHero() {
   var deployMeta = defaultManifest
     ? 'Deployed ' + new Date(defaultManifest.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '';
+
+  var heroButtons = '<button class="btn btn-hero" data-action="showChangeDefaultModal">Change Default</button>';
+  if (config.previousDefault) {
+    heroButtons = '<button class="btn btn-hero" data-action="showRollbackModal" style="border-color:rgba(255,200,200,0.4);">Rollback to ' + esc(config.previousDefault) + '</button> ' + heroButtons;
+  }
+
   return '<div class="hero">' +
     '<div>' +
       '<div class="label">Current Default</div>' +
       '<div class="ver">v' + esc(config.default || 'none') + '</div>' +
       '<div class="meta">' + esc(String(versionCount)) + ' versions &bull; ' + esc(String(workerCount)) + ' workers' + (deployMeta ? ' &bull; ' + esc(deployMeta) : '') + '</div>' +
     '</div>' +
-    '<button class="btn btn-hero" onclick="showChangeDefaultModal()">Change Default</button>' +
+    '<div class="hero-actions">' + heroButtons + '</div>' +
   '</div>';
 }
 
@@ -452,20 +693,31 @@ function renderVersions() {
     var isDefault = bid === config.default;
     var dotHtml = role.dot ? '<span class="badge-dot"></span>' : '';
 
+    var tiers = getBuiltTiers(bid);
+    var tierHtml = '';
+    if (tiers.length) {
+      tierHtml = '<span class="tier-badges">';
+      tiers.forEach(function(t) {
+        var cls = t === 'lite' ? 'badge-blue' : 'badge-purple';
+        tierHtml += '<span class="badge tier-badge ' + cls + '">' + esc(t) + '</span>';
+      });
+      tierHtml += '</span>';
+    }
+
     var actions = '';
     if (!isDefault) {
-      actions += '<button class="btn btn-outline btn-sm" onclick="showPromoteModal(\\'' + esc(bid) + '\\')">Promote</button> ';
-      actions += '<button class="btn btn-ghost btn-sm" style="color:var(--destructive);" onclick="showSunsetModal(\\'' + esc(bid) + '\\')">Sunset</button>';
+      actions += '<button class="btn btn-outline btn-sm" data-action="showPromoteModal" data-arg="' + esc(bid) + '">Promote</button> ';
+      actions += '<button class="btn btn-ghost btn-sm" style="color:var(--destructive);" data-action="showSunsetModal" data-arg="' + esc(bid) + '">Sunset</button>';
     }
 
     var hasManifest = !!manifests[bid];
     var isExpanded = !!expandedVersions[bid];
     var expandBtn = hasManifest
-      ? ' <button class="expand-btn" onclick="toggleExpand(\\'' + esc(bid) + '\\')">' + (isExpanded ? '&#9660;' : '&#9654;') + '</button>'
+      ? ' <button class="expand-btn" data-action="toggleExpand" data-arg="' + esc(bid) + '">' + (isExpanded ? '&#9660;' : '&#9654;') + '</button>'
       : '';
 
     rows += '<tr>' +
-      '<td><strong style="font-weight:600;">' + esc(bid) + '</strong>' + expandBtn + '</td>' +
+      '<td><strong style="font-weight:600;">' + esc(bid) + '</strong>' + tierHtml + expandBtn + '</td>' +
       '<td><span class="badge ' + role.badge + '">' + dotHtml + esc(role.label) + '</span></td>' +
       '<td style="text-align:right;white-space:nowrap;">' + actions + '</td>' +
     '</tr>';
@@ -490,7 +742,9 @@ function renderVersions() {
   }
 
   return '<div class="section">' +
-    '<div class="section-header"><h2>All Versions</h2></div>' +
+    '<div class="section-header"><h2>All Versions</h2>' +
+      '<button class="btn btn-outline btn-sm" data-action="showCompareModal">Compare</button>' +
+    '</div>' +
     '<div class="card"><table>' +
       '<thead><tr><th style="padding-top:16px;">Build ID</th><th style="padding-top:16px;">Role</th><th style="padding-top:16px;"></th></tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
@@ -510,8 +764,8 @@ function renderOverrides() {
         '<span style="color:var(--primary);font-weight:600;">' + esc(o.webBuildId) + '</span>' +
       '</div>' +
       '<div style="display:flex;gap:6px;">' +
-        '<button class="btn btn-ghost btn-sm" onclick="showEditOverrideModal(' + i + ')">Edit</button>' +
-        '<button class="btn btn-ghost btn-sm" style="color:var(--destructive);" onclick="showDeleteOverrideModal(' + i + ')">Delete</button>' +
+        '<button class="btn btn-ghost btn-sm" data-action="showEditOverrideModal" data-arg="' + i + '">Edit</button>' +
+        '<button class="btn btn-ghost btn-sm" style="color:var(--destructive);" data-action="showDeleteOverrideModal" data-arg="' + i + '">Delete</button>' +
       '</div></div>';
   });
 
@@ -521,7 +775,7 @@ function renderOverrides() {
 
   return '<div class="section">' +
     '<div class="section-header"><h2>Desktop Overrides</h2>' +
-      '<button class="btn btn-outline btn-sm" onclick="showAddOverrideModal()">+ Add Override</button>' +
+      '<button class="btn btn-outline btn-sm" data-action="showAddOverrideModal">+ Add Override</button>' +
     '</div>' +
     '<div class="card" style="padding:20px 24px;">' + rows + '</div></div>';
 }
@@ -529,17 +783,28 @@ function renderOverrides() {
 // ── Render KV Config ──
 function renderKV() {
   var json = JSON.stringify(config, null, 2);
+  var linksHtml = '';
+  if (meta) {
+    linksHtml = '<div class="resource-links">';
+    if (meta.accountId) {
+      linksHtml += '<a class="resource-link" href="https://dash.cloudflare.com/' + esc(meta.accountId) + '/workers-and-pages" target="_blank" rel="noopener">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>' +
+        'CF Workers</a>';
+    }
+    if (meta.accountId && meta.kvNamespaceId) {
+      linksHtml += '<a class="resource-link" href="https://dash.cloudflare.com/' + esc(meta.accountId) + '/workers/kv/namespaces/' + esc(meta.kvNamespaceId) + '" target="_blank" rel="noopener">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>' +
+        'KV Namespace</a>';
+    }
+    linksHtml += '</div>';
+  }
+
   return '<div class="section"><div class="card">' +
-    '<button class="collapsible-toggle" onclick="toggleKV(this)">' +
+    '<button class="collapsible-toggle" data-action="toggleKV">' +
       '<span class="arrow">&#9654;</span> Raw KV Config' +
     '</button>' +
-    '<div class="collapsible-body"><pre>' + esc(json) + '</pre></div>' +
+    '<div class="collapsible-body"><pre>' + esc(json) + '</pre>' + linksHtml + '</div>' +
   '</div></div>';
-}
-
-function toggleKV(btn) {
-  btn.classList.toggle('open');
-  btn.nextElementSibling.classList.toggle('open');
 }
 
 // ── Modals ──
@@ -554,9 +819,11 @@ function showChangeDefaultModal() {
     '<h3>Change Default Version</h3>' +
     '<label>New default version</label>' +
     '<select id="modal-new-default">' + options + '</select>' +
+    '<label style="margin-top:12px;">Type the selected version to confirm</label>' +
+    '<input id="modal-confirm-input" type="text" data-confirm-select="modal-new-default" placeholder="Type version to confirm" autocomplete="off">' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="confirmChangeDefault()">Confirm</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" id="modal-confirm-btn" data-action="confirmChangeDefault" disabled>Confirm</button>' +
     '</div>');
 }
 
@@ -577,9 +844,12 @@ function showPromoteModal(bid) {
       '<div><span class="old">default: "' + esc(config.default) + '"</span></div>' +
       '<div><span class="new">default: "' + esc(bid) + '"</span></div>' +
     '</div>' +
+    '<label>Type <strong>' + esc(bid) + '</strong> to confirm</label>' +
+    '<input id="modal-confirm-input" type="text" data-confirm-value="' + esc(bid) + '" placeholder="' + esc(bid) + '" autocomplete="off">' +
+    '<div class="confirm-hint">This will change the default version for all users</div>' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="confirmPromote(\\'' + esc(bid) + '\\')">Promote</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" id="modal-confirm-btn" data-action="confirmPromote" data-arg="' + esc(bid) + '" disabled>Promote</button>' +
     '</div>');
 }
 
@@ -593,12 +863,25 @@ function confirmPromote(bid) {
 }
 
 function showSunsetModal(bid) {
+  var affectedOverrides = (config.overrides || []).filter(function(o) { return o.webBuildId === bid; });
+  var warnHtml = '';
+  if (affectedOverrides.length) {
+    var rangeList = affectedOverrides.map(function(o) { return esc(o.desktopRange); }).join(', ');
+    warnHtml = '<div class="warn-banner">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+      '<span>' + affectedOverrides.length + ' override(s) will also be removed: ' + rangeList + '</span>' +
+    '</div>';
+  }
+
   showModal(
     '<h3>Remove ' + esc(bid) + '</h3>' +
     '<p style="font-size:14px;color:var(--muted-foreground);margin-bottom:16px;">Remove <strong>' + esc(bid) + '</strong> from activeVersions?</p>' +
+    warnHtml +
+    '<label>Type <strong>' + esc(bid) + '</strong> to confirm</label>' +
+    '<input id="modal-confirm-input" type="text" data-confirm-value="' + esc(bid) + '" placeholder="' + esc(bid) + '" autocomplete="off">' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-destructive" onclick="confirmSunset(\\'' + esc(bid) + '\\')">Remove</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-destructive" id="modal-confirm-btn" data-action="confirmSunset" data-arg="' + esc(bid) + '" disabled>Remove</button>' +
     '</div>');
 }
 
@@ -612,6 +895,35 @@ function confirmSunset(bid) {
   }).catch(function(err) { showToast(err.message, 'error'); });
 }
 
+function showRollbackModal() {
+  var prev = config.previousDefault;
+  if (!prev) return;
+
+  showModal(
+    '<h3>Rollback to ' + esc(prev) + '</h3>' +
+    '<p class="modal-desc">This will restore <strong>' + esc(prev) + '</strong> as the default version.</p>' +
+    '<div class="diff">' +
+      '<div><span class="old">default: "' + esc(config.default) + '"</span></div>' +
+      '<div><span class="new">default: "' + esc(prev) + '"</span></div>' +
+    '</div>' +
+    '<label>Type <strong>' + esc(prev) + '</strong> to confirm rollback</label>' +
+    '<input id="modal-confirm-input" type="text" data-confirm-value="' + esc(prev) + '" placeholder="' + esc(prev) + '" autocomplete="off">' +
+    '<div class="actions">' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-destructive" id="modal-confirm-btn" data-action="confirmRollback" disabled>Rollback</button>' +
+    '</div>');
+}
+
+function confirmRollback() {
+  var prev = config.previousDefault;
+  var updated = JSON.parse(JSON.stringify(config));
+  updated.default = prev;
+  saveConfig(updated).then(function() {
+    closeModal();
+    showToast('Rolled back to ' + prev);
+  }).catch(function(err) { showToast(err.message, 'error'); });
+}
+
 function showAddOverrideModal() {
   if (!config.activeVersions.length) { showToast('No active versions available', 'error'); return; }
   var options = config.activeVersions.map(function(v) {
@@ -619,13 +931,13 @@ function showAddOverrideModal() {
   }).join('');
   showModal(
     '<h3>Add Override</h3>' +
-    '<label>Desktop Range</label>' +
+    '<label>Desktop Range ' + semverTooltipHtml() + '</label>' +
     '<input id="modal-range" type="text" placeholder="e.g. >=2.0.0 <2.1.0">' +
     '<label>Target Build</label>' +
     '<select id="modal-target">' + options + '</select>' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="confirmAddOverride()">Add Override</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="confirmAddOverride">Add Override</button>' +
     '</div>');
 }
 
@@ -650,13 +962,13 @@ function showEditOverrideModal(idx) {
   }).join('');
   showModal(
     '<h3>Edit Override</h3>' +
-    '<label>Desktop Range</label>' +
+    '<label>Desktop Range ' + semverTooltipHtml() + '</label>' +
     '<input id="modal-range" type="text" value="' + esc(o.desktopRange) + '">' +
     '<label>Target Build</label>' +
     '<select id="modal-target">' + options + '</select>' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" onclick="confirmEditOverride(' + idx + ')">Save</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="confirmEditOverride" data-arg="' + idx + '">Save</button>' +
     '</div>');
 }
 
@@ -678,8 +990,8 @@ function showDeleteOverrideModal(idx) {
     '<h3>Delete Override</h3>' +
     '<p style="font-size:14px;color:var(--muted-foreground);margin-bottom:16px;">Remove override <strong>' + esc(o.desktopRange) + '</strong> &rarr; <strong>' + esc(o.webBuildId) + '</strong>?</p>' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-destructive" onclick="confirmDeleteOverride(' + idx + ')">Delete</button>' +
+      '<button class="btn btn-outline" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-destructive" data-action="confirmDeleteOverride" data-arg="' + idx + '">Delete</button>' +
     '</div>');
 }
 
@@ -699,8 +1011,8 @@ function showDeployModal() {
     '<label class="checkbox-row"><input type="checkbox" id="modal-set-default"> Set as default version after deploy</label>' +
     '<div id="deploy-result"></div>' +
     '<div class="actions">' +
-      '<button class="btn btn-outline" id="deploy-cancel-btn" onclick="closeModal()">Cancel</button>' +
-      '<button class="btn btn-primary" id="deploy-confirm-btn" onclick="confirmDeploy()">Deploy</button>' +
+      '<button class="btn btn-outline" id="deploy-cancel-btn" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" id="deploy-confirm-btn" data-action="confirmDeploy">Deploy</button>' +
     '</div>');
 }
 
@@ -716,19 +1028,31 @@ function confirmDeploy() {
   checkbox.style.opacity = '0.4';
   checkbox.style.pointerEvents = 'none';
 
-  triggerDeploy(setAsDefault).then(function() {
-    result.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#dcfce7;border-radius:8px;margin-bottom:16px;border:1px solid #bbf7d0;">' +
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
-      '<span style="font-size:13px;color:#166534;font-weight:500;">Deploy triggered — check GitHub Actions for progress</span>' +
-    '</div>';
+  triggerDeploy(setAsDefault).then(function(data) {
+    var runUrl = data.runUrl;
+    var runLinkHtml = '';
+    var actionsIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>';
+    if (runUrl) {
+      deployRunUrl = runUrl;
+      runLinkHtml = '<a class="deploy-run-link" href="' + esc(runUrl) + '" target="_blank" rel="noopener">' + actionsIcon + 'View Workflow Run</a>';
+      var runId = extractRunId(runUrl);
+      if (runId) { startDeployStatusPoll(runId, result); }
+    } else if (meta && meta.githubRepo) {
+      runLinkHtml = '<a class="deploy-run-link" href="https://github.com/' + esc(meta.githubRepo) + '/actions/workflows/release-web.yml" target="_blank" rel="noopener">' + actionsIcon + 'View GitHub Actions</a>';
+    }
+    result.innerHTML = '<div class="result-banner success">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
+      '<span>Deploy triggered successfully</span>' +
+    '</div>' + runLinkHtml + '<div id="deploy-status-area"></div>';
     confirmBtn.textContent = 'Done';
     confirmBtn.classList.remove('is-loading');
-    confirmBtn.onclick = closeModal;
+    confirmBtn.setAttribute('data-action', 'closeModal');
+    confirmBtn.removeAttribute('disabled');
     checkbox.style.display = 'none';
   }).catch(function(err) {
-    result.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:#fee2e2;border-radius:8px;margin-bottom:16px;border:1px solid #fecaca;">' +
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>' +
-      '<span style="font-size:13px;color:#dc2626;font-weight:500;">' + esc(err.message) + '</span>' +
+    result.innerHTML = '<div class="result-banner error">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>' +
+      '<span>' + esc(err.message) + '</span>' +
     '</div>';
     confirmBtn.classList.remove('is-loading');
     confirmBtn.textContent = 'Retry';
@@ -738,9 +1062,98 @@ function confirmDeploy() {
   });
 }
 
+function startDeployStatusPoll(runId, resultContainer) {
+  if (deployStatusTimer) { clearInterval(deployStatusTimer); }
+  deployStatusTimer = setInterval(function() {
+    fetch('/api/deploy/status?run_id=' + encodeURIComponent(runId))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data) return;
+        var area = document.getElementById('deploy-status-area');
+        if (!area) { clearInterval(deployStatusTimer); deployStatusTimer = null; return; }
+        var badgeClass = 'queued';
+        var label = data.status;
+        if (data.status === 'in_progress') { badgeClass = 'in_progress'; label = 'In Progress'; }
+        if (data.status === 'completed') {
+          badgeClass = data.conclusion === 'success' ? 'completed-success' : 'completed-failure';
+          label = data.conclusion === 'success' ? 'Success' : (data.conclusion || 'Failed');
+          clearInterval(deployStatusTimer);
+          deployStatusTimer = null;
+          if (data.conclusion === 'success') { loadConfig(); }
+        }
+        area.innerHTML = '<div style="margin-top:8px;"><span class="deploy-status-badge ' + badgeClass + '">' + esc(label) + '</span></div>';
+      });
+  }, 5000);
+}
+
+// ── Version Comparison ──
+function showCompareModal() {
+  if (!config.activeVersions || config.activeVersions.length < 2) {
+    showToast('Need at least 2 active versions to compare', 'error');
+    return;
+  }
+  var options = config.activeVersions.map(function(v) {
+    return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+  }).join('');
+  var secondOptions = config.activeVersions.slice(1).concat(config.activeVersions.slice(0, 1)).map(function(v) {
+    return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+  }).join('');
+
+  showModal(
+    '<h3>Compare Versions</h3>' +
+    '<p class="modal-desc">Compare commits between two versions.</p>' +
+    '<div class="compare-grid">' +
+      '<div><label>From</label><select id="compare-from">' + options + '</select></div>' +
+      '<div class="compare-arrow">&rarr;</div>' +
+      '<div><label>To</label><select id="compare-to">' + secondOptions + '</select></div>' +
+    '</div>' +
+    '<div id="compare-result"></div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-outline" data-action="closeModal">Close</button>' +
+      '<button class="btn btn-primary" data-action="runCompare">Compare</button>' +
+    '</div>');
+}
+
+function runCompare() {
+  var fromBid = document.getElementById('compare-from').value;
+  var toBid = document.getElementById('compare-to').value;
+  var result = document.getElementById('compare-result');
+  if (fromBid === toBid) { result.innerHTML = '<div class="loading-sm">Same version selected</div>'; return; }
+  result.innerHTML = '<div class="loading-sm">Loading manifests...</div>';
+
+  var needed = [];
+  if (!manifests[fromBid]) needed.push(fetch('/api/builds/' + encodeURIComponent(fromBid) + '/manifest').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) { if (d) manifests[fromBid] = d; }));
+  if (!manifests[toBid]) needed.push(fetch('/api/builds/' + encodeURIComponent(toBid) + '/manifest').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) { if (d) manifests[toBid] = d; }));
+
+  Promise.all(needed).then(function() {
+    var fromM = manifests[fromBid];
+    var toM = manifests[toBid];
+    if (!fromM || !toM) { result.innerHTML = '<div class="loading-sm">Manifest not available for one or both versions</div>'; return; }
+    var fromShas = {};
+    (fromM.commits || []).forEach(function(c) { fromShas[c.sha] = true; });
+    var newCommits = (toM.commits || []).filter(function(c) { return !fromShas[c.sha]; });
+
+    if (!newCommits.length) {
+      result.innerHTML = '<div class="loading-sm">No new commits between these versions</div>';
+      return;
+    }
+    var html = '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">' + newCommits.length + ' new commit(s) in ' + esc(toBid) + '</div><div class="compare-result">';
+    newCommits.forEach(function(c) {
+      html += '<div class="commit-row">' +
+        '<span class="sha">' + esc(c.sha) + '</span>' +
+        '<span class="msg">' + esc(c.message) + '</span>' +
+        '<span class="date">' + esc(c.date.substring(0, 10)) + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+    result.innerHTML = html;
+  });
+}
+
 // ── Tab Bar ──
 function switchTab(tab) {
   currentTab = tab;
+  window.location.hash = tab;
   if (tab === 'audit') {
     if (!auditEntries) { loadAuditLog(); }
     startAuditPoll();
@@ -750,10 +1163,17 @@ function switchTab(tab) {
   renderAll();
 }
 
+function initTabFromHash() {
+  var hash = window.location.hash.replace('#', '');
+  if (hash === 'audit' || hash === 'releases') {
+    currentTab = hash;
+  }
+}
+
 function renderTabBar() {
   return '<div class="tab-bar">' +
-    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" onclick="switchTab(\\'releases\\')">Releases</button>' +
-    '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" onclick="switchTab(\\'audit\\')">Audit Log</button>' +
+    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Releases</button>' +
+    '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" data-action="switchTab" data-arg="audit">Audit Log</button>' +
   '</div>';
 }
 
@@ -793,9 +1213,44 @@ function stopAuditPoll() {
   if (auditPollTimer) { clearInterval(auditPollTimer); auditPollTimer = null; }
 }
 
-function toggleAuditEntry(id) {
-  if (expandedAuditEntries[id]) { delete expandedAuditEntries[id]; } else { expandedAuditEntries[id] = true; }
+function toggleAuditEntry(entryId) {
+  if (expandedAuditEntries[entryId]) {
+    delete expandedAuditEntries[entryId];
+    renderAll();
+    return;
+  }
+  expandedAuditEntries[entryId] = true;
+  if (!auditDetailCache[entryId] && !auditDetailLoading[entryId]) {
+    loadAuditDetail(entryId);
+  }
   renderAll();
+}
+
+function loadAuditDetail(entryId) {
+  var entry = null;
+  for (var i = 0; i < auditEntries.length; i++) {
+    if (auditEntries[i].id === entryId) { entry = auditEntries[i]; break; }
+  }
+  if (!entry) return;
+  var key = auditKvKey(entry);
+  if (!key) {
+    auditDetailCache[entryId] = entry;
+    renderAll();
+    return;
+  }
+  auditDetailLoading[entryId] = true;
+  renderAll();
+  fetch('/api/audit/' + encodeURIComponent(key))
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      delete auditDetailLoading[entryId];
+      if (data) { auditDetailCache[entryId] = data; }
+      renderAll();
+    })
+    .catch(function() {
+      delete auditDetailLoading[entryId];
+      renderAll();
+    });
 }
 
 function diffConfigLines(before, after) {
@@ -836,7 +1291,11 @@ function renderAuditDetailContent(entry) {
     return diffConfigLines(entry.details.before, entry.details.after);
   }
   if (entry.action === 'deploy_triggered' && entry.details) {
-    return '<div><strong>Set as default:</strong> ' + esc(String(!!entry.details.setAsDefault)) + '</div>';
+    var html = '<div><strong>Set as default:</strong> ' + esc(String(!!entry.details.setAsDefault)) + '</div>';
+    if (entry.details.runUrl) {
+      html += '<div style="margin-top:4px"><strong>Run:</strong> <a href="' + esc(entry.details.runUrl) + '" target="_blank" rel="noopener" style="color:var(--primary);">' + esc(entry.details.runUrl) + '</a></div>';
+    }
+    return html;
   }
   if (entry.action === 'release_completed' && entry.details && entry.details.buildId) {
     return '<div><strong>Build ID:</strong> ' + esc(entry.details.buildId) + '</div>';
@@ -875,21 +1334,28 @@ function renderAuditLog() {
     var dotClass = getActionDotClass(entry.action);
     var sourceLabel = entry.source ? esc(entry.source) : '';
     var userLabel = entry.user ? esc(entry.user.replace(/@.*$/, '')) : (entry.source === 'ci' ? 'CI' : '\\u2014');
-    var detailHtml = renderAuditDetailContent(entry);
-    var hasDetail = !!detailHtml;
 
-    rows += '<tr class="audit-row' + (isExpanded ? ' audit-expanded' : '') + '" onclick="toggleAuditEntry(\\'' + esc(entryId) + '\\')">' +
+    rows += '<tr class="audit-row' + (isExpanded ? ' audit-expanded' : '') + '" data-action="toggleAuditEntry" data-arg="' + esc(entryId) + '">' +
       '<td class="audit-time">' + esc(time) + '</td>' +
       '<td><span class="audit-action-dot ' + dotClass + '"></span><span class="audit-action-text">' + actionLabel + '</span></td>' +
       '<td class="audit-source">' + sourceLabel + '</td>' +
       '<td class="audit-user">' + userLabel + '</td>' +
-      '<td style="text-align:right;">' + (hasDetail ? '<span class="audit-chevron">\\u25B8</span>' : '') + '</td>' +
+      '<td style="text-align:right;"><span class="audit-chevron">\\u25B8</span></td>' +
     '</tr>';
 
-    if (hasDetail) {
-      rows += '<tr class="audit-detail-row" style="display:' + (isExpanded ? 'table-row' : 'none') + ';">' +
-        '<td colspan="5"><div class="audit-detail-content">' + detailHtml + '</div></td>' +
-      '</tr>';
+    if (isExpanded) {
+      if (auditDetailLoading[entryId]) {
+        rows += '<tr class="audit-detail-row"><td colspan="5"><div class="audit-detail-content"><div class="loading-sm">Loading details...</div></div></td></tr>';
+      } else if (auditDetailCache[entryId]) {
+        var detailHtml = renderAuditDetailContent(auditDetailCache[entryId]);
+        if (detailHtml) {
+          rows += '<tr class="audit-detail-row"><td colspan="5"><div class="audit-detail-content">' + detailHtml + '</div></td></tr>';
+        } else {
+          rows += '<tr class="audit-detail-row"><td colspan="5"><div class="audit-detail-content" style="color:var(--muted-foreground);">No additional details</div></td></tr>';
+        }
+      } else {
+        rows += '<tr class="audit-detail-row"><td colspan="5"><div class="audit-detail-content" style="color:var(--muted-foreground);">Failed to load details</div></td></tr>';
+      }
     }
   });
 
@@ -916,8 +1382,126 @@ function renderAll() {
   document.getElementById('app-root').innerHTML = content;
 }
 
+// ── Event Delegation: #app-root ──
+document.getElementById('app-root').addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.getAttribute('data-action');
+  var arg = el.getAttribute('data-arg');
+
+  switch (action) {
+    case 'switchTab': switchTab(arg); break;
+    case 'showChangeDefaultModal': showChangeDefaultModal(); break;
+    case 'showPromoteModal': showPromoteModal(arg); break;
+    case 'showSunsetModal': showSunsetModal(arg); break;
+    case 'showRollbackModal': showRollbackModal(); break;
+    case 'toggleExpand': toggleExpand(arg); break;
+    case 'showEditOverrideModal': showEditOverrideModal(parseInt(arg)); break;
+    case 'showDeleteOverrideModal': showDeleteOverrideModal(parseInt(arg)); break;
+    case 'showAddOverrideModal': showAddOverrideModal(); break;
+    case 'showCompareModal': showCompareModal(); break;
+    case 'toggleKV':
+      el.classList.toggle('open');
+      el.nextElementSibling.classList.toggle('open');
+      break;
+    case 'toggleAuditEntry': toggleAuditEntry(arg); break;
+  }
+});
+
+// ── Event Delegation: #modal-root ──
+document.getElementById('modal-root').addEventListener('click', function(e) {
+  var backdrop = e.target.closest('.modal-backdrop');
+  if (backdrop && e.target === backdrop) { closeModal(); return; }
+
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.getAttribute('data-action');
+  var arg = el.getAttribute('data-arg');
+
+  switch (action) {
+    case 'closeModal': closeModal(); break;
+    case 'confirmChangeDefault': confirmChangeDefault(); break;
+    case 'confirmPromote': confirmPromote(arg); break;
+    case 'confirmSunset': confirmSunset(arg); break;
+    case 'confirmRollback': confirmRollback(); break;
+    case 'confirmAddOverride': confirmAddOverride(); break;
+    case 'confirmEditOverride': confirmEditOverride(parseInt(arg)); break;
+    case 'confirmDeleteOverride': confirmDeleteOverride(parseInt(arg)); break;
+    case 'confirmDeploy': confirmDeploy(); break;
+    case 'runCompare': runCompare(); break;
+  }
+});
+
+// ── Event Delegation: type-to-confirm inputs ──
+document.getElementById('modal-root').addEventListener('input', function(e) {
+  var input = e.target;
+  var expected = null;
+  if (input.hasAttribute('data-confirm-value')) {
+    expected = input.getAttribute('data-confirm-value');
+  } else if (input.hasAttribute('data-confirm-select')) {
+    var sel = document.getElementById(input.getAttribute('data-confirm-select'));
+    expected = sel ? sel.value : null;
+  }
+  if (expected === null) return;
+  var confirmBtn = document.getElementById('modal-confirm-btn');
+  if (confirmBtn) {
+    confirmBtn.disabled = input.value !== expected;
+  }
+});
+
+// ── Keyboard Navigation ──
+document.addEventListener('keydown', function(e) {
+  var modalRoot = document.getElementById('modal-root');
+  var backdrop = modalRoot ? modalRoot.querySelector('.modal-backdrop:not(.closing)') : null;
+  if (!backdrop) return;
+
+  if (e.key === 'Escape') {
+    closeModal();
+    e.preventDefault();
+    return;
+  }
+
+  if (e.key === 'Enter' && e.target.tagName !== 'SELECT') {
+    var primaryBtn = backdrop.querySelector('.btn-primary:not(:disabled), .btn-destructive:not(:disabled)');
+    if (primaryBtn) {
+      primaryBtn.click();
+      e.preventDefault();
+    }
+    return;
+  }
+
+  if (e.key === 'Tab') {
+    var focusable = backdrop.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { last.focus(); e.preventDefault(); }
+    } else {
+      if (document.activeElement === last) { first.focus(); e.preventDefault(); }
+    }
+  }
+});
+
+// ── Static button listeners ──
+document.getElementById('deploy-btn').addEventListener('click', showDeployModal);
+document.getElementById('dark-toggle').addEventListener('click', toggleDarkMode);
+
+// ── Hash change listener ──
+window.addEventListener('hashchange', function() {
+  var hash = window.location.hash.replace('#', '');
+  if ((hash === 'audit' || hash === 'releases') && hash !== currentTab) {
+    switchTab(hash);
+  }
+});
+
 // ── Init ──
+initDarkMode();
+initTabFromHash();
 loadConfig();
+checkHealth();
+loadBuilds();
+if (currentTab === 'audit') { loadAuditLog(); startAuditPoll(); }
 </script>
 </body>
 </html>`;

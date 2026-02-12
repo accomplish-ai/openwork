@@ -5,6 +5,16 @@ compatibility_date = "2024-12-01"
 [observability]
 enabled = true
 
+[vars]
+CLOUDFLARE_ACCOUNT_ID = ""
+KV_NAMESPACE_ID = ""
+
+# Secrets (set via `wrangler secret put`):
+# - GITHUB_TOKEN
+# - GITHUB_REPO
+# - AUDIT_WEBHOOK_SECRET
+# - SLACK_WEBHOOK_URL (optional)
+
 [[kv_namespaces]]
 binding = "ROUTING_CONFIG"
 id = "local-dev-placeholder"
