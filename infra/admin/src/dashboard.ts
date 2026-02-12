@@ -1321,8 +1321,11 @@ function renderAuditLog() {
     return '<div class="card"><div class="loading">No audit entries yet</div></div>';
   }
 
+  var sorted = auditEntries.slice().sort(function(a, b) {
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+  });
   var rows = '';
-  auditEntries.forEach(function(entry) {
+  sorted.forEach(function(entry) {
     var entryId = entry.id;
     var isExpanded = !!expandedAuditEntries[entryId];
     var time = new Date(entry.timestamp).toLocaleString('en-US', {
