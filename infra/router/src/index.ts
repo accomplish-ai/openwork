@@ -93,6 +93,7 @@ function resolveOverride(
 
 function resolveTier(tierParam: string | null, cookieTier: Tier | undefined): Tier {
   if (tierParam === "enterprise") return "enterprise";
+  if (tierParam === "lite") return "lite";
   return cookieTier ?? "lite";
 }
 

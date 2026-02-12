@@ -2,6 +2,11 @@ import { defineConfig } from 'vite';
 import electron from 'vite-plugin-electron';
 import pkg from './package.json';
 
+const tier = process.env.APP_TIER || 'lite';
+if (tier !== 'lite' && tier !== 'enterprise') {
+  throw new Error(`Invalid APP_TIER: "${tier}". Must be "lite" or "enterprise".`);
+}
+
 export default defineConfig(() => ({
   plugins: [
     electron([
@@ -11,6 +16,9 @@ export default defineConfig(() => ({
           startup();
         },
         vite: {
+          define: {
+            __APP_TIER__: JSON.stringify(tier),
+          },
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {

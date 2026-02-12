@@ -105,7 +105,7 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 | `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
 | `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
 | `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
-| `APP_TIER` | Web build | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Controls which features are tree-shaken. |
+| `APP_TIER` | Web + Desktop build | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Web: controls feature tree-shaking. Desktop: sets router `type` param and artifact naming (enterprise builds produce `Accomplish-Enterprise-*` DMGs). |
 | `ANTHROPIC_API_KEY` | E2E AI tests | Anthropic provider key for AI task execution tests |
 | `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
 | `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |

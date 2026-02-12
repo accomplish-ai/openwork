@@ -48,8 +48,17 @@ try {
   // This avoids issues with node-pty's winpty.gyp batch file handling
   const npmRebuildFlag = isWindows ? ' --config.npmRebuild=false' : '';
 
+  // Tier-aware artifact naming: enterprise builds get "Enterprise" suffix
+  const tier = process.env.APP_TIER || 'lite';
+  if (tier !== 'lite' && tier !== 'enterprise') {
+    throw new Error(`Invalid APP_TIER: "${tier}". Must be "lite" or "enterprise".`);
+  }
+  const artifactNameFlag = tier === 'enterprise'
+    ? ` --config.artifactName='Accomplish-Enterprise-\${version}-\${os}-\${arch}.\${ext}'`
+    : '';
+
   // Use npx to run electron-builder to ensure it's found in node_modules
-  const command = `npx electron-builder ${args}${npmRebuildFlag}`;
+  const command = `npx electron-builder ${args}${npmRebuildFlag}${artifactNameFlag}`;
 
   console.log('Running:', command);
   if (isWindows) {

@@ -15,6 +15,8 @@
     "build:unpack": "tsc && vite build && node scripts/package.cjs --dir",
     "package": "pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:mac": "pnpm download:nodejs && pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package:mac:lite": "APP_TIER=lite pnpm package:mac",
+    "package:mac:enterprise": "APP_TIER=enterprise pnpm package:mac",
     "release": "pnpm build && node scripts/package.cjs --mac --publish always",
     "release:mac": "pnpm build && node scripts/package.cjs --mac --publish always",
     "package:win": "pnpm build && node scripts/package.cjs --win --x64 --publish never",

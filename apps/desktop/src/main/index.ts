@@ -72,7 +72,7 @@ const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-rout
 function buildRouterUrl(): string {
   const url = new URL(ROUTER_URL);
   url.searchParams.set('build', app.getVersion());
-  if (!url.searchParams.has('type')) url.searchParams.set('type', 'lite');
+  if (!url.searchParams.has('type')) url.searchParams.set('type', __APP_TIER__);
   url.searchParams.set('machineId', getMachineId());
   url.searchParams.set('arch', process.arch);
   url.searchParams.set('platform', process.platform);

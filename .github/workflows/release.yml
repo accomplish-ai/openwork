@@ -243,10 +243,13 @@ jobs:
           fi
 
   build-mac-arm64:
-    name: Build macOS (Apple Silicon)
+    name: Build macOS (Apple Silicon) - ${{ matrix.tier }}
     needs: version-bump
     if: needs.version-bump.outputs.platforms == 'all' || needs.version-bump.outputs.platforms == 'macos-only'
     runs-on: macos-14
+    strategy:
+      matrix:
+        tier: [lite, enterprise]
     permissions:
       contents: read
     steps:
@@ -277,6 +280,8 @@ jobs:
 
       - name: Build desktop app
         run: pnpm -F @accomplish/desktop build
+        env:
+          APP_TIER: ${{ matrix.tier }}
 
       - name: Package (unsigned)
         run: node scripts/package.cjs --mac --arm64 --publish never
@@ -285,21 +290,25 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          APP_TIER: ${{ matrix.tier }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: Accomplish-macOS-arm64
+          name: Accomplish-macOS-arm64-${{ matrix.tier }}
           path: |
             apps/desktop/release/*-arm64.dmg
             apps/desktop/release/*-arm64.zip
           retention-days: 30
 
   build-mac-x64:
-    name: Build macOS (Intel)
+    name: Build macOS (Intel) - ${{ matrix.tier }}
     needs: version-bump
     if: needs.version-bump.outputs.platforms == 'all' || needs.version-bump.outputs.platforms == 'macos-only'
     runs-on: macos-15-large
+    strategy:
+      matrix:
+        tier: [lite, enterprise]
     permissions:
       contents: read
     steps:
@@ -330,6 +339,8 @@ jobs:
 
       - name: Build desktop app
         run: pnpm -F @accomplish/desktop build
+        env:
+          APP_TIER: ${{ matrix.tier }}
 
       - name: Package (unsigned)
         run: node scripts/package.cjs --mac --x64 --publish never
@@ -338,11 +349,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          APP_TIER: ${{ matrix.tier }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: Accomplish-macOS-x64
+          name: Accomplish-macOS-x64-${{ matrix.tier }}
           path: |
             apps/desktop/release/*-x64.dmg
             apps/desktop/release/*-x64.zip
@@ -447,19 +459,33 @@ jobs:
             echo "dry_run=$INPUT_DRY_RUN" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download macOS ARM64 artifacts
+      - name: Download macOS ARM64 lite artifacts
         if: needs.build-mac-arm64.result == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: Accomplish-macOS-arm64
-          path: ./release/arm64
+          name: Accomplish-macOS-arm64-lite
+          path: ./release/arm64-lite
 
-      - name: Download macOS x64 artifacts
+      - name: Download macOS ARM64 enterprise artifacts
+        if: needs.build-mac-arm64.result == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: Accomplish-macOS-arm64-enterprise
+          path: ./release/arm64-enterprise
+
+      - name: Download macOS x64 lite artifacts
         if: needs.build-mac-x64.result == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: Accomplish-macOS-x64
-          path: ./release/x64
+          name: Accomplish-macOS-x64-lite
+          path: ./release/x64-lite
+
+      - name: Download macOS x64 enterprise artifacts
+        if: needs.build-mac-x64.result == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: Accomplish-macOS-x64-enterprise
+          path: ./release/x64-enterprise
 
       # - name: Download Windows x64 artifacts
       #   if: needs.build-windows-x64.result == 'success'
@@ -482,8 +508,10 @@ jobs:
           prerelease: ${{ steps.check.outputs.dry_run == 'true' }}
           generate_release_notes: true
           files: |
-            ./release/arm64/*
-            ./release/x64/*
+            ./release/arm64-lite/*
+            ./release/arm64-enterprise/*
+            ./release/x64-lite/*
+            ./release/x64-enterprise/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
