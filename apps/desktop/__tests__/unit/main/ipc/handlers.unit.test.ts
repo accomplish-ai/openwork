@@ -388,26 +388,6 @@ vi.mock('@main/permission-api', () => ({
 import { registerIPCHandlers } from '@main/ipc/handlers';
 import { ipcMain, BrowserWindow, shell } from 'electron';
 
-// Mock adds storage/API methods to the module; real index does not export them at top level
-type MockedAgentCore = typeof import('@accomplish_ai/agent-core') & {
-  setDebugMode: (enabled: boolean) => void;
-  deleteTask: (taskId: string) => void;
-  clearHistory: () => void;
-  addFavorite: (taskId: string, prompt: string, summary?: string) => void;
-  removeFavorite: (taskId: string) => void;
-  getFavorites: () => unknown[];
-  isFavorite: (taskId: string) => boolean;
-  setOnboardingComplete: (complete: boolean) => void;
-  setSelectedModel: (model: { provider: string; model: string }) => void;
-  saveTask: (task: unknown) => void;
-  addTaskMessage: (taskId: string, message: unknown) => void;
-  updateTaskStatus: (taskId: string, status: string, completedAt?: string) => void;
-};
-
-async function getMockedAgentCore(): Promise<MockedAgentCore> {
-  return (await import('@accomplish_ai/agent-core')) as unknown as MockedAgentCore;
-}
-
 // Type the mocked ipcMain with helpers
 type MockedIpcMain = typeof ipcMain & {
   _getHandler: (channel: string) => Function | undefined;
@@ -625,7 +605,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('settings:set-debug-mode', true);
 
       // Assert
-      const { setDebugMode } = await getMockedAgentCore();
+      const { setDebugMode } = await import('@accomplish_ai/agent-core');
       expect(setDebugMode).toHaveBeenCalledWith(true);
     });
 
@@ -889,7 +869,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:delete', taskId);
 
       // Assert
-      const { deleteTask } = await getMockedAgentCore();
+      const { deleteTask } = await import('@accomplish_ai/agent-core');
       expect(deleteTask).toHaveBeenCalledWith(taskId);
     });
 
@@ -916,7 +896,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:clear-history');
 
       // Assert
-      const { clearHistory } = await getMockedAgentCore();
+      const { clearHistory } = await import('@accomplish_ai/agent-core');
       expect(clearHistory).toHaveBeenCalled();
     });
 
@@ -933,14 +913,14 @@ describe('IPC Handlers Integration', () => {
 
       await invokeHandler('task:favorite:add', taskId);
 
-      const { addFavorite } = await getMockedAgentCore();
+      const { addFavorite } = await import('@accomplish_ai/agent-core');
       expect(addFavorite).toHaveBeenCalledWith(taskId, 'Complete me', 'Done');
     });
 
     it('task:favorite:add should no-op when task not found', async () => {
       await invokeHandler('task:favorite:add', 'task_nonexistent');
 
-      const { addFavorite } = await getMockedAgentCore();
+      const { addFavorite } = await import('@accomplish_ai/agent-core');
       expect(addFavorite).not.toHaveBeenCalled();
     });
 
@@ -956,7 +936,7 @@ describe('IPC Handlers Integration', () => {
 
       await invokeHandler('task:favorite:add', taskId);
 
-      const { addFavorite } = await getMockedAgentCore();
+      const { addFavorite } = await import('@accomplish_ai/agent-core');
       expect(addFavorite).not.toHaveBeenCalled();
     });
 
@@ -970,7 +950,7 @@ describe('IPC Handlers Integration', () => {
 
       await invokeHandler('task:favorite:remove', taskId);
 
-      const { removeFavorite } = await getMockedAgentCore();
+      const { removeFavorite } = await import('@accomplish_ai/agent-core');
       expect(removeFavorite).toHaveBeenCalledWith(taskId);
     });
 
@@ -984,7 +964,7 @@ describe('IPC Handlers Integration', () => {
       const result = await invokeHandler('task:favorite:list');
 
       expect(result).toHaveLength(2);
-      const { getFavorites } = await getMockedAgentCore();
+      const { getFavorites } = await import('@accomplish_ai/agent-core');
       expect(getFavorites).toHaveBeenCalled();
     });
 
@@ -1053,7 +1033,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('onboarding:set-complete', true);
 
       // Assert
-      const { setOnboardingComplete } = await getMockedAgentCore();
+      const { setOnboardingComplete } = await import('@accomplish_ai/agent-core');
       expect(setOnboardingComplete).toHaveBeenCalledWith(true);
     });
   });
@@ -1184,7 +1164,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('model:set', newModel);
 
       // Assert
-      const { setSelectedModel } = await getMockedAgentCore();
+      const { setSelectedModel } = await import('@accomplish_ai/agent-core');
       expect(setSelectedModel).toHaveBeenCalledWith(newModel);
     });
 
@@ -1523,7 +1503,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:start', config);
 
       // Assert
-      const { saveTask } = await getMockedAgentCore();
+      const { saveTask } = await import('@accomplish_ai/agent-core');
       expect(saveTask).toHaveBeenCalled();
     });
 
@@ -1647,7 +1627,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
 
       // Assert
-      const { addTaskMessage } = await getMockedAgentCore();
+      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
       expect(addTaskMessage).toHaveBeenCalledWith(
         existingTaskId,
         expect.objectContaining({
@@ -1675,7 +1655,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
 
       // Assert
-      const { updateTaskStatus } = await getMockedAgentCore();
+      const { updateTaskStatus } = await import('@accomplish_ai/agent-core');
       expect(updateTaskStatus).toHaveBeenCalledWith(
         existingTaskId,
         'running',
@@ -1700,7 +1680,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt);
 
       // Assert
-      const { addTaskMessage } = await getMockedAgentCore();
+      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
       // Should not be called for new tasks
       expect(addTaskMessage).not.toHaveBeenCalledWith(
         undefined,
