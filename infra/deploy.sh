@@ -3,21 +3,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DIST_DIR="$REPO_ROOT/apps/web/dist"
+DIST_DIR="$REPO_ROOT/apps/web/dist/client"
 source "$SCRIPT_DIR/lib.sh"
 
 deploy_app_worker() {
   local name="$1"
   local tier="$2"
   local version="$3"
-  local r2_prefix="$4"
 
   echo "Deploying ${name}..."
-  (cd "$SCRIPT_DIR/app" && npx wrangler deploy \
+  (cd "$REPO_ROOT/apps/web" && npx wrangler deploy \
     --name "$name" \
     --var "TIER:$tier" \
-    --var "VERSION:$version" \
-    --var "R2_PREFIX:$r2_prefix")
+    --var "VERSION:$version")
 }
 
 deploy_admin_worker() {
@@ -58,16 +56,10 @@ release() {
   echo "build_id=$build_id" >> "${GITHUB_OUTPUT:-/dev/null}"
   echo "Releasing version: $build_id"
 
-  # 1. Build and upload to R2 (per tier)
+  # 1. Build and deploy app workers (per tier)
   for tier in "${TIERS[@]}"; do
     build_web_tier "$REPO_ROOT" "$DIST_DIR" "$tier"
-    gen_manifest "$build_id" "$DIST_DIR"
-    rclone_upload_to_r2 "$DIST_DIR" "$(r2_prod_prefix "$build_id" "$tier")"
-  done
-
-  # 2. Deploy app workers (both tiers)
-  for tier in "${TIERS[@]}"; do
-    deploy_app_worker "$(versioned_worker_name "$build_id" "$tier")" "$tier" "$build_id" "$(r2_prod_prefix "$build_id" "$tier")/"
+    deploy_app_worker "$(versioned_worker_name "$build_id" "$tier")" "$tier" "$build_id"
   done
 
   # 3. Health check both workers
@@ -129,19 +121,13 @@ preview() {
   build_id="$(get_build_id)"
   echo "Build ID: $build_id"
 
-  # 1. Build and upload to R2 (per tier)
+  # 1. Build and deploy versioned app workers (per tier)
   for tier in "${TIERS[@]}"; do
     build_web_tier "$REPO_ROOT" "$DIST_DIR" "$tier"
-    rclone_upload_to_r2 "$DIST_DIR" "$(r2_preview_prefix "$pr_number" "$tier")"
-  done
-
-  # 2. Deploy versioned app workers
-  for tier in "${TIERS[@]}"; do
     local dns_slug
     dns_slug="$(slugify "$build_id")"
     local name="${WORKER_PREFIX}-pr-${pr_number}-v${dns_slug}-${tier}"
-    local r2_prefix="$(r2_preview_prefix "$pr_number" "$tier")/"
-    deploy_app_worker "$name" "$tier" "$build_id" "$r2_prefix"
+    deploy_app_worker "$name" "$tier" "$build_id"
   done
 
   # 3. Generate router config with KV binding + versioned service bindings
@@ -176,7 +162,7 @@ usage() {
   echo "Usage: deploy.sh <command>"
   echo ""
   echo "Commands:"
-  echo "  release              Full release: R2 upload + deploy workers + router + KV update"
+  echo "  release              Full release: deploy workers + router + KV update"
   echo "  preview <pr-number>  PR preview deploy"
   echo "  admin                Deploy admin dashboard worker"
   exit 1

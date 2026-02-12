@@ -17,30 +17,6 @@ get_build_id() {
   echo "$(get_version)-$(get_build_number)"
 }
 
-get_content_type() {
-  local file="$1"
-  case "$file" in
-    *.html) echo "text/html; charset=utf-8" ;;
-    *.js)   echo "application/javascript; charset=utf-8" ;;
-    *.css)  echo "text/css; charset=utf-8" ;;
-    *.json) echo "application/json; charset=utf-8" ;;
-    *.svg)  echo "image/svg+xml" ;;
-    *.png)  echo "image/png" ;;
-    *.jpg|*.jpeg) echo "image/jpeg" ;;
-    *.gif)  echo "image/gif" ;;
-    *.ico)  echo "image/x-icon" ;;
-    *.webp) echo "image/webp" ;;
-    *.woff) echo "font/woff" ;;
-    *.woff2) echo "font/woff2" ;;
-    *.ttf)  echo "font/ttf" ;;
-    *.map)  echo "application/json" ;;
-    *.txt)  echo "text/plain; charset=utf-8" ;;
-    *.xml)  echo "application/xml; charset=utf-8" ;;
-    *.webmanifest) echo "application/manifest+json" ;;
-    *)      echo "application/octet-stream" ;;
-  esac
-}
-
 # --- Constants ---
 WORKER_PREFIX="accomplish"
 TIERS=("lite" "enterprise")

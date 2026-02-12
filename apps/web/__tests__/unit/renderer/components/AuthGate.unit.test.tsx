@@ -80,9 +80,9 @@ describe('AuthGate', () => {
     const input = screen.getByPlaceholderText('your-company');
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    // Wait a tick to ensure no async sign-in happened
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByText('Enterprise Single Sign-On')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Enterprise Single Sign-On')).toBeInTheDocument();
+    });
     expect(screen.queryByTestId('app-content')).not.toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('AuthGate', () => {
 
     // Spinner should be visible while signing in
     expect(screen.queryByText('Sign in with SSO')).not.toBeInTheDocument();
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.getByTestId('sign-in-spinner')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByTestId('app-content')).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('AuthGate', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     // Spinner should now be visible (isSigningIn = true)
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.getByTestId('sign-in-spinner')).toBeInTheDocument();
 
     // Second Enter while signing in — should be ignored by isSigningIn guard
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -134,5 +134,32 @@ describe('AuthGate', () => {
     await waitFor(() => {
       expect(screen.getByTestId('app-content')).toBeInTheDocument();
     });
+  });
+
+  it('displays dev-mode auth bypass banner', () => {
+    render(<AuthGate><div>App</div></AuthGate>);
+
+    const banner = screen.getByTestId('dev-auth-banner');
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveTextContent('DEV MODE');
+  });
+
+  it('does not display error message after successful sign-in', async () => {
+    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+
+    // No error initially
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
+
+    // The current placeholder always succeeds, so we verify the error element
+    // is not shown after a successful sign-in
+    fireEvent.change(screen.getByPlaceholderText('your-company'), {
+      target: { value: 'acme-corp' },
+    });
+    fireEvent.click(screen.getByText('Sign in with SSO'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('app-content')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();
   });
 });

@@ -5,15 +5,12 @@
   "scripts": {
     "dev": "bash dev.sh",
     "deploy": "bash deploy.sh",
-    "test:unit": "cd router && npx vitest run --config vitest.unit.config.ts && cd ../app && npx vitest run --config vitest.unit.config.ts",
-    "test:integration": "cd router && npx vitest run --config vitest.integration.config.ts && cd ../app && npx vitest run --config vitest.integration.config.ts",
-    "test": "npm run test:unit && npm run test:integration"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.12",
     "@cloudflare/workers-types": "^4",
     "typescript": "^5.9.3",
-    "vitest": "~3.2.0",
+    "vitest": "^4.0.18",
     "wrangler": "^4"
   }
 }

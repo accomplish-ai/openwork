@@ -29,7 +29,7 @@ import {
 } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WEB_DIST = path.resolve(__dirname, '../../../web/dist');
+const WEB_DIST = path.resolve(__dirname, '../../../web/dist/client');
 const LOCAL_PORT = 4173;
 
 const PROVIDERS = [

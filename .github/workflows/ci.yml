@@ -8,7 +8,6 @@ on:
       - 'apps/web/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
-      - 'infra/**'
   pull_request:
     branches: [main]
     paths:
@@ -16,7 +15,6 @@ on:
       - 'apps/web/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
-      - 'infra/**'
 
 permissions:
   contents: read
@@ -285,25 +283,4 @@ jobs:
           name: smoke-debug-logs
           path: /tmp/e2e-debug/
           retention-days: 7
-
-  infra-tests:
-    name: Infra Worker Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: infra/package-lock.json
-
-      - name: Install dependencies
-        run: cd infra && npm ci
-
-      - name: Run unit tests
-        run: cd infra && npm run test:unit
-
-      - name: Run integration tests
-        run: cd infra && npm run test:integration
 

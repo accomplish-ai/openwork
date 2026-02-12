@@ -8,7 +8,7 @@ Accomplish is a pnpm workspace monorepo: an Electron desktop app, a React 19 web
 
 ```
 apps/desktop    @accomplish/desktop     Electron shell (IPC, preload bridge, platform integration)
-apps/web        @accomplish/web         React 19 SPA (hash router, runs in Electron renderer)
+apps/web        @accomplish/web         React 19 SPA with Hono BFF (client/server split, Cloudflare Workers)
 infra/                                  Cloudflare Workers + R2 (NOT in pnpm workspace, uses npm)
 scripts/                                Dev orchestration scripts (Node.js CJS)
 docs/                                   Architecture plans + review documents
@@ -16,7 +16,7 @@ docs/                                   Architecture plans + review documents
 
 **External dependency**: [`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish) (npm package, not in workspace) — all agent/AI logic.
 - Desktop imports full package (v0.3.1) — validation, providers, task management
-- Web imports ONLY `@accomplish_ai/agent-core/common` (^0.2.2) — types + shared utilities
+- Web imports ONLY `@accomplish_ai/agent-core/common` (0.3.1) — types + shared utilities
 
 
 ### Infra: Cloudflare Workers
@@ -31,7 +31,7 @@ docs/                                   Architecture plans + review documents
 ```
 
 - **Router** (`infra/router/`): KV-driven version routing with two-path model. Navigation requests (page loads) always re-evaluate KV config (override → default), ensuring users get version upgrades. Sub-resource requests (assets) use cookie fast path for performance. Reads `RoutingConfig` from KV namespace `ROUTING_CONFIG`. Falls back to `APP_LITE`/`APP_ENTERPRISE` bindings when KV unavailable (preview environments).
-- **App Worker** (`infra/app/`): serves static assets from R2, SPA fallback for non-file paths
+- **App Worker** (`apps/web/`): Hono BFF server with `assets.directory` binding, security headers middleware, SPA fallback for non-file paths. Config: `apps/web/wrangler.jsonc`
 - **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
 - App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
 - **Admin Worker** (`infra/admin/`): standalone dashboard for managing KV routing config. Protected by Cloudflare Access (Zero Trust), no build step (vanilla HTML/JS as template literal). API: GET/PUT `/api/config`, POST `/api/deploy` (dispatches release-web workflow). Deployed via `deploy.sh admin` or automatically during `deploy.sh release`.
@@ -43,7 +43,7 @@ docs/                                   Architecture plans + review documents
 - **Source of truth**: `apps/web/package.json` (web deploys) and `apps/desktop/package.json` (desktop releases)
 - Root `package.json` version (`0.1.0`) is NOT used for deployments
 - Desktop `package.json` is for the dmg/exe
-- Web `pacakge.json` is for the App Workers
+- Web `package.json` is for the App Workers
 - No git tags, no changelog automation, no semantic-release
 - **Build ID** format: `{semver}-{buildNumber}` (e.g., `0.1.0-27`). Build number = `git rev-list --count HEAD`
 - R2 paths use build ID: `builds/v{buildId}-{tier}/`
@@ -94,11 +94,6 @@ cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
 cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
 cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 cd infra && bash setup.sh                 # One-time: create R2 bucket (idempotent)
-
-# Infra tests (run from infra/, uses npm not pnpm)
-cd infra && npm test                      # All infra tests (unit + integration)
-cd infra && npm run test:unit             # Unit tests only (router + app)
-cd infra && npm run test:integration      # Integration tests only (real miniflare KV/R2)
 ```
 
 ### Environment Variables
@@ -125,14 +120,14 @@ cd infra && npm run test:integration      # Integration tests only (real minifla
 Run this after completing any changes:
 
 ```bash
-pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit && cd infra && npm test
+pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
 ```
 
 ## CI/CD Workflows
 
 | Workflow | Trigger | Secrets | What it does |
 |---|---|---|---|
-| `ci.yml` | PR / push to main | — | 6 parallel test jobs (incl. infra worker tests) + Windows CI |
+| `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
 | `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
 | `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
@@ -150,9 +145,16 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 - **`apps/web` imports only from `@accomplish_ai/agent-core/common`** (shared types/utilities), never the full package (Node.js-only code).
 - Electron main process: no React or browser APIs. Web code: no Node.js modules directly.
 
+### Enterprise Auth (Auth0)
+
+- **AuthGate** (`apps/web/src/client/components/enterprise/AuthGate.tsx`): Wraps app content for enterprise tier only. Gated by `isEnterprise()` from `apps/web/src/client/lib/tier.ts` which checks the `__APP_TIER__` compile-time constant.
+- Lite tier skips AuthGate entirely — no auth required.
+- **Current state**: AuthGate contains placeholder auth logic (TODO: replace with real Auth0 redirect flow + server-side session validation via BFF).
+- **AuthErrorToast** (`apps/web/src/client/components/AuthErrorToast.tsx`): Displays auth errors with re-login option.
+
 ### State Management
 
-- **Web**: Single Zustand store (`apps/web/src/stores/taskStore.ts`) — tasks, permissions, setup, todos, auth
+- **Web**: Single Zustand store (`apps/web/src/client/stores/taskStore.ts`) — tasks, permissions, setup, todos, auth
 - **Electron main**: electron-store (settings), better-sqlite3 (tasks/todos), secure storage (API keys)
 
 ### Key Dependencies
@@ -165,19 +167,20 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 | `electron-store` | Desktop | Settings persistence |
 | `node-pty` | Desktop | PTY for opencode process |
 | React 19 + react-router v7 | Web | UI framework (hash router) |
-| Zustand v5 | Web | State management |
-| Radix UI | Web | Accessible UI primitives |
-| Tailwind CSS 3 + Framer Motion | Web | Styling + animations |
-| `wrangler` | Infra | Cloudflare Workers CLI |
+| Hono | Web (server) | BFF server framework on Cloudflare Workers |
+| Zustand v5 | Web (client) | State management |
+| Radix UI | Web (client) | Accessible UI primitives |
+| Tailwind CSS 3 + Framer Motion | Web (client) | Styling + animations |
+| `wrangler` | Infra + Web | Cloudflare Workers CLI |
 
 ### Path Aliases
 
 - Desktop: `@main/*` → `src/main/*`
-- Web: `@/*` → `src/*`
+- Web: `@/*` → `src/client/*`
 
 ### Build Output
 
-- **Web**: `apps/web/dist/` — static SPA with `base: './'` (relative paths for R2/CDN)
+- **Web**: `apps/web/dist/client/` — static SPA with `base: './'` (relative paths for Workers assets binding)
 - **Desktop**: `dist-electron/` (main + preload), `dist/` (copied web assets), `release/` (packaged app)
 - **Desktop packaging**: electron-builder → DMG + ZIP (macOS), NSIS (Windows). Published to GitHub Releases (`accomplish-ai/accomplish`)
 

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { launchElectron, startServeProcess, stopServeProcess, runE2ESuite } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WEB_DIST = path.resolve(__dirname, '../../../web/dist');
+const WEB_DIST = path.resolve(__dirname, '../../../web/dist/client');
 const PORT = 4173;
 
 let serveProcess: ChildProcess;

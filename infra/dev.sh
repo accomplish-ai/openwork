@@ -3,36 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DIST_DIR="$REPO_ROOT/apps/web/dist"
+DIST_DIR="$REPO_ROOT/apps/web/dist/client"
 PERSIST_DIR="$SCRIPT_DIR/.wrangler/state"
 source "$SCRIPT_DIR/lib.sh"
-R2_BUCKET="${R2_BUCKET:-accomplish-assets}"
-
-seed_local_r2() {
-  local tier="$1"
-  local build_id="$2"
-  local prefix="$(r2_prod_prefix "$build_id" "$tier")"
-  echo "Seeding local R2: $prefix/"
-
-  find "$DIST_DIR" -type f | while read -r file; do
-    local relative="${file#$DIST_DIR/}"
-    local key="${prefix}/${relative}"
-    local ct
-    ct="$(get_content_type "$file")"
-
-    npx wrangler r2 object put "${R2_BUCKET}/$key" \
-      --file "$file" \
-      --content-type "$ct" \
-      --local \
-      --persist-to "$PERSIST_DIR" 2>/dev/null || {
-        npx wrangler r2 object put "${R2_BUCKET}/$key" \
-          --file "$file" \
-          --content-type "$ct" \
-          --local \
-          --persist-to "$PERSIST_DIR" 2>/dev/null || true
-      }
-  done
-}
 
 gen_app_dev_config() {
   local name="$1"
@@ -42,13 +15,19 @@ gen_app_dev_config() {
 
   {
     echo "name = \"$name\""
+    echo 'main = "src/server/index.ts"'
+    echo 'compatibility_date = "2024-12-01"'
     echo ""
-    cat "$SCRIPT_DIR/app/wrangler.toml"
+    echo "[assets]"
+    echo 'directory = "dist/client"'
+    echo 'binding = "ASSETS"'
+    echo ""
+    echo "[observability]"
+    echo "enabled = true"
     echo ""
     echo "[vars]"
     echo "TIER = \"$tier\""
     echo "VERSION = \"$build_id\""
-    echo "R2_PREFIX = \"$(r2_prod_prefix "$build_id" "$tier")/\""
   } > "$output"
 }
 
@@ -67,8 +46,8 @@ seed_local_kv() {
 start_local_workers() {
   local build_id="$1"
 
-  local lite_config="$SCRIPT_DIR/app/.generated-dev-lite.toml"
-  local ent_config="$SCRIPT_DIR/app/.generated-dev-enterprise.toml"
+  local lite_config="$REPO_ROOT/apps/web/.generated-dev-lite.toml"
+  local ent_config="$REPO_ROOT/apps/web/.generated-dev-enterprise.toml"
   local router_config="$SCRIPT_DIR/router/.generated-dev.toml"
 
   gen_app_dev_config "$(versioned_worker_name "$build_id" lite)" "lite" "$lite_config" "$build_id"
@@ -76,7 +55,7 @@ start_local_workers() {
   gen_router_config "$router_config" "local-dev-placeholder" "$build_id"
 
   echo "Starting local workers on http://localhost:8787..."
-  (cd "$SCRIPT_DIR" && npx wrangler dev \
+  (cd "$REPO_ROOT/apps/web" && npx wrangler dev \
     -c "$router_config" \
     -c "$lite_config" \
     -c "$ent_config" \
@@ -93,9 +72,6 @@ case "$TIER" in
 
     echo ""
     build_web_tier "$REPO_ROOT" "$DIST_DIR" "$TIER"
-
-    echo ""
-    seed_local_r2 "$TIER" "$build_id"
 
     echo ""
     seed_local_kv "$build_id"

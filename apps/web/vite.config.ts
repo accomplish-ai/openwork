@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, 'src/client'),
     },
   },
   server: {
@@ -22,22 +22,7 @@ export default defineConfig({
     __APP_TIER__: JSON.stringify(tier),
   },
   build: {
-    outDir: 'dist',
+    outDir: 'dist/client',
     emptyOutDir: true,
-  },
-  test: {
-    globals: true,
-    root: __dirname,
-    include: ['__tests__/**/*.test.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
-    setupFiles: ['__tests__/setup.ts'],
-    environment: 'jsdom',
-    testTimeout: 10000,
-    hookTimeout: 15000,
-    server: {
-      deps: {
-        inline: ['@accomplish_ai/agent-core'],
-      },
-    },
   },
 });

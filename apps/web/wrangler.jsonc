@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "accomplish-app",
+  "main": "src/server/index.ts",
+  "compatibility_date": "2024-12-01",
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "TIER": "lite",
+    "VERSION": "dev"
+  }
+}

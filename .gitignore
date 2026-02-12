@@ -53,7 +53,6 @@ prisma/*.db-journal
 
 # Docs
 docs/plans/
-tasks/*.md
 
 # Misc
 *.pem

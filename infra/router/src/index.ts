@@ -1,25 +1,25 @@
 import type { Env, RoutingConfig } from "./types";
 
-export type Tier = "lite" | "enterprise";
+type Tier = "lite" | "enterprise";
 
-export interface Route {
+interface Route {
   buildId: string;
   tier: Tier;
   source: string;
 }
 
-export const BUILD_ID_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$/;
-export const COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const BUILD_ID_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$/;
+const COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
-export function slugifyBinding(buildId: string): string {
+function slugifyBinding(buildId: string): string {
   return buildId.replace(/[.\-]/g, "_");
 }
 
-export function bindingName(buildId: string, tier: Tier): string {
+function bindingName(buildId: string, tier: Tier): string {
   return `APP_V${slugifyBinding(buildId)}_${tier.toUpperCase()}`;
 }
 
-export function parseCookie(request: Request): { buildId: string; tier: Tier } | null {
+function parseCookie(request: Request): { buildId: string; tier: Tier } | null {
   const header = request.headers.get("cookie");
   if (!header) return null;
 
@@ -38,7 +38,7 @@ export function parseCookie(request: Request): { buildId: string; tier: Tier } |
   return { buildId, tier };
 }
 
-export function setCookieHeader(buildId: string, tier: Tier): string {
+function setCookieHeader(buildId: string, tier: Tier): string {
   return `app-version=${buildId}:${tier}; Max-Age=${COOKIE_MAX_AGE_SECONDS}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
@@ -46,7 +46,7 @@ export function setCookieHeader(buildId: string, tier: Tier): string {
  * Simple semver satisfies check for ranges like ">=1.0.0 <1.1.0".
  * Supports individual constraints: >=, >, <=, <, = (or bare version).
  */
-export function semverSatisfies(version: string, range: string): boolean {
+function semverSatisfies(version: string, range: string): boolean {
   const parts = version.split(".").map(Number);
   if (parts.length !== 3 || parts.some(isNaN)) return false;
 
@@ -71,14 +71,14 @@ export function semverSatisfies(version: string, range: string): boolean {
   return true;
 }
 
-export function compareSemver(a: number[], b: number[]): number {
+function compareSemver(a: number[], b: number[]): number {
   for (let i = 0; i < 3; i++) {
     if (a[i] !== b[i]) return a[i] - b[i];
   }
   return 0;
 }
 
-export function resolveOverride(
+function resolveOverride(
   config: RoutingConfig,
   desktopVersion: string | null,
 ): string | null {
@@ -91,7 +91,7 @@ export function resolveOverride(
   return null;
 }
 
-export function resolveTier(tierParam: string | null, cookieTier: Tier | undefined): Tier {
+function resolveTier(tierParam: string | null, cookieTier: Tier | undefined): Tier {
   if (tierParam === "enterprise") return "enterprise";
   if (tierParam === "lite") return "lite";
   return cookieTier ?? "lite";
@@ -104,7 +104,7 @@ export function isNavigation(request: Request, url: URL): boolean {
   return false;
 }
 
-export function errorResponse(error: string, status: number): Response {
+function errorResponse(error: string, status: number): Response {
   return new Response(JSON.stringify({ error }), {
     status,
     headers: { "content-type": "application/json" },

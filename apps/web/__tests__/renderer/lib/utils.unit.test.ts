@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn } from '../../../src/lib/utils';
+import { cn } from '../../../src/client/lib/utils';
 
 describe('utils.ts', () => {
   describe('cn() - class name merging', () => {

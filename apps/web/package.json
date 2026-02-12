@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:lite": "APP_TIER=lite tsc && APP_TIER=lite vite build",
-    "build:enterprise": "APP_TIER=enterprise tsc && APP_TIER=enterprise vite build",
-    "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit",
+    "build": "tsc -p tsconfig.client.json --noEmit && vite build",
+    "build:lite": "APP_TIER=lite tsc -p tsconfig.client.json --noEmit && APP_TIER=lite vite build",
+    "build:enterprise": "APP_TIER=enterprise tsc -p tsconfig.client.json --noEmit && APP_TIER=enterprise vite build",
+    "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "lint": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.server.json --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
@@ -28,6 +28,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.0",
+    "hono": "^4.11.9",
     "lucide-react": "^0.563.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -37,6 +38,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260212.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "6.9.1",
@@ -52,6 +54,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.64.0"
   }
 }
