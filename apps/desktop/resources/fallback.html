@@ -21,6 +21,11 @@
     max-width: 420px;
     padding: 2rem;
     -webkit-app-region: no-drag;
+    animation: fadeIn 0.4s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .icon-circle {
     width: 72px;
@@ -31,11 +36,22 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.25rem;
+    transition: background 0.3s;
+  }
+  .icon-circle.retrying {
+    background: #f0fdf0;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .icon-circle.retrying svg { color: #213c20; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.06); opacity: 0.8; }
   }
   .icon-circle svg {
     width: 32px;
     height: 32px;
     color: #dc4a3a;
+    transition: color 0.3s;
   }
   h1 {
     font-size: 1.375rem;
@@ -60,21 +76,41 @@
     color: #fff;
     border: none;
     height: 36px;
-    padding: 0 16px;
+    padding: 0 20px;
     border-radius: 6px;
     font-family: inherit;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.1s, opacity 0.2s;
+    position: relative;
   }
   button:hover { background: #1a3019; }
-  button:active { background: #15260f; }
+  button:active { background: #15260f; transform: scale(0.97); }
+  button.retrying {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  button.retrying .spinner { display: inline-block; }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="icon-circle">
+  <div class="icon-circle" id="icon">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
       <path d="M12 9v4"/>
@@ -84,9 +120,13 @@
   <h1>Unable to Connect</h1>
   <p>Accomplish couldn't reach the server. Check your internet connection and try again.</p>
   <div class="error-detail" id="error-detail"></div>
-  <button onclick="retry()">Retry</button>
+  <button id="retry-btn"><span class="spinner"></span><span id="btn-text">Retry</span></button>
 </div>
 <script>
+  const btn = document.getElementById('retry-btn');
+  const btnText = document.getElementById('btn-text');
+  const icon = document.getElementById('icon');
+
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const desc = params.get('desc');
@@ -94,13 +134,19 @@
     document.getElementById('error-detail').textContent =
       (desc || 'Unknown error') + (code ? ' (code: ' + code + ')' : '');
   }
-  function retry() {
-    if (window.accomplish && window.accomplish.retryLoad) {
-      window.accomplish.retryLoad();
-    } else {
-      window.location.reload();
-    }
-  }
+
+  btn.onclick = function() {
+    btn.classList.add('retrying');
+    icon.classList.add('retrying');
+    btnText.textContent = 'Retrying\u2026';
+    setTimeout(function() {
+      if (window.accomplish && window.accomplish.retryLoad) {
+        window.accomplish.retryLoad();
+      } else {
+        window.location.reload();
+      }
+    }, 300);
+  };
 </script>
 </body>
 </html>

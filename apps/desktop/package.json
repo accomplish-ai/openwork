@@ -107,8 +107,8 @@
         "to": "icon.png"
       },
       {
-        "from": "resources/error.html",
-        "to": "error.html"
+        "from": "resources/fallback.html",
+        "to": "fallback.html"
       },
       {
         "from": "node_modules/@accomplish_ai/agent-core/mcp-tools",

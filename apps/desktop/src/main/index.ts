@@ -176,8 +176,8 @@ function createWindow() {
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
     console.error(`[Main] Failed to load: ${errorDescription} (code: ${errorCode})`);
     const errorPage = app.isPackaged
-      ? path.join(process.resourcesPath, 'error.html')
-      : path.join(process.env.APP_ROOT!, 'resources', 'error.html');
+      ? path.join(process.resourcesPath, 'fallback.html')
+      : path.join(process.env.APP_ROOT!, 'resources', 'fallback.html');
     mainWindow?.loadFile(errorPage, {
       query: { code: String(errorCode), desc: errorDescription },
     });
