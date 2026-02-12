@@ -42,11 +42,6 @@ cleanup_preview() {
   echo "Deleting router: ${router_name}..."
   npx wrangler delete --name "$router_name" --force 2>/dev/null || echo "Router ${router_name} not found, skipping"
 
-  # Delete R2 prefixes
-  for tier in "${TIERS[@]}"; do
-    rclone_delete_r2_prefix "$(r2_preview_prefix "$pr" "$tier")/"
-  done
-
   # Delete KV key
   kv_delete_key "$kv_key"
 

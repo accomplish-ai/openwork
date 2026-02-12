@@ -36,10 +36,6 @@ deploy_admin_worker() {
     echo "[[kv_namespaces]]"
     echo 'binding = "ROUTING_CONFIG"'
     echo "id = \"${KV_NAMESPACE_ID}\""
-    echo ""
-    echo "[[r2_buckets]]"
-    echo 'binding = "ASSETS"'
-    echo 'bucket_name = "accomplish-assets"'
   } > "$toml"
 
   (cd "$SCRIPT_DIR/admin" && npx wrangler deploy --config "$toml")
@@ -102,7 +98,13 @@ release() {
   fi
   kv_write_config "$new_config"
 
-  # 9. Deploy admin worker
+  # 9. Write build manifest to KV
+  local manifest_json
+  manifest_json="$(gen_manifest "$build_id")"
+  kv_write_manifest "$build_id" "$manifest_json"
+  echo "Manifest written to KV for $build_id"
+
+  # 10. Deploy admin worker
   deploy_admin_worker
 
   echo "Release complete! Version: $build_id"

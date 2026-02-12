@@ -2,7 +2,6 @@ import { getDashboardHtml } from "./dashboard";
 
 interface Env {
   ROUTING_CONFIG: KVNamespace;
-  ASSETS: R2Bucket;
   GITHUB_TOKEN: string;
   GITHUB_REPO: string;
   AUDIT_WEBHOOK_SECRET: string;
@@ -201,12 +200,10 @@ async function handleGetManifest(env: Env, buildId: string): Promise<Response> {
   if (!BUILD_ID_PATTERN.test(buildId)) {
     return jsonResponse({ error: "invalid_build_id" }, 400);
   }
-  const key = `builds/v${buildId}-lite/manifest.json`;
-  const object = await env.ASSETS.get(key);
-  if (!object) {
+  const data = await env.ROUTING_CONFIG.get<Record<string, unknown>>(`manifest:${buildId}`, { type: "json" });
+  if (!data) {
     return jsonResponse({ error: "not_found" }, 404);
   }
-  const data = await object.json();
   return jsonResponse(data, 200);
 }
 
@@ -265,15 +262,11 @@ async function handlePostAudit(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleListBuilds(env: Env): Promise<Response> {
-  const listed = await env.ASSETS.list({ prefix: "builds/v", delimiter: "/" });
-  const buildIds = new Set<string>();
-  for (const prefix of listed.delimitedPrefixes) {
-    const match = prefix.match(/^builds\/v(.+)-(lite|enterprise)\/$/);
-    if (match) {
-      buildIds.add(match[1]);
-    }
+  const config = await env.ROUTING_CONFIG.get<RoutingConfig>("config", { type: "json" });
+  if (!config) {
+    return jsonResponse([], 200);
   }
-  return jsonResponse([...buildIds].sort(), 200);
+  return jsonResponse([...config.activeVersions].sort(), 200);
 }
 
 export default {

@@ -8,7 +8,3 @@ enabled = true
 [[kv_namespaces]]
 binding = "ROUTING_CONFIG"
 id = "local-dev-placeholder"
-
-[[r2_buckets]]
-binding = "ASSETS"
-bucket_name = "accomplish-assets"

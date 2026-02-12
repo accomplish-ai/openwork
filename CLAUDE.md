@@ -9,7 +9,7 @@ Accomplish is a pnpm workspace monorepo: an Electron desktop app, a React 19 web
 ```
 apps/desktop    @accomplish/desktop     Electron shell (IPC, preload bridge, platform integration)
 apps/web        @accomplish/web         React 19 SPA with Hono BFF (client/server split, Cloudflare Workers)
-infra/                                  Cloudflare Workers + R2 (NOT in pnpm workspace, uses npm)
+infra/                                  Cloudflare Workers + KV (NOT in pnpm workspace, uses npm)
 scripts/                                Dev orchestration scripts (Node.js CJS)
 docs/                                   Architecture plans + review documents
 ```
@@ -22,20 +22,19 @@ docs/                                   Architecture plans + review documents
 ### Infra: Cloudflare Workers
 
 ```
-┌─────────┐    service binding    ┌──────────────────┐    R2 GET
-│ Router  │───────────────────────▶│ App Worker (lite) │──────────▶ R2: builds/v{ver}-lite/
-│ Worker  │                       └──────────────────┘            accomplish-assets bucket
+┌─────────┐    service binding    ┌──────────────────┐
+│ Router  │───────────────────────▶│ App Worker (lite) │──── assets.directory
+│ Worker  │                       └──────────────────┘
 │         │    service binding    ┌──────────────────────┐
-│         │───────────────────────▶│ App Worker (enterprise)│──────▶ R2: builds/v{ver}-enterprise/
+│         │───────────────────────▶│ App Worker (enterprise)│── assets.directory
 └─────────┘                       └──────────────────────┘
 ```
 
 - **Router** (`infra/router/`): KV-driven version routing with two-path model. Navigation requests (page loads) always re-evaluate KV config (override → default), ensuring users get version upgrades. Sub-resource requests (assets) use cookie fast path for performance. Reads `RoutingConfig` from KV namespace `ROUTING_CONFIG`. Falls back to `APP_LITE`/`APP_ENTERPRISE` bindings when KV unavailable (preview environments).
 - **App Worker** (`apps/web/`): Hono BFF server with `assets.directory` binding, security headers middleware, SPA fallback for non-file paths. Config: `apps/web/wrangler.jsonc`
-- **R2 bucket** `accomplish-assets`: `builds/v{version}-{tier}/` (prod), `builds/pr-{N}-{tier}/` (preview)
 - App worker is tier-agnostic — name/vars injected at deploy time via `wrangler deploy --name --var`
 - **Admin Worker** (`infra/admin/`): standalone dashboard for managing KV routing config. Protected by Cloudflare Access (Zero Trust), no build step (vanilla HTML/JS as template literal). API: GET/PUT `/api/config`, POST `/api/deploy` (dispatches release-web workflow). Deployed via `deploy.sh admin` or automatically during `deploy.sh release`.
-- **Build Manifests**: Each release generates a `manifest.json` (via `gen_manifest` in `lib.sh`) containing buildId, version, gitSha, timestamp, and last 20 commits. Uploaded to R2 alongside build assets. Viewable in admin dashboard per-version.
+- **Build Manifests**: Each release generates a manifest (via `gen_manifest` in `lib.sh`) containing buildId, version, gitSha, timestamp, and last 20 commits. Stored in KV (`manifest:{buildId}`). Viewable in admin dashboard per-version.
 - Cache: `index.html` no-cache, `/assets/*` 1yr immutable, everything else 1hr
 
 ### Versioning
@@ -46,7 +45,6 @@ docs/                                   Architecture plans + review documents
 - Web `package.json` is for the App Workers
 - No git tags, no changelog automation, no semantic-release
 - **Build ID** format: `{semver}-{buildNumber}` (e.g., `0.1.0-27`). Build number = `git rev-list --count HEAD`
-- R2 paths use build ID: `builds/v{buildId}-{tier}/`
 - Deploy ≠ Release: deploying a version makes it available; setting `default` in KV makes it active
 
 ## Commands
@@ -59,7 +57,7 @@ pnpm install                              # ALWAYS use pnpm, never npm or yarn
 pnpm dev                                  # Vite dev server on :5173 + Electron
 pnpm dev:clean                            # Same with CLEAN_START=1 (clears user data)
 pnpm dev:kill                             # Kill orphaned process on port 5173
-pnpm dev:workers:lite                     # Build web + seed local R2 + start local workers (lite tier)
+pnpm dev:workers:lite                     # Build web + start local workers (lite tier)
 pnpm dev:workers:enterprise               # Same for enterprise tier
 pnpm dev:remote <url>                     # Point desktop app at a remote worker URL
 
@@ -88,12 +86,11 @@ pnpm -F @accomplish/desktop test:e2e        # Real task execution — local + re
 pnpm -F @accomplish/web exec vitest run path/to/file.unit.test.ts
 
 # Infra (run from infra/)
-cd infra && bash deploy.sh release         # Release: R2 upload + workers + router + KV update
+cd infra && bash deploy.sh release         # Release: deploy workers + router + KV update
 cd infra && bash deploy.sh preview <PR>   # PR preview deploy
 cd infra && bash cleanup.sh <PR>          # Delete PR preview resources
-cd infra && bash dev.sh lite              # Local workers dev (builds + seeds R2 + wrangler dev)
+cd infra && bash dev.sh lite              # Local workers dev (builds + wrangler dev)
 cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
-cd infra && bash setup.sh                 # One-time: create R2 bucket (idempotent)
 ```
 
 ### Environment Variables
@@ -104,7 +101,7 @@ cd infra && bash setup.sh                 # One-time: create R2 bucket (idempote
 | `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
 | `ACCOMPLISH_USER_DATA_NAME` | Desktop main | Override userData dir name (default: `Accomplish`). Used by E2E for isolation |
 | `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
-| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for R2 API calls in cleanup and KV operations |
+| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for KV operations |
 | `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
 | `AUDIT_WEBHOOK_SECRET` | CI / admin worker | Shared secret for CI→admin audit webhook (`x-audit-secret` header) |
 | `GITHUB_REPO` | admin worker | GitHub repo (`owner/repo`) for workflow dispatch from admin dashboard |
@@ -129,9 +126,9 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 |---|---|---|---|
 | `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
 | `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
-| `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → upload R2 → deploy versioned workers + router → update KV |
+| `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
-| `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + R2 objects |
+| `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + KV keys |
 | `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
 
 All deploy/preview workflows validate required secrets at startup (`.github/actions/validate-secrets/`).
@@ -221,4 +218,4 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 - No deploy rollback mechanism
 - Windows desktop build is disabled in release workflow
 - Router TODOs: canary routing, A/B experiments, Analytics Engine
-- Remaining manual setup: Cloudflare API tokens, R2 API credentials, GitHub secrets (see CI validation for required list)
+- Remaining manual setup: Cloudflare API tokens, GitHub secrets (see CI validation for required list)

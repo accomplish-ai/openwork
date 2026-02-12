@@ -29,10 +29,6 @@ slugify_binding() { echo "$1" | sed 's/[.\-]/_/g'; }
 versioned_worker_name() { echo "${WORKER_PREFIX}-v$(slugify "$1")-$2"; }
 binding_name() { echo "APP_V$(slugify_binding "$1")_$(echo "$2" | tr '[:lower:]' '[:upper:]')"; }
 
-# --- R2 path helpers ---
-r2_prod_prefix() { echo "builds/v$1-$2"; }
-r2_preview_prefix() { echo "builds/pr-$1-$2"; }
-
 # --- Build ---
 build_web() {
   local repo_root="$1"
@@ -54,40 +50,6 @@ build_web_tier() {
   if [ ! -d "$dist_dir" ]; then
     echo "ERROR: $dist_dir does not exist after build"
     exit 1
-  fi
-}
-
-# --- R2 operations (rclone) ---
-rclone_upload_to_r2() {
-  local source_dir="$1"
-  local prefix="$2"
-  local bucket="${R2_BUCKET:-accomplish-assets}"
-
-  echo "Uploading to R2 via rclone: ${bucket}/${prefix}/"
-  rclone copy "$source_dir" "R2:${bucket}/${prefix}/" \
-    --s3-no-check-bucket \
-    --transfers 8 \
-    --checkers 16 \
-    --fast-list \
-    --verbose
-  echo "Upload complete: ${prefix}/"
-}
-
-rclone_delete_r2_prefix() {
-  local prefix="$1"
-  local bucket="${R2_BUCKET:-accomplish-assets}"
-
-  echo "Deleting R2 prefix via rclone: ${bucket}/${prefix}"
-  local output
-  if output=$(rclone purge "R2:${bucket}/${prefix}" 2>&1); then
-    echo "Delete complete: ${prefix}"
-  else
-    if echo "$output" | grep -qiE "directory not found|not found|404"; then
-      echo "Prefix ${prefix} does not exist, nothing to delete"
-    else
-      echo "WARNING: rclone purge failed for ${bucket}/${prefix}:"
-      echo "$output"
-    fi
   fi
 }
 
@@ -182,6 +144,12 @@ kv_write_key() {
 
 kv_write_config() { kv_write_key "config" "$1"; }
 
+kv_write_manifest() {
+  local build_id="$1"
+  local manifest_json="$2"
+  kv_write_key "manifest:${build_id}" "$manifest_json"
+}
+
 kv_delete_key() {
   local key="$1"
   local url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}/values/${key}"
@@ -234,7 +202,6 @@ gen_preview_router_config_kv() {
 # --- Build manifest generation ---
 gen_manifest() {
   local build_id="$1"
-  local dist_dir="$2"
   local version build_number git_sha timestamp
 
   build_number="${build_id##*-}"
@@ -255,8 +222,5 @@ gen_manifest() {
     --arg sha "$git_sha" \
     --arg ts "$timestamp" \
     --argjson commits "$commits" \
-    '{buildId:$bid, version:$ver, buildNumber:$bn, gitSha:$sha, timestamp:$ts, commits:$commits}' \
-    > "$dist_dir/manifest.json"
-
-  echo "Generated manifest.json for $build_id ($(echo "$commits" | jq length) commits)"
+    '{buildId:$bid, version:$ver, buildNumber:$bn, gitSha:$sha, timestamp:$ts, commits:$commits}'
 }
