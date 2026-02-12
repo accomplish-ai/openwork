@@ -36,44 +36,21 @@ function makeGetRequest(path: string): Request {
   return new Request(`https://admin.example.com${path}`);
 }
 
-describe("handleGetManifest — enterprise fallback", () => {
+describe("handleGetManifest — KV lookup", () => {
   const ctx = createMockExecutionContext();
 
-  it("returns lite manifest when only lite exists", async () => {
-    const r2Objects = new Map<string, unknown>();
-    r2Objects.set("builds/v0.1.0-1-lite/manifest.json", { buildId: "0.1.0-1", tier: "lite" });
-    const env = createMockEnv({ r2Objects });
+  it("returns manifest from KV", async () => {
+    const kvStore = new Map<string, MockKVEntry>();
+    kvStore.set("manifest:0.1.0-1", { value: JSON.stringify({ buildId: "0.1.0-1", version: "0.1.0" }) });
+    const env = createMockEnv({ kvStore });
 
     const res = await worker.fetch(makeGetRequest("/api/builds/0.1.0-1/manifest"), env, ctx);
     expect(res.status).toBe(200);
-    const body = await res.json() as { tier: string };
-    expect(body.tier).toBe("lite");
+    const body = await res.json() as { buildId: string };
+    expect(body.buildId).toBe("0.1.0-1");
   });
 
-  it("returns enterprise manifest when only enterprise exists", async () => {
-    const r2Objects = new Map<string, unknown>();
-    r2Objects.set("builds/v0.1.0-1-enterprise/manifest.json", { buildId: "0.1.0-1", tier: "enterprise" });
-    const env = createMockEnv({ r2Objects });
-
-    const res = await worker.fetch(makeGetRequest("/api/builds/0.1.0-1/manifest"), env, ctx);
-    expect(res.status).toBe(200);
-    const body = await res.json() as { tier: string };
-    expect(body.tier).toBe("enterprise");
-  });
-
-  it("prefers lite manifest when both tiers exist", async () => {
-    const r2Objects = new Map<string, unknown>();
-    r2Objects.set("builds/v0.1.0-1-lite/manifest.json", { buildId: "0.1.0-1", tier: "lite" });
-    r2Objects.set("builds/v0.1.0-1-enterprise/manifest.json", { buildId: "0.1.0-1", tier: "enterprise" });
-    const env = createMockEnv({ r2Objects });
-
-    const res = await worker.fetch(makeGetRequest("/api/builds/0.1.0-1/manifest"), env, ctx);
-    expect(res.status).toBe(200);
-    const body = await res.json() as { tier: string };
-    expect(body.tier).toBe("lite");
-  });
-
-  it("returns 404 when neither tier has manifest", async () => {
+  it("returns 404 when manifest not in KV", async () => {
     const env = createMockEnv();
     const res = await worker.fetch(makeGetRequest("/api/builds/0.1.0-1/manifest"), env, ctx);
     expect(res.status).toBe(404);

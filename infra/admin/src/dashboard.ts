@@ -562,7 +562,7 @@ function getBuiltTiers(bid) {
   for (var i = 0; i < buildsList.length; i++) {
     if (buildsList[i].buildId === bid) { entry = buildsList[i]; break; }
   }
-  return entry ? entry.tiers : [];
+  return entry && entry.tiers ? entry.tiers : [];
 }
 
 // ── Toast ──

@@ -301,13 +301,10 @@ async function handleGetManifest(env: Env, buildId: string): Promise<Response> {
   if (!BUILD_ID_PATTERN.test(buildId)) {
     return jsonResponse({ error: "invalid_build_id" }, 400);
   }
-  const object =
-    await env.ASSETS.get(`builds/v${buildId}-lite/manifest.json`) ??
-    await env.ASSETS.get(`builds/v${buildId}-enterprise/manifest.json`);
-  if (!object) {
+  const data = await env.ROUTING_CONFIG.get(`manifest:${buildId}`, { type: "json" });
+  if (!data) {
     return jsonResponse({ error: "not_found" }, 404);
   }
-  const data = await object.json();
   return jsonResponse(data, 200);
 }
 
@@ -382,19 +379,9 @@ async function handlePostAudit(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleListBuilds(env: Env): Promise<Response> {
-  const listed = await env.ASSETS.list({ prefix: "builds/v", delimiter: "/" });
-  const buildMap = new Map<string, string[]>();
-  for (const prefix of listed.delimitedPrefixes) {
-    const match = prefix.match(/^builds\/v(.+)-(lite|enterprise)\/$/);
-    if (match) {
-      const [, buildId, tier] = match;
-      const tiers = buildMap.get(buildId) ?? [];
-      tiers.push(tier);
-      buildMap.set(buildId, tiers);
-    }
-  }
-  const builds = [...buildMap.entries()]
-    .map(([buildId, tiers]) => ({ buildId, tiers: tiers.sort() }))
+  const listed = await env.ROUTING_CONFIG.list({ prefix: "manifest:" });
+  const builds = listed.keys
+    .map((key) => ({ buildId: key.name.replace("manifest:", "") }))
     .sort((a, b) => a.buildId.localeCompare(b.buildId));
   return jsonResponse(builds, 200);
 }
