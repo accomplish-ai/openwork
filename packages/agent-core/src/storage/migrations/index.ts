@@ -26,6 +26,7 @@ const migrations: Migration[] = [
   v006,
   v007,
   v008,
+  v009,
 ];
 
 export function registerMigration(migration: Migration): void {
@@ -33,7 +34,7 @@ export function registerMigration(migration: Migration): void {
   migrations.sort((a, b) => a.version - b.version);
 }
 
-export const CURRENT_VERSION = 8;
+export const CURRENT_VERSION = 9;
 
 export function getStoredVersion(db: Database): number {
   try {
