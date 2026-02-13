@@ -39,6 +39,7 @@
     "better-sqlite3": "^12.6.2",
     "dotenv": "^17.2.4",
     "electron-store": "^8.2.0",
+    "electron-updater": "^6.7.3",
     "fix-path": "^5.0.0",
     "node-pty": "^1.1.0",
     "opencode-ai": "1.1.16",

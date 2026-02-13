@@ -98,6 +98,7 @@ cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 | Variable | Where | Purpose |
 |---|---|---|
 | `ACCOMPLISH_ROUTER_URL` | Desktop main | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev` |
+| `ACCOMPLISH_UPDATER_URL` | Desktop main | Feed URL for electron-updater auto-update checks. If unset, updater is disabled. |
 | `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
 | `ACCOMPLISH_USER_DATA_NAME` | Desktop main | Override userData dir name (default: `Accomplish`). Used by E2E for isolation |
 | `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
@@ -111,6 +112,7 @@ cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 | `ANTHROPIC_API_KEY` | E2E AI tests | Anthropic provider key for AI task execution tests |
 | `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
 | `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |
+| `R2_BUCKET` | CI / release scripts | Cloudflare R2 bucket name for desktop update artifacts |
 
 ## Verification Command
 
@@ -129,7 +131,7 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 | `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
 | `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + KV keys |
-| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL` | Bump version → tag → build desktop (mac arm64+x64) → GitHub Release |
+| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL`, R2 creds | Build desktop (mac arm64+x64, lite+enterprise) → upload to R2 → generate update manifests → GitHub Release |
 
 All deploy/preview workflows validate required secrets at startup (`.github/actions/validate-secrets/`).
 

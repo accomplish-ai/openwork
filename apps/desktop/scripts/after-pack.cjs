@@ -331,20 +331,28 @@ async function resignMacApp(context) {
   const appName = packager.appInfo.productFilename;
   const appPath = path.join(appOutDir, `${appName}.app`);
 
-  console.log(`[after-pack] Re-signing macOS app: ${appPath}`);
+  if (process.env.CSC_LINK) {
+    console.log('[after-pack] CSC_LINK is set, skipping ad-hoc re-sign');
+    return;
+  }
 
+  if (process.env.CSC_IDENTITY_AUTO_DISCOVERY !== 'false') {
+    try {
+      const result = execSync('security find-identity -v -p codesigning', { encoding: 'utf8' });
+      if (result.includes('Developer ID Application')) {
+        console.log('[after-pack] Real signing identity found, skipping ad-hoc re-sign');
+        return;
+      }
+    } catch {
+      // No keychain access, fall through to ad-hoc
+    }
+  }
+
+  console.log(`[after-pack] Re-signing macOS app with ad-hoc identity: ${appPath}`);
   try {
-    // Remove existing signature and re-sign with ad-hoc signature
-    // --force: replace existing signature
-    // --deep: sign all nested code (frameworks, helpers, etc.)
-    // --sign -: ad-hoc signature (no certificate required)
-    execSync(`codesign --force --deep --sign - "${appPath}"`, {
-      stdio: 'inherit',
-    });
-    console.log('[after-pack] Successfully re-signed macOS app');
+    execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+    console.log('[after-pack] Successfully re-signed macOS app (ad-hoc)');
   } catch (err) {
     console.error('[after-pack] Failed to re-sign macOS app:', err.message);
-    // Don't fail the build - unsigned apps still work locally
-    // and users can remove quarantine manually
   }
 }

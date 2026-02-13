@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import electron from 'vite-plugin-electron';
+import path from 'path';
 import pkg from './package.json';
 
 const tier = process.env.APP_TIER || 'lite';
@@ -18,6 +19,12 @@ export default defineConfig(() => ({
         vite: {
           define: {
             __APP_TIER__: JSON.stringify(tier),
+            __APP_VERSION__: JSON.stringify(pkg.version),
+          },
+          resolve: {
+            alias: {
+              '@main': path.resolve(__dirname, 'src/main'),
+            },
           },
           build: {
             outDir: 'dist-electron/main',

@@ -8,6 +8,8 @@ import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electro
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { initUpdater, autoCheckForUpdates } from './updater';
+import { initMenu } from './menu';
 
 const APP_DATA_NAME = process.env.ACCOMPLISH_USER_DATA_NAME || 'Accomplish';
 if (APP_DATA_NAME === '.' || APP_DATA_NAME === '..' || APP_DATA_NAME !== path.basename(APP_DATA_NAME)) {
@@ -237,9 +239,11 @@ if (!gotTheLock) {
     console.log('[Main] Electron app ready, version:', app.getVersion());
 
     try {
-      const didMigrate = migrateLegacyData();
-      if (didMigrate) {
-        console.log('[Main] Migrated data from legacy userData path');
+      if (process.env.CLEAN_START !== '1') {
+        const didMigrate = migrateLegacyData();
+        if (didMigrate) {
+          console.log('[Main] Migrated data from legacy userData path');
+        }
       }
     } catch (err) {
       console.error('[Main] Legacy data migration failed:', err);
@@ -301,6 +305,9 @@ if (!gotTheLock) {
     if (mainWindow) {
       initThoughtStreamApi(mainWindow);
       startThoughtStreamServer();
+      initUpdater(mainWindow).catch((err) => console.error('[Main] initUpdater failed:', err));
+      initMenu();
+      setTimeout(() => autoCheckForUpdates(), 5000);
     }
 
     app.on('activate', () => {
