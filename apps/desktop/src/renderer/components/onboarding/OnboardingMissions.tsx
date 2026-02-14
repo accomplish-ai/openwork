@@ -235,7 +235,7 @@ export function OnboardingMissions() {
                 <span className="text-2xl font-bold">Level {progress.level}</span>
               </div>
               <div className="text-xs text-muted-foreground">
-                {pointsInLevel}/{pointsToNextLevel % 50 || 50} XP
+                {pointsInLevel}/50 XP
               </div>
             </div>
           </div>
