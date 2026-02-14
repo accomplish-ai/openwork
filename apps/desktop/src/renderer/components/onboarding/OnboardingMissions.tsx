@@ -27,7 +27,7 @@ interface OnboardingProgress {
   level: number;
 }
 
-// Import mission definitions from core package
+// Onboarding mission definitions are defined locally in this file.
 const MISSIONS: Omit<OnboardingMission, 'completed'>[] = [
   {
     id: 'connect-provider',
