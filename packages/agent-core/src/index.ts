@@ -197,7 +197,7 @@ export type { BundledNodePathsExtended } from './utils/bundled-node.js';
 export { getExtendedNodePath, findCommandInPath } from './utils/system-path.js';
 
 // Sanitization functions
-export { sanitizeString } from './utils/sanitize.js';
+export { sanitizeString, PROMPT_DEFAULT_MAX_LENGTH } from './utils/sanitize.js';
 
 // URL validation functions
 export { validateHttpUrl } from './utils/url.js';
