@@ -683,28 +683,38 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     if (useSandbox) {
       const proc = await this.spawnDocker(safeCwd, allArgs, env);
-      this.ptyProcess = proc ?? this.spawnNormal(safeCwd, command, allArgs, env);
+      if (proc) {
+        this.ptyProcess = proc;
+      } else {
+        console.warn('[OpenCode CLI] Docker unavailable, falling back to direct execution');
+        this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
+      }
     } else {
       this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
     }
 
-    this.ptyProcess.onData((data: string) => {
-      const cleanData = data
-        .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
-        .replace(/\x1B\][^\x07]*\x07/g, '')
-        .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
-      if (cleanData.trim()) {
-        const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
-        console.log('[OpenCode CLI stdout]:', truncated);
-        this.emit('debug', { type: 'stdout', message: cleanData });
+    if (this.ptyProcess) {
+      this.ptyProcess.onData((data: string) => {
+        const cleanData = data
+          .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
+          .replace(/\x1B\][^\x07]*\x07/g, '')
+          .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
+        if (cleanData.trim()) {
+          const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+          console.log('[OpenCode CLI stdout]:', truncated);
+          this.emit('debug', { type: 'stdout', message: cleanData });
 
-        this.streamParser.feed(cleanData);
-      }
-    });
+          this.streamParser.feed(cleanData);
+        }
+      });
 
-    this.ptyProcess.onExit(({ exitCode }) => {
-      this.handleProcessExit(exitCode);
-    });
+      this.ptyProcess.onExit(({ exitCode, signal }) => {
+        const exitMsg = `PTY Process exited with code: ${exitCode}, signal: ${signal}`;
+        console.log('[OpenCode CLI]', exitMsg);
+        this.emit('debug', { type: 'exit', message: exitMsg, data: { exitCode, signal } });
+        this.handleProcessExit(exitCode);
+      });
+    }
   }
 
   private generateTaskId(): string {
