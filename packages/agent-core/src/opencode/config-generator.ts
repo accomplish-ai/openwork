@@ -610,6 +610,7 @@ export function getOpenCodeConfigPath(userDataPath: string): string {
 export interface BuildCliArgsOptions {
   prompt: string;
   sessionId?: string;
+  filePaths?: string[];
   selectedModel?: {
     provider: string;
     model: string;
@@ -617,7 +618,7 @@ export interface BuildCliArgsOptions {
 }
 
 export function buildCliArgs(options: BuildCliArgsOptions): string[] {
-  const { prompt, sessionId, selectedModel } = options;
+  const { prompt, sessionId, selectedModel, filePaths } = options;
 
   const args: string[] = ['run'];
 
@@ -653,6 +654,21 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
 
   if (sessionId) {
     args.push('--session', sessionId);
+  }
+
+  if (Array.isArray(filePaths)) {
+    const seen = new Set<string>();
+    for (const filePath of filePaths) {
+      if (typeof filePath !== 'string') {
+        continue;
+      }
+      const trimmedPath = filePath.trim();
+      if (!trimmedPath || seen.has(trimmedPath)) {
+        continue;
+      }
+      seen.add(trimmedPath);
+      args.push('--file', trimmedPath);
+    }
   }
 
   args.push('--agent', ACCOMPLISH_AGENT_NAME);

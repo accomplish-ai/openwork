@@ -37,6 +37,7 @@ interface AccomplishAPI {
 
   // Task operations
   startTask(config: TaskConfig): Promise<Task>;
+  getPathForFile(file: File): string;
   cancelTask(taskId: string): Promise<void>;
   interruptTask(taskId: string): Promise<void>;
   getTask(taskId: string): Promise<Task | null>;

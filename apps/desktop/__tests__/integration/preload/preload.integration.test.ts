@@ -17,6 +17,7 @@ const mockExposeInMainWorld = vi.fn();
 const mockInvoke = vi.fn(() => Promise.resolve(undefined));
 const mockOn = vi.fn();
 const mockRemoveListener = vi.fn();
+const mockGetPathForFile = vi.fn(() => '');
 
 // Mock electron module before importing preload
 vi.mock('electron', () => ({
@@ -27,6 +28,9 @@ vi.mock('electron', () => ({
     invoke: mockInvoke,
     on: mockOn,
     removeListener: mockRemoveListener,
+  },
+  webUtils: {
+    getPathForFile: mockGetPathForFile,
   },
 }));
 
@@ -108,9 +112,15 @@ describe('Preload Script Integration', () => {
 
     describe('Task Operations', () => {
       it('startTask should invoke task:start with config', async () => {
-        const config = { description: 'Test task' };
-        await (capturedAccomplishAPI.startTask as (config: { description: string }) => Promise<unknown>)(config);
+        const config = { prompt: 'Test task' };
+        await (capturedAccomplishAPI.startTask as (config: { prompt: string }) => Promise<unknown>)(config);
         expect(mockInvoke).toHaveBeenCalledWith('task:start', config);
+      });
+
+      it('getPathForFile should delegate to webUtils.getPathForFile', () => {
+        const file = new File(['content'], 'notes.txt', { type: 'text/plain' });
+        (capturedAccomplishAPI.getPathForFile as (file: File) => string)(file);
+        expect(mockGetPathForFile).toHaveBeenCalledWith(file);
       });
 
       it('cancelTask should invoke task:cancel with taskId', async () => {

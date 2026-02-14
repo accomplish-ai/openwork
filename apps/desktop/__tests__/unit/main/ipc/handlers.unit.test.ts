@@ -252,7 +252,9 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     ALLOWED_API_KEY_PROVIDERS: actual.ALLOWED_API_KEY_PROVIDERS,
     STANDARD_VALIDATION_PROVIDERS: actual.STANDARD_VALIDATION_PROVIDERS,
     validate: actual.validate,
+    taskConfigSchema: actual.taskConfigSchema,
     permissionResponseSchema: actual.permissionResponseSchema,
+    resumeSessionSchema: actual.resumeSessionSchema,
 
     // Utility functions
     createTaskId: vi.fn(() => `task_${Date.now()}`),
@@ -1412,7 +1414,7 @@ describe('IPC Handlers Integration', () => {
         taskId: 'custom_task_id',
         sessionId: 'custom_session',
         workingDirectory: '/some/path',
-        allowedTools: ['tool1', 'tool2', 123, null], // Should filter non-strings
+        allowedTools: ['tool1', 'tool2'],
         systemPromptAppend: 'Additional instructions',
         outputSchema: { type: 'object' },
       };
@@ -1435,7 +1437,7 @@ describe('IPC Handlers Integration', () => {
           taskId: 'custom_task_id',
           sessionId: 'custom_session',
           workingDirectory: '/some/path',
-          allowedTools: ['tool1', 'tool2'], // Non-strings filtered
+          allowedTools: ['tool1', 'tool2'],
           systemPromptAppend: 'Additional instructions',
           outputSchema: { type: 'object' },
         }),

@@ -6,10 +6,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import TaskInputBar from '@/components/landing/TaskInputBar';
+import type { FileAttachment } from '@/lib/task-attachments';
 
 // Helper to render with Router context (required for PlusMenu -> CreateSkillModal -> useNavigate)
 const renderWithRouter = (ui: React.ReactElement) => {
@@ -63,6 +64,15 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 describe('TaskInputBar Integration', () => {
+  const sampleAttachment: FileAttachment = {
+    id: 'att-1',
+    name: 'notes.txt',
+    path: 'C:\\temp\\notes.txt',
+    type: 'text',
+    preview: 'sample',
+    size: 128,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -257,6 +267,23 @@ describe('TaskInputBar Integration', () => {
       expect(submitButton).not.toBeDisabled();
     });
 
+    it('should enable submit button when there are attachments without text', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          attachments={[sampleAttachment]}
+        />
+      );
+
+      const submitButton = screen.getByRole('button', { name: /submit/i });
+      expect(submitButton).not.toBeDisabled();
+    });
+
     it('should call onSubmit when submit button is clicked', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
@@ -266,6 +293,25 @@ describe('TaskInputBar Integration', () => {
           value="Submit this task"
           onChange={onChange}
           onSubmit={onSubmit}
+        />
+      );
+
+      const submitButton = screen.getByRole('button', { name: /submit/i });
+      fireEvent.click(submitButton);
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onSubmit with attachments only', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          attachments={[sampleAttachment]}
         />
       );
 
@@ -474,6 +520,24 @@ describe('TaskInputBar Integration', () => {
       expect(submitButton).not.toBeDisabled();
     });
 
+    it('should disable submit when base prompt at limit plus attachments exceeds final prompt limit', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const exactLimitValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH);
+
+      renderWithRouter(
+        <TaskInputBar
+          value={exactLimitValue}
+          onChange={onChange}
+          onSubmit={onSubmit}
+          attachments={[sampleAttachment]}
+        />
+      );
+
+      const submitButton = screen.getByTestId('task-input-submit');
+      expect(submitButton).toBeDisabled();
+    });
+
     it('should not call onSubmit when clicking submit with oversized message', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
@@ -543,6 +607,77 @@ describe('TaskInputBar Integration', () => {
       const tooltips = screen.getAllByRole('tooltip');
       const submitTooltip = tooltips.find(t => t.textContent === 'Submit');
       expect(submitTooltip).toBeDefined();
+    });
+
+    it('should show "Submit" tooltip when only attachments are present', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          attachments={[sampleAttachment]}
+        />
+      );
+
+      const tooltips = screen.getAllByRole('tooltip');
+      const submitTooltip = tooltips.find(t => t.textContent === 'Submit');
+      expect(submitTooltip).toBeDefined();
+    });
+  });
+
+  describe('drag and drop behavior', () => {
+    it('should not show file drop overlay for non-file drag data', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const { container } = renderWithRouter(
+        <TaskInputBar
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = container.querySelector('.relative.rounded-xl') as HTMLDivElement;
+      expect(dropZone).toBeTruthy();
+
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: {
+          items: [{ kind: 'string', type: 'text/plain' }],
+          types: ['text/plain'],
+          files: [],
+        },
+      });
+
+      expect(screen.queryByText(/drop files to attach/i)).not.toBeInTheDocument();
+    });
+
+    it('should show file drop overlay for file drag data', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const { container } = renderWithRouter(
+        <TaskInputBar
+          value=""
+          onChange={onChange}
+          onSubmit={onSubmit}
+          onAttachmentsChange={vi.fn()}
+        />
+      );
+
+      const dropZone = container.querySelector('.relative.rounded-xl') as HTMLDivElement;
+      expect(dropZone).toBeTruthy();
+
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: {
+          items: [{ kind: 'file', type: 'text/plain' }],
+          types: ['Files'],
+          files: [new File(['hello'], 'hello.txt', { type: 'text/plain' })],
+        },
+      });
+
+      expect(screen.getByText(/drop files to attach/i)).toBeInTheDocument();
     });
   });
 

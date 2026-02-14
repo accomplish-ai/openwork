@@ -8,6 +8,16 @@ export type TaskStatus =
   | 'cancelled'
   | 'interrupted';
 
+export type TaskInputAttachmentType = 'image' | 'text' | 'document' | 'other';
+
+export interface TaskInputAttachment {
+  name: string;
+  path: string;
+  type: TaskInputAttachmentType;
+  size: number;
+  preview?: string;
+}
+
 export interface TaskConfig {
   prompt: string;
   taskId?: string;
@@ -16,6 +26,7 @@ export interface TaskConfig {
   systemPromptAppend?: string;
   outputSchema?: object;
   sessionId?: string;
+  attachments?: TaskInputAttachment[];
   /** Model ID for display name in progress events */
   modelId?: string;
 }
@@ -34,7 +45,7 @@ export interface Task {
 }
 
 export interface TaskAttachment {
-  type: 'screenshot' | 'json';
+  type: 'screenshot' | 'json' | 'file';
   data: string;
   label?: string;
 }

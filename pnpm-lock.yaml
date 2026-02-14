@@ -90,8 +90,11 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       opencode-ai:
-        specifier: 1.2.1
-        version: 1.2.1
+        specifier: 1.1.16
+        version: 1.1.16
+      pdfjs-dist:
+        specifier: ^5.4.624
+        version: 5.4.624
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -1303,6 +1306,76 @@ packages:
 
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
+
+  '@napi-rs/canvas-android-arm64@0.1.92':
+    resolution: {integrity: sha512-rDOtq53ujfOuevD5taxAuIFALuf1QsQWZe1yS/N4MtT+tNiDBEdjufvQRPWZ11FubL2uwgP8ApYU3YOaNu1ZsQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [android]
+
+  '@napi-rs/canvas-darwin-arm64@0.1.92':
+    resolution: {integrity: sha512-4PT6GRGCr7yMRehp42x0LJb1V0IEy1cDZDDayv7eKbFUIGbPFkV7CRC9Bee5MPkjg1EB4ZPXXUyy3gjQm7mR8Q==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@napi-rs/canvas-darwin-x64@0.1.92':
+    resolution: {integrity: sha512-5e/3ZapP7CqPtDcZPtmowCsjoyQwuNMMD7c0GKPtZQ8pgQhLkeq/3fmk0HqNSD1i227FyJN/9pDrhw/UMTkaWA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@napi-rs/canvas-linux-arm-gnueabihf@0.1.92':
+    resolution: {integrity: sha512-j6KaLL9iir68lwpzzY+aBGag1PZp3+gJE2mQ3ar4VJVmyLRVOh+1qsdNK1gfWoAVy5w6U7OEYFrLzN2vOFUSng==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+
+  '@napi-rs/canvas-linux-arm64-gnu@0.1.92':
+    resolution: {integrity: sha512-s3NlnJMHOSotUYVoTCoC1OcomaChFdKmZg0VsHFeIkeHbwX0uPHP4eCX1irjSfMykyvsGHTQDfBAtGYuqxCxhQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@napi-rs/canvas-linux-arm64-musl@0.1.92':
+    resolution: {integrity: sha512-xV0GQnukYq5qY+ebkAwHjnP2OrSGBxS3vSi1zQNQj0bkXU6Ou+Tw7JjCM7pZcQ28MUyEBS1yKfo7rc7ip2IPFQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@napi-rs/canvas-linux-riscv64-gnu@0.1.92':
+    resolution: {integrity: sha512-+GKvIFbQ74eB/TopEdH6XIXcvOGcuKvCITLGXy7WLJAyNp3Kdn1ncjxg91ihatBaPR+t63QOE99yHuIWn3UQ9w==}
+    engines: {node: '>= 10'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@napi-rs/canvas-linux-x64-gnu@0.1.92':
+    resolution: {integrity: sha512-tFd6MwbEhZ1g64iVY2asV+dOJC+GT3Yd6UH4G3Hp0/VHQ6qikB+nvXEULskFYZ0+wFqlGPtXjG1Jmv7sJy+3Ww==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@napi-rs/canvas-linux-x64-musl@0.1.92':
+    resolution: {integrity: sha512-uSuqeSveB/ZGd72VfNbHCSXO9sArpZTvznMVsb42nqPP7gBGEH6NJQ0+hmF+w24unEmxBhPYakP/Wiosm16KkA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@napi-rs/canvas-win32-arm64-msvc@0.1.92':
+    resolution: {integrity: sha512-20SK5AU/OUNz9ZuoAPj5ekWai45EIBDh/XsdrVZ8le/pJVlhjFU3olbumSQUXRFn7lBRS+qwM8kA//uLaDx6iQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@napi-rs/canvas-win32-x64-msvc@0.1.92':
+    resolution: {integrity: sha512-KEhyZLzq1MXCNlXybz4k25MJmHFp+uK1SIb8yJB0xfrQjz5aogAMhyseSzewo+XxAq3OAOdyKvfHGNzT3w1RPg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@napi-rs/canvas@0.1.92':
+    resolution: {integrity: sha512-q7ZaUCJkEU5BeOdE7fBx1XWRd2T5Ady65nxq4brMf5L4cE1VV/ACq5w9Z5b/IVJs8CwSSIwc30nlthH0gFo4Ig==}
+    engines: {node: '>= 10'}
 
   '@next/env@15.5.9':
     resolution: {integrity: sha512-4GlTZ+EJM7WaW2HEZcyU317tIQDjkQIyENDLxYJfSWlfqguN+dHkZgyQTV/7ykvobU7yEH5gKvreNrH4B6QgIg==}
@@ -4039,6 +4112,9 @@ packages:
   node-pty@1.1.0:
     resolution: {integrity: sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==}
 
+  node-readable-to-web-readable-stream@0.4.2:
+    resolution: {integrity: sha512-/cMZNI34v//jUTrI+UIo4ieHAB5EZRY/+7OmXZgBxaWBMcW2tGdceIw06RFxWxrKZ5Jp3sI2i5TsRo+CBhtVLQ==}
+
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
@@ -4091,62 +4167,62 @@ packages:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
 
-  opencode-ai@1.2.1:
-    resolution: {integrity: sha512-DPFpMCOGYg1vLufSgHqq+L9jf89F+GauJViV8oNFMET7prP0HAFFBu6r6p/oGzeETui/P/rhQ6Yy/vtk5DjQfQ==}
+  opencode-ai@1.1.16:
+    resolution: {integrity: sha512-piB73mbwCXi1Qxm/h9lqrQh2xQST2fU850o4B1vZSOQU7QZpEKV02eyvP7up+tpWJvO/7HzzThNz/ziKRqlE4A==}
     hasBin: true
 
-  opencode-darwin-arm64@1.2.1:
-    resolution: {integrity: sha512-+pV3pLi+1Cc7Bbg3IrzD8jzkIvNXU3W7JjA+pPILLDq2K5XOAJwW69MKEVdktD7dsJ/1CS+Su6FsCuLeeeViNA==}
+  opencode-darwin-arm64@1.1.16:
+    resolution: {integrity: sha512-SZCAgDruwYn0GmSt6u0Ozl3cqyIqTvt6l9qnAwAc0HTaFxEpRfj3Zcp5yM24aZV63xfYL9dL4fDahzXC6HRK6A==}
     cpu: [arm64]
     os: [darwin]
 
-  opencode-darwin-x64-baseline@1.2.1:
-    resolution: {integrity: sha512-yCMVKtioz6YuXJIhwRamDRXxBcLrq7kx2Quh0bcbzZO4Q2S3siriEQJPXFitMOvcza1LyM937005KRlauAqeVA==}
+  opencode-darwin-x64-baseline@1.1.16:
+    resolution: {integrity: sha512-S5B+8sVdheozpvEl6orPv0j8V6y7zZSbRZehDIFcfPmYdAavFiEYh2LzrW6yIIkopigeNw4jve1MKPIZouat6A==}
     cpu: [x64]
     os: [darwin]
 
-  opencode-darwin-x64@1.2.1:
-    resolution: {integrity: sha512-UaxZPlaMqQuZPzoSgytSOAmcnuMzLjaP5M3iS+tAvWj+mLTi4hf8WqGNzVQVJspSXLbYjr9aJCHO8BwRcPUqzQ==}
+  opencode-darwin-x64@1.1.16:
+    resolution: {integrity: sha512-pz5DdWjMZzvSxDVQDrte+S/DNeVTW4rvgHfIuTbBd6Ec91IGvdwXTF+y8Gm6HR+lR9qb4ySOshY25tyUm/xQYQ==}
     cpu: [x64]
     os: [darwin]
 
-  opencode-linux-arm64-musl@1.2.1:
-    resolution: {integrity: sha512-ZOSfrJPdN0LFwxrb/weCyM4eTYkqBwIRJBewESU0XsZN03VampkLTQyrjt6NQLkxCL24ba5+T4fpSC1Tue6Ctw==}
+  opencode-linux-arm64-musl@1.1.16:
+    resolution: {integrity: sha512-66TDRjsfYWGgTFYkybx0FOD4IkepzR5ZCSK1SRHw9sXGJ0boQzksMkmfrIvlPhJI/NlJ/5s/YdIZGg+YZrCu/w==}
     cpu: [arm64]
     os: [linux]
 
-  opencode-linux-arm64@1.2.1:
-    resolution: {integrity: sha512-ER9rY34TyM58R2ts5dZ068ayB8+Q/7aoIbMzI19TnCH6VNbe85mMrlSkOyFwX38b5i0uhW/588Q3PMReM9021A==}
+  opencode-linux-arm64@1.1.16:
+    resolution: {integrity: sha512-T+6uo+Wd6/DdNFUId6sjwMMipo4eypc+BgwsGrKy5JBbGzULtRdLpiKPVrX3I/ig9bGH5ZgehxiCUxjHxXsepw==}
     cpu: [arm64]
     os: [linux]
 
-  opencode-linux-x64-baseline-musl@1.2.1:
-    resolution: {integrity: sha512-lmeVH/0JIDWu4GDB/D46uuTZAvS37fm14QF2L5J82JZWgaKovFAgjYS7p40kiHyx2pSab00kSzQ5yXALyNIKow==}
+  opencode-linux-x64-baseline-musl@1.1.16:
+    resolution: {integrity: sha512-45bmsvZMGqnJoZRpC2zFt2QcA7f5vOvCSwEZVl2LQKoF27nG+2QLmHWuuuPkUa+sRetu4kLiGkWL62bBYQTnkw==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64-baseline@1.2.1:
-    resolution: {integrity: sha512-7OwzEUu2qA4csDPh+i8ousZNSZrozFX5iigo721p4Rk03gXP4r1Rc9E9lKQTwANwoGaTPewrodlWCbLcibnUGA==}
+  opencode-linux-x64-baseline@1.1.16:
+    resolution: {integrity: sha512-xDhehKSW8MdQoo/itos3UQuiQyaBbQU5ovmCkZtt9b+u2thgTE4V3wBVpUbRHWxARm5ph2q498z5bXJ9YlG4HA==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64-musl@1.2.1:
-    resolution: {integrity: sha512-jWgXRsJKk4SrNuOUtU/Uf6wpKKlwZkCqibFbwvZJ0ZZ2BhN6aIJOrQG7hoz4Vb4LvdwNFseMr3BUEEDeEO40WA==}
+  opencode-linux-x64-musl@1.1.16:
+    resolution: {integrity: sha512-+H0nq6aj7Ii8LAno4RkJp3yN3v6suThEViBKV7M1ie0EWSg324ss1DDDqL8yr7ZjfaQdv8XQa+Raa5t1hG0wVQ==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64@1.2.1:
-    resolution: {integrity: sha512-loyZpl5FKLu3JixhetT5YhutyhU55ZQiLR/BV/CdhRD1S8YqbcLso0n+SBGRNZGCvcfGER8Bzgq8ECiAZzqF2A==}
+  opencode-linux-x64@1.1.16:
+    resolution: {integrity: sha512-W/xiXc9sOoe58D86v7ibfGBl/+iXrxeffP3/dZ/3hSxGWJnxAkThnDEAd68NMz6yKDkhSvKJrUMDoKbYnr/lXQ==}
     cpu: [x64]
     os: [linux]
 
-  opencode-windows-x64-baseline@1.2.1:
-    resolution: {integrity: sha512-r8bEKF4YE+l7/GGCfohjtNYJCKrzUJo7V99LzI8NQUu31c3hUvfzDJLAvjtuy7cQWftBHW77lqt7Oi5v8NpDeA==}
+  opencode-windows-x64-baseline@1.1.16:
+    resolution: {integrity: sha512-scSrtWCJE9HhjiJoDb006s1p8ZQ8+ROF6tTrK0SZcySGvpBpp5/yidBpHXpZJ9XnImfAowm32LAk7acDCwB7zQ==}
     cpu: [x64]
     os: [win32]
 
-  opencode-windows-x64@1.2.1:
-    resolution: {integrity: sha512-rgmxeRUqdq+CYL+YSQs/679LLbfJy9/Z86ua3L3noIdvHns0q8s7ASFQeE3eW+875kNm4Cm3DxXk/TIP+i4zOQ==}
+  opencode-windows-x64@1.1.16:
+    resolution: {integrity: sha512-9xVZmTgupRS0KBv/S6dqhH3Mz32lYVLjmADkmlhb8xUB+IhTE4LurZMTbdCNvB5Q+lRcyQrw4tJFciZxvdRVhg==}
     cpu: [x64]
     os: [win32]
 
@@ -4245,6 +4321,10 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
+
+  pdfjs-dist@5.4.624:
+    resolution: {integrity: sha512-sm6TxKTtWv1Oh6n3C6J6a8odejb5uO4A4zo/2dgkHuC0iu8ZMAXOezEODkVaoVp8nX1Xzr+0WxFJJmUr45hQzg==}
+    engines: {node: '>=20.16.0 || >=22.3.0'}
 
   pe-library@0.4.1:
     resolution: {integrity: sha512-eRWB5LBz7PpDu4PUlwT0PhnQfTQJlDDdPa35urV4Osrm0t0AqQFGn+UIkU3klZvwJ8KPO3VbBFsXquA6p6kqZw==}
@@ -6666,6 +6746,54 @@ snapshots:
       fs-extra: 8.1.0
       globby: 11.1.0
       read-yaml-file: 1.1.0
+
+  '@napi-rs/canvas-android-arm64@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-darwin-arm64@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-darwin-x64@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-arm-gnueabihf@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-arm64-gnu@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-arm64-musl@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-riscv64-gnu@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-x64-gnu@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-linux-x64-musl@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-win32-arm64-msvc@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas-win32-x64-msvc@0.1.92':
+    optional: true
+
+  '@napi-rs/canvas@0.1.92':
+    optionalDependencies:
+      '@napi-rs/canvas-android-arm64': 0.1.92
+      '@napi-rs/canvas-darwin-arm64': 0.1.92
+      '@napi-rs/canvas-darwin-x64': 0.1.92
+      '@napi-rs/canvas-linux-arm-gnueabihf': 0.1.92
+      '@napi-rs/canvas-linux-arm64-gnu': 0.1.92
+      '@napi-rs/canvas-linux-arm64-musl': 0.1.92
+      '@napi-rs/canvas-linux-riscv64-gnu': 0.1.92
+      '@napi-rs/canvas-linux-x64-gnu': 0.1.92
+      '@napi-rs/canvas-linux-x64-musl': 0.1.92
+      '@napi-rs/canvas-win32-arm64-msvc': 0.1.92
+      '@napi-rs/canvas-win32-x64-msvc': 0.1.92
+    optional: true
 
   '@next/env@15.5.9': {}
 
@@ -9856,6 +9984,9 @@ snapshots:
     dependencies:
       node-addon-api: 7.1.1
 
+  node-readable-to-web-readable-stream@0.4.2:
+    optional: true
+
   node-releases@2.0.27: {}
 
   nopt@6.0.0:
@@ -9901,51 +10032,51 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  opencode-ai@1.2.1:
+  opencode-ai@1.1.16:
     optionalDependencies:
-      opencode-darwin-arm64: 1.2.1
-      opencode-darwin-x64: 1.2.1
-      opencode-darwin-x64-baseline: 1.2.1
-      opencode-linux-arm64: 1.2.1
-      opencode-linux-arm64-musl: 1.2.1
-      opencode-linux-x64: 1.2.1
-      opencode-linux-x64-baseline: 1.2.1
-      opencode-linux-x64-baseline-musl: 1.2.1
-      opencode-linux-x64-musl: 1.2.1
-      opencode-windows-x64: 1.2.1
-      opencode-windows-x64-baseline: 1.2.1
+      opencode-darwin-arm64: 1.1.16
+      opencode-darwin-x64: 1.1.16
+      opencode-darwin-x64-baseline: 1.1.16
+      opencode-linux-arm64: 1.1.16
+      opencode-linux-arm64-musl: 1.1.16
+      opencode-linux-x64: 1.1.16
+      opencode-linux-x64-baseline: 1.1.16
+      opencode-linux-x64-baseline-musl: 1.1.16
+      opencode-linux-x64-musl: 1.1.16
+      opencode-windows-x64: 1.1.16
+      opencode-windows-x64-baseline: 1.1.16
 
-  opencode-darwin-arm64@1.2.1:
+  opencode-darwin-arm64@1.1.16:
     optional: true
 
-  opencode-darwin-x64-baseline@1.2.1:
+  opencode-darwin-x64-baseline@1.1.16:
     optional: true
 
-  opencode-darwin-x64@1.2.1:
+  opencode-darwin-x64@1.1.16:
     optional: true
 
-  opencode-linux-arm64-musl@1.2.1:
+  opencode-linux-arm64-musl@1.1.16:
     optional: true
 
-  opencode-linux-arm64@1.2.1:
+  opencode-linux-arm64@1.1.16:
     optional: true
 
-  opencode-linux-x64-baseline-musl@1.2.1:
+  opencode-linux-x64-baseline-musl@1.1.16:
     optional: true
 
-  opencode-linux-x64-baseline@1.2.1:
+  opencode-linux-x64-baseline@1.1.16:
     optional: true
 
-  opencode-linux-x64-musl@1.2.1:
+  opencode-linux-x64-musl@1.1.16:
     optional: true
 
-  opencode-linux-x64@1.2.1:
+  opencode-linux-x64@1.1.16:
     optional: true
 
-  opencode-windows-x64-baseline@1.2.1:
+  opencode-windows-x64-baseline@1.1.16:
     optional: true
 
-  opencode-windows-x64@1.2.1:
+  opencode-windows-x64@1.1.16:
     optional: true
 
   ora@5.4.1:
@@ -10036,6 +10167,11 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  pdfjs-dist@5.4.624:
+    optionalDependencies:
+      '@napi-rs/canvas': 0.1.92
+      node-readable-to-web-readable-stream: 0.4.2
 
   pe-library@0.4.1: {}
 

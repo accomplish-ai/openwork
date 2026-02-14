@@ -329,6 +329,48 @@ describe('Home Page Integration', () => {
       });
     });
 
+    it('should start task with structured attachments even when prompt is empty', async () => {
+      const mockTask = createMockTask('task-124', 'Attached files task', 'running');
+      mockStartTask.mockResolvedValue(mockTask);
+
+      const { container } = render(
+        <MemoryRouter initialEntries={['/']}>
+          <HomePage />
+        </MemoryRouter>
+      );
+
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(fileInput).toBeInTheDocument();
+
+      fireEvent.change(fileInput, {
+        target: {
+          files: [new File(['hello from file'], 'notes.txt', { type: 'text/plain' })],
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('1/5 files attached')).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByTestId('task-input-submit');
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockStartTask).toHaveBeenCalledTimes(1);
+      });
+
+      expect(mockStartTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [
+            expect.objectContaining({
+              name: 'notes.txt',
+              type: 'text',
+            }),
+          ],
+        })
+      );
+    });
+
     it('should not submit empty task', async () => {
       // Arrange
       render(

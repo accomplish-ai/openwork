@@ -241,6 +241,30 @@ describe('validation.ts', () => {
         }
       });
 
+      it('should accept valid task attachments', () => {
+        const config = {
+          prompt: 'Analyze attached files',
+          attachments: [
+            {
+              name: 'notes.txt',
+              path: 'C:\\temp\\notes.txt',
+              type: 'text',
+              size: 1024,
+              preview: 'hello',
+            },
+            {
+              name: 'image.png',
+              path: 'C:\\temp\\image.png',
+              type: 'image',
+              size: 2048,
+            },
+          ],
+        };
+
+        const result = taskConfigSchema.safeParse(config);
+        expect(result.success).toBe(true);
+      });
+
       it('should accept empty arrays for allowedTools', () => {
         // Arrange
         const config = { prompt: 'Test', allowedTools: [] };
@@ -336,6 +360,38 @@ describe('validation.ts', () => {
         const result = taskConfigSchema.safeParse(config);
 
         // Assert
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject task config with too many attachments', () => {
+        const config = {
+          prompt: 'Too many attachments',
+          attachments: Array.from({ length: 6 }, (_, index) => ({
+            name: `file-${index}.txt`,
+            path: `C:\\temp\\file-${index}.txt`,
+            type: 'text',
+            size: 100,
+          })),
+        };
+
+        const result = taskConfigSchema.safeParse(config);
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject attachment that exceeds size limit', () => {
+        const config = {
+          prompt: 'Oversized attachment',
+          attachments: [
+            {
+              name: 'large.pdf',
+              path: 'C:\\temp\\large.pdf',
+              type: 'document',
+              size: 10 * 1024 * 1024 + 1,
+            },
+          ],
+        };
+
+        const result = taskConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
       });
     });
