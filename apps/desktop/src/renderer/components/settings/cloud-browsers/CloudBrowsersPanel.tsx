@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
 
+/** Settings panel for cloud browser providers (e.g. Browserbase). */
 export function CloudBrowsersPanel() {
   const [apiKey, setApiKey] = useState('');
   const [projectId, setProjectId] = useState('');
