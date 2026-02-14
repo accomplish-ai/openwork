@@ -120,7 +120,7 @@ export type { EnvironmentConfig } from './opencode/environment.js';
 
 export { buildProviderConfigs, syncApiKeysToOpenCodeAuth } from './opencode/config-builder.js';
 
-export { getOpenCodeAuthPath, getOpenAiOauthStatus } from './opencode/auth.js';
+export { getOpenCodeAuthPath, getOpenCodeDataHome, getOpenAiOauthStatus } from './opencode/auth.js';
 
 // Message processing is now internal to TaskManager (use onBatchedMessages callback)
 // CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)

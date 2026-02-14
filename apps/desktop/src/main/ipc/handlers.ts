@@ -871,6 +871,17 @@ export function registerIPCHandlers(): void {
     return storage.getTheme();
   });
 
+  handle('settings:sandbox-mode', async (_event: IpcMainInvokeEvent) => {
+    return storage.getSandboxMode();
+  });
+
+  handle('settings:set-sandbox-mode', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid sandbox mode value');
+    }
+    storage.setSandboxMode(enabled);
+  });
+
   handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
     if (!['system', 'light', 'dark'].includes(theme)) {
       throw new Error('Invalid theme value');

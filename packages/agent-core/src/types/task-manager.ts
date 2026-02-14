@@ -68,6 +68,10 @@ export interface TaskAdapterOptions {
   onBeforeStart?: () => Promise<void>;
   /** Function to get display name for a model ID */
   getModelDisplayName?: (modelId: string) => string;
+  /** Function to check if sandbox mode is enabled (Docker-based execution) */
+  getSandboxMode?: () => boolean;
+  /** Function to get paths for sandbox mounts (config dir, XDG data home) */
+  getSandboxPaths?: () => { configDir: string; openDataHome: string };
 }
 
 /** Options for creating a TaskManager instance */
