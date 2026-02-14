@@ -207,9 +207,9 @@ export function OnboardingMissions() {
   const totalMissions = MISSIONS.length;
   const completedCount = progress.completedMissionIds.length;
   const progressPercentage = (completedCount / totalMissions) * 100;
-  const pointsToNextLevel = progress.level * 50;
-  const pointsInLevel = progress.totalPoints % 50;
-  const levelProgress = (pointsInLevel / 50) * 100;
+  const POINTS_PER_LEVEL = 50;
+  const pointsInLevel = progress.totalPoints % POINTS_PER_LEVEL;
+  const levelProgress = (pointsInLevel / POINTS_PER_LEVEL) * 100;
 
   const categories = ['all', 'setup', 'tasks', 'skills', 'advanced'];
   const filteredMissions =
