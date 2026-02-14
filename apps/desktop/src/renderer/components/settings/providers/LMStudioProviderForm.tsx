@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ConnectedProvider, LMStudioCredentials, ToolSupportStatus } from '@accomplish/shared';
+import type { ConnectedProvider, LMStudioCredentials, ToolSupportStatus } from '@accomplish_ai/agent-core/common';
 import {
   ConnectButton,
   ConnectedControls,

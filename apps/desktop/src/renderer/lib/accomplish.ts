@@ -16,13 +16,15 @@ import type {
   ApiKeyConfig,
   TaskMessage,
   BedrockCredentials,
+  VertexCredentials,
   ProviderSettings,
   ProviderId,
   ConnectedProvider,
   TodoItem,
   ToolSupportStatus,
   Skill,
-} from '@accomplish/shared';
+  McpConnector,
+} from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
 interface AccomplishAPI {
@@ -54,7 +56,10 @@ interface AccomplishAPI {
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
-  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean }>;
+  getTheme(): Promise<string>;
+  setTheme(theme: string): Promise<void>;
+  onThemeChange?(callback: (data: { theme: string; resolved: string }) => void): () => void;
+  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;
   getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;
@@ -98,6 +103,13 @@ interface AccomplishAPI {
   setAzureFoundryConfig(config: { baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null): Promise<void>;
   testAzureFoundryConnection(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<{ success: boolean; error?: string }>;
   saveAzureFoundryConfig(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<void>;
+
+  // Dynamic model fetching (generic, config-driven)
+  fetchProviderModels(providerId: string, options?: { baseUrl?: string; zaiRegion?: string }): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string }>;
+    error?: string;
+  }>;
 
   // OpenRouter configuration
   fetchOpenRouterModels(): Promise<{
@@ -149,6 +161,14 @@ interface AccomplishAPI {
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
   fetchBedrockModels(credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }>;
+
+  // Vertex AI configuration
+  validateVertexCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
+  saveVertexCredentials(credentials: string): Promise<ApiKeyConfig>;
+  getVertexCredentials(): Promise<VertexCredentials | null>;
+  fetchVertexModels(credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }>;
+  detectVertexProject(): Promise<{ success: boolean; projectId: string | null }>;
+  listVertexProjects(): Promise<{ success: boolean; projects: Array<{ projectId: string; name: string }>; error?: string }>;
 
   // E2E Testing
   isE2EMode(): Promise<boolean>;
@@ -206,6 +226,16 @@ interface AccomplishAPI {
   resyncSkills(): Promise<Skill[]>;
   openSkillInEditor(filePath: string): Promise<void>;
   showSkillInFolder(filePath: string): Promise<void>;
+
+  // MCP Connectors
+  getConnectors(): Promise<McpConnector[]>;
+  addConnector(name: string, url: string): Promise<McpConnector>;
+  deleteConnector(id: string): Promise<void>;
+  setConnectorEnabled(id: string, enabled: boolean): Promise<void>;
+  startConnectorOAuth(connectorId: string): Promise<{ state: string; authUrl: string }>;
+  completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
+  disconnectConnector(connectorId: string): Promise<void>;
+  onMcpAuthCallback?(callback: (url: string) => void): () => void;
 }
 
 interface AccomplishShell {
@@ -246,6 +276,24 @@ export function getAccomplish() {
     },
 
     fetchBedrockModels: (credentials: string) => window.accomplish!.fetchBedrockModels(credentials),
+
+    validateVertexCredentials: async (credentials: VertexCredentials): Promise<{ valid: boolean; error?: string }> => {
+      return window.accomplish!.validateVertexCredentials(JSON.stringify(credentials));
+    },
+
+    saveVertexCredentials: async (credentials: VertexCredentials): Promise<ApiKeyConfig> => {
+      return window.accomplish!.saveVertexCredentials(JSON.stringify(credentials));
+    },
+
+    getVertexCredentials: async (): Promise<VertexCredentials | null> => {
+      return window.accomplish!.getVertexCredentials();
+    },
+
+    fetchVertexModels: (credentials: string) => window.accomplish!.fetchVertexModels(credentials),
+
+    detectVertexProject: () => window.accomplish!.detectVertexProject(),
+
+    listVertexProjects: () => window.accomplish!.listVertexProjects(),
   };
 }
 

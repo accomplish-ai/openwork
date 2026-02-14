@@ -1,1 +1,1 @@
-export { getModelDisplayName } from '@accomplish/shared';
+export { getModelDisplayName } from '@accomplish_ai/agent-core/common';

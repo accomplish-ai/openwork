@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { getAccomplish } from '@/lib/accomplish';
-import type { ConnectedProvider, AzureFoundryCredentials } from '@accomplish/shared';
+import type { ConnectedProvider, AzureFoundryCredentials } from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
   ConnectButton,
@@ -121,7 +121,7 @@ export function AzureFoundryProviderForm({
                 data-testid="azure-foundry-auth-api-key"
                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   authType === 'api-key'
-                    ? 'bg-[#0078D4] text-white'
+                    ? 'bg-provider-accent text-white'
                     : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -132,7 +132,7 @@ export function AzureFoundryProviderForm({
                 data-testid="azure-foundry-auth-entra-id"
                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   authType === 'entra-id'
-                    ? 'bg-[#0078D4] text-white'
+                    ? 'bg-provider-accent text-white'
                     : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >

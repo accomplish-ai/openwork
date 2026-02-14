@@ -1,0 +1,78 @@
+{
+  "name": "@accomplish_ai/agent-core",
+  "version": "0.3.2",
+  "description": "Core logic for Accomplish - OpenCode adapter, storage, providers, MCP tools, and skills",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/accomplish-ai/accomplish.git",
+    "directory": "packages/agent-core"
+  },
+  "homepage": "https://github.com/accomplish-ai/accomplish/tree/main/packages/agent-core#readme",
+  "bugs": {
+    "url": "https://github.com/accomplish-ai/accomplish/issues"
+  },
+  "keywords": [
+    "automation",
+    "agent",
+    "opencode",
+    "task-manager",
+    "mcp",
+    "ai",
+    "electron"
+  ],
+  "publishConfig": {
+    "name": "@accomplish_ai/agent-core",
+    "access": "public"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./common": {
+      "types": "./dist/common.d.ts",
+      "import": "./dist/common.js",
+      "default": "./dist/common.js"
+    }
+  },
+  "files": [
+    "dist",
+    "mcp-tools/*/dist",
+    "mcp-tools/*/package.json",
+    "mcp-tools/*/*.cjs",
+    "mcp-tools/*/*.md",
+    "mcp-tools/package.json"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock": "^3.971.0",
+    "@aws-sdk/credential-providers": "^3.971.0",
+    "@azure/identity": "^4.13.0",
+    "better-sqlite3": "^12.6.2",
+    "gray-matter": "^4.0.3",
+    "node-pty": "^1.1.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

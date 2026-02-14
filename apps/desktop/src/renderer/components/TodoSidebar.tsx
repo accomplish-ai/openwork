@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TodoItem } from '@accomplish/shared';
+import type { TodoItem } from '@accomplish_ai/agent-core/common';
 
 interface TodoSidebarProps {
   todos: TodoItem[];

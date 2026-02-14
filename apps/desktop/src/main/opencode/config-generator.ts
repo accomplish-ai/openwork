@@ -6,11 +6,14 @@ import {
   buildProviderConfigs,
   syncApiKeysToOpenCodeAuth as coreSyncApiKeysToOpenCodeAuth,
   getOpenCodeAuthPath,
-} from '@accomplish/core';
+  isTokenExpired,
+  refreshAccessToken,
+} from '@accomplish_ai/agent-core';
 import { getApiKey, getAllApiKeys } from '../store/secureStorage';
+import { getStorage } from '../store/storage';
 import { getNodePath } from '../utils/bundled-node';
 import { skillsManager } from '../skills';
-import { PERMISSION_API_PORT, QUESTION_API_PORT } from '@accomplish/shared';
+import { PERMISSION_API_PORT, QUESTION_API_PORT } from '@accomplish_ai/agent-core';
 
 export { ACCOMPLISH_AGENT_NAME };
 
@@ -22,7 +25,7 @@ export function getMcpToolsPath(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'mcp-tools');
   } else {
-    return path.join(app.getAppPath(), '..', '..', 'packages', 'core', 'mcp-tools');
+    return path.join(app.getAppPath(), '..', '..', 'packages', 'agent-core', 'mcp-tools');
   }
 }
 
@@ -34,7 +37,7 @@ export function getOpenCodeConfigDir(): string {
   if (app.isPackaged) {
     return process.resourcesPath;
   } else {
-    return path.join(app.getAppPath(), '..', '..', 'packages', 'core');
+    return path.join(app.getAppPath(), '..', '..', 'packages', 'agent-core');
   }
 }
 
@@ -59,7 +62,68 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     azureFoundryToken,
   });
 
+  // Inject store:false for OpenAI to prevent 403 errors
+  // with project-scoped keys (sk-proj-...) that lack /v1/chat/completions storage permission
+  const openAiApiKey = getApiKey('openai');
+  if (openAiApiKey) {
+    const existingOpenAi = providerConfigs.find(p => p.id === 'openai');
+    if (existingOpenAi) {
+      existingOpenAi.options.store = false;
+    } else {
+      providerConfigs.push({
+        id: 'openai',
+        options: { store: false },
+      });
+    }
+  }
+
   const enabledSkills = await skillsManager.getEnabled();
+
+  // Fetch enabled connectors with valid tokens
+  const storage = getStorage();
+  const enabledConnectors = storage.getEnabledConnectors();
+  const connectors: Array<{ id: string; name: string; url: string; accessToken: string }> = [];
+
+  for (const connector of enabledConnectors) {
+    if (connector.status !== 'connected') continue;
+
+    let tokens = storage.getConnectorTokens(connector.id);
+    if (!tokens?.accessToken) {
+      console.warn(`[Connectors] Missing access token for ${connector.name}`);
+      storage.setConnectorStatus(connector.id, 'error');
+      continue;
+    }
+
+    // Refresh token if expired
+    if (isTokenExpired(tokens)) {
+      if (tokens.refreshToken && connector.oauthMetadata && connector.clientRegistration) {
+        try {
+          tokens = await refreshAccessToken({
+            tokenEndpoint: connector.oauthMetadata.tokenEndpoint,
+            refreshToken: tokens.refreshToken,
+            clientId: connector.clientRegistration.clientId,
+            clientSecret: connector.clientRegistration.clientSecret,
+          });
+          storage.storeConnectorTokens(connector.id, tokens);
+        } catch (err) {
+          console.warn(`[Connectors] Token refresh failed for ${connector.name}:`, err);
+          storage.setConnectorStatus(connector.id, 'error');
+          continue;
+        }
+      } else {
+        console.warn(`[Connectors] Access token expired for ${connector.name} and cannot be refreshed`);
+        storage.setConnectorStatus(connector.id, 'error');
+        continue;
+      }
+    }
+
+    connectors.push({
+      id: connector.id,
+      name: connector.name,
+      url: connector.url,
+      accessToken: tokens.accessToken,
+    });
+  }
 
   const result = generateConfig({
     platform: process.platform,
@@ -74,6 +138,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     enabledProviders,
     model: modelOverride?.model,
     smallModel: modelOverride?.smallModel,
+    connectors: connectors.length > 0 ? connectors : undefined,
   });
 
   process.env.OPENCODE_CONFIG = result.configPath;

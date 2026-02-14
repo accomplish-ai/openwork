@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import type { ApiKeyConfig } from '@accomplish/shared';
+import type { ApiKeyConfig } from '@accomplish_ai/agent-core';
 
 // Create mock functions for accomplish API
 const mockGetApiKeys = vi.fn();
@@ -61,6 +61,9 @@ const mockAccomplish = {
   setProviderDebugMode: vi.fn().mockResolvedValue(undefined),
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
+  getTheme: vi.fn().mockResolvedValue('system'),
+  setTheme: vi.fn().mockResolvedValue(undefined),
+  onThemeChange: vi.fn().mockReturnValue(() => {}),
 };
 
 // Mock the accomplish module
@@ -241,7 +244,7 @@ describe('SettingsDialog Integration', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         // Verify anthropic card has green background (is active)
         const anthropicCard = screen.getByTestId('provider-card-anthropic');
-        expect(anthropicCard.className).toContain('bg-[#e9f7e7]');
+        expect(anthropicCard.className).toContain('bg-provider-bg-active');
       });
 
       // Verify the initial state: anthropic is active

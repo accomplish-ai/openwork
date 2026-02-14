@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
-import type { ConnectedProvider, OpenRouterCredentials } from '@accomplish/shared';
-import { PROVIDER_META } from '@accomplish/shared';
+import type { ConnectedProvider, OpenRouterCredentials } from '@accomplish_ai/agent-core/common';
+import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
   ConnectButton,
@@ -106,7 +106,7 @@ export function OpenRouterProviderForm({
 
   return (
     <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={openrouterLogo} providerName="OpenRouter" />
+      <ProviderFormHeader logoSrc={openrouterLogo} providerName="OpenRouter" invertInDark />
 
       <div className="space-y-3">
         <AnimatePresence mode="wait">

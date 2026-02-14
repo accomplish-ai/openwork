@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog, nativeTheme } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -13,23 +13,18 @@ if (process.platform === 'win32') {
 
 import { registerIPCHandlers } from './ipc/handlers';
 import {
-  flushPendingTasks,
-  getProviderSettings,
-  removeConnectedProvider,
   FutureSchemaError,
-  stopAzureFoundryProxy,
-  stopMoonshotProxy,
-} from '@accomplish/core';
+} from '@accomplish_ai/agent-core';
 import {
   initThoughtStreamApi,
   startThoughtStreamServer,
 } from './thought-stream-api';
-import type { ProviderId } from '@accomplish/shared';
-import { disposeTaskManager } from './opencode';
+import type { ProviderId } from '@accomplish_ai/agent-core';
+import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
-import { initializeDatabase, closeDatabase } from './store/db';
-import { getApiKey } from './store/secureStorage';
+import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
+import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
 
@@ -51,6 +46,11 @@ if (process.env.CLEAN_START === '1') {
   } catch (err) {
     console.error('[Clean Mode] Failed to clear userData:', err);
   }
+  // Clear secure storage first (while singleton still exists), then null the reference.
+  // Reversing this order would cause getStorage() to re-create the singleton.
+  clearSecureStorage();
+  resetStorageSingleton();
+  console.log('[Clean Mode] All singletons reset');
 }
 
 app.setName('Accomplish');
@@ -96,6 +96,7 @@ function createWindow() {
     minHeight: 600,
     title: 'Accomplish',
     icon: icon.isEmpty() ? undefined : icon,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#171717' : '#f9f9f9',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
@@ -115,7 +116,8 @@ function createWindow() {
   mainWindow.maximize();
 
   const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
-  if (!app.isPackaged && !isE2EMode) {
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  if (!app.isPackaged && !isE2EMode && !isTestEnv) {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
@@ -170,7 +172,9 @@ if (!gotTheLock) {
         const protocolUrl = commandLine.find((arg) => arg.startsWith('accomplish://'));
         if (protocolUrl) {
           console.log('[Main] Received protocol URL from second-instance:', protocolUrl);
-          if (protocolUrl.startsWith('accomplish://callback')) {
+          if (protocolUrl.startsWith('accomplish://callback/mcp')) {
+            mainWindow.webContents.send('auth:mcp-callback', protocolUrl);
+          } else if (protocolUrl.startsWith('accomplish://callback')) {
             mainWindow.webContents.send('auth:callback', protocolUrl);
           }
         }
@@ -181,17 +185,19 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     console.log('[Main] Electron app ready, version:', app.getVersion());
 
-    try {
-      const didMigrate = migrateLegacyData();
-      if (didMigrate) {
-        console.log('[Main] Migrated data from legacy userData path');
+    if (process.env.CLEAN_START !== '1') {
+      try {
+        const didMigrate = migrateLegacyData();
+        if (didMigrate) {
+          console.log('[Main] Migrated data from legacy userData path');
+        }
+      } catch (err) {
+        console.error('[Main] Legacy data migration failed:', err);
       }
-    } catch (err) {
-      console.error('[Main] Legacy data migration failed:', err);
     }
 
     try {
-      initializeDatabase();
+      initializeStorage();
     } catch (err) {
       if (err instanceof FutureSchemaError) {
         await dialog.showMessageBox({
@@ -208,14 +214,16 @@ if (!gotTheLock) {
     }
 
     try {
-      const settings = getProviderSettings();
+      const storage = getStorage();
+      const settings = storage.getProviderSettings();
       for (const [id, provider] of Object.entries(settings.connectedProviders)) {
         const providerId = id as ProviderId;
-        if (provider?.credentials?.type === 'api_key') {
+        const credType = provider?.credentials?.type;
+        if (!credType || credType === 'api_key') {
           const key = getApiKey(providerId);
           if (!key) {
             console.warn(`[Main] Provider ${providerId} has api_key auth but key not found in secure storage`);
-            removeConnectedProvider(providerId);
+            storage.removeConnectedProvider(providerId);
             console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
         }
@@ -234,6 +242,14 @@ if (!gotTheLock) {
       if (!icon.isEmpty()) {
         app.dock.setIcon(icon);
       }
+    }
+
+    // Must run before createWindow() so backgroundColor matches the theme
+    try {
+      const storage = getStorage();
+      nativeTheme.themeSource = storage.getTheme();
+    } catch {
+      // First launch or corrupt DB — nativeTheme stays 'system'
     }
 
     registerIPCHandlers();
@@ -262,16 +278,10 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  flushPendingTasks();
-  disposeTaskManager();
+  disposeTaskManager(); // Also cleans up proxies internally
+  cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
-  stopAzureFoundryProxy().catch((err) => {
-    console.error('[Main] Failed to stop Azure Foundry proxy:', err);
-  });
-  stopMoonshotProxy().catch((err) => {
-    console.error('[Main] Failed to stop Moonshot proxy:', err);
-  });
-  closeDatabase();
+  closeStorage();
   shutdownLogCollector();
 });
 
@@ -290,7 +300,9 @@ function handleProtocolUrlFromArgs(): void {
       app.whenReady().then(() => {
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) {
-            if (protocolUrl.startsWith('accomplish://callback')) {
+            if (protocolUrl.startsWith('accomplish://callback/mcp')) {
+              mainWindow.webContents.send('auth:mcp-callback', protocolUrl);
+            } else if (protocolUrl.startsWith('accomplish://callback')) {
               mainWindow.webContents.send('auth:callback', protocolUrl);
             }
           }
@@ -304,7 +316,9 @@ handleProtocolUrlFromArgs();
 
 app.on('open-url', (event, url) => {
   event.preventDefault();
-  if (url.startsWith('accomplish://callback')) {
+  if (url.startsWith('accomplish://callback/mcp')) {
+    mainWindow?.webContents?.send('auth:mcp-callback', url);
+  } else if (url.startsWith('accomplish://callback')) {
     mainWindow?.webContents?.send('auth:callback', url);
   }
 });

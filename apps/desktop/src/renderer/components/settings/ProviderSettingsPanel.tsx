@@ -1,8 +1,8 @@
 // apps/desktop/src/renderer/components/settings/ProviderSettingsPanel.tsx
 
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ProviderId, ConnectedProvider } from '@accomplish/shared';
-import { PROVIDER_META } from '@accomplish/shared';
+import type { ProviderId, ConnectedProvider } from '@accomplish_ai/agent-core/common';
+import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
 import {
   ClassicProviderForm,
   BedrockProviderForm,
@@ -11,6 +11,7 @@ import {
   OpenRouterProviderForm,
   LiteLLMProviderForm,
   LMStudioProviderForm,
+  VertexProviderForm,
 } from './providers';
 import { ZaiProviderForm } from './providers/ZaiProviderForm';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -33,6 +34,7 @@ export function ProviderSettingsPanel({
   showModelError,
 }: ProviderSettingsPanelProps) {
   const meta = PROVIDER_META[providerId];
+
 
   // Render form content based on provider category
   const renderForm = () => {
@@ -66,6 +68,17 @@ export function ProviderSettingsPanel({
       case 'aws':
         return (
           <BedrockProviderForm
+            connectedProvider={connectedProvider}
+            onConnect={onConnect}
+            onDisconnect={onDisconnect}
+            onModelChange={onModelChange}
+            showModelError={showModelError}
+          />
+        );
+
+      case 'gcp':
+        return (
+          <VertexProviderForm
             connectedProvider={connectedProvider}
             onConnect={onConnect}
             onDisconnect={onDisconnect}

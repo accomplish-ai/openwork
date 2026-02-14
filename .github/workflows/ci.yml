@@ -48,8 +48,8 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Run core tests
-        run: pnpm -F @accomplish/core test
+      - name: Run agent-core tests
+        run: pnpm -F @accomplish_ai/agent-core test
 
   # Run unit and integration tests in parallel
   unit-tests:

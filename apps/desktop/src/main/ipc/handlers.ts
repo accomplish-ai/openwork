@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, shell, app, dialog } from 'electron';
+import crypto from 'crypto';
+import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
@@ -7,83 +8,54 @@ import {
   getOpenCodeCliVersion,
   getTaskManager,
   disposeTaskManager,
+  cleanupVertexServiceAccountKey,
 } from '../opencode';
 import { getLogCollector } from '../logging';
 import {
-  getTasks,
-  getTask,
-  saveTask,
-  updateTaskStatus,
-  updateTaskSummary,
-  addTaskMessage,
-  deleteTask,
-  clearHistory,
-  getTodosForTask,
   validateApiKey,
   validateBedrockCredentials,
   fetchBedrockModels,
   validateAzureFoundry,
   testAzureFoundryConnection,
   fetchOpenRouterModels,
+  fetchProviderModels,
   testLiteLLMConnection,
   fetchLiteLLMModels,
   validateHttpUrl,
   sanitizeString,
   generateTaskSummary,
-  toTaskMessage,
-  queueMessage,
-  flushAndCleanupBatcher,
   validateTaskConfig,
-} from '@accomplish/core';
-import { createTaskId, createMessageId } from '@accomplish/shared';
+} from '@accomplish_ai/agent-core';
+import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
   storeApiKey,
   getApiKey,
   deleteApiKey,
   getAllApiKeys,
   hasAnyApiKey,
-  listStoredCredentials,
+  getBedrockCredentials,
 } from '../store/secureStorage';
 import {
-  getDebugMode,
-  setDebugMode,
-  getAppSettings,
-  getOnboardingComplete,
-  setOnboardingComplete,
-  getSelectedModel,
-  setSelectedModel,
-  getActiveProviderModel,
-  getOpenAiBaseUrl,
-  setOpenAiBaseUrl,
-  getOllamaConfig,
-  setOllamaConfig,
-  getAzureFoundryConfig,
-  setAzureFoundryConfig,
-  getLiteLLMConfig,
-  setLiteLLMConfig,
-  getLMStudioConfig,
-  setLMStudioConfig,
   testOllamaModelToolSupport,
   testOllamaConnection,
   testLMStudioConnection,
   fetchLMStudioModels,
   validateLMStudioConfig,
-} from '@accomplish/core';
-import { safeParseJson } from '@accomplish/core';
+} from '@accomplish_ai/agent-core';
+import { getStorage } from '../store/storage';
+import { safeParseJson } from '@accomplish_ai/agent-core';
 import {
-  getProviderSettings,
-  setActiveProvider,
-  getConnectedProvider,
-  setConnectedProvider,
-  removeConnectedProvider,
-  updateProviderModel,
-  setProviderDebugMode,
-  getProviderDebugMode,
-  hasReadyProvider,
   getOpenAiOauthStatus,
-} from '@accomplish/core';
+} from '@accomplish_ai/agent-core';
 import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
-import type { ProviderId, ConnectedProvider, BedrockCredentials } from '@accomplish/shared';
+import type { ProviderId, ConnectedProvider, BedrockCredentials, McpConnector, OAuthMetadata, OAuthClientRegistration } from '@accomplish_ai/agent-core';
+import {
+  discoverOAuthMetadata,
+  registerOAuthClient,
+  generatePkceChallenge,
+  buildAuthorizationUrl,
+  exchangeCodeForTokens,
+} from '@accomplish_ai/agent-core';
 import { getDesktopConfig } from '../config';
 import {
   startPermissionApiServer,
@@ -110,8 +82,8 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
   ToolSupportStatus,
-} from '@accomplish/shared';
-import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS } from '@accomplish/shared';
+} from '@accomplish_ai/agent-core';
+import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
   normalizeIpcError,
   permissionResponseSchema,
@@ -127,6 +99,7 @@ import {
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
+import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -166,6 +139,7 @@ function handle<Args extends unknown[], ReturnType = unknown>(
 }
 
 export function registerIPCHandlers(): void {
+  const storage = getStorage();
   const taskManager = getTaskManager();
 
   let permissionApiInitialized = false;
@@ -175,7 +149,7 @@ export function registerIPCHandlers(): void {
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
 
-    if (!isMockTaskEventsEnabled() && !hasReadyProvider()) {
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
     }
 
@@ -192,7 +166,7 @@ export function registerIPCHandlers(): void {
       const mockTask = createMockTask(taskId, validatedConfig.prompt);
       const scenario = detectScenarioFromPrompt(validatedConfig.prompt);
 
-      saveTask(mockTask);
+      storage.saveTask(mockTask);
 
       void executeMockTaskFlow(window, {
         taskId,
@@ -204,8 +178,8 @@ export function registerIPCHandlers(): void {
       return mockTask;
     }
 
-    const activeModel = getActiveProviderModel();
-    const selectedModel = activeModel || getSelectedModel();
+    const activeModel = storage.getActiveProviderModel();
+    const selectedModel = activeModel || storage.getSelectedModel();
     if (selectedModel?.model) {
       validatedConfig.modelId = selectedModel.model;
     }
@@ -214,9 +188,6 @@ export function registerIPCHandlers(): void {
       taskId,
       window,
       sender,
-      toTaskMessage,
-      queueMessage,
-      flushAndCleanupBatcher,
     });
 
     const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
@@ -229,11 +200,11 @@ export function registerIPCHandlers(): void {
     };
     task.messages = [initialUserMessage];
 
-    saveTask(task);
+    storage.saveTask(task);
 
     generateTaskSummary(validatedConfig.prompt, getApiKey)
       .then((summary) => {
-        updateTaskSummary(taskId, summary);
+        storage.updateTaskSummary(taskId, summary);
         if (!window.isDestroyed() && !sender.isDestroyed()) {
           sender.send('task:summary', { taskId, summary });
         }
@@ -250,13 +221,13 @@ export function registerIPCHandlers(): void {
 
     if (taskManager.isTaskQueued(taskId)) {
       taskManager.cancelQueuedTask(taskId);
-      updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
       return;
     }
 
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.cancelTask(taskId);
-      updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
     }
   });
 
@@ -269,23 +240,23 @@ export function registerIPCHandlers(): void {
   });
 
   handle('task:get', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return getTask(taskId) || null;
+    return storage.getTask(taskId) || null;
   });
 
   handle('task:list', async (_event: IpcMainInvokeEvent) => {
-    return getTasks();
+    return storage.getTasks();
   });
 
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    deleteTask(taskId);
+    storage.deleteTask(taskId);
   });
 
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
-    clearHistory();
+    storage.clearHistory();
   });
 
   handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return getTodosForTask(taskId);
+    return storage.getTodosForTask(taskId);
   });
 
   handle('permission:respond', async (_event: IpcMainInvokeEvent, response: PermissionResponse) => {
@@ -337,7 +308,7 @@ export function registerIPCHandlers(): void {
       ? sanitizeString(existingTaskId, 'taskId', 128)
       : undefined;
 
-    if (!isMockTaskEventsEnabled() && !hasReadyProvider()) {
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
     }
 
@@ -350,19 +321,16 @@ export function registerIPCHandlers(): void {
         content: validatedPrompt,
         timestamp: new Date().toISOString(),
       };
-      addTaskMessage(validatedExistingTaskId, userMessage);
+      storage.addTaskMessage(validatedExistingTaskId, userMessage);
     }
 
-    const activeModelForResume = getActiveProviderModel();
-    const selectedModelForResume = activeModelForResume || getSelectedModel();
+    const activeModelForResume = storage.getActiveProviderModel();
+    const selectedModelForResume = activeModelForResume || storage.getSelectedModel();
 
     const callbacks = createTaskCallbacks({
       taskId,
       window,
       sender,
-      toTaskMessage,
-      queueMessage,
-      flushAndCleanupBatcher,
     });
 
     const task = await taskManager.startTask(taskId, {
@@ -373,50 +341,64 @@ export function registerIPCHandlers(): void {
     }, callbacks);
 
     if (validatedExistingTaskId) {
-      updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
+      storage.updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
     }
 
     return task;
   });
 
   handle('settings:api-keys', async (_event: IpcMainInvokeEvent) => {
-    const storedCredentials = await listStoredCredentials();
+    const storedKeys = await getAllApiKeys();
 
-    const keys = storedCredentials
-      .filter((credential) => credential.account.startsWith('apiKey:'))
-      .map((credential) => {
-        const provider = credential.account.replace('apiKey:', '');
-
+    const keys = Object.entries(storedKeys)
+      .filter(([_provider, apiKey]) => apiKey !== null)
+      .map(([provider, apiKey]) => {
         let keyPrefix = '';
         if (provider === 'bedrock') {
+          const bedrockCreds = getBedrockCredentials();
+          if (bedrockCreds) {
+            if (bedrockCreds.authType === 'accessKeys') {
+              keyPrefix = `${bedrockCreds.accessKeyId?.substring(0, 8) || 'AKIA'}...`;
+            } else if (bedrockCreds.authType === 'profile') {
+              keyPrefix = `Profile: ${bedrockCreds.profileName || 'default'}`;
+            } else {
+              keyPrefix = 'AWS Credentials';
+            }
+          } else {
+            keyPrefix = 'AWS Credentials';
+          }
+        } else if (provider === 'vertex') {
           try {
-            const parsed = JSON.parse(credential.password);
-            if (parsed.authType === 'accessKeys') {
-              keyPrefix = `${parsed.accessKeyId?.substring(0, 8) || 'AKIA'}...`;
-            } else if (parsed.authType === 'profile') {
-              keyPrefix = `Profile: ${parsed.profileName || 'default'}`;
+            const vertexCreds = apiKey ? JSON.parse(apiKey) : null;
+            if (vertexCreds?.projectId) {
+              keyPrefix = `${vertexCreds.projectId} (${vertexCreds.location || 'unknown'})`;
+            } else {
+              keyPrefix = 'GCP Credentials';
             }
           } catch {
-            keyPrefix = 'AWS Credentials';
+            keyPrefix = 'GCP Credentials';
           }
         } else {
           keyPrefix =
-            credential.password && credential.password.length > 0
-              ? `${credential.password.substring(0, 8)}...`
-              : '';
+            apiKey && apiKey.length > 0 ? `${apiKey.substring(0, 8)}...` : '';
         }
+
+        const labelMap: Record<string, string> = {
+          bedrock: 'AWS Credentials',
+          vertex: 'GCP Credentials',
+        };
 
         return {
           id: `local-${provider}`,
           provider,
-          label: provider === 'bedrock' ? 'AWS Credentials' : 'Local API Key',
+          label: labelMap[provider] || 'Local API Key',
           keyPrefix,
           isActive: true,
           createdAt: new Date().toISOString(),
         };
       });
 
-    const azureConfig = getAzureFoundryConfig();
+    const azureConfig = storage.getAzureFoundryConfig();
     const hasAzureKey = keys.some((k) => k.provider === 'azure-foundry');
 
     if (azureConfig && azureConfig.authType === 'entra-id' && !hasAzureKey) {
@@ -499,7 +481,6 @@ export function registerIPCHandlers(): void {
 
     console.log(`[API Key] Validation requested for provider: ${provider}`);
 
-    // For standard providers, delegate to core's validateApiKey
     if (STANDARD_VALIDATION_PROVIDERS.has(provider)) {
       let sanitizedKey: string;
       try {
@@ -508,10 +489,10 @@ export function registerIPCHandlers(): void {
         return { valid: false, error: e instanceof Error ? e.message : 'Invalid API key' };
       }
 
-      const result = await validateApiKey(provider as import('@accomplish/shared').ProviderType, sanitizedKey, {
+      const result = await validateApiKey(provider as import('@accomplish_ai/agent-core').ProviderType, sanitizedKey, {
         timeout: API_KEY_VALIDATION_TIMEOUT_MS,
-        baseUrl: provider === 'openai' ? getOpenAiBaseUrl().trim() || undefined : undefined,
-        zaiRegion: provider === 'zai' ? (options?.region as import('@accomplish/shared').ZaiRegion) || 'international' : undefined,
+        baseUrl: provider === 'openai' ? storage.getOpenAiBaseUrl().trim() || undefined : undefined,
+        zaiRegion: provider === 'zai' ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) || 'international' : undefined,
       });
 
       if (result.valid) {
@@ -523,9 +504,8 @@ export function registerIPCHandlers(): void {
       return result;
     }
 
-    // Handle azure-foundry with special Entra ID handling
     if (provider === 'azure-foundry') {
-      const config = getAzureFoundryConfig();
+      const config = storage.getAzureFoundryConfig();
       const result = await validateAzureFoundry(config, {
         apiKey: key,
         baseUrl: options?.baseUrl,
@@ -620,6 +600,9 @@ export function registerIPCHandlers(): void {
     }
   });
 
+  // Vertex AI handlers
+  registerVertexHandlers(handle);
+
   handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {
     await deleteApiKey('anthropic');
   });
@@ -647,14 +630,14 @@ export function registerIPCHandlers(): void {
   });
 
   handle('model:get', async (_event: IpcMainInvokeEvent) => {
-    return getSelectedModel();
+    return storage.getSelectedModel();
   });
 
   handle('model:set', async (_event: IpcMainInvokeEvent, model: SelectedModel) => {
     if (!model || typeof model.provider !== 'string' || typeof model.model !== 'string') {
       throw new Error('Invalid model configuration');
     }
-    setSelectedModel(model);
+    storage.setSelectedModel(model);
   });
 
   handle('ollama:test-connection', async (_event: IpcMainInvokeEvent, url: string) => {
@@ -662,7 +645,7 @@ export function registerIPCHandlers(): void {
   });
 
   handle('ollama:get-config', async (_event: IpcMainInvokeEvent) => {
-    return getOllamaConfig();
+    return storage.getOllamaConfig();
   });
 
   handle('ollama:set-config', async (_event: IpcMainInvokeEvent, config: OllamaConfig | null) => {
@@ -685,11 +668,11 @@ export function registerIPCHandlers(): void {
         }
       }
     }
-    setOllamaConfig(config);
+    storage.setOllamaConfig(config);
   });
 
   handle('azure-foundry:get-config', async (_event: IpcMainInvokeEvent) => {
-    return getAzureFoundryConfig();
+    return storage.getAzureFoundryConfig();
   });
 
   handle('azure-foundry:set-config', async (_event: IpcMainInvokeEvent, config: AzureFoundryConfig | null) => {
@@ -712,7 +695,7 @@ export function registerIPCHandlers(): void {
         throw new Error('Invalid Azure Foundry configuration: Invalid base URL format');
       }
     }
-    setAzureFoundryConfig(config);
+    storage.setAzureFoundryConfig(config);
   });
 
   handle('azure-foundry:test-connection', async (
@@ -745,7 +728,7 @@ export function registerIPCHandlers(): void {
       enabled: true,
       lastValidated: Date.now(),
     };
-    setAzureFoundryConfig(azureConfig);
+    storage.setAzureFoundryConfig(azureConfig);
 
     console.log('[Azure Foundry] Config saved for new provider settings:', {
       endpoint,
@@ -765,13 +748,13 @@ export function registerIPCHandlers(): void {
   });
 
   handle('litellm:fetch-models', async (_event: IpcMainInvokeEvent) => {
-    const config = getLiteLLMConfig();
+    const config = storage.getLiteLLMConfig();
     const apiKey = getApiKey('litellm');
     return fetchLiteLLMModels({ config, apiKey: apiKey || undefined });
   });
 
   handle('litellm:get-config', async (_event: IpcMainInvokeEvent) => {
-    return getLiteLLMConfig();
+    return storage.getLiteLLMConfig();
   });
 
   handle('litellm:set-config', async (_event: IpcMainInvokeEvent, config: LiteLLMConfig | null) => {
@@ -794,7 +777,7 @@ export function registerIPCHandlers(): void {
         }
       }
     }
-    setLiteLLMConfig(config);
+    storage.setLiteLLMConfig(config);
   });
 
   handle('lmstudio:test-connection', async (_event: IpcMainInvokeEvent, url: string) => {
@@ -802,7 +785,7 @@ export function registerIPCHandlers(): void {
   });
 
   handle('lmstudio:fetch-models', async (_event: IpcMainInvokeEvent) => {
-    const config = getLMStudioConfig();
+    const config = storage.getLMStudioConfig();
     if (!config || !config.baseUrl) {
       return { success: false, error: 'No LM Studio configured' };
     }
@@ -811,14 +794,42 @@ export function registerIPCHandlers(): void {
   });
 
   handle('lmstudio:get-config', async (_event: IpcMainInvokeEvent) => {
-    return getLMStudioConfig();
+    return storage.getLMStudioConfig();
   });
 
   handle('lmstudio:set-config', async (_event: IpcMainInvokeEvent, config: LMStudioConfig | null) => {
     if (config !== null) {
       validateLMStudioConfig(config);
     }
-    setLMStudioConfig(config);
+    storage.setLMStudioConfig(config);
+  });
+
+  handle('provider:fetch-models', async (_event: IpcMainInvokeEvent, providerId: string, options?: { baseUrl?: string; zaiRegion?: string }) => {
+    const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
+    if (!providerConfig?.modelsEndpoint) {
+      return { success: false, error: 'No models endpoint configured for this provider' };
+    }
+
+    const apiKey = getApiKey(providerId);
+    if (!apiKey) {
+      return { success: false, error: 'No API key found for this provider' };
+    }
+
+    let urlOverride: string | undefined;
+    if (providerId === 'openai' && options?.baseUrl) {
+      urlOverride = `${options.baseUrl.replace(/\/+$/, '')}/models`;
+    }
+    if (providerId === 'zai' && options?.zaiRegion) {
+      const region = options.zaiRegion as import('@accomplish_ai/agent-core').ZaiRegion;
+      urlOverride = `${ZAI_ENDPOINTS[region]}/models`;
+    }
+
+    return fetchProviderModels({
+      endpointConfig: providerConfig.modelsEndpoint,
+      apiKey,
+      urlOverride,
+      timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+    });
   });
 
   handle('api-keys:all', async (_event: IpcMainInvokeEvent) => {
@@ -843,25 +854,45 @@ export function registerIPCHandlers(): void {
   });
 
   handle('settings:debug-mode', async (_event: IpcMainInvokeEvent) => {
-    return getDebugMode();
+    return storage.getDebugMode();
   });
 
   handle('settings:set-debug-mode', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
     if (typeof enabled !== 'boolean') {
       throw new Error('Invalid debug mode flag');
     }
-    setDebugMode(enabled);
+    storage.setDebugMode(enabled);
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:debug-mode-changed', { enabled });
     }
   });
 
+  handle('settings:theme', async (_event: IpcMainInvokeEvent) => {
+    return storage.getTheme();
+  });
+
+  handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
+    if (!['system', 'light', 'dark'].includes(theme)) {
+      throw new Error('Invalid theme value');
+    }
+    storage.setTheme(theme as 'system' | 'light' | 'dark');
+    nativeTheme.themeSource = theme as 'system' | 'light' | 'dark';
+
+    const resolved = theme === 'system'
+      ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      : theme;
+
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('settings:theme-changed', { theme, resolved });
+    }
+  });
+
   handle('settings:app-settings', async (_event: IpcMainInvokeEvent) => {
-    return getAppSettings();
+    return storage.getAppSettings();
   });
 
   handle('settings:openai-base-url:get', async (_event: IpcMainInvokeEvent) => {
-    return getOpenAiBaseUrl();
+    return storage.getOpenAiBaseUrl();
   });
 
   handle('settings:openai-base-url:set', async (_event: IpcMainInvokeEvent, baseUrl: string) => {
@@ -871,12 +902,12 @@ export function registerIPCHandlers(): void {
 
     const trimmed = baseUrl.trim();
     if (!trimmed) {
-      setOpenAiBaseUrl('');
+      storage.setOpenAiBaseUrl('');
       return;
     }
 
     validateHttpUrl(trimmed, 'OpenAI base URL');
-    setOpenAiBaseUrl(trimmed.replace(/\/+$/, ''));
+    storage.setOpenAiBaseUrl(trimmed.replace(/\/+$/, ''));
   });
 
   handle('opencode:auth:openai:status', async (_event: IpcMainInvokeEvent) => {
@@ -893,13 +924,13 @@ export function registerIPCHandlers(): void {
       return true;
     }
 
-    if (getOnboardingComplete()) {
+    if (storage.getOnboardingComplete()) {
       return true;
     }
 
-    const tasks = getTasks();
+    const tasks = storage.getTasks();
     if (tasks.length > 0) {
-      setOnboardingComplete(true);
+      storage.setOnboardingComplete(true);
       return true;
     }
 
@@ -907,7 +938,7 @@ export function registerIPCHandlers(): void {
   });
 
   handle('onboarding:set-complete', async (_event: IpcMainInvokeEvent, complete: boolean) => {
-    setOnboardingComplete(complete);
+    storage.setOnboardingComplete(complete);
   });
 
   handle('shell:open-external', async (_event: IpcMainInvokeEvent, url: string) => {
@@ -955,35 +986,38 @@ export function registerIPCHandlers(): void {
     return transcribeAudio(buffer, mimeType);
   });
   handle('provider-settings:get', async () => {
-    return getProviderSettings();
+    return storage.getProviderSettings();
   });
 
   handle('provider-settings:set-active', async (_event: IpcMainInvokeEvent, providerId: ProviderId | null) => {
-    setActiveProvider(providerId);
+    storage.setActiveProvider(providerId);
   });
 
   handle('provider-settings:get-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-    return getConnectedProvider(providerId);
+    return storage.getConnectedProvider(providerId);
   });
 
   handle('provider-settings:set-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId, provider: ConnectedProvider) => {
-    setConnectedProvider(providerId, provider);
+    storage.setConnectedProvider(providerId, provider);
   });
 
   handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-    removeConnectedProvider(providerId);
+    storage.removeConnectedProvider(providerId);
+    if (providerId === 'vertex') {
+      cleanupVertexServiceAccountKey();
+    }
   });
 
   handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
-    updateProviderModel(providerId, modelId);
+    storage.updateProviderModel(providerId, modelId);
   });
 
   handle('provider-settings:set-debug', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
-    setProviderDebugMode(enabled);
+    storage.setProviderDebugMode(enabled);
   });
 
   handle('provider-settings:get-debug', async () => {
-    return getProviderDebugMode();
+    return storage.getProviderDebugMode();
   });
 
   handle('logs:export', async (event: IpcMainInvokeEvent) => {
@@ -1084,4 +1118,170 @@ export function registerIPCHandlers(): void {
   handle('skills:show-in-folder', async (_event, filePath: string) => {
     shell.showItemInFolder(filePath);
   });
+
+  // ── MCP Connectors ──────────────────────────────────────────────────
+
+  handle('connectors:list', async () => {
+    return storage.getAllConnectors();
+  });
+
+  handle('connectors:add', async (_event, name: string, url: string) => {
+    const sanitizedName = sanitizeString(name, 'connectorName', 128);
+    const sanitizedUrl = sanitizeString(url, 'connectorUrl', 512);
+
+    // Validate URL scheme
+    try {
+      const parsed = new URL(sanitizedUrl);
+      if (!parsed.protocol.startsWith('http')) {
+        throw new Error('Connector URL must use http:// or https://');
+      }
+    } catch (err) {
+      throw new Error(
+        err instanceof Error && err.message.includes('http')
+          ? err.message
+          : `Invalid connector URL: ${sanitizedUrl}`
+      );
+    }
+
+    const id = `mcp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+
+    const connector: McpConnector = {
+      id,
+      name: sanitizedName,
+      url: sanitizedUrl,
+      status: 'disconnected',
+      isEnabled: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    storage.upsertConnector(connector);
+    return connector;
+  });
+
+  handle('connectors:delete', async (_event, id: string) => {
+    storage.deleteConnectorTokens(id);
+    storage.deleteConnector(id);
+  });
+
+  handle('connectors:set-enabled', async (_event, id: string, enabled: boolean) => {
+    storage.setConnectorEnabled(id, enabled);
+  });
+
+  handle('connectors:start-oauth', async (_event, connectorId: string) => {
+    const connector = storage.getConnectorById(connectorId);
+    if (!connector) throw new Error('Connector not found');
+
+    // 1. Discover OAuth metadata
+    const metadata = await discoverOAuthMetadata(connector.url);
+
+    // 2. Register client dynamically
+    let clientReg = connector.clientRegistration;
+    if (!clientReg) {
+      clientReg = await registerOAuthClient(
+        metadata,
+        'accomplish://callback/mcp',
+        'Accomplish Desktop',
+      );
+    }
+
+    // 3. Save metadata and client registration
+    storage.upsertConnector({
+      ...connector,
+      oauthMetadata: metadata,
+      clientRegistration: clientReg,
+      status: 'connecting',
+      updatedAt: new Date().toISOString(),
+    });
+
+    // 4. Generate PKCE
+    const pkce = generatePkceChallenge();
+
+    // 5. Store pending flow state
+    const state = crypto.randomUUID();
+    cleanupExpiredOAuthFlows();
+    pendingOAuthFlows.set(state, {
+      connectorId,
+      codeVerifier: pkce.codeVerifier,
+      metadata,
+      clientRegistration: clientReg,
+      createdAt: Date.now(),
+    });
+
+    // 6. Build authorization URL and open in browser
+    const authUrl = buildAuthorizationUrl({
+      authorizationEndpoint: metadata.authorizationEndpoint,
+      clientId: clientReg.clientId,
+      redirectUri: 'accomplish://callback/mcp',
+      codeChallenge: pkce.codeChallenge,
+      state,
+      scope: metadata.scopesSupported?.join(' '),
+    });
+
+    await shell.openExternal(authUrl);
+
+    return { state, authUrl };
+  });
+
+  handle('connectors:complete-oauth', async (_event, state: string, code: string) => {
+    cleanupExpiredOAuthFlows();
+    const flow = pendingOAuthFlows.get(state);
+    if (!flow) throw new Error('No pending OAuth flow for this state');
+    pendingOAuthFlows.delete(state);
+
+    // Exchange code for tokens
+    const tokens = await exchangeCodeForTokens({
+      tokenEndpoint: flow.metadata.tokenEndpoint,
+      code,
+      codeVerifier: flow.codeVerifier,
+      clientId: flow.clientRegistration.clientId,
+      clientSecret: flow.clientRegistration.clientSecret,
+      redirectUri: 'accomplish://callback/mcp',
+    });
+
+    // Store tokens securely
+    storage.storeConnectorTokens(flow.connectorId, tokens);
+
+    // Update connector status
+    const connector = storage.getConnectorById(flow.connectorId);
+    if (connector) {
+      storage.upsertConnector({
+        ...connector,
+        status: 'connected',
+        lastConnectedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return storage.getConnectorById(flow.connectorId);
+  });
+
+  handle('connectors:disconnect', async (_event, connectorId: string) => {
+    storage.deleteConnectorTokens(connectorId);
+    storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+}
+
+// In-memory store for pending OAuth flows (keyed by state parameter)
+const OAUTH_FLOW_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+const pendingOAuthFlows = new Map<
+  string,
+  {
+    connectorId: string;
+    codeVerifier: string;
+    metadata: OAuthMetadata;
+    clientRegistration: OAuthClientRegistration;
+    createdAt: number;
+  }
+>();
+
+function cleanupExpiredOAuthFlows(): void {
+  const now = Date.now();
+  for (const [state, flow] of pendingOAuthFlows) {
+    if (now - flow.createdAt > OAUTH_FLOW_TTL_MS) {
+      pendingOAuthFlows.delete(state);
+    }
+  }
 }

@@ -124,175 +124,184 @@ let mockOnboardingComplete = false;
 let mockSelectedModel: { provider: string; model: string } | null = null;
 let mockOpenAiBaseUrl = '';
 
-// Mock @accomplish/core - comprehensive mock covering all exports used by handlers.ts
-vi.mock('@accomplish/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@accomplish/core')>();
-  return {
-    // Use actual implementation for API validation since tests stub fetch
-    validateApiKey: actual.validateApiKey,
+// Mock @accomplish_ai/agent-core - comprehensive mock covering all exports used by handlers.ts
+vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@accomplish_ai/agent-core')>();
 
-    // Use actual implementation for URL validation since tests depend on real validation
-    validateHttpUrl: actual.validateHttpUrl,
+  // Storage methods shared between module-level exports and createStorage() return value.
+  // Using a shared object ensures test spy assertions (e.g. `const { setDebugMode } = await import(...)`)
+  // reference the same mock instances that handlers.ts calls via getStorage().
+  const storageMethods = {
+    // Task history
+    getTasks: vi.fn(() => mockTasks),
+    getTask: vi.fn((taskId: string) => mockTasks.find((t) => t.id === taskId)),
+    saveTask: vi.fn((task: unknown) => {
+      const t = task as { id: string };
+      const existing = mockTasks.findIndex((x) => x.id === t.id);
+      if (existing >= 0) {
+        mockTasks[existing] = task as (typeof mockTasks)[0];
+      } else {
+        mockTasks.push(task as (typeof mockTasks)[0]);
+      }
+    }),
+    updateTaskStatus: vi.fn(),
+    updateTaskSessionId: vi.fn(),
+    updateTaskSummary: vi.fn(),
+    addTaskMessage: vi.fn(),
+    deleteTask: vi.fn((taskId: string) => {
+      const idx = mockTasks.findIndex((t) => t.id === taskId);
+      if (idx >= 0) mockTasks.splice(idx, 1);
+    }),
+    clearHistory: vi.fn(() => {
+      mockTasks.length = 0;
+    }),
+    saveTodosForTask: vi.fn(),
+    getTodosForTask: vi.fn(() => []),
+    clearTodosForTask: vi.fn(),
 
-    // Use actual implementation for task config validation
-    validateTaskConfig: actual.validateTaskConfig,
+    // App settings
+    getDebugMode: vi.fn(() => mockDebugMode),
+    setDebugMode: vi.fn((enabled: boolean) => {
+      mockDebugMode = enabled;
+    }),
+    getAppSettings: vi.fn(() => ({
+      debugMode: mockDebugMode,
+      onboardingComplete: mockOnboardingComplete,
+      selectedModel: mockSelectedModel,
+      openaiBaseUrl: mockOpenAiBaseUrl,
+    })),
+    getOnboardingComplete: vi.fn(() => mockOnboardingComplete),
+    setOnboardingComplete: vi.fn((complete: boolean) => {
+      mockOnboardingComplete = complete;
+    }),
+    getSelectedModel: vi.fn(() => mockSelectedModel),
+    setSelectedModel: vi.fn((model: { provider: string; model: string }) => {
+      mockSelectedModel = model;
+    }),
+    getOpenAiBaseUrl: vi.fn(() => mockOpenAiBaseUrl),
+    setOpenAiBaseUrl: vi.fn((baseUrl: string) => {
+      mockOpenAiBaseUrl = baseUrl;
+    }),
+    getOllamaConfig: vi.fn(() => null),
+    setOllamaConfig: vi.fn(),
+    getAzureFoundryConfig: vi.fn(() => null),
+    setAzureFoundryConfig: vi.fn(),
+    getLiteLLMConfig: vi.fn(() => null),
+    setLiteLLMConfig: vi.fn(),
+    getLMStudioConfig: vi.fn(() => null),
+    setLMStudioConfig: vi.fn(),
+    clearAppSettings: vi.fn(),
 
-  // Utility functions
-  fetchWithTimeout: vi.fn(() => Promise.resolve(new Response('{}'))),
-  createTaskId: vi.fn(() => `task_${Date.now()}`),
-  createMessageId: vi.fn(() => `msg-${Date.now()}`),
-  sanitizeString: vi.fn((input: unknown, fieldName: string, maxLength = 255) => {
-    if (typeof input !== 'string') {
-      throw new Error(`${fieldName} must be a string`);
-    }
-    const trimmed = input.trim();
-    if (!trimmed) {
-      throw new Error(`${fieldName} is required`);
-    }
-    if (trimmed.length > maxLength) {
-      throw new Error(`${fieldName} exceeds maximum length of ${maxLength}`);
-    }
-    return trimmed;
-  }),
-  safeParseJson: vi.fn((s: string) => ({ success: true, data: JSON.parse(s) })),
-
-  // Task history functions
-  getTasks: vi.fn(() => mockTasks),
-  getTask: vi.fn((taskId: string) => mockTasks.find((t) => t.id === taskId)),
-  saveTask: vi.fn((task: unknown) => {
-    const t = task as { id: string };
-    const existing = mockTasks.findIndex((x) => x.id === t.id);
-    if (existing >= 0) {
-      mockTasks[existing] = task as (typeof mockTasks)[0];
-    } else {
-      mockTasks.push(task as (typeof mockTasks)[0]);
-    }
-  }),
-  updateTaskStatus: vi.fn(),
-  updateTaskSessionId: vi.fn(),
-  updateTaskSummary: vi.fn(),
-  addTaskMessage: vi.fn(),
-  deleteTask: vi.fn((taskId: string) => {
-    const idx = mockTasks.findIndex((t) => t.id === taskId);
-    if (idx >= 0) mockTasks.splice(idx, 1);
-  }),
-  clearHistory: vi.fn(() => {
-    mockTasks.length = 0;
-  }),
-  saveTodosForTask: vi.fn(),
-  getTodosForTask: vi.fn(() => []),
-  clearTodosForTask: vi.fn(),
-
-  // App settings functions
-  getDebugMode: vi.fn(() => mockDebugMode),
-  setDebugMode: vi.fn((enabled: boolean) => {
-    mockDebugMode = enabled;
-  }),
-  getAppSettings: vi.fn(() => ({
-    debugMode: mockDebugMode,
-    onboardingComplete: mockOnboardingComplete,
-    selectedModel: mockSelectedModel,
-    openaiBaseUrl: mockOpenAiBaseUrl,
-  })),
-  getOnboardingComplete: vi.fn(() => mockOnboardingComplete),
-  setOnboardingComplete: vi.fn((complete: boolean) => {
-    mockOnboardingComplete = complete;
-  }),
-  getSelectedModel: vi.fn(() => mockSelectedModel),
-  setSelectedModel: vi.fn((model: { provider: string; model: string }) => {
-    mockSelectedModel = model;
-  }),
-  getOpenAiBaseUrl: vi.fn(() => mockOpenAiBaseUrl),
-  setOpenAiBaseUrl: vi.fn((baseUrl: string) => {
-    mockOpenAiBaseUrl = baseUrl;
-  }),
-  getOllamaConfig: vi.fn(() => null),
-  setOllamaConfig: vi.fn(),
-  getAzureFoundryConfig: vi.fn(() => null),
-  setAzureFoundryConfig: vi.fn(),
-  getLiteLLMConfig: vi.fn(() => null),
-  setLiteLLMConfig: vi.fn(),
-  getLMStudioConfig: vi.fn(() => null),
-  setLMStudioConfig: vi.fn(),
-
-  // Provider settings functions
-  getProviderSettings: vi.fn(() => ({
-    activeProviderId: 'anthropic',
-    connectedProviders: {
-      anthropic: {
-        providerId: 'anthropic',
-        connectionStatus: 'connected',
-        selectedModelId: 'claude-3-5-sonnet-20241022',
-        credentials: { type: 'api-key', apiKey: 'test-key' },
+    // Provider settings
+    getProviderSettings: vi.fn(() => ({
+      activeProviderId: 'anthropic',
+      connectedProviders: {
+        anthropic: {
+          providerId: 'anthropic',
+          connectionStatus: 'connected',
+          selectedModelId: 'claude-3-5-sonnet-20241022',
+          credentials: { type: 'api-key', apiKey: 'test-key' },
+        },
       },
-    },
-    debugMode: false,
-  })),
-  setActiveProvider: vi.fn(),
-  getActiveProviderModel: vi.fn(() => ({
-    provider: 'anthropic',
-    model: 'claude-3-5-sonnet-20241022',
-  })),
-  getConnectedProvider: vi.fn(() => ({
-    providerId: 'anthropic',
-    connectionStatus: 'connected',
-    selectedModelId: 'claude-3-5-sonnet-20241022',
-    credentials: { type: 'api-key', apiKey: 'test-key' },
-  })),
-  setConnectedProvider: vi.fn(),
-  removeConnectedProvider: vi.fn(),
-  updateProviderModel: vi.fn(),
-  setProviderDebugMode: vi.fn(),
-  getProviderDebugMode: vi.fn(() => false),
-  hasReadyProvider: vi.fn(() => true),
-  getOpenAiOauthStatus: vi.fn(() => ({ connected: false })),
+      debugMode: false,
+    })),
+    setActiveProvider: vi.fn(),
+    getActiveProviderModel: vi.fn(() => ({
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+    })),
+    getConnectedProvider: vi.fn(() => ({
+      providerId: 'anthropic',
+      connectionStatus: 'connected',
+      selectedModelId: 'claude-3-5-sonnet-20241022',
+      credentials: { type: 'api-key', apiKey: 'test-key' },
+    })),
+    setConnectedProvider: vi.fn(),
+    removeConnectedProvider: vi.fn(),
+    updateProviderModel: vi.fn(),
+    setProviderDebugMode: vi.fn(),
+    getProviderDebugMode: vi.fn(() => false),
+    hasReadyProvider: vi.fn(() => true),
+    getConnectedProviderIds: vi.fn(() => ['anthropic']),
+    getActiveProviderId: vi.fn(() => 'anthropic'),
+    clearProviderSettings: vi.fn(),
 
-  // Azure token function
-  getAzureEntraToken: vi.fn(() => Promise.resolve({ success: true, token: 'mock-token' })),
+    // Database lifecycle
+    initialize: vi.fn(),
+    isDatabaseInitialized: vi.fn(() => true),
+    close: vi.fn(),
+    getDatabasePath: vi.fn(() => '/mock/path'),
 
-  // Task summarization
-  generateTaskSummary: vi.fn(() => Promise.resolve('Mock task summary')),
+    // Secure storage
+    storeApiKey: vi.fn(),
+    getApiKey: vi.fn(() => null),
+    deleteApiKey: vi.fn(() => true),
+    getAllApiKeys: vi.fn(() => Promise.resolve({})),
+    storeBedrockCredentials: vi.fn(),
+    getBedrockCredentials: vi.fn(() => null),
+    hasAnyApiKey: vi.fn(() => Promise.resolve(false)),
+    listStoredCredentials: vi.fn(() => []),
+    clearSecureStorage: vi.fn(),
+  };
 
-  // Message processing functions
-  toTaskMessage: vi.fn((message: unknown) => {
-    const msg = message as { type: string; part?: { text?: string; tool?: string } };
-    if (msg.type === 'text' && msg.part?.text) {
-      return {
-        id: `msg-${Date.now()}`,
-        type: 'assistant',
-        content: msg.part.text,
-        timestamp: new Date().toISOString(),
-      };
-    }
-    if (msg.type === 'tool_call') {
-      return {
-        id: `msg-${Date.now()}`,
-        type: 'tool',
-        content: `Using tool: ${msg.part?.tool}`,
-        toolName: msg.part?.tool,
-        timestamp: new Date().toISOString(),
-      };
-    }
-    return null;
-  }),
-  queueMessage: vi.fn(),
-  flushAndCleanupBatcher: vi.fn(),
+  return {
+    // Use actual implementations for validation
+    validateApiKey: actual.validateApiKey,
+    validateHttpUrl: actual.validateHttpUrl,
+    validateTaskConfig: actual.validateTaskConfig,
+    ALLOWED_API_KEY_PROVIDERS: actual.ALLOWED_API_KEY_PROVIDERS,
+    STANDARD_VALIDATION_PROVIDERS: actual.STANDARD_VALIDATION_PROVIDERS,
+    validate: actual.validate,
+    permissionResponseSchema: actual.permissionResponseSchema,
 
-  // API validation functions
-  validateAnthropicApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateOpenAIApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateGoogleApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateXAIApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateBedrockCredentials: vi.fn(() => Promise.resolve({ valid: true })),
-  validateDeepSeekApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateOpenAICompatibleApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-  validateOllamaConnection: vi.fn(() => Promise.resolve({ valid: true })),
-  validateLiteLLMConnection: vi.fn(() => Promise.resolve({ valid: true })),
-  validateLMStudioConnection: vi.fn(() => Promise.resolve({ valid: true })),
-  testLMStudioConnection: vi.fn(() => Promise.resolve({ success: true, models: [] })),
-  fetchLMStudioModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
-  validateLMStudioConfig: vi.fn(),
-  validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
+    // Utility functions
+    createTaskId: vi.fn(() => `task_${Date.now()}`),
+    createMessageId: vi.fn(() => `msg-${Date.now()}`),
+    sanitizeString: vi.fn((input: unknown, fieldName: string, maxLength = 255) => {
+      if (typeof input !== 'string') {
+        throw new Error(`${fieldName} must be a string`);
+      }
+      const trimmed = input.trim();
+      if (!trimmed) {
+        throw new Error(`${fieldName} is required`);
+      }
+      if (trimmed.length > maxLength) {
+        throw new Error(`${fieldName} exceeds maximum length of ${maxLength}`);
+      }
+      return trimmed;
+    }),
+    safeParseJson: vi.fn((s: string) => ({ success: true, data: JSON.parse(s) })),
+
+    // Storage methods at module level (for test spy assertions)
+    ...storageMethods,
+
+    // Factory function returning the same mock instances
+    createStorage: vi.fn(() => storageMethods),
+
+    // OAuth status
+    getOpenAiOauthStatus: vi.fn(() => ({ connected: false })),
+
+    // Azure token function
+    getAzureEntraToken: vi.fn(() => Promise.resolve({ success: true, token: 'mock-token' })),
+
+    // Task summarization
+    generateTaskSummary: vi.fn(() => Promise.resolve('Mock task summary')),
+
+    // API validation functions
+    validateAnthropicApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateOpenAIApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateGoogleApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateXAIApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateBedrockCredentials: vi.fn(() => Promise.resolve({ valid: true })),
+    validateDeepSeekApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateOpenAICompatibleApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+    validateOllamaConnection: vi.fn(() => Promise.resolve({ valid: true })),
+    validateLiteLLMConnection: vi.fn(() => Promise.resolve({ valid: true })),
+    validateLMStudioConnection: vi.fn(() => Promise.resolve({ valid: true })),
+    testLMStudioConnection: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+    fetchLMStudioModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+    validateLMStudioConfig: vi.fn(),
+    validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
     validateMoonshotApiKey: vi.fn(() => Promise.resolve({ valid: true })),
   };
 });
@@ -315,11 +324,11 @@ vi.mock('@main/store/secureStorage', () => ({
   }),
   getAllApiKeys: vi.fn(() =>
     Promise.resolve({
-      anthropic: mockApiKeys['anthropic'] || null,
-      openai: mockApiKeys['openai'] || null,
-      google: mockApiKeys['google'] || null,
-      xai: mockApiKeys['xai'] || null,
-      custom: mockApiKeys['custom'] || null,
+      anthropic: mockApiKeys['anthropic'] ?? null,
+      openai: mockApiKeys['openai'] ?? null,
+      google: mockApiKeys['google'] ?? null,
+      xai: mockApiKeys['xai'] ?? null,
+      custom: mockApiKeys['custom'] ?? null,
     })
   ),
   hasAnyApiKey: vi.fn(() =>
@@ -573,7 +582,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('settings:set-debug-mode', true);
 
       // Assert
-      const { setDebugMode } = await import('@accomplish/core');
+      const { setDebugMode } = await import('@accomplish_ai/agent-core');
       expect(setDebugMode).toHaveBeenCalledWith(true);
     });
 
@@ -607,11 +616,12 @@ describe('IPC Handlers Integration', () => {
     });
 
     it('settings:api-keys should return list of stored API keys', async () => {
-      // Arrange
-      mockStoredCredentials = [
-        { account: 'apiKey:anthropic', password: 'sk-ant-12345678' },
-        { account: 'apiKey:openai', password: 'sk-openai-abcdefgh' },
-      ];
+      // Arrange - set the api keys directly via mockApiKeys
+      // Note: The handler now uses getAllApiKeys() which reads from mockApiKeys
+      mockApiKeys = {
+        anthropic: 'sk-ant-12345678',
+        openai: 'sk-openai-abcdefgh',
+      };
 
       // Act
       const result = await invokeHandler('settings:api-keys');
@@ -836,7 +846,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:delete', taskId);
 
       // Assert
-      const { deleteTask } = await import('@accomplish/core');
+      const { deleteTask } = await import('@accomplish_ai/agent-core');
       expect(deleteTask).toHaveBeenCalledWith(taskId);
     });
 
@@ -863,7 +873,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:clear-history');
 
       // Assert
-      const { clearHistory } = await import('@accomplish/core');
+      const { clearHistory } = await import('@accomplish_ai/agent-core');
       expect(clearHistory).toHaveBeenCalled();
     });
   });
@@ -921,7 +931,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('onboarding:set-complete', true);
 
       // Assert
-      const { setOnboardingComplete } = await import('@accomplish/core');
+      const { setOnboardingComplete } = await import('@accomplish_ai/agent-core');
       expect(setOnboardingComplete).toHaveBeenCalledWith(true);
     });
   });
@@ -1052,7 +1062,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('model:set', newModel);
 
       // Assert
-      const { setSelectedModel } = await import('@accomplish/core');
+      const { setSelectedModel } = await import('@accomplish_ai/agent-core');
       expect(setSelectedModel).toHaveBeenCalledWith(newModel);
     });
 
@@ -1391,7 +1401,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('task:start', config);
 
       // Assert
-      const { saveTask } = await import('@accomplish/core');
+      const { saveTask } = await import('@accomplish_ai/agent-core');
       expect(saveTask).toHaveBeenCalled();
     });
 
@@ -1515,7 +1525,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
 
       // Assert
-      const { addTaskMessage } = await import('@accomplish/core');
+      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
       expect(addTaskMessage).toHaveBeenCalledWith(
         existingTaskId,
         expect.objectContaining({
@@ -1543,7 +1553,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
 
       // Assert
-      const { updateTaskStatus } = await import('@accomplish/core');
+      const { updateTaskStatus } = await import('@accomplish_ai/agent-core');
       expect(updateTaskStatus).toHaveBeenCalledWith(
         existingTaskId,
         'running',
@@ -1568,7 +1578,7 @@ describe('IPC Handlers Integration', () => {
       await invokeHandler('session:resume', sessionId, prompt);
 
       // Assert
-      const { addTaskMessage } = await import('@accomplish/core');
+      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
       // Should not be called for new tasks
       expect(addTaskMessage).not.toHaveBeenCalledWith(
         undefined,
@@ -2024,10 +2034,11 @@ describe('IPC Handlers Integration', () => {
     });
 
     it('settings:api-keys should handle empty password', async () => {
-      // Arrange
-      mockStoredCredentials = [
-        { account: 'apiKey:anthropic', password: '' },
-      ];
+      // Arrange - use mockApiKeys directly
+      // Note: The handler now uses getAllApiKeys() which reads from mockApiKeys
+      mockApiKeys = {
+        anthropic: '',  // Empty key value
+      };
 
       // Act
       const result = await invokeHandler('settings:api-keys') as Array<{ keyPrefix: string }>;
@@ -2041,6 +2052,6 @@ describe('IPC Handlers Integration', () => {
   // Note: Callback execution tests for onStatusChange, onDebug, onError, onComplete
   // are complex to set up due to vitest mock hoisting for webContents.send.
   // The callback logic is exercised through the task lifecycle tests above.
-  // The utility functions (extractScreenshots, sanitizeToolOutput, toTaskMessage)
+  // The utility functions (extractScreenshots, sanitizeToolOutput)
   // are tested in handlers-utils.unit.test.ts as pure function tests.
 });
