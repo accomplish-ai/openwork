@@ -397,6 +397,30 @@ export function getDashboardHtml(nonce: string): string {
     /* Loading */
     .loading { text-align: center; padding: 60px 0; color: var(--muted-foreground); font-size: 14px; }
     .loading-sm { text-align: center; padding: 16px 0; color: var(--muted-foreground); font-size: 13px; }
+
+    /* Desktop manifest cards */
+    .manifest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    .manifest-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm);
+    }
+    .manifest-card .manifest-tier { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .manifest-card .manifest-version { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
+    .manifest-card .manifest-meta { font-size: 13px; color: var(--muted-foreground); margin-top: 6px; }
+    .manifest-card.empty { display: flex; align-items: center; justify-content: center; color: var(--muted-foreground); font-size: 14px; min-height: 120px; }
+
+    /* Desktop version expand */
+    .desktop-version-row { cursor: pointer; transition: background 0.12s; }
+    .desktop-version-row:hover { background: var(--muted); }
+    .desktop-files { padding: 0 16px 12px; }
+    .desktop-file-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+    .desktop-file-row:first-child { border-top: none; }
+
+    /* Badge red for failures */
+    .badge-red { background: #fee2e2; color: #dc2626; }
+    html.dark .badge-red { background: #450a0a; color: #fca5a5; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    html.dark .badge-yellow { background: #451a03; color: #fbbf24; }
   </style>
 </head>
 <body>
@@ -425,6 +449,10 @@ export function getDashboardHtml(nonce: string): string {
       <button id="deploy-btn" class="btn btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         Deploy New Build
+      </button>
+      <button id="desktop-release-btn" class="btn btn-primary" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Release Desktop App
       </button>
     </div>
   </div>
@@ -456,6 +484,13 @@ var healthStatus = null;
 var buildsList = null;
 var deployRunUrl = null;
 var deployStatusTimer = null;
+var desktopManifests = null;
+var desktopWorkflows = null;
+var desktopVersions = null;
+var desktopPackageVersion = null;
+var desktopWorkflowsPollTimer = null;
+var expandedDesktopVersions = {};
+var desktopLoading = false;
 
 // ── API ──
 function loadManifests() {
@@ -546,6 +581,62 @@ function loadBuilds() {
     .then(function(data) {
       if (data) { buildsList = data; renderAll(); }
     });
+}
+
+function loadDesktopManifests() {
+  fetch('/api/desktop/manifests')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { desktopManifests = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load desktop manifests: ' + err.message, 'error'); });
+}
+
+function loadDesktopWorkflows() {
+  fetch('/api/desktop/workflows')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { desktopWorkflows = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load desktop workflows: ' + err.message, 'error'); });
+}
+
+function loadDesktopVersions() {
+  fetch('/api/desktop/versions')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { desktopVersions = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load desktop versions: ' + err.message, 'error'); });
+}
+
+function loadDesktopPackageVersion() {
+  fetch('/api/desktop/package-version')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { desktopPackageVersion = data.version; renderAll(); })
+    .catch(function(err) { showToast('Failed to load desktop package version: ' + err.message, 'error'); });
+}
+
+function startDesktopPoll() {
+  stopDesktopPoll();
+  desktopWorkflowsPollTimer = setInterval(function() {
+    if (currentTab !== 'desktop') { stopDesktopPoll(); return; }
+    loadDesktopWorkflows();
+  }, 30000);
+}
+
+function stopDesktopPoll() {
+  if (desktopWorkflowsPollTimer) { clearInterval(desktopWorkflowsPollTimer); desktopWorkflowsPollTimer = null; }
+}
+
+function triggerDesktopRelease(updateLatestMac) {
+  return fetch('/api/desktop/release', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ updateLatestMac: updateLatestMac })
+  }).then(function(r) {
+    if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'HTTP ' + r.status); });
+    return r.json();
+  });
+}
+
+function toggleDesktopVersion(version) {
+  if (expandedDesktopVersions[version]) { delete expandedDesktopVersions[version]; } else { expandedDesktopVersions[version] = true; }
+  renderAll();
 }
 
 function updateResourceLinks() {
@@ -1160,19 +1251,37 @@ function switchTab(tab) {
   } else {
     stopAuditPoll();
   }
+  if (tab === 'desktop') {
+    if (!desktopManifests) { loadDesktopManifests(); }
+    if (!desktopWorkflows) { loadDesktopWorkflows(); }
+    if (!desktopVersions) { loadDesktopVersions(); }
+    if (!desktopPackageVersion) { loadDesktopPackageVersion(); }
+    startDesktopPoll();
+  } else {
+    stopDesktopPoll();
+  }
+  updateHeaderButtons();
   renderAll();
 }
 
 function initTabFromHash() {
   var hash = window.location.hash.replace('#', '');
-  if (hash === 'audit' || hash === 'releases') {
+  if (hash === 'audit' || hash === 'releases' || hash === 'desktop') {
     currentTab = hash;
   }
+}
+
+function updateHeaderButtons() {
+  var deployBtn = document.getElementById('deploy-btn');
+  var desktopReleaseBtn = document.getElementById('desktop-release-btn');
+  if (deployBtn) deployBtn.style.display = currentTab === 'desktop' ? 'none' : '';
+  if (desktopReleaseBtn) desktopReleaseBtn.style.display = currentTab === 'desktop' ? '' : 'none';
 }
 
 function renderTabBar() {
   return '<div class="tab-bar">' +
     '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Releases</button>' +
+    '<button class="tab' + (currentTab === 'desktop' ? ' active' : '') + '" data-action="switchTab" data-arg="desktop">Desktop Releases</button>' +
     '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" data-action="switchTab" data-arg="audit">Audit Log</button>' +
   '</div>';
 }
@@ -1310,6 +1419,7 @@ function getActionDotClass(action) {
   if (action === 'config_updated') return 'config';
   if (action === 'deploy_triggered') return 'deploy';
   if (action === 'release_completed') return 'release';
+  if (action === 'desktop_release_triggered') return 'deploy';
   return 'config';
 }
 
@@ -1373,12 +1483,226 @@ function renderAuditLog() {
     '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
 }
 
+// ── Render Desktop ──
+function renderDesktopHero() {
+  function manifestCard(manifest, tierName, colorClass) {
+    if (!manifest) {
+      return '<div class="manifest-card empty">No ' + tierName.toLowerCase() + ' manifest found</div>';
+    }
+    var fileCount = manifest.files ? manifest.files.length : 0;
+    var relDate = manifest.releaseDate ? new Date(manifest.releaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+    return '<div class="manifest-card">' +
+      '<div class="manifest-tier"><span class="badge ' + colorClass + '">' + esc(tierName) + '</span></div>' +
+      '<div class="manifest-version">v' + esc(String(manifest.version || 'unknown')) + '</div>' +
+      '<div class="manifest-meta">' + esc(relDate) + ' &bull; ' + esc(String(fileCount)) + ' file(s)</div>' +
+    '</div>';
+  }
+
+  var liteCard = manifestCard(desktopManifests && desktopManifests.lite, 'Lite', 'badge-green');
+  var entCard = manifestCard(desktopManifests && desktopManifests.enterprise, 'Enterprise', 'badge-purple');
+
+  var nextVersion = desktopPackageVersion
+    ? '<div style="text-align:center;margin-bottom:24px;font-size:13px;color:var(--muted-foreground);">Next Build Version: <strong style="color:var(--foreground);">' + esc(desktopPackageVersion) + '</strong></div>'
+    : '';
+
+  return '<div class="section">' +
+    '<div class="section-header"><h2>Auto-Updater Current Versions</h2></div>' +
+    '<div class="manifest-grid">' + liteCard + entCard + '</div>' +
+  '</div>' + nextVersion;
+}
+
+function formatDuration(startIso, endIso) {
+  var start = new Date(startIso).getTime();
+  var end = new Date(endIso).getTime();
+  var diffMs = end - start;
+  if (diffMs < 0) return '—';
+  var mins = Math.floor(diffMs / 60000);
+  var secs = Math.floor((diffMs % 60000) / 1000);
+  if (mins > 0) return mins + 'm ' + secs + 's';
+  return secs + 's';
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function renderDesktopWorkflows() {
+  if (!desktopWorkflows) {
+    return '<div class="section"><div class="section-header"><h2>Recent Release Workflows</h2></div>' +
+      '<div class="card"><div class="loading-sm">Loading workflows...</div></div></div>';
+  }
+  if (!desktopWorkflows.length) {
+    return '<div class="section"><div class="section-header"><h2>Recent Release Workflows</h2></div>' +
+      '<div class="card"><div class="loading">No workflow runs found</div></div></div>';
+  }
+
+  var rows = '';
+  desktopWorkflows.forEach(function(run) {
+    var badgeClass = 'badge-gray';
+    var label = esc(run.status);
+    if (run.status === 'completed') {
+      if (run.conclusion === 'success') { badgeClass = 'badge-green'; label = 'Success'; }
+      else if (run.conclusion === 'failure') { badgeClass = 'badge-red'; label = 'Failure'; }
+      else if (run.conclusion === 'cancelled') { badgeClass = 'badge-gray'; label = 'Cancelled'; }
+      else { badgeClass = 'badge-gray'; label = esc(run.conclusion || 'Unknown'); }
+    } else if (run.status === 'in_progress') {
+      badgeClass = 'badge-yellow'; label = 'In Progress';
+    } else if (run.status === 'queued') {
+      badgeClass = 'badge-gray'; label = 'Queued';
+    }
+
+    var started = new Date(run.run_started_at || run.created_at).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    var duration = run.status === 'completed' ? formatDuration(run.run_started_at || run.created_at, run.updated_at) : '—';
+
+    rows += '<tr>' +
+      '<td><span class="badge ' + badgeClass + '">' + label + '</span></td>' +
+      '<td>' + esc(run.actor) + '</td>' +
+      '<td class="audit-time">' + esc(started) + '</td>' +
+      '<td class="audit-time">' + esc(duration) + '</td>' +
+      '<td style="text-align:right;"><a class="btn btn-ghost btn-sm" href="' + esc(run.html_url) + '" target="_blank" rel="noopener">View</a></td>' +
+    '</tr>';
+  });
+
+  return '<div class="section"><div class="section-header"><h2>Recent Release Workflows</h2></div>' +
+    '<div class="card"><table><thead><tr>' +
+      '<th style="padding-top:16px;">Status</th>' +
+      '<th style="padding-top:16px;">Actor</th>' +
+      '<th style="padding-top:16px;">Started</th>' +
+      '<th style="padding-top:16px;">Duration</th>' +
+      '<th style="padding-top:16px;"></th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+}
+
+function renderDesktopVersions() {
+  if (!desktopVersions) {
+    return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
+      '<div class="card"><div class="loading-sm">Loading versions...</div></div></div>';
+  }
+  if (!desktopVersions.length) {
+    return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
+      '<div class="card"><div class="loading">No artifacts found in R2</div></div></div>';
+  }
+
+  var rows = '';
+  desktopVersions.forEach(function(v) {
+    var isExpanded = !!expandedDesktopVersions[v.version];
+    var archSet = {};
+    var tierSet = {};
+    v.files.forEach(function(f) {
+      if (f.name.indexOf('arm64') !== -1) archSet['arm64'] = true;
+      if (f.name.indexOf('x64') !== -1) archSet['x64'] = true;
+      if (f.name.indexOf('Enterprise') !== -1) tierSet['enterprise'] = true;
+      else tierSet['lite'] = true;
+    });
+
+    var archBadges = '';
+    Object.keys(archSet).forEach(function(a) {
+      archBadges += '<span class="badge badge-gray" style="margin-left:4px;">' + esc(a) + '</span>';
+    });
+    var tierBadges = '';
+    Object.keys(tierSet).forEach(function(t) {
+      var cls = t === 'lite' ? 'badge-blue' : 'badge-purple';
+      tierBadges += '<span class="badge tier-badge ' + cls + '" style="margin-left:4px;">' + esc(t) + '</span>';
+    });
+
+    var expandIcon = isExpanded ? '&#9660;' : '&#9654;';
+
+    rows += '<tr class="desktop-version-row" data-action="toggleDesktopVersion" data-arg="' + esc(v.version) + '">' +
+      '<td><strong style="font-weight:600;">' + esc(v.version) + '</strong>' + tierBadges + archBadges + '</td>' +
+      '<td>' + esc(String(v.files.length)) + ' file(s)</td>' +
+      '<td style="text-align:right;"><span class="expand-btn">' + expandIcon + '</span></td>' +
+    '</tr>';
+
+    if (isExpanded) {
+      var fileRows = '';
+      v.files.forEach(function(f) {
+        fileRows += '<div class="desktop-file-row">' +
+          '<span>' + esc(f.name) + '</span>' +
+          '<span style="color:var(--muted-foreground);">' + esc(formatFileSize(f.size)) + '</span>' +
+        '</div>';
+      });
+      rows += '<tr><td colspan="3" style="padding:0;"><div class="desktop-files">' + fileRows + '</div></td></tr>';
+    }
+  });
+
+  return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
+    '<div class="card"><table><thead><tr>' +
+      '<th style="padding-top:16px;">Version</th>' +
+      '<th style="padding-top:16px;">Files</th>' +
+      '<th style="padding-top:16px;"></th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+}
+
+// ── Desktop Release Modal ──
+function showDesktopReleaseModal() {
+  showModal(
+    '<h3>Release Desktop App</h3>' +
+    '<p class="modal-desc">This will trigger a new desktop build and release via GitHub Actions.</p>' +
+    (desktopPackageVersion ? '<div style="margin-bottom:16px;font-size:13px;color:var(--muted-foreground);">Version: <strong style="color:var(--foreground);">' + esc(desktopPackageVersion) + '</strong></div>' : '') +
+    '<label class="checkbox-row"><input type="checkbox" id="modal-update-latest-mac" checked> Update latest-mac manifest (enables auto-updates)</label>' +
+    '<div id="desktop-release-result"></div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-outline" id="desktop-release-cancel-btn" data-action="closeModal">Cancel</button>' +
+      '<button class="btn btn-primary" id="desktop-release-confirm-btn" data-action="confirmDesktopRelease">Release</button>' +
+    '</div>');
+}
+
+function confirmDesktopRelease() {
+  var updateLatestMac = document.getElementById('modal-update-latest-mac').checked;
+  var confirmBtn = document.getElementById('desktop-release-confirm-btn');
+  var cancelBtn = document.getElementById('desktop-release-cancel-btn');
+  var result = document.getElementById('desktop-release-result');
+  var checkbox = document.querySelector('.checkbox-row');
+
+  confirmBtn.classList.add('is-loading');
+  cancelBtn.style.display = 'none';
+  checkbox.style.opacity = '0.4';
+  checkbox.style.pointerEvents = 'none';
+
+  triggerDesktopRelease(updateLatestMac).then(function(data) {
+    var runUrl = data.runUrl;
+    var runLinkHtml = '';
+    var actionsIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>';
+    if (runUrl) {
+      runLinkHtml = '<a class="deploy-run-link" href="' + esc(runUrl) + '" target="_blank" rel="noopener">' + actionsIcon + 'View Workflow Run</a>';
+    } else if (meta && meta.githubRepo) {
+      runLinkHtml = '<a class="deploy-run-link" href="https://github.com/' + esc(meta.githubRepo) + '/actions/workflows/release.yml" target="_blank" rel="noopener">' + actionsIcon + 'View GitHub Actions</a>';
+    }
+    result.innerHTML = '<div class="result-banner success">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
+      '<span>Desktop release triggered successfully</span>' +
+    '</div>' + runLinkHtml;
+    confirmBtn.textContent = 'Done';
+    confirmBtn.classList.remove('is-loading');
+    confirmBtn.setAttribute('data-action', 'closeModal');
+    confirmBtn.removeAttribute('disabled');
+    checkbox.style.display = 'none';
+    loadDesktopWorkflows();
+  }).catch(function(err) {
+    result.innerHTML = '<div class="result-banner error">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>' +
+      '<span>' + esc(err.message) + '</span>' +
+    '</div>';
+    confirmBtn.classList.remove('is-loading');
+    confirmBtn.textContent = 'Retry';
+    cancelBtn.style.display = '';
+    checkbox.style.opacity = '1';
+    checkbox.style.pointerEvents = '';
+  });
+}
+
 // ── Render All ──
 function renderAll() {
   if (!config) return;
   var content = renderTabBar();
   if (currentTab === 'releases') {
     content += renderHero() + renderVersions() + renderOverrides() + renderKV();
+  } else if (currentTab === 'desktop') {
+    content += renderDesktopHero() + renderDesktopWorkflows() + renderDesktopVersions();
   } else if (currentTab === 'audit') {
     content += renderAuditLog();
   }
@@ -1408,6 +1732,7 @@ document.getElementById('app-root').addEventListener('click', function(e) {
       el.nextElementSibling.classList.toggle('open');
       break;
     case 'toggleAuditEntry': toggleAuditEntry(arg); break;
+    case 'toggleDesktopVersion': toggleDesktopVersion(arg); break;
   }
 });
 
@@ -1431,6 +1756,7 @@ document.getElementById('modal-root').addEventListener('click', function(e) {
     case 'confirmEditOverride': confirmEditOverride(parseInt(arg)); break;
     case 'confirmDeleteOverride': confirmDeleteOverride(parseInt(arg)); break;
     case 'confirmDeploy': confirmDeploy(); break;
+    case 'confirmDesktopRelease': confirmDesktopRelease(); break;
     case 'runCompare': runCompare(); break;
   }
 });
@@ -1488,12 +1814,13 @@ document.addEventListener('keydown', function(e) {
 
 // ── Static button listeners ──
 document.getElementById('deploy-btn').addEventListener('click', showDeployModal);
+document.getElementById('desktop-release-btn').addEventListener('click', showDesktopReleaseModal);
 document.getElementById('dark-toggle').addEventListener('click', toggleDarkMode);
 
 // ── Hash change listener ──
 window.addEventListener('hashchange', function() {
   var hash = window.location.hash.replace('#', '');
-  if ((hash === 'audit' || hash === 'releases') && hash !== currentTab) {
+  if ((hash === 'audit' || hash === 'releases' || hash === 'desktop') && hash !== currentTab) {
     switchTab(hash);
   }
 });
@@ -1505,6 +1832,8 @@ loadConfig();
 checkHealth();
 loadBuilds();
 if (currentTab === 'audit') { loadAuditLog(); startAuditPoll(); }
+if (currentTab === 'desktop') { loadDesktopManifests(); loadDesktopWorkflows(); loadDesktopVersions(); loadDesktopPackageVersion(); startDesktopPoll(); }
+updateHeaderButtons();
 </script>
 </body>
 </html>`;

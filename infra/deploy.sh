@@ -41,6 +41,10 @@ deploy_admin_worker() {
     echo "[[kv_namespaces]]"
     echo 'binding = "ROUTING_CONFIG"'
     echo "id = \"${KV_NAMESPACE_ID}\""
+    echo ""
+    echo "[[r2_buckets]]"
+    echo 'binding = "DOWNLOADS_BUCKET"'
+    echo 'bucket_name = "openwork"'
   } > "$toml"
 
   (cd "$SCRIPT_DIR/admin" && npx wrangler deploy --config "$toml")

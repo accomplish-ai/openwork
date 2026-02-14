@@ -2,6 +2,7 @@ import { getDashboardHtml } from "./dashboard";
 
 interface Env {
   ROUTING_CONFIG: KVNamespace;
+  DOWNLOADS_BUCKET: R2Bucket;
   GITHUB_TOKEN: string;
   GITHUB_REPO: string;
   AUDIT_WEBHOOK_SECRET: string;
@@ -14,6 +15,7 @@ type AuditAction =
   | "config_updated"
   | "deploy_triggered"
   | "release_completed"
+  | "desktop_release_triggered"
   | "override_added"
   | "override_removed";
 
@@ -210,11 +212,11 @@ async function handlePutConfig(request: Request, env: Env, ctx: ExecutionContext
   return jsonResponse(config, 200);
 }
 
-async function findLatestWorkflowRun(env: Env): Promise<string | null> {
+async function findLatestWorkflowRun(env: Env, workflowFile: string): Promise<string | null> {
   await new Promise((resolve) => setTimeout(resolve, WORKFLOW_POLL_DELAY_MS));
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/release-web.yml/runs?per_page=1`,
+      `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/${workflowFile}/runs?per_page=1`,
       {
         headers: {
           "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
@@ -267,7 +269,7 @@ async function handleDeploy(request: Request, env: Env, ctx: ExecutionContext): 
     return jsonResponse({ error: "github_api_error", status: response.status, message: "Failed to trigger deploy" }, 502);
   }
 
-  const runUrl = await findLatestWorkflowRun(env);
+  const runUrl = await findLatestWorkflowRun(env, "release-web.yml");
 
   const user = request.headers.get("Cf-Access-Authenticated-User-Email") || undefined;
   await writeAuditEntry(env, "deploy_triggered", { setAsDefault, runUrl }, "dashboard", user);
@@ -359,7 +361,7 @@ async function handlePostAudit(request: Request, env: Env): Promise<Response> {
   }
   const obj = body as Record<string, unknown>;
 
-  const validActions: AuditAction[] = ["config_updated", "deploy_triggered", "release_completed", "override_added", "override_removed"];
+  const validActions: AuditAction[] = ["config_updated", "deploy_triggered", "release_completed", "desktop_release_triggered", "override_added", "override_removed"];
   if (typeof obj.action !== "string" || !validActions.includes(obj.action as AuditAction)) {
     return jsonResponse({ error: "invalid_action" }, 400);
   }
@@ -376,6 +378,218 @@ async function handlePostAudit(request: Request, env: Env): Promise<Response> {
   );
 
   return jsonResponse(entry, 201);
+}
+
+function parseElectronUpdaterYaml(text: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const files: Array<Record<string, unknown>> = [];
+  let currentFile: Record<string, unknown> | null = null;
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trimEnd();
+    if (!line || line.startsWith("#")) continue;
+
+    if (line === "files:") {
+      continue;
+    }
+
+    // Array item start
+    if (line.startsWith("  - ")) {
+      if (currentFile) files.push(currentFile);
+      currentFile = {};
+      const kv = line.slice(4);
+      const idx = kv.indexOf(":");
+      if (idx !== -1) {
+        const key = kv.slice(0, idx).trim();
+        const val = kv.slice(idx + 1).trim();
+        currentFile[key] = val === '' ? val : (isNaN(Number(val)) ? val : Number(val));
+      }
+      continue;
+    }
+
+    // Array item continuation
+    if (line.startsWith("    ") && currentFile) {
+      const kv = line.trim();
+      const idx = kv.indexOf(":");
+      if (idx !== -1) {
+        const key = kv.slice(0, idx).trim();
+        const val = kv.slice(idx + 1).trim();
+        currentFile[key] = val === '' ? val : (isNaN(Number(val)) ? val : Number(val));
+      }
+      continue;
+    }
+
+    // Close any open file entry when we hit a top-level key
+    if (currentFile) {
+      files.push(currentFile);
+      currentFile = null;
+    }
+
+    // Top-level key: value
+    const idx = line.indexOf(":");
+    if (idx !== -1) {
+      const key = line.slice(0, idx).trim();
+      const val = line.slice(idx + 1).trim();
+      if (val.startsWith("'") && val.endsWith("'")) {
+        result[key] = val.slice(1, -1);
+      } else {
+        result[key] = val === '' ? val : (isNaN(Number(val)) ? val : Number(val));
+      }
+    }
+  }
+
+  if (currentFile) files.push(currentFile);
+  if (files.length) result.files = files;
+
+  return result;
+}
+
+async function handleDesktopWorkflows(env: Env): Promise<Response> {
+  const response = await fetch(
+    `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/release.yml/runs?per_page=20`,
+    {
+      headers: {
+        "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github+v3+json",
+        "User-Agent": "accomplish-admin",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    return jsonResponse({ error: "github_api_error", status: response.status }, 502);
+  }
+
+  const data = await response.json() as {
+    workflow_runs: Array<{
+      id: number;
+      status: string;
+      conclusion: string | null;
+      html_url: string;
+      created_at: string;
+      updated_at: string;
+      actor: { login: string } | null;
+      run_started_at: string;
+    }>;
+  };
+
+  const runs = (data.workflow_runs || []).map((r) => ({
+    id: r.id,
+    status: r.status,
+    conclusion: r.conclusion,
+    html_url: r.html_url,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    actor: r.actor?.login ?? "unknown",
+    run_started_at: r.run_started_at,
+  }));
+
+  return jsonResponse(runs, 200);
+}
+
+async function handleDesktopVersions(env: Env): Promise<Response> {
+  let cursor: string | undefined;
+  const allObjects: R2Object[] = [];
+  do {
+    const listed = await env.DOWNLOADS_BUCKET.list({ prefix: "downloads/", cursor });
+    allObjects.push(...listed.objects);
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+  const versions: Record<string, Array<{ name: string; size: number }>> = {};
+
+  for (const obj of allObjects) {
+    // Key format: downloads/{version}/macos/{filename}
+    const parts = obj.key.split("/");
+    if (parts.length < 3) continue;
+    const version = parts[1];
+    if (!versions[version]) versions[version] = [];
+    const name = parts.slice(2).join("/");
+    versions[version].push({ name, size: obj.size });
+  }
+
+  const result = Object.entries(versions)
+    .map(([version, files]) => ({ version, files }))
+    .sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
+
+  return jsonResponse(result, 200);
+}
+
+async function handleDesktopManifests(env: Env): Promise<Response> {
+  const [liteObj, enterpriseObj] = await Promise.all([
+    env.DOWNLOADS_BUCKET.get("latest-mac.yml"),
+    env.DOWNLOADS_BUCKET.get("latest-mac-enterprise.yml"),
+  ]);
+
+  const lite = liteObj ? parseElectronUpdaterYaml(await liteObj.text()) : null;
+  const enterprise = enterpriseObj ? parseElectronUpdaterYaml(await enterpriseObj.text()) : null;
+
+  return jsonResponse({ lite, enterprise }, 200);
+}
+
+async function handleDesktopRelease(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const parsed = await parseJsonBody(request);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed.data;
+
+  if (!body || typeof body !== "object" || typeof (body as Record<string, unknown>).updateLatestMac !== "boolean") {
+    return jsonResponse({ error: "invalid_body", message: "Expected { updateLatestMac: boolean }" }, 400);
+  }
+
+  const { updateLatestMac } = body as { updateLatestMac: boolean };
+
+  const response = await fetch(
+    `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/release.yml/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github+v3+json",
+        "User-Agent": "accomplish-admin",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: { update_latest_mac: String(updateLatestMac) },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("GitHub API error:", response.status, text);
+    return jsonResponse({ error: "github_api_error", status: response.status, message: "Failed to trigger desktop release" }, 502);
+  }
+
+  const runUrl = await findLatestWorkflowRun(env, "release.yml");
+
+  const user = request.headers.get("Cf-Access-Authenticated-User-Email") || undefined;
+  await writeAuditEntry(env, "desktop_release_triggered", { updateLatestMac, runUrl }, "dashboard", user);
+  sendSlackNotification(env, ctx, `Desktop release triggered${updateLatestMac ? " (update latest-mac)" : ""}${user ? ` by ${user}` : ""}`);
+
+  return jsonResponse({ dispatched: true, updateLatestMac, runUrl }, 202);
+}
+
+async function handleDesktopPackageVersion(env: Env): Promise<Response> {
+  const response = await fetch(
+    `https://api.github.com/repos/${env.GITHUB_REPO}/contents/apps/desktop/package.json?ref=main`,
+    {
+      headers: {
+        "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github+v3+json",
+        "User-Agent": "accomplish-admin",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    return jsonResponse({ error: "github_api_error", status: response.status }, 502);
+  }
+
+  const data = await response.json() as { content: string };
+  const decoded = atob(data.content.replace(/\n/g, ""));
+  const pkg = JSON.parse(decoded) as { version: string };
+
+  return jsonResponse({ version: pkg.version }, 200);
 }
 
 async function handleListBuilds(env: Env): Promise<Response> {
@@ -437,6 +651,24 @@ export default {
         }
         if (pathname === "/api/builds" && request.method === "GET") {
           return await handleListBuilds(env);
+        }
+
+        if (pathname === "/api/desktop/workflows" && request.method === "GET") {
+          return await handleDesktopWorkflows(env);
+        }
+        if (pathname === "/api/desktop/versions" && request.method === "GET") {
+          return await handleDesktopVersions(env);
+        }
+        if (pathname === "/api/desktop/manifests" && request.method === "GET") {
+          return await handleDesktopManifests(env);
+        }
+        if (pathname === "/api/desktop/release" && request.method === "POST") {
+          const originErr = checkOrigin(request);
+          if (originErr) return originErr;
+          return await handleDesktopRelease(request, env, ctx);
+        }
+        if (pathname === "/api/desktop/package-version" && request.method === "GET") {
+          return await handleDesktopPackageVersion(env);
         }
 
         return jsonResponse({ error: "not_found" }, 404);

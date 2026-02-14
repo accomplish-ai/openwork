@@ -18,3 +18,7 @@ KV_NAMESPACE_ID = ""
 [[kv_namespaces]]
 binding = "ROUTING_CONFIG"
 id = "local-dev-placeholder"
+
+[[r2_buckets]]
+binding = "DOWNLOADS_BUCKET"
+bucket_name = "openwork"

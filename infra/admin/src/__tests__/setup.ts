@@ -89,6 +89,7 @@ export function createMockEnv(overrides?: {
   return {
     ROUTING_CONFIG: createMockKV(overrides?.kvStore),
     ASSETS: createMockR2(overrides?.r2Objects),
+    DOWNLOADS_BUCKET: createMockR2(overrides?.r2Objects),
     GITHUB_TOKEN: "test-github-token",
     GITHUB_REPO: "test-org/test-repo",
     AUDIT_WEBHOOK_SECRET: "test-webhook-secret",
