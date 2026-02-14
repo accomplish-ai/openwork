@@ -656,5 +656,86 @@ describe('TaskInputBar Integration', () => {
 
       expect(onSubmit).toHaveBeenCalledWith(undefined);
     });
+
+    it('should show error when file exceeds 10MB limit', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const largeFile = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large.bin');
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Process this"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [largeFile], types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/exceeds 10MB limit/)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when dropping more than 5 files', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const files = Array.from({ length: 6 }, (_, i) =>
+        new File(['content'], `file${i}.txt`) as File & { path?: string }
+      );
+      files.forEach((f, i) => {
+        (f as File & { path?: string }).path = `/path/file${i}.txt`;
+      });
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Process these"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files, types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Maximum 5 files/)).toBeInTheDocument();
+      });
+    });
+
+    it('should remove attachment when chip remove button is clicked', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const file = new File([], 'test.bin') as File & { path?: string };
+      file.path = '/path/test.bin';
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Review this"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.dragOver(dropZone, { dataTransfer: { types: ['Files'] } });
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [file], types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('attachment-chip-test.bin')).toBeInTheDocument();
+      });
+
+      const removeButton = screen.getByRole('button', { name: /Remove test.bin/ });
+      fireEvent.click(removeButton);
+
+      expect(screen.queryByTestId('attachment-chip-test.bin')).not.toBeInTheDocument();
+    });
   });
 });

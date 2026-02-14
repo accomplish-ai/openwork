@@ -116,6 +116,7 @@ export default function TaskInputBar({
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const dragCounterRef = useRef(0);
   const effectivePrompt = attachments.length > 0 ? buildPromptWithAttachments(value, attachments) : value;
   const isOverLimit = effectivePrompt.length > PROMPT_DEFAULT_MAX_LENGTH;
   const canSubmit = !!basePrompt && !isDisabled && !isOverLimit;
@@ -179,6 +180,7 @@ export default function TaskInputBar({
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
+      dragCounterRef.current = 0;
       setDragOver(false);
       if (isDisabled || speechInput.isRecording) return;
       const files = Array.from(e.dataTransfer.files);
@@ -214,9 +216,23 @@ export default function TaskInputBar({
     [isDisabled, speechInput.isRecording]
   );
 
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      if (!isDisabled && !speechInput.isRecording && e.dataTransfer.types.includes('Files')) {
+        setDragOver(true);
+      }
+    },
+    [isDisabled, speechInput.isRecording]
+  );
+
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setDragOver(false);
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setDragOver(false);
+    }
   }, []);
 
   const removeAttachment = useCallback((id: string) => {
@@ -332,6 +348,7 @@ export default function TaskInputBar({
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
       >
         {/* File attachment chips */}
