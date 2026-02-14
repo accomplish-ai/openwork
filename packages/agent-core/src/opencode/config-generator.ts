@@ -634,8 +634,7 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'openrouter') {
       args.push('--model', selectedModel.model);
     } else if (selectedModel.provider === 'ollama') {
-      // Normalize model ID: strip any existing prefix and re-add it
-      // This handles both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
+      // Accept both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
       const normalizedModelId = selectedModel.model.replace(/^ollama\//, '');
       args.push('--model', `ollama/${normalizedModelId}`);
     } else if (selectedModel.provider === 'litellm') {

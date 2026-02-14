@@ -72,7 +72,7 @@ export class TaskManager {
     callbacks: TaskCallbacks
   ): Promise<Task> {
     console.log('[TaskManager] Starting task:', taskId);
-    console.log('[TaskManager] Working directory:', config.workingDirectory || this.options.defaultWorkingDirectory);
+    console.log('[TaskManager] Working directory:', config.workingDirectory ? '<custom>' : '<default>');
     console.log('[TaskManager] Prompt length:', config.prompt?.length || 0);
 
     const cliInstalled = await this.options.isCliAvailable();
