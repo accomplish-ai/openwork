@@ -228,7 +228,8 @@ export async function buildProviderConfigs(
   for (const { id, name, baseUrl, prefix } of openaiCompatibleProviders) {
     const prov = providerSettings.connectedProviders[id as keyof typeof providerSettings.connectedProviders];
     if (prov?.connectionStatus === 'connected' && prov.selectedModelId) {
-      const modelId = (prov.selectedModelId as string).replace(new RegExp(`^${prefix.replace('/', '\\/')}`), '');
+      const selectedModel = prov.selectedModelId as string;
+      const modelId = selectedModel.startsWith(prefix) ? selectedModel.slice(prefix.length) : selectedModel;
       const apiKey = getApiKey(id);
       if (apiKey) {
         providerConfigs.push({
