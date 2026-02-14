@@ -207,28 +207,44 @@ export default function SettingsDialog({
 
   // Handle safety level change
   const handleSafetyLevelChange = useCallback(async (level: string) => {
-    setSafetyLevelState(level);
-    await accomplish.setSafetyLevel(level);
+    try {
+      await accomplish.setSafetyLevel(level);
+      setSafetyLevelState(level);
+    } catch (error) {
+      console.error('Failed to set safety level:', error);
+    }
   }, [accomplish]);
 
   // Handle dry-run mode toggle
   const handleDryRunToggle = useCallback(async () => {
     const newValue = !dryRunMode;
-    setDryRunModeState(newValue);
-    await accomplish.setDryRunMode(newValue);
+    try {
+      await accomplish.setDryRunMode(newValue);
+      setDryRunModeState(newValue);
+    } catch (error) {
+      console.error('Failed to set dry-run mode:', error);
+    }
   }, [dryRunMode, accomplish]);
 
   // Handle provider profile change
   const handleProviderProfileChange = useCallback(async (profile: string) => {
-    setProviderProfileState(profile);
-    await accomplish.setProviderProfile(profile);
+    try {
+      await accomplish.setProviderProfile(profile);
+      setProviderProfileState(profile);
+    } catch (error) {
+      console.error('Failed to set provider profile:', error);
+    }
   }, [accomplish]);
 
   // Handle auto-fallback toggle
   const handleAutoFallbackToggle = useCallback(async () => {
     const newValue = !autoFallback;
-    setAutoFallbackState(newValue);
-    await accomplish.setAutoFallback(newValue);
+    try {
+      await accomplish.setAutoFallback(newValue);
+      setAutoFallbackState(newValue);
+    } catch (error) {
+      console.error('Failed to set auto-fallback:', error);
+    }
   }, [autoFallback, accomplish]);
 
   // Handle log export
