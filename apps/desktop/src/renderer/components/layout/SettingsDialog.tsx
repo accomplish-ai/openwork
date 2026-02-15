@@ -32,7 +32,7 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about';
+  initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers';
 }
 
 export default function SettingsDialog({
@@ -46,7 +46,7 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers'>(initialTab as any);
+  const [activeTab, setActiveTab] = useState<'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers'>(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
