@@ -87,7 +87,7 @@
     "@vitest/coverage-v8": "^4.0.17",
     "autoprefixer": "^10.4.20",
     "electron": "^35.2.1",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.7.0",
     "esbuild": "^0.27.3",
     "happy-dom": "^20.1.0",
     "jsdom": "^27.4.0",
