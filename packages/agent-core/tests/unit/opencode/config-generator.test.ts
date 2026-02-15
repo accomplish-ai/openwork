@@ -396,7 +396,7 @@ describe('ConfigGenerator', () => {
       // Should use node + dist path instead of tsx + src
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]?.replace(/\\/g, '/')).toContain('dist/index.mjs');
     });
 
     it('should use tsx for MCP entry when not packaged', () => {
@@ -453,6 +453,22 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('complete_task');
     });
 
+    it('should include conversational bypass rules for simple chat', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('CONVERSATIONAL BYPASS');
+      expect(result.systemPrompt).toContain('Do NOT call start_task');
+      expect(result.systemPrompt).toContain('Do NOT call complete_task');
+      expect(result.systemPrompt).toContain('Keep responses concise by default');
+    });
+
     it('should include filesystem rules', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
@@ -480,6 +496,7 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('<capabilities>');
       expect(result.systemPrompt).toContain('Browser Automation');
       expect(result.systemPrompt).toContain('File Management');
+      expect(result.systemPrompt).toContain('Do not list capabilities unless the user explicitly asks');
     });
 
     it('should include user communication rules', () => {
@@ -577,8 +594,16 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).not.toContain('browser_batch_actions');
       expect(result.systemPrompt).not.toContain('browser_script');
       expect(result.systemPrompt).not.toContain('browser_* MCP tools');
-      expect(result.systemPrompt).not.toContain('BROWSER ACTION VERBOSITY');
+      expect(result.systemPrompt).not.toContain('BROWSER COMMUNICATION STYLE');
       expect(result.systemPrompt).not.toContain('Browser Automation');
+    });
+
+    it('should include concise browser communication guidance when browser is enabled', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'builtin' } }));
+
+      expect(result.systemPrompt).toContain('BROWSER COMMUNICATION STYLE');
+      expect(result.systemPrompt).toContain('Do not narrate every click');
+      expect(result.systemPrompt).toContain('Prefer short milestone updates');
     });
 
     it('should keep browser identity in prompt for builtin mode', () => {
