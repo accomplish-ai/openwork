@@ -155,9 +155,12 @@ async function handleChatCompletion(req: ChatCompletionRequest): Promise<object>
     });
 
     // Decode only the generated tokens (skip prompt tokens)
-    const promptLength = inputs.input_ids.dims[1];
+    const promptLength = inputs.input_ids.dims?.[1] || 0;
     const generatedTokens = outputs.slice(null, [promptLength, null]);
     const text = state.tokenizer.decode(generatedTokens[0], { skip_special_tokens: true });
+
+    const completionTokens = generatedTokens.dims?.[1] || 0;
+    const totalTokens = promptLength + completionTokens;
 
     return {
         id: `chatcmpl-hf-${Date.now()}`,
@@ -176,8 +179,8 @@ async function handleChatCompletion(req: ChatCompletionRequest): Promise<object>
         ],
         usage: {
             prompt_tokens: promptLength,
-            completion_tokens: generatedTokens.dims?.[1] || 0,
-            total_tokens: (promptLength || 0) + (generatedTokens.dims?.[1] || 0),
+            completion_tokens: completionTokens,
+            total_tokens: totalTokens,
         },
     };
 }
