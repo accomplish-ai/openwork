@@ -16,7 +16,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'complete_task',
       description:
-        'Call this tool when you have finished the task or cannot continue. You MUST call this tool to end a task - do not stop without calling it.',
+        'Call this tool when you have finished the task or cannot continue. You MUST call this tool to end a task - do not stop without calling it. IMPORTANT: Before calling with status "success", ensure all todos are marked "completed" or "cancelled" via todowrite. Completion will be rejected if any todos are still pending or in_progress.',
       inputSchema: {
         type: 'object',
         required: ['status', 'summary', 'original_request_summary'],
