@@ -46,7 +46,6 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'glm-4.5-flash': 'GLM-4.5 Flash',
   // MiniMax
   'MiniMax-M2.5': 'MiniMax M2.5',
-  'minimax-m2.5': 'MiniMax M2.5',
   'MiniMax-M2': 'MiniMax M2',
   'MiniMax-M2.1': 'MiniMax M2.1',
 };
