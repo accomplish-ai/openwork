@@ -516,7 +516,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         this.emit('complete', {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
-          error: message.error,
+          error: typeof message.error === 'string'
+            ? message.error
+            : JSON.stringify(message.error) || 'Unknown error',
         });
         break;
 
