@@ -2,7 +2,6 @@ import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
 import { StreamParser } from './StreamParser.js';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './OpenCodeLogWatcher.js';
 import { CompletionEnforcer, CompletionEnforcerCallbacks, CompletionFlowState } from '../../opencode/completion/index.js';
