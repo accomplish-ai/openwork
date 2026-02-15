@@ -101,6 +101,8 @@ import {
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
 
+import { registerCloudBrowserHandlers } from './cloud-browsers';
+
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
@@ -602,6 +604,9 @@ export function registerIPCHandlers(): void {
 
   // Vertex AI handlers
   registerVertexHandlers(handle);
+
+  // Cloud Browser handlers
+  registerCloudBrowserHandlers(handle);
 
   handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {
     await deleteApiKey('anthropic');

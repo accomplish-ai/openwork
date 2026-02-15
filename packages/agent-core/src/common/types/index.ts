@@ -87,6 +87,7 @@ export type {
   ToolSupportStatus,
   ConnectedProvider,
   ProviderSettings,
+  AwsAgentCoreConfig,
 } from './providerSettings.js';
 
 export type { SkillSource, Skill, SkillFrontmatter } from './skills.js';

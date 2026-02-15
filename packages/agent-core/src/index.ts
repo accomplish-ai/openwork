@@ -314,6 +314,7 @@ export type {
   ToolSupportStatus,
   ConnectedProvider,
   ProviderSettings,
+  AwsAgentCoreConfig,
 } from './common/types/providerSettings.js';
 export {
   PROVIDER_META,

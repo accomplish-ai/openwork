@@ -6,7 +6,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import type { ProviderType, Skill, TodoItem, McpConnector, AwsAgentCoreConfig } from '@accomplish_ai/agent-core';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -364,9 +364,12 @@ const accomplishAPI = {
     ipcRenderer.invoke('connectors:disconnect', connectorId),
   onMcpAuthCallback: (callback: (url: string) => void) => {
     const listener = (_: unknown, url: string) => callback(url);
-    ipcRenderer.on('auth:mcp-callback', listener);
     return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
   },
+
+  // Cloud Browsers
+  testCloudBrowserConnection: (config: AwsAgentCoreConfig): Promise<boolean> =>
+    ipcRenderer.invoke('cloud-browser:test-connection', config),
 };
 
 // Expose the API to the renderer

@@ -97,6 +97,12 @@ export interface AzureFoundryCredentials {
   deploymentName: string;
   keyPrefix?: string;
 }
+export interface AwsAgentCoreConfig {
+  region: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  profile?: string;
+}
 
 export interface VertexProviderCredentials {
   type: 'vertex';
@@ -138,6 +144,10 @@ export interface ProviderSettings {
   activeProviderId: ProviderId | null;
   connectedProviders: Partial<Record<ProviderId, ConnectedProvider>>;
   debugMode: boolean;
+  cloudBrowser?: {
+    provider: 'aws-agent-core' | 'browserbase' | null;
+    aws?: AwsAgentCoreConfig;
+  };
 }
 
 export function isProviderReady(provider: ConnectedProvider | undefined): boolean {

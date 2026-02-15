@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  AwsAgentCoreConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -236,6 +237,8 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+  // Cloud Browsers
+  testCloudBrowserConnection(config: AwsAgentCoreConfig): Promise<boolean>;
 }
 
 interface AccomplishShell {
@@ -294,6 +297,8 @@ export function getAccomplish() {
     detectVertexProject: () => window.accomplish!.detectVertexProject(),
 
     listVertexProjects: () => window.accomplish!.listVertexProjects(),
+    
+    testCloudBrowserConnection: (config: AwsAgentCoreConfig) => window.accomplish!.testCloudBrowserConnection(config),
   };
 }
 
