@@ -153,6 +153,7 @@ describe('ConfigGenerator', () => {
       expect(result.mcpServers['dev-browser-mcp']).toBeDefined();
       expect(result.mcpServers['complete-task']).toBeDefined();
       expect(result.mcpServers['start-task']).toBeDefined();
+      expect(result.mcpServers['desktop-control']).toBeDefined();
     });
 
     it('should set permission API port in environment', () => {
@@ -166,6 +167,7 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9999');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9999');
     });
 
     it('should set question API port in environment', () => {
@@ -191,6 +193,7 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9226');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9226');
       expect(result.mcpServers['ask-user-question'].environment?.QUESTION_API_PORT).toBe('9227');
     });
 
@@ -396,7 +399,7 @@ describe('ConfigGenerator', () => {
       // Should use node + dist path instead of tsx + src
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]).toContain(path.join('dist', 'index.mjs'));
     });
 
     it('should use tsx for MCP entry when not packaged', () => {
