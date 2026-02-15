@@ -60,6 +60,7 @@ export default function SettingsDialog({
   } = useProviderSettings();
 
   const [theme, setThemeState] = useState<string>('system');
+  const [sandboxMode, setSandboxModeState] = useState(false);
   // Debug mode state - stored in appSettings, not providerSettings
   const [debugMode, setDebugModeState] = useState(false);
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
@@ -70,6 +71,7 @@ export default function SettingsDialog({
     if (!open) return;
     refetch();
     accomplish.getTheme().then(setThemeState);
+    accomplish.getSandboxMode().then(setSandboxModeState);
     accomplish.getDebugMode().then(setDebugModeState);
     // Load app version
     accomplish.getVersion().then(setAppVersion);
@@ -185,6 +187,12 @@ export default function SettingsDialog({
     applyTheme(value);
     await accomplish.setTheme(value);
   }, [accomplish]);
+
+  const handleSandboxToggle = useCallback(async () => {
+    const newValue = !sandboxMode;
+    await accomplish.setSandboxMode(newValue);
+    setSandboxModeState(newValue);
+  }, [sandboxMode, accomplish]);
 
   // Handle debug mode toggle - writes to appSettings (correct store)
   const handleDebugToggle = useCallback(async () => {
@@ -586,6 +594,25 @@ export default function SettingsDialog({
                       {option.label}
                     </button>
                   ))}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground">Sandbox Mode</div>
+                    <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                      Run tasks in a Docker container for limited filesystem and network access. Requires Docker to be installed.
+                    </p>
+                  </div>
+                  <button
+                    data-testid="settings-sandbox-toggle"
+                    onClick={handleSandboxToggle}
+                    className={`relative ml-4 inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${sandboxMode ? 'bg-primary' : 'bg-muted'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${sandboxMode ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

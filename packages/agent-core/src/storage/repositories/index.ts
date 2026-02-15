@@ -17,6 +17,8 @@ export {
   setOpenAiBaseUrl,
   getTheme,
   setTheme,
+  getSandboxMode,
+  setSandboxMode,
   getAppSettings,
   clearAppSettings,
   type AppSettings,

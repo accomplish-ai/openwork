@@ -58,6 +58,8 @@ interface AccomplishAPI {
   setDebugMode(enabled: boolean): Promise<void>;
   getTheme(): Promise<string>;
   setTheme(theme: string): Promise<void>;
+  getSandboxMode(): Promise<boolean>;
+  setSandboxMode(enabled: boolean): Promise<void>;
   onThemeChange?(callback: (data: { theme: string; resolved: string }) => void): () => void;
   getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }>;
   getOpenAiBaseUrl(): Promise<string>;

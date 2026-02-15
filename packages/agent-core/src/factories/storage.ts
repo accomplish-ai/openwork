@@ -37,6 +37,8 @@ import {
   setOpenAiBaseUrl,
   getTheme,
   setTheme,
+  getSandboxMode,
+  setSandboxMode,
   getAppSettings,
   clearAppSettings,
 } from '../storage/repositories/appSettings.js';
@@ -121,6 +123,8 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     setOpenAiBaseUrl: (baseUrl) => setOpenAiBaseUrl(baseUrl),
     getTheme: () => getTheme(),
     setTheme: (theme) => setTheme(theme),
+    getSandboxMode: () => getSandboxMode(),
+    setSandboxMode: (enabled) => setSandboxMode(enabled),
     getAppSettings: () => getAppSettings(),
     clearAppSettings: () => clearAppSettings(),
 

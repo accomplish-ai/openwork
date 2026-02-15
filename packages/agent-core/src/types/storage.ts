@@ -58,6 +58,7 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  sandboxMode: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +131,10 @@ export interface AppSettingsAPI {
   getTheme(): ThemePreference;
   /** Set the theme preference */
   setTheme(theme: ThemePreference): void;
+  /** Get whether sandbox mode is enabled (Docker-based task execution) */
+  getSandboxMode(): boolean;
+  /** Set sandbox mode */
+  setSandboxMode(enabled: boolean): void;
   /** Get all application settings as a snapshot */
   getAppSettings(): AppSettings;
   /** Reset all application settings to defaults */
