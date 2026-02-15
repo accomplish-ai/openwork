@@ -177,7 +177,40 @@ describe('OpenCodeLogWatcher', () => {
 
       const message = OpenCodeLogWatcher.getErrorMessage(error);
       expect(message).toContain('Model not available');
-      expect(message).toContain('unknown');
+    });
+
+    it('should classify Gemini resource exhausted as quota error', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        providerID: 'gemini',
+        errorName: 'QuotaExceededError',
+        statusCode: 429,
+        message: 'RESOURCE_EXHAUSTED',
+        raw: '429 RESOURCE_EXHAUSTED',
+      };
+
+      const details = OpenCodeLogWatcher.getErrorDetails(error);
+      expect(details.category).toBe('quota');
+      expect(details.providerId).toBe('gemini');
+      expect(details.userMessage).toContain('quota');
+    });
+
+    it('should classify OpenAI insufficient quota as quota error', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        providerID: 'openai',
+        errorName: 'AI_APICallError',
+        statusCode: 429,
+        message: 'You exceeded your current quota, please check your plan and billing details.',
+        raw: 'insufficient_quota',
+      };
+
+      const details = OpenCodeLogWatcher.getErrorDetails(error);
+      expect(details.category).toBe('quota');
+      expect(details.providerId).toBe('openai');
+      expect(details.userMessage).toContain('OpenAI');
     });
 
     it('should return user-friendly message for AI_APICallError with 429', () => {
@@ -272,6 +305,29 @@ describe('OpenCodeLogWatcher', () => {
     it('should create a new log watcher with default directory', () => {
       const newWatcher = createLogWatcher();
       expect(newWatcher).toBeInstanceOf(OpenCodeLogWatcher);
+    });
+  });
+
+  describe('line parsing', () => {
+    it('should match AI_APICallError lines even when hint tokens are absent', () => {
+      watcher = new OpenCodeLogWatcher(logDir);
+      const errors: OpenCodeLogError[] = [];
+      watcher.on('error', (error) => errors.push(error));
+
+      const line =
+        '{"name":"AI_APICallError","statusCode":418,"message":"request failed","providerID":"openai","modelID":"gpt-5","sessionID":"sess-123"}';
+
+      (
+        watcher as unknown as {
+          parseLine: (line: string) => void;
+        }
+      ).parseLine(line);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].errorName).toBe('AI_APICallError');
+      expect(errors[0].statusCode).toBe(418);
+      expect(errors[0].raw).toBe(line);
+      expect(errors[0].errorDetails?.providerId).toBe('openai');
     });
   });
 

@@ -107,6 +107,8 @@ export type {
   TaskAttachment,
   TaskMessage,
   TaskResult,
+  TaskErrorCategory,
+  TaskErrorDetails,
   StartupStage,
   TaskProgress,
   TaskUpdateEvent,
