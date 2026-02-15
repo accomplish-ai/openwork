@@ -29,9 +29,6 @@ interface SettingsDialogProps {
   onOpenChange: (open: boolean) => void;
   onApiKeySaved?: () => void;
   initialProvider?: ProviderId;
-  /**
-   * Initial tab to show when dialog opens ('providers' or 'voice')
-   */
   initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers';
 }
 
