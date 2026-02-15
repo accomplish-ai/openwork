@@ -1,4 +1,4 @@
-import { app, Menu, shell } from 'electron';
+import { app, dialog, Menu, shell } from 'electron';
 import { checkForUpdates, getUpdateState, quitAndInstall, setOnUpdateDownloaded } from './updater';
 
 export function buildAppMenu(): void {
@@ -52,8 +52,26 @@ export function buildAppMenu(): void {
     {
       label: 'Help',
       submenu: [
-        ...(!isMac ? [updateMenuItem, { type: 'separator' as const }] : []),
+        ...(!isMac ? [
+          { label: 'Check for Updates...', click: () => checkForUpdates(false) },
+          { type: 'separator' as const },
+        ] : []),
         { label: 'Learn More', click: () => shell.openExternal('https://accomplish.ai') },
+        ...(!isMac ? [
+          { type: 'separator' as const },
+          {
+            label: 'About Accomplish',
+            click: async () => {
+              await dialog.showMessageBox({
+                type: 'info',
+                title: 'About Accomplish',
+                message: 'Accomplish',
+                detail: `Version ${app.getVersion()}\n\nA desktop automation assistant.\n\n© ${new Date().getFullYear()} Accomplish AI`,
+                buttons: ['OK'],
+              });
+            },
+          },
+        ] : []),
       ],
     },
   ];

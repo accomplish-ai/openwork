@@ -113,6 +113,11 @@ cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 | `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
 | `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |
 | `R2_BUCKET` | CI / release scripts | Cloudflare R2 bucket name for desktop update artifacts |
+| `SM_HOST` | CI / release | DigiCert KeyLocker host for Windows code signing |
+| `SM_API_KEY` | CI / release | DigiCert API key for Windows code signing |
+| `SM_CLIENT_CERT_FILE` | CI / release | DigiCert client cert file for Windows code signing |
+| `SM_CLIENT_CERT_PASSWORD` | CI / release | DigiCert client cert password for Windows code signing |
+| `SM_KEYPAIR_ALIAS` | CI / release | DigiCert keypair alias for Windows code signing |
 
 ## Verification Command
 
@@ -131,7 +136,7 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 | `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → deploy versioned workers + router → update KV |
 | `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
 | `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + KV keys |
-| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL`, R2 creds | Build desktop (mac arm64+x64, lite+enterprise) → upload to R2 → generate update manifests → GitHub Release |
+| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL`, R2 creds | Build desktop (mac arm64+x64, win x64, lite+enterprise) → upload to R2 → generate update manifests → GitHub Release |
 
 All deploy/preview workflows validate required secrets at startup (`.github/actions/validate-secrets/`).
 
@@ -218,6 +223,5 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 ## Known Issues / Open Items
 - No staging environment — PR previews serve as staging
 - No deploy rollback mechanism
-- Windows desktop build is disabled in release workflow
 - Router TODOs: canary routing, A/B experiments, Analytics Engine
 - Remaining manual setup: Cloudflare API tokens, GitHub secrets (see CI validation for required list)

@@ -1,11 +1,38 @@
 import fixPath from 'fix-path';
 fixPath();
 
+import path from 'path';
+import { spawn } from 'child_process';
+import { app } from 'electron';
+
+// Handle Squirrel.Windows startup events FIRST - before anything else
+if (process.platform === 'win32') {
+  const squirrelCommand = process.argv[1];
+
+  if (squirrelCommand === '--squirrel-install' || squirrelCommand === '--squirrel-updated') {
+    const updateExe = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
+    const exeName = path.basename(process.execPath);
+    const child = spawn(updateExe, ['--createShortcut=' + exeName], { detached: true, stdio: 'ignore' });
+    child.unref();
+    app.quit();
+    process.exit(0);
+  } else if (squirrelCommand === '--squirrel-uninstall') {
+    const updateExe = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
+    const exeName = path.basename(process.execPath);
+    const child = spawn(updateExe, ['--removeShortcut=' + exeName], { detached: true, stdio: 'ignore' });
+    child.unref();
+    app.quit();
+    process.exit(0);
+  } else if (squirrelCommand === '--squirrel-obsolete') {
+    app.quit();
+    process.exit(0);
+  }
+}
+
 import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { config } from 'dotenv';
-import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
-import path from 'path';
+import { BrowserWindow, shell, ipcMain, nativeImage, dialog } from 'electron';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initUpdater, autoCheckForUpdates } from './updater';

@@ -188,7 +188,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Rebuild native modules
-        run: pnpm rebuild better-sqlite3 --recursive
+        run: |
+          pnpm rebuild better-sqlite3 --recursive
+          pnpm rebuild node-pty --recursive
 
       - name: Build packages
         run: pnpm build
@@ -282,5 +284,68 @@ jobs:
         with:
           name: smoke-debug-logs
           path: /tmp/e2e-debug/
+          retention-days: 7
+
+  windows-smoke-tests:
+    name: Windows Smoke Tests
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Rebuild native modules
+        run: |
+          pnpm rebuild better-sqlite3 --recursive
+          pnpm rebuild node-pty --recursive
+
+      - name: Rebuild native modules for Electron
+        run: pnpm exec electron-rebuild -f
+        working-directory: apps/desktop
+
+      - name: Run smoke tests
+        timeout-minutes: 5
+        run: pnpm -F @accomplish/desktop test:smoke
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-smoke-playwright-report
+          path: apps/desktop/playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-smoke-test-results
+          path: apps/desktop/test-results/
+          retention-days: 7
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-smoke-test-artifacts
+          path: apps/desktop/test-artifacts/
           retention-days: 7
 

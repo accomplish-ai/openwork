@@ -102,6 +102,7 @@
       "dist-electron/main/mcp/*.js"
     ],
     "afterPack": "./scripts/after-pack.cjs",
+    "afterAllArtifactBuild": "./scripts/after-all-artifact-build.cjs",
     "extraResources": [
       {
         "from": "resources/icon.png",
@@ -169,7 +170,8 @@
       "target": [
         "nsis"
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.ico",
+      "sign": "./scripts/sign-win.cjs"
     },
     "nsis": {
       "oneClick": true,

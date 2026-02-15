@@ -9,7 +9,7 @@ on:
         default: true
         type: boolean
       update_latest_win:
-        description: 'Update latest-win.yml manifest (reserved for future Windows builds)'
+        description: 'Update latest-win.yml manifest'
         required: false
         default: true
         type: boolean
@@ -122,6 +122,49 @@ jobs:
             apps/desktop/release/*-x64.zip
           retention-days: 30
 
+  build-win-x64:
+    name: Build Windows (x64) - ${{ matrix.tier }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        tier: [lite, enterprise]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Download Node.js binaries
+        run: pnpm -F @accomplish/desktop download:nodejs
+      - name: Build desktop app
+        run: pnpm -F @accomplish/desktop build
+        env:
+          APP_TIER: ${{ matrix.tier }}
+      - name: Package and sign
+        run: node scripts/package.cjs --win --x64 --publish never
+        working-directory: apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SM_HOST: ${{ secrets.SM_HOST }}
+          SM_API_KEY: ${{ secrets.SM_API_KEY }}
+          SM_CLIENT_CERT_FILE: ${{ secrets.SM_CLIENT_CERT_FILE }}
+          SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+          SM_KEYPAIR_ALIAS: ${{ secrets.SM_KEYPAIR_ALIAS }}
+          APP_TIER: ${{ matrix.tier }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.tier == 'enterprise' && 'Accomplish-Enterprise-Windows-x64' || 'Accomplish-Windows-x64' }}
+          path: |
+            apps/desktop/release/*.exe
+          retention-days: 30
+
   upload-cloudflare:
     name: Upload to Cloudflare R2 - ${{ matrix.tier }}
     needs: [build-mac-arm64, build-mac-x64]
@@ -147,7 +190,7 @@ jobs:
         id: version
         run: |
           VERSION=$(node -p "require('./apps/desktop/package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Upload binaries and manifest to R2
         run: bash scripts/upload-r2-macos.sh
         env:
@@ -160,9 +203,42 @@ jobs:
           AWS_REGION: auto
           UPDATE_MANIFEST: ${{ inputs.update_latest_mac }}
 
+  upload-cloudflare-win:
+    name: Upload Windows to Cloudflare R2 - ${{ matrix.tier }}
+    needs: [build-win-x64]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        tier: [lite, enterprise]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.tier == 'enterprise' && 'Accomplish-Enterprise-Windows-x64' || 'Accomplish-Windows-x64' }}
+          path: ./release/win
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Upload binaries and manifest to R2
+        run: bash scripts/upload-r2-windows.sh
+        env:
+          BASE_VERSION: ${{ steps.version.outputs.version }}
+          TIER: ${{ matrix.tier }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+          UPDATE_MANIFEST: ${{ inputs.update_latest_win }}
+
   release-private:
     name: Release to Private Repo
-    needs: [build-mac-arm64, build-mac-x64]
+    needs: [build-mac-arm64, build-mac-x64, build-win-x64]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -187,11 +263,21 @@ jobs:
         with:
           name: Accomplish-Enterprise-macOS-x64
           path: ./release/mac
+      - name: Download Windows lite artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Accomplish-Windows-x64
+          path: ./release/win
+      - name: Download Windows enterprise artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Accomplish-Enterprise-Windows-x64
+          path: ./release/win
       - name: Get version from package.json
         id: version
         run: |
           VERSION=$(node -p "require('./apps/desktop/package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Create/Update Release (private repo)
         uses: softprops/action-gh-release@v1
         with:
@@ -201,17 +287,17 @@ jobs:
           prerelease: false
           files: |
             ./release/mac/*
+            ./release/win/*
           body: |
             ## Accomplish v${{ steps.version.outputs.version }}
 
             ### Downloads
             - **macOS (Apple Silicon)**: `Accomplish-*-arm64.dmg`
             - **macOS (Intel)**: `Accomplish-*-x64.dmg`
+            - **Windows (x64)**: `Accomplish-*-win-x64.exe`
 
             ### Installation
-            1. Download the appropriate installer for your Mac
-            2. Open the DMG and drag Accomplish to Applications
-            3. Launch Accomplish
-            4. Enter your API key to get started
+            **macOS:** Open the DMG and drag Accomplish to Applications
+            **Windows:** Run the installer and follow the prompts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

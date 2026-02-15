@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from 'events';
 
 const storeData: Record<string, unknown> = {};
 
@@ -7,6 +8,7 @@ vi.mock('electron', () => ({
   dialog: { showMessageBox: vi.fn(() => Promise.resolve({ response: 1 })), showErrorBox: vi.fn() },
   BrowserWindow: vi.fn(),
   shell: { openExternal: vi.fn() },
+  clipboard: { writeText: vi.fn() },
 }));
 
 const mockAutoUpdater = {
@@ -24,6 +26,23 @@ vi.mock('electron-store', () => {
   return { default: MockStore };
 });
 
+// Mock https for Windows update flow
+function createMockHttpsResponse(statusCode: number, body: string) {
+  const res = new EventEmitter() as EventEmitter & { statusCode: number };
+  res.statusCode = statusCode;
+  setTimeout(() => {
+    res.emit('data', body);
+    res.emit('end');
+  }, 0);
+  return res;
+}
+
+const mockHttpsGet = vi.fn();
+vi.mock('https', () => ({
+  default: { get: (...args: unknown[]) => mockHttpsGet(...args) },
+  get: (...args: unknown[]) => mockHttpsGet(...args),
+}));
+
 vi.mock('../../../src/main/opencode', () => ({ disposeTaskManager: vi.fn() }));
 vi.stubGlobal('__APP_TIER__', 'enterprise');
 vi.stubGlobal('__APP_VERSION__', '0.3.8');
@@ -33,6 +52,11 @@ describe('updater', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     for (const key of Object.keys(storeData)) delete storeData[key];
+    mockHttpsGet.mockImplementation((_url: string, cb: (res: unknown) => void) => {
+      const res = createMockHttpsResponse(200, `version: 1.0.0\npath: https://example.com/installer.exe\nsha512: abc123\nreleaseDate: '2026-01-01'\n`);
+      cb(res);
+      return { on: vi.fn() };
+    });
   });
 
   describe('shouldAutoCheck', () => {
@@ -65,18 +89,39 @@ describe('updater', () => {
   });
 
   describe('initUpdater', () => {
-    it('configures autoUpdater with correct settings', async () => {
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
-      expect(mockAutoUpdater.autoDownload).toBe(true);
-      expect(mockAutoUpdater.autoInstallOnAppQuit).toBe(true);
-      expect(mockAutoUpdater.setFeedURL).toHaveBeenCalledWith({
-        provider: 'generic', url: 'https://downloads.openwork.me', channel: 'enterprise',
-      });
+    it('configures autoUpdater with correct settings on non-win32', async () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
+        expect(mockAutoUpdater.autoDownload).toBe(true);
+        expect(mockAutoUpdater.autoInstallOnAppQuit).toBe(true);
+        expect(mockAutoUpdater.setFeedURL).toHaveBeenCalledWith({
+          provider: 'generic', url: 'https://downloads.openwork.me', channel: 'enterprise',
+        });
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('returns early on win32 without configuring autoUpdater', async () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
+        expect(mockAutoUpdater.setFeedURL).not.toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
 
     it('sets channel to latest for lite tier', async () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
       vi.stubGlobal('__APP_TIER__', 'lite');
       try {
         const { initUpdater } = await import('../../../src/main/updater');
@@ -87,18 +132,25 @@ describe('updater', () => {
         );
       } finally {
         vi.stubGlobal('__APP_TIER__', 'enterprise');
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
       }
     });
 
     it('registers event handlers for update-available, download-progress, update-downloaded, error', async () => {
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
-      const registeredEvents = mockAutoUpdater.on.mock.calls.map((c: unknown[]) => c[0]);
-      expect(registeredEvents).toContain('update-available');
-      expect(registeredEvents).toContain('download-progress');
-      expect(registeredEvents).toContain('update-downloaded');
-      expect(registeredEvents).toContain('error');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
+        const registeredEvents = mockAutoUpdater.on.mock.calls.map((c: unknown[]) => c[0]);
+        expect(registeredEvents).toContain('update-available');
+        expect(registeredEvents).toContain('download-progress');
+        expect(registeredEvents).toContain('update-downloaded');
+        expect(registeredEvents).toContain('error');
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
   });
 
@@ -115,29 +167,119 @@ describe('updater', () => {
       }
     });
 
-    it('on win32 with silent=true, does not call checkForUpdates or show dialog', async () => {
-      const { dialog } = await import('electron');
+    it('on win32, does not call autoUpdater.checkForUpdates', async () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
       try {
         const { checkForUpdates } = await import('../../../src/main/updater');
         await checkForUpdates(true);
         expect(mockAutoUpdater.checkForUpdates).not.toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('on win32 with newer version available, shows update dialog', async () => {
+      const { dialog } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      mockHttpsGet.mockImplementation((_url: string, cb: (res: unknown) => void) => {
+        const res = createMockHttpsResponse(200, `version: 1.0.0\npath: https://example.com/installer.exe\nsha512: abc\nreleaseDate: '2026-01-01'\n`);
+        cb(res);
+        return { on: vi.fn() };
+      });
+      try {
+        const { checkForUpdates } = await import('../../../src/main/updater');
+        await checkForUpdates(false);
+        expect(dialog.showMessageBox).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Update Available' }),
+        );
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('on win32 with same version, shows no-update dialog when not silent', async () => {
+      const { dialog } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      mockHttpsGet.mockImplementation((_url: string, cb: (res: unknown) => void) => {
+        const res = createMockHttpsResponse(200, `version: 0.3.8\npath: https://example.com/installer.exe\nsha512: abc\nreleaseDate: '2026-01-01'\n`);
+        cb(res);
+        return { on: vi.fn() };
+      });
+      try {
+        const { checkForUpdates } = await import('../../../src/main/updater');
+        await checkForUpdates(false);
+        expect(dialog.showMessageBox).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'No Updates' }),
+        );
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('on win32 with fetch failure and silent=true, does not show dialog', async () => {
+      const { dialog } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      mockHttpsGet.mockImplementation((_url: string, cb: (res: unknown) => void) => {
+        const res = createMockHttpsResponse(500, '');
+        cb(res);
+        return { on: vi.fn() };
+      });
+      try {
+        const { checkForUpdates } = await import('../../../src/main/updater');
+        await checkForUpdates(true);
         expect(dialog.showMessageBox).not.toHaveBeenCalled();
       } finally {
         Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
       }
     });
 
-    it('on win32 with silent=false, shows Windows update dialog', async () => {
+    it('on win32 with fetch failure and silent=false, shows error dialog', async () => {
       const { dialog } = await import('electron');
       const originalPlatform = process.platform;
       Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      mockHttpsGet.mockImplementation((_url: string, cb: (res: unknown) => void) => {
+        const res = createMockHttpsResponse(500, '');
+        cb(res);
+        return { on: vi.fn() };
+      });
       try {
         const { checkForUpdates } = await import('../../../src/main/updater');
         await checkForUpdates(false);
-        expect(mockAutoUpdater.checkForUpdates).not.toHaveBeenCalled();
-        expect(dialog.showMessageBox).toHaveBeenCalled();
+        expect(dialog.showMessageBox).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Update Check Failed' }),
+        );
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('on win32 update dialog Download button opens external URL', async () => {
+      const { dialog, shell } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({ response: 0 } as any);
+      try {
+        const { checkForUpdates } = await import('../../../src/main/updater');
+        await checkForUpdates(false);
+        expect(shell.openExternal).toHaveBeenCalledWith('https://example.com/installer.exe');
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
+    });
+
+    it('on win32 update dialog Copy URL button copies to clipboard', async () => {
+      const { dialog, clipboard } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({ response: 1 } as any);
+      try {
+        const { checkForUpdates } = await import('../../../src/main/updater');
+        await checkForUpdates(false);
+        expect(clipboard.writeText).toHaveBeenCalledWith('https://example.com/installer.exe');
       } finally {
         Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
       }
@@ -219,71 +361,96 @@ describe('updater', () => {
   describe('event handlers', () => {
     it('update-available handler sets availableVersion and env var without showing dialog', async () => {
       const { dialog } = await import('electron');
-      const { initUpdater, getUpdateState } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater, getUpdateState } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
 
-      const updateAvailableHandler = mockAutoUpdater.on.mock.calls.find(
-        (c: unknown[]) => c[0] === 'update-available'
-      )?.[1] as (info: { version: string }) => void;
+        const updateAvailableHandler = mockAutoUpdater.on.mock.calls.find(
+          (c: unknown[]) => c[0] === 'update-available'
+        )?.[1] as (info: { version: string }) => void;
 
-      updateAvailableHandler({ version: '1.2.3' });
-      expect(getUpdateState().availableVersion).toBe('1.2.3');
-      expect(process.env.__UPDATER_AVAILABLE__).toBe('1.2.3');
-      expect(dialog.showMessageBox).not.toHaveBeenCalled();
+        updateAvailableHandler({ version: '1.2.3' });
+        expect(getUpdateState().availableVersion).toBe('1.2.3');
+        expect(process.env.__UPDATER_AVAILABLE__).toBe('1.2.3');
+        expect(dialog.showMessageBox).not.toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
 
     it('download-progress handler updates progress bar', async () => {
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
 
-      const progressHandler = mockAutoUpdater.on.mock.calls.find(
-        (c: unknown[]) => c[0] === 'download-progress'
-      )?.[1] as (progress: { percent: number }) => void;
+        const progressHandler = mockAutoUpdater.on.mock.calls.find(
+          (c: unknown[]) => c[0] === 'download-progress'
+        )?.[1] as (progress: { percent: number }) => void;
 
-      progressHandler({ percent: 50 });
-      expect(mockWindow.setProgressBar).toHaveBeenCalledWith(0.5);
+        progressHandler({ percent: 50 });
+        expect(mockWindow.setProgressBar).toHaveBeenCalledWith(0.5);
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
 
     it('update-downloaded handler sets downloadedVersion, calls callback, and shows dialog', async () => {
       const { dialog } = await import('electron');
-      const { initUpdater, getUpdateState, setOnUpdateDownloaded } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      const callback = vi.fn();
-      setOnUpdateDownloaded(callback);
-      await initUpdater(mockWindow);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater, getUpdateState, setOnUpdateDownloaded } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        const callback = vi.fn();
+        setOnUpdateDownloaded(callback);
+        await initUpdater(mockWindow);
 
-      const downloadedHandler = mockAutoUpdater.on.mock.calls.find(
-        (c: unknown[]) => c[0] === 'update-downloaded'
-      )?.[1] as (info: { version: string }) => void;
+        const downloadedHandler = mockAutoUpdater.on.mock.calls.find(
+          (c: unknown[]) => c[0] === 'update-downloaded'
+        )?.[1] as (info: { version: string }) => void;
 
-      downloadedHandler({ version: '1.2.3' });
-      expect(getUpdateState().downloadedVersion).toBe('1.2.3');
-      expect(getUpdateState().updateAvailable).toBe(true);
-      expect(mockWindow.setProgressBar).toHaveBeenCalledWith(-1);
-      expect(callback).toHaveBeenCalled();
-      expect(dialog.showMessageBox).toHaveBeenCalled();
+        downloadedHandler({ version: '1.2.3' });
+        expect(getUpdateState().downloadedVersion).toBe('1.2.3');
+        expect(mockWindow.setProgressBar).toHaveBeenCalledWith(-1);
+        expect(callback).toHaveBeenCalled();
+        expect(dialog.showMessageBox).toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
 
     it('error handler clears progress bar and logs error', async () => {
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
 
-      const errorHandler = mockAutoUpdater.on.mock.calls.find(
-        (c: unknown[]) => c[0] === 'error'
-      )?.[1] as (error: Error) => void;
+        const errorHandler = mockAutoUpdater.on.mock.calls.find(
+          (c: unknown[]) => c[0] === 'error'
+        )?.[1] as (error: Error) => void;
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      errorHandler(new Error('Something broke'));
-      expect(mockWindow.setProgressBar).toHaveBeenCalledWith(-1);
-      expect(consoleSpy).toHaveBeenCalledWith('[Updater] Error:', 'Something broke');
-      consoleSpy.mockRestore();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        errorHandler(new Error('Something broke'));
+        expect(mockWindow.setProgressBar).toHaveBeenCalledWith(-1);
+        expect(consoleSpy).toHaveBeenCalledWith('[Updater] Error:', 'Something broke');
+        consoleSpy.mockRestore();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
 
     it('update-downloaded handler suppresses dialog when __UPDATER_AUTO_ACCEPT__ is set', async () => {
       const { dialog } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
       process.env.__UPDATER_AUTO_ACCEPT__ = 'true';
       try {
         const { initUpdater } = await import('../../../src/main/updater');
@@ -298,50 +465,63 @@ describe('updater', () => {
         await new Promise((r) => setTimeout(r, 50));
         expect(dialog.showMessageBox).not.toHaveBeenCalled();
       } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
         delete process.env.__UPDATER_AUTO_ACCEPT__;
       }
     });
 
     it('update-downloaded dialog "Restart Now" (response=0) triggers quitAndInstall', async () => {
       const { dialog } = await import('electron');
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
       vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({ response: 0 } as any);
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
+      try {
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
 
-      const downloadedHandler = mockAutoUpdater.on.mock.calls.find(
-        (c: unknown[]) => c[0] === 'update-downloaded'
-      )?.[1] as (info: { version: string }) => void;
+        const downloadedHandler = mockAutoUpdater.on.mock.calls.find(
+          (c: unknown[]) => c[0] === 'update-downloaded'
+        )?.[1] as (info: { version: string }) => void;
 
-      downloadedHandler({ version: '2.0.0' });
-      await vi.waitFor(() => {
-        expect(dialog.showMessageBox).toHaveBeenCalled();
-      });
-      // quitAndInstall waits 2s then calls autoUpdater.quitAndInstall
-      await vi.waitFor(() => {
-        expect(mockAutoUpdater.quitAndInstall).toHaveBeenCalled();
-      }, { timeout: 5000 });
+        downloadedHandler({ version: '2.0.0' });
+        await vi.waitFor(() => {
+          expect(dialog.showMessageBox).toHaveBeenCalled();
+        });
+        // quitAndInstall waits 2s then calls autoUpdater.quitAndInstall
+        await vi.waitFor(() => {
+          expect(mockAutoUpdater.quitAndInstall).toHaveBeenCalled();
+        }, { timeout: 5000 });
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
   });
 
   describe('quitAndInstall', () => {
     it('disposes task manager then calls autoUpdater.quitAndInstall', async () => {
       const { disposeTaskManager } = await import('../../../src/main/opencode');
-      const { quitAndInstall } = await import('../../../src/main/updater');
-      // Ensure autoUpdater is initialized
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+      try {
+        const { quitAndInstall, initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
 
-      await quitAndInstall();
-      expect(disposeTaskManager).toHaveBeenCalled();
-      expect(mockAutoUpdater.quitAndInstall).toHaveBeenCalled();
+        await quitAndInstall();
+        expect(disposeTaskManager).toHaveBeenCalled();
+        expect(mockAutoUpdater.quitAndInstall).toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      }
     });
   });
 
   describe('initUpdater edge cases', () => {
     it('falls back to UPDATE_SERVER_URL when ACCOMPLISH_UPDATER_URL is unset', async () => {
       const originalUrl = process.env.ACCOMPLISH_UPDATER_URL;
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
       delete process.env.ACCOMPLISH_UPDATER_URL;
       try {
         const { initUpdater } = await import('../../../src/main/updater');
@@ -353,36 +533,25 @@ describe('updater', () => {
         );
       } finally {
         process.env.ACCOMPLISH_UPDATER_URL = originalUrl;
+        Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
       }
     });
 
     it('catches and logs errors if autoUpdater setup throws', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
       // Make setFeedURL throw to trigger the catch block
       mockAutoUpdater.setFeedURL.mockImplementationOnce(() => { throw new Error('Feed setup failed'); });
 
-      const { initUpdater } = await import('../../../src/main/updater');
-      const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
-      await initUpdater(mockWindow);
-
-      expect(consoleSpy).toHaveBeenCalledWith('[Updater] initUpdater crashed:', expect.any(Error));
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Windows update dialog', () => {
-    it('on win32 with silent=false and response=0, opens external releases page', async () => {
-      const { dialog, shell } = await import('electron');
-      const originalPlatform = process.platform;
-      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
-      vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({ response: 0 } as any);
       try {
-        const { checkForUpdates } = await import('../../../src/main/updater');
-        await checkForUpdates(false);
-        await vi.waitFor(() => {
-          expect(shell.openExternal).toHaveBeenCalledWith('https://github.com/accomplish-ai/accomplish-enterprise/releases');
-        });
+        const { initUpdater } = await import('../../../src/main/updater');
+        const mockWindow = { setProgressBar: vi.fn() } as unknown as import('electron').BrowserWindow;
+        await initUpdater(mockWindow);
+
+        expect(consoleSpy).toHaveBeenCalledWith('[Updater] initUpdater crashed:', expect.any(Error));
       } finally {
+        consoleSpy.mockRestore();
         Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
       }
     });

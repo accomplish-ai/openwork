@@ -1,8 +1,10 @@
-import type { AppUpdater } from 'electron-updater';
-import { app, dialog, BrowserWindow } from 'electron';
+import type { AppUpdater, UpdateInfo } from 'electron-updater';
+import { app, dialog, BrowserWindow, shell, clipboard } from 'electron';
 import Store from 'electron-store';
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
+import http from 'http';
 
 const CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const UPDATE_SERVER_URL = 'https://downloads.openwork.me';
@@ -22,15 +24,169 @@ function getStore(): Store<{ lastUpdateCheck: number }> {
   return store;
 }
 
+// Windows update info from yml
+interface WindowsUpdateInfo {
+  version: string;
+  path: string;
+  sha512: string;
+  releaseDate: string;
+}
+
+/**
+ * Fetch and parse the latest-win.yml manifest
+ */
+async function fetchWindowsUpdateInfo(): Promise<WindowsUpdateInfo | null> {
+  const tier = __APP_TIER__;
+  const manifestName = tier === 'enterprise' ? 'latest-win-enterprise.yml' : 'latest-win.yml';
+  const url = `${getFeedUrl()}/${manifestName}`;
+
+  return new Promise((resolve) => {
+    const get = url.startsWith('http://') ? http.get : https.get;
+    get(url, (res) => {
+      if (res.statusCode !== 200) {
+        console.error(`[Updater] Failed to fetch ${manifestName}: ${res.statusCode}`);
+        resolve(null);
+        return;
+      }
+
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const lines = data.split('\n');
+          const info: Partial<WindowsUpdateInfo> = {};
+
+          for (const line of lines) {
+            const match = line.match(/^(\w+):\s*['"]?([^'"]+)['"]?\s*$/);
+            if (match) {
+              const [, key, value] = match;
+              if (key === 'version') info.version = value;
+              if (key === 'path') info.path = value;
+              if (key === 'sha512') info.sha512 = value;
+              if (key === 'releaseDate') info.releaseDate = value;
+            }
+          }
+
+          if (info.version && info.path) {
+            resolve(info as WindowsUpdateInfo);
+          } else {
+            console.error('[Updater] Invalid manifest format');
+            resolve(null);
+          }
+        } catch (error) {
+          console.error('[Updater] Failed to parse manifest:', error);
+          resolve(null);
+        }
+      });
+    }).on('error', (error) => {
+      console.error('[Updater] Failed to fetch manifest:', error);
+      resolve(null);
+    });
+  });
+}
+
+/**
+ * Compare semantic versions
+ * Returns: 1 if a > b, -1 if a < b, 0 if equal
+ */
+function compareVersions(a: string, b: string): number {
+  const partsA = a.split('.').map(Number);
+  const partsB = b.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
+    if (numA > numB) return 1;
+    if (numA < numB) return -1;
+  }
+  return 0;
+}
+
+/**
+ * Show update available dialog with download URL (Windows)
+ */
+async function showWindowsUpdateDialog(
+  currentVersion: string,
+  newVersion: string,
+  downloadUrl: string,
+): Promise<void> {
+  const response = await dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Available',
+    message: `A new version of Accomplish is available!`,
+    detail: `Version ${newVersion} is available.\nYou are currently on version ${currentVersion}.\n\nClick "Download" to open the download page in your browser.`,
+    buttons: ['Download', 'Copy URL', 'Later'],
+    defaultId: 0,
+    cancelId: 2,
+  });
+
+  if (response.response === 0) {
+    await shell.openExternal(downloadUrl);
+  } else if (response.response === 1) {
+    clipboard.writeText(downloadUrl);
+  }
+}
+
+/**
+ * Check for updates on Windows by fetching latest-win.yml
+ */
+async function checkForUpdatesWindows(silent: boolean): Promise<void> {
+  const currentVersion = app.getVersion();
+
+  const updateInfo = await fetchWindowsUpdateInfo();
+
+  if (!updateInfo) {
+    if (!silent) {
+      await dialog.showMessageBox({
+        type: 'error',
+        title: 'Update Check Failed',
+        message: 'Could not check for updates',
+        detail: 'Failed to fetch update information. Please try again later.',
+        buttons: ['OK'],
+      });
+    }
+    return;
+  }
+
+  getStore().set('lastUpdateCheck', Date.now());
+  const isNewer = compareVersions(updateInfo.version, currentVersion) > 0;
+
+  if (!isNewer) {
+    if (!silent) {
+      await dialog.showMessageBox({
+        type: 'info',
+        title: 'No Updates',
+        message: `You're up to date!`,
+        detail: `Accomplish ${currentVersion} is the latest version.`,
+        buttons: ['OK'],
+      });
+    }
+    return;
+  }
+
+  const downloadUrl = updateInfo.path.startsWith('http://') || updateInfo.path.startsWith('https://')
+    ? updateInfo.path
+    : `${getFeedUrl()}/${updateInfo.path}`;
+
+  updateAvailable = {
+    version: updateInfo.version,
+    releaseDate: updateInfo.releaseDate,
+  } as UpdateInfo;
+  process.env.__UPDATER_AVAILABLE__ = updateInfo.version;
+
+  if (!process.env.__UPDATER_AUTO_ACCEPT__) {
+    await showWindowsUpdateDialog(currentVersion, updateInfo.version, downloadUrl);
+  }
+}
+
 let mainWindow: BrowserWindow | null = null;
 let downloadedVersion: string | null = null;
-let availableVersion: string | null = null;
+let updateAvailable: UpdateInfo | null = null;
 let onUpdateDownloadedCallback: (() => void) | null = null;
 
 let _autoUpdater: AppUpdater | null = null;
 async function lazyAutoUpdater(): Promise<AppUpdater> {
   if (!_autoUpdater) {
-    // electron-updater caches app.getVersion() in its constructor — set valid version first
     if (!app.isPackaged) {
       (app as any).setVersion(__APP_VERSION__);
     }
@@ -47,6 +203,10 @@ export async function initUpdater(window: BrowserWindow): Promise<void> {
   }
   try {
     mainWindow = window;
+
+    // Windows uses manifest-based update check, not electron-updater autoDownload
+    if (process.platform === 'win32') return;
+
     const autoUpdater = await lazyAutoUpdater();
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
@@ -62,7 +222,7 @@ export async function initUpdater(window: BrowserWindow): Promise<void> {
 
     autoUpdater.on('update-available', (info) => {
       console.log('[Updater] update-available:', info.version);
-      availableVersion = info.version;
+      updateAvailable = info;
       process.env.__UPDATER_AVAILABLE__ = info.version;
     });
     autoUpdater.on('download-progress', (progress) => {
@@ -89,10 +249,12 @@ export async function initUpdater(window: BrowserWindow): Promise<void> {
 
 export async function checkForUpdates(silent: boolean): Promise<void> {
   if (!getFeedUrl()) return;
+
   if (process.platform === 'win32') {
-    if (!silent) showWindowsUpdateDialog();
+    await checkForUpdatesWindows(silent);
     return;
   }
+
   try {
     const autoUpdater = await lazyAutoUpdater();
     await autoUpdater.checkForUpdates();
@@ -123,7 +285,7 @@ export function autoCheckForUpdates(): void {
 }
 
 export function getUpdateState(): { updateAvailable: boolean; downloadedVersion: string | null; availableVersion: string | null } {
-  return { updateAvailable: !!downloadedVersion, downloadedVersion, availableVersion };
+  return { updateAvailable: !!updateAvailable, downloadedVersion, availableVersion: updateAvailable?.version || null };
 }
 
 export function setOnUpdateDownloaded(callback: () => void): void {
@@ -138,16 +300,4 @@ async function showUpdateReadyDialog(version: string): Promise<void> {
     buttons: ['Restart Now', 'Later'], defaultId: 0, cancelId: 1,
   });
   if (response === 0) await quitAndInstall();
-}
-
-async function showWindowsUpdateDialog(): Promise<void> {
-  const { response } = await dialog.showMessageBox({
-    type: 'info', title: 'Check for Updates',
-    message: 'Please visit our releases page to check for the latest version.',
-    buttons: ['Open Downloads', 'Cancel'], defaultId: 0, cancelId: 1,
-  });
-  if (response === 0) {
-    const { shell } = await import('electron');
-    shell.openExternal('https://github.com/accomplish-ai/accomplish-enterprise/releases');
-  }
 }
