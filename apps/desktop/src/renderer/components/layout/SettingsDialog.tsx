@@ -552,7 +552,6 @@ export default function SettingsDialog({
             </div>
           )}
 
-          {/* Cloud Browsers Tab */}
           {activeTab === 'cloud-browsers' && (
             <div className="space-y-6">
               <CloudBrowsersSettings />

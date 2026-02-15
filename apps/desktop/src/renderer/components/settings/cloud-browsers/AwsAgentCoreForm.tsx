@@ -22,7 +22,9 @@ export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgen
   };
 
   const handleTest = async () => {
-    if (!config) return;
+    if (!config) {
+      return;
+    }
     setTesting(true);
     setTestResult(null);
     try {

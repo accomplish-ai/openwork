@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerCloudBrowserHandlers } from '../../../../src/main/ipc/cloud-browsers';
 import type { AwsAgentCoreConfig } from '@accomplish_ai/agent-core';
 
-// Mock electron modules
 vi.mock('electron', () => {
   const mockHandlers = new Map<string, Function>();
   return {
@@ -17,7 +16,6 @@ vi.mock('electron', () => {
   };
 });
 
-// Mock agent-core
 vi.mock('@accomplish_ai/agent-core', () => ({
   validateBedrockCredentials: vi.fn(),
 }));
@@ -25,16 +23,16 @@ vi.mock('@accomplish_ai/agent-core', () => ({
 import { ipcMain } from 'electron';
 import { validateBedrockCredentials } from '@accomplish_ai/agent-core';
 
-// Helper to access mocked implementations
 const mockedIpcMain = ipcMain as unknown as {
   _getHandler: (channel: string) => Function | undefined;
   _clear: () => void;
 };
 
-// Helper to invoke handler
 async function invokeHandler(channel: string, ...args: any[]) {
   const handler = mockedIpcMain._getHandler(channel);
-  if (!handler) throw new Error(`No handler for ${channel}`);
+  if (!handler) {
+    throw new Error(`No handler for ${channel}`);
+  }
   return handler({}, ...args);
 }
 

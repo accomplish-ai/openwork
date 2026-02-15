@@ -364,7 +364,10 @@ const accomplishAPI = {
     ipcRenderer.invoke('connectors:disconnect', connectorId),
   onMcpAuthCallback: (callback: (url: string) => void) => {
     const listener = (_: unknown, url: string) => callback(url);
-    return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
+    ipcRenderer.on('auth:mcp-callback', listener);
+    return () => {
+      ipcRenderer.removeListener('auth:mcp-callback', listener);
+    };
   },
 
   // Cloud Browsers

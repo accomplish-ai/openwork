@@ -7,9 +7,11 @@ export function CloudBrowsersSettings() {
   const [selectedProvider, setSelectedProvider] = useState<'aws' | 'browserbase'>('aws');
   const [awsConfig, setAwsConfig] = useState<AwsAgentCoreConfig>({ region: 'us-east-1' });
 
-  // Test connection using IPC
   const handleTestAws = async (config: AwsAgentCoreConfig) => {
-    console.log('Testing AWS connection:', config);
+    console.log('Testing AWS connection:', {
+      region: config.region,
+      profile: config.profile,
+    });
     return getAccomplish().testCloudBrowserConnection(config);
   };
 
