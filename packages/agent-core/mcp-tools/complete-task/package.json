@@ -7,13 +7,15 @@
     "start": "npx tsx src/index.ts"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "dependencies": {
     "@accomplish/desktop": "file:../../../../apps/desktop"
   },
   "overrides": {
     "fast-xml-parser": "^5.3.6",
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "qs": "^6.15.0"
   }
 }

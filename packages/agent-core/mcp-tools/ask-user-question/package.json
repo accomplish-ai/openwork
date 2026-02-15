@@ -10,7 +10,7 @@
     "dev": "npx tsx --watch src/index.ts"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   },
@@ -19,6 +19,8 @@
   },
   "overrides": {
     "fast-xml-parser": "^5.3.6",
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "qs": "^6.15.0"
   }
 }

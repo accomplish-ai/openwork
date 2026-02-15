@@ -12,11 +12,13 @@
     "playwright": "npm:rebrowser-playwright@^1.52.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "vitest": "^1.0.0"
   },
   "overrides": {
     "fast-xml-parser": "^5.3.6",
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "qs": "^6.15.0"
   }
 }
