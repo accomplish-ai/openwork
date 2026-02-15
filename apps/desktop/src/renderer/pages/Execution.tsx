@@ -8,6 +8,7 @@ import { getAccomplish } from '../lib/accomplish';
 import { springs } from '../lib/animations';
 import type { TaskMessage } from '@accomplish_ai/agent-core/common';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
@@ -182,6 +183,7 @@ export default function ExecutionPage() {
   const accomplish = getAccomplish();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [followUp, setFollowUp] = useState('');
+  const isFollowUpOverLimit = followUp.length > PROMPT_DEFAULT_MAX_LENGTH;
   const followUpInputRef = useRef<HTMLTextAreaElement>(null);
   const [taskRunCount, setTaskRunCount] = useState(0);
   const [currentTool, setCurrentTool] = useState<string | null>(null);
@@ -500,7 +502,7 @@ export default function ExecutionPage() {
   }, [canFollowUp]);
 
   const handleFollowUp = async () => {
-    if (!followUp.trim()) return;
+    if (!followUp.trim() || isFollowUpOverLimit) return;
 
     // Check if any provider is ready before sending (skip in E2E mode)
     const isE2EMode = await accomplish.isE2EMode();
@@ -1396,15 +1398,22 @@ export default function ExecutionPage() {
                   onOpenSettings={handleOpenSpeechSettings}
                   size="md"
                 />
-                <button
-                  type="button"
-                  onClick={handleFollowUp}
-                  disabled={!followUp.trim() || isLoading || speechInput.isRecording}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Send"
-                >
-                  <CornerDownLeft className="h-4 w-4" />
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Send"
+                      onClick={handleFollowUp}
+                      disabled={!followUp.trim() || isLoading || speechInput.isRecording || isFollowUpOverLimit}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <CornerDownLeft className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>{isFollowUpOverLimit ? 'Message is too long' : !followUp.trim() ? 'Enter a message' : 'Send'}</span>
+                  </TooltipContent>
+                </Tooltip>
                 </div>
               </div>
             </div>
