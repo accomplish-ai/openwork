@@ -10,6 +10,8 @@
 // Task types
 export type {
   TaskStatus,
+  TaskInputAttachmentType,
+  TaskInputAttachment,
   TaskConfig,
   Task,
   TaskAttachment,

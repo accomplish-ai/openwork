@@ -147,7 +147,8 @@ export function registerIPCHandlers(): void {
   handle('task:start', async (event: IpcMainInvokeEvent, config: TaskConfig) => {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
-    const validatedConfig = validateTaskConfig(config);
+    const parsedConfig = validate(taskConfigSchema, config);
+    const validatedConfig = validateTaskConfig(parsedConfig);
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
@@ -192,11 +193,20 @@ export function registerIPCHandlers(): void {
 
     const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
 
+    const initialUserMessageAttachments = validatedConfig.attachments?.map((attachment) => ({
+      type: 'file' as const,
+      data: attachment.path,
+      label: attachment.name,
+    }));
+
     const initialUserMessage: TaskMessage = {
       id: createMessageId(),
       type: 'user',
       content: validatedConfig.prompt,
       timestamp: new Date().toISOString(),
+      attachments: initialUserMessageAttachments?.length
+        ? initialUserMessageAttachments
+        : undefined,
     };
     task.messages = [initialUserMessage];
 

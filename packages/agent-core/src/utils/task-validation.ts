@@ -1,5 +1,14 @@
-import type { TaskConfig } from '../common/types/task.js';
+import type { TaskConfig, TaskInputAttachmentType } from '../common/types/task.js';
 import { sanitizeString } from './sanitize.js';
+
+const MAX_TASK_ATTACHMENTS = 5;
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+const VALID_ATTACHMENT_TYPES = new Set<TaskInputAttachmentType>([
+  'image',
+  'text',
+  'document',
+  'other',
+]);
 
 /**
  * Validates and sanitizes a TaskConfig object.
@@ -35,6 +44,45 @@ export function validateTaskConfig(config: TaskConfig): TaskConfig {
   }
   if (config.outputSchema && typeof config.outputSchema === 'object') {
     validated.outputSchema = config.outputSchema;
+  }
+  if (Array.isArray(config.attachments)) {
+    const sanitizedAttachments: NonNullable<TaskConfig['attachments']> = [];
+    for (const attachment of config.attachments) {
+      if (!attachment || typeof attachment !== 'object') {
+        continue;
+      }
+      if (sanitizedAttachments.length >= MAX_TASK_ATTACHMENTS) {
+        break;
+      }
+
+      const type = VALID_ATTACHMENT_TYPES.has(attachment.type)
+        ? attachment.type
+        : 'other';
+      const size = Number.isFinite(attachment.size) ? Math.trunc(attachment.size) : 0;
+      if (size < 0 || size > MAX_ATTACHMENT_SIZE_BYTES) {
+        continue;
+      }
+
+      const sanitizedAttachment = {
+        name: sanitizeString(attachment.name, 'attachmentName', 512),
+        path: sanitizeString(attachment.path, 'attachmentPath', 4096),
+        type,
+        size,
+      } as const;
+
+      if (attachment.preview) {
+        sanitizedAttachments.push({
+          ...sanitizedAttachment,
+          preview: sanitizeString(attachment.preview, 'attachmentPreview', 12000),
+        });
+      } else {
+        sanitizedAttachments.push(sanitizedAttachment);
+      }
+    }
+
+    if (sanitizedAttachments.length > 0) {
+      validated.attachments = sanitizedAttachments;
+    }
   }
 
   return validated;

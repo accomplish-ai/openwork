@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+const MAX_TASK_ATTACHMENTS = 5;
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+
+const taskInputAttachmentSchema = z.object({
+  name: z.string().min(1, 'Attachment name is required').max(512),
+  path: z.string().min(1, 'Attachment path is required').max(4096),
+  type: z.enum(['image', 'text', 'document', 'other']),
+  size: z
+    .number()
+    .int()
+    .nonnegative('Attachment size must be non-negative')
+    .max(MAX_ATTACHMENT_SIZE_BYTES, 'Attachment exceeds 10 MB limit'),
+  preview: z.string().max(12000).optional(),
+});
+
 export const taskConfigSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
   taskId: z.string().optional(),
@@ -8,6 +23,7 @@ export const taskConfigSchema = z.object({
   systemPromptAppend: z.string().optional(),
   outputSchema: z.record(z.any()).optional(),
   sessionId: z.string().optional(),
+  attachments: z.array(taskInputAttachmentSchema).max(MAX_TASK_ATTACHMENTS).optional(),
   chrome: z.boolean().optional(),
 });
 

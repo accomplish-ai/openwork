@@ -102,6 +102,8 @@ export type {
 export { STARTUP_STAGES } from './task.js';
 export type {
   TaskStatus,
+  TaskInputAttachmentType,
+  TaskInputAttachment,
   TaskConfig,
   Task,
   TaskAttachment,

@@ -5,7 +5,7 @@
  * @vitest-environment jsdom
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Task, TaskStatus } from '@accomplish_ai/agent-core';
@@ -37,6 +37,7 @@ function createMockTask(
 // Mock accomplish API
 const mockAccomplish = {
   hasAnyApiKey: mockHasAnyApiKey,
+  getPathForFile: vi.fn().mockReturnValue('path/to/notes.txt'),
   getSelectedModel: vi.fn().mockResolvedValue({ provider: 'anthropic', id: 'claude-3-opus' }),
   getOllamaConfig: vi.fn().mockResolvedValue(null),
   onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
@@ -135,6 +136,8 @@ vi.mock('/assets/usecases/event-calendar-builder.png', () => ({ default: 'event.
 describe('Home Page Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (window as Window & { accomplish?: typeof mockAccomplish }).accomplish = mockAccomplish;
+    mockAccomplish.getPathForFile.mockReturnValue('path/to/notes.txt');
     // Reset store state
     mockStoreState = {
       startTask: mockStartTask,
@@ -157,6 +160,10 @@ describe('Home Page Integration', () => {
       },
       debugMode: false,
     });
+  });
+
+  afterEach(() => {
+    delete (window as Window & { accomplish?: typeof mockAccomplish }).accomplish;
   });
 
   describe('initial render', () => {
@@ -327,6 +334,50 @@ describe('Home Page Integration', () => {
       await waitFor(() => {
         expect(mockStartTask).toHaveBeenCalled();
       });
+    });
+
+    it('should start task with structured attachments even when prompt is empty', async () => {
+      const mockTask = createMockTask('task-124', 'Attached files task', 'running');
+      mockStartTask.mockResolvedValue(mockTask);
+
+      const { container } = render(
+        <MemoryRouter initialEntries={['/']}>
+          <HomePage />
+        </MemoryRouter>
+      );
+
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(fileInput).toBeInTheDocument();
+
+      fireEvent.change(fileInput, {
+        target: {
+          files: [new File(['hello from file'], 'notes.txt', { type: 'text/plain' })],
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('1/5 files attached')).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByTestId('task-input-submit');
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockStartTask).toHaveBeenCalledTimes(1);
+      });
+      expect(mockAccomplish.getPathForFile).toHaveBeenCalled();
+
+      expect(mockStartTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [
+            expect.objectContaining({
+              name: 'notes.txt',
+              path: 'path/to/notes.txt',
+              type: 'text',
+            }),
+          ],
+        })
+      );
     });
 
     it('should not submit empty task', async () => {
