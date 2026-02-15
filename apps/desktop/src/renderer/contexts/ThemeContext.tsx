@@ -38,7 +38,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Apply theme class
-    root.classList.add(effectiveTheme);
+    if (effectiveTheme === "dark") {
+      root.classList.add("dark");
+    }
 
     // Save to localStorage
     localStorage.setItem("theme", theme);
@@ -46,7 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for system theme changes when in system mode
   useEffect(() => {
-    if (theme !== "system") return;
+    if (theme !== "system") {
+      return;
+    }
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 

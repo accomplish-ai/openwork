@@ -203,7 +203,9 @@ export default function SettingsDialog({
   // Handle model change
   const handleModelChange = useCallback(
     async (modelId: string) => {
-      if (!selectedProvider) return;
+      if (!selectedProvider) {
+        return;
+      }
       await updateModel(selectedProvider, modelId);
 
       // Auto-set as active if this provider is now ready
