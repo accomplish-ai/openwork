@@ -8,7 +8,7 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "strict": true,
-        "noEmit": true,
+        "noEmit": false,
         "baseUrl": ".",
         "paths": {
             "@accomplish_ai/agent-core": [

@@ -35,8 +35,6 @@ const fastify = Fastify({
     logger: true,
 });
 
-// Initialize Core Services
-
 import { createDaemonTaskManagerOptions } from './daemon-options.js';
 import { initializeStorage, getStorage } from './services/storage.js';
 
@@ -57,7 +55,20 @@ console.log('Daemon setup complete, starting main...');
 async function main() {
     console.log('Entering main function...');
     await fastify.register(cors, {
-        origin: '*', // need to secure
+        origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
+            const allowed = new Set([
+                'http://127.0.0.1:3000',
+                'http://localhost:3000',
+                'app://.'
+            ]);
+
+            if (!origin || allowed.has(origin)) {
+                cb(null, true);
+                return;
+            }
+
+            cb(new Error("Not allowed"), false);
+        }
     });
 
     await fastify.register(websocket);
@@ -92,7 +103,9 @@ async function main() {
         return {
 
             onBatchedMessages: (messages: TaskMessage[]) => {
-                messages.forEach((msg: TaskMessage) => getStorage().addTaskMessage(taskId, msg));
+                messages.forEach((msg: TaskMessage) => {
+                    getStorage().addTaskMessage(taskId, msg);
+                });
                 broadcast('task:messages', { taskId, messages });
             },
 

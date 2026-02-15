@@ -9,7 +9,6 @@ import fs from 'fs';
 
 let storageInstance: StorageAPI | null = null;
 
-// Helper to get User Data path
 export function getUserDataPath(): string {
     if (process.env.DAEMON_USER_DATA_PATH) {
         return process.env.DAEMON_USER_DATA_PATH;
@@ -26,7 +25,7 @@ export function getUserDataPath(): string {
 }
 
 export function initializeStorage(): void {
-    if (storageInstance) return;
+    if (storageInstance) { return; }
 
     const userDataPath = getUserDataPath();
     const storageDir = path.join(userDataPath, 'storage');

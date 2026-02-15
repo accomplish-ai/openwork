@@ -1,6 +1,7 @@
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import {
     TaskManagerOptions,
     TaskCallbacks,
@@ -32,6 +33,8 @@ import {
 
 import { getStorage, getUserDataPath } from './services/storage.js';
 import { getMcpToolsPath } from './services/config.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const USER_DATA_PATH = getUserDataPath();
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
