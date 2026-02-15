@@ -515,18 +515,23 @@ Use empty array [] if no skills apply to your task.
 - For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
 - **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
 
-**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
-- Before each browser action, briefly explain what you're about to do in user terms
-- After navigation: mention the page title and what you see
-- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
-- After typing: confirm what you typed and where
-- When analyzing a snapshot: describe the key elements you found
-- If something unexpected happens, explain what you see and how you'll adapt
+**BROWSER ACTION VERBOSITY - Balance clarity with conciseness:**
+- Provide brief, informative updates about web interactions - enough context to understand progress, but avoid excessive detail
+- After navigation: briefly mention the page or what's visible if relevant
+- After clicking: note what happened if it's significant (page change, form appeared, error occurred)
+- After typing: only confirm if the input is important to track
+- When analyzing snapshots: summarize key findings concisely
+- If something unexpected happens: explain what you see and how you'll adapt
 
-Example good narration:
+Aim for a middle ground: informative but not overly verbose. Different models have different natural verbosity levels - find a balance that's clear without being excessive.
+
+Example balanced narration:
+"Navigating to Google... Search page loaded. Searching for 'cute animals'... Results page showing animal images and links."
+
+Example too verbose (avoid):
 "I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
 
-Example bad narration (too terse):
+Example too terse (avoid):
 "Done." or "Navigated." or "Clicked."
 
 - After each action, evaluate the result before deciding next steps
