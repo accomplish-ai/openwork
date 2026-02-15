@@ -54,11 +54,7 @@ export const SkillCard = memo(function SkillCard({
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
           {skill.name}
           {skill.isVerified && (
-            <svg
-              className="h-3.5 w-3.5 text-blue-500"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+            <svg className="h-3.5 w-3.5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
@@ -103,7 +99,13 @@ export const SkillCard = memo(function SkillCard({
             )}
             {skill.source === 'custom' && (
               <>
-                <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  className="h-2.5 w-2.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
@@ -114,7 +116,7 @@ export const SkillCard = memo(function SkillCard({
           <span className="text-[10px] text-muted-foreground">{formattedDate}</span>
         </div>
 
-{skill.source !== 'official' && (
+        {skill.source !== 'official' && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -154,10 +156,7 @@ export const SkillCard = memo(function SkillCard({
                 </svg>
                 Show in Folder
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleDelete}
-                variant="destructive"
-              >
+              <DropdownMenuItem onClick={handleDelete} variant="destructive">
                 <svg
                   className="mr-2 h-4 w-4"
                   viewBox="0 0 24 24"

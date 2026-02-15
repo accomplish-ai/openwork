@@ -19,18 +19,21 @@
     "dev:workers:enterprise": "node scripts/dev-workers.cjs enterprise",
     "dev:remote": "node scripts/dev-remote.cjs",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
-    "build": "pnpm -r build",
+    "build": "pnpm -r run build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
     "build:web": "pnpm -F @accomplish/web build",
     "build:web:lite": "pnpm -F @accomplish/web run build:lite",
     "build:web:enterprise": "pnpm -F @accomplish/web run build:enterprise",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r --parallel run typecheck && eslint .",
+    "typecheck": "pnpm -r --parallel run typecheck",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "release": "pnpm build"
+    "release": "pnpm build",
+    "lint:eslint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.0",
@@ -40,6 +43,14 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.55.0",
     "wait-on": "^9.0.3"
   }
 }

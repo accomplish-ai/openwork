@@ -1,4 +1,3 @@
-
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
@@ -45,17 +44,17 @@ export function TaskLauncherItem({ task, isSelected, onClick }: TaskLauncherItem
       className={cn(
         'w-full text-left px-3 py-2 rounded-md text-sm transition-colors duration-100',
         'flex items-center gap-2',
-        isSelected
-          ? 'bg-primary text-primary-foreground'
-          : 'text-foreground hover:bg-accent'
+        isSelected ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent',
       )}
     >
       {getStatusIcon(task.status)}
       <span className="truncate flex-1">{task.prompt}</span>
-      <span className={cn(
-        'text-xs shrink-0',
-        isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
-      )}>
+      <span
+        className={cn(
+          'text-xs shrink-0',
+          isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground',
+        )}
+      >
         {formatRelativeDate(task.createdAt)}
       </span>
     </button>

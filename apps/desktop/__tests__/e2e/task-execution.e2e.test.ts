@@ -63,7 +63,15 @@ export async function setupApp(
   const consoleCollector = collectAllConsoleLogs(window);
   const networkFailures = collectNetworkFailures(window);
   await window.waitForLoadState('networkidle');
-  return { app, window, consoleCollector, networkFailures, artifactDir, electronPaths, closeMainLog };
+  return {
+    app,
+    window,
+    consoleCollector,
+    networkFailures,
+    artifactDir,
+    electronPaths,
+    closeMainLog,
+  };
 }
 
 export async function teardownApp(ctx: TaskTestContext) {
@@ -72,7 +80,10 @@ export async function teardownApp(ctx: TaskTestContext) {
     ctx.consoleCollector.flush(path.join(ctx.artifactDir, 'console.log'));
   }
   if (ctx.networkFailures?.length > 0) {
-    fs.writeFileSync(path.join(ctx.artifactDir, 'network-failures.log'), ctx.networkFailures.join('\n'));
+    fs.writeFileSync(
+      path.join(ctx.artifactDir, 'network-failures.log'),
+      ctx.networkFailures.join('\n'),
+    );
   }
   collectAppLogs(ctx.electronPaths, ctx.artifactDir);
   collectCrashDumps(ctx.electronPaths, ctx.artifactDir);
@@ -98,7 +109,9 @@ export async function runTaskTest(
   await assertBridgeWorks(ctx.window);
   await connectAndActivateProvider(ctx.window, providerId, apiKey);
 
-  await ctx.window.getByTestId('task-input-textarea').fill('Go to hackernews and click on the first article');
+  await ctx.window
+    .getByTestId('task-input-textarea')
+    .fill('Go to hackernews and click on the first article');
   await ctx.window.getByTestId('task-input-submit').click();
 
   const status = await waitForTaskCompletion(ctx.window, 300_000);

@@ -204,7 +204,7 @@ describe('OpenCode CLI Path Module', () => {
           'node_modules',
           pkg,
           'bin',
-          binary
+          binary,
         );
 
         mockFs.existsSync.mockImplementation((p: string) => {
@@ -343,7 +343,7 @@ describe('OpenCode CLI Path Module', () => {
           'node_modules',
           pkg,
           'bin',
-          binary
+          binary,
         );
 
         mockFs.existsSync.mockImplementation((p: string) => {
@@ -393,7 +393,7 @@ describe('OpenCode CLI Path Module', () => {
           'app.asar.unpacked',
           'node_modules',
           getPlatformPackageName(),
-          'package.json'
+          'package.json',
         );
 
         mockFs.existsSync.mockImplementation((p: string) => p === packageJsonPath);

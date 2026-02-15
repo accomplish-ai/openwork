@@ -33,7 +33,7 @@ function runCommand(command, description) {
       env: {
         ...process.env,
         ACCOMPLISH_POSTINSTALL_RUNNING: '1',
-      }
+      },
     });
   } catch (error) {
     console.error(`Failed: ${description}`);
@@ -66,7 +66,7 @@ if (isWindows) {
       execSync(`npx prebuild-install --runtime electron --target ${electronVersion}`, {
         stdio: 'inherit',
         cwd: betterSqlite3Path,
-        shell: true
+        shell: true,
       });
       console.log('> better-sqlite3 Electron prebuild installed successfully');
     } catch (error) {
@@ -97,8 +97,18 @@ if (isWindows) {
 
 // Install shared MCP tools runtime dependencies (Playwright) at mcp-tools/ root
 // MCP tools are now in packages/agent-core/mcp-tools
-const mcpToolsPath = path.join(__dirname, '..', 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
-runCommand(`npm --prefix "${mcpToolsPath}" install --omit=dev`, 'Installing shared MCP tools runtime dependencies');
+const mcpToolsPath = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  '@accomplish_ai',
+  'agent-core',
+  'mcp-tools',
+);
+runCommand(
+  `npm --prefix "${mcpToolsPath}" install --omit=dev`,
+  'Installing shared MCP tools runtime dependencies',
+);
 
 console.log('\n> Postinstall complete!');
 

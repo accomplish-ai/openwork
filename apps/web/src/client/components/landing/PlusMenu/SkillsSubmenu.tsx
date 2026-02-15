@@ -16,7 +16,14 @@ interface SkillsSubmenuProps {
   isRefreshing?: boolean;
 }
 
-export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateNewSkill, onRefresh, isRefreshing }: SkillsSubmenuProps) {
+export function SkillsSubmenu({
+  skills,
+  onSkillSelect,
+  onManageSkills,
+  onCreateNewSkill,
+  onRefresh,
+  isRefreshing,
+}: SkillsSubmenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSkills = useMemo(() => {
@@ -26,7 +33,7 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
       (s) =>
         s.name.toLowerCase().includes(query) ||
         s.description.toLowerCase().includes(query) ||
-        s.command.toLowerCase().includes(query)
+        s.command.toLowerCase().includes(query),
     );
   }, [skills, searchQuery]);
 
@@ -49,9 +56,7 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
       {/* Skills List */}
       <div className="max-h-[300px] overflow-y-auto">
         {filteredSkills.length === 0 ? (
-          <div className="p-3 text-center text-sm text-muted-foreground">
-            No skills found
-          </div>
+          <div className="p-3 text-center text-sm text-muted-foreground">No skills found</div>
         ) : (
           filteredSkills.map((skill) => (
             <button
@@ -59,9 +64,7 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
               onClick={() => onSkillSelect(skill.command)}
               className="w-full px-3 py-2 text-left hover:bg-accent transition-colors"
             >
-              <div className="text-[13px] font-semibold text-foreground">
-                {skill.name}
-              </div>
+              <div className="text-[13px] font-semibold text-foreground">{skill.name}</div>
               <div className="mt-0.5">
                 <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
                   {skill.source === 'official' && (
@@ -80,7 +83,13 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
                   )}
                   {skill.source === 'custom' && (
                     <>
-                      <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        className="h-2.5 w-2.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
@@ -140,9 +149,8 @@ export function SkillsSubmenu({ skills, onSkillSelect, onManageSkills, onCreateN
         >
           <motion.div
             animate={isRefreshing ? { rotate: 720 } : { rotate: 0 }}
-            transition={isRefreshing
-              ? { duration: 1, repeat: Infinity, ease: 'linear' }
-              : { duration: 0 }
+            transition={
+              isRefreshing ? { duration: 1, repeat: Infinity, ease: 'linear' } : { duration: 0 }
             }
           >
             <svg

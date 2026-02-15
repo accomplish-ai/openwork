@@ -17,7 +17,6 @@ import {
   type TranscriptionError,
 } from '@accomplish_ai/agent-core';
 
-
 let _speechService: SpeechServiceAPI | null = null;
 
 function getSpeechService(): SpeechServiceAPI {
@@ -41,7 +40,7 @@ export function isElevenLabsConfigured(): boolean {
  * Validate ElevenLabs API key by making a test request
  */
 export async function validateElevenLabsApiKey(
-  apiKey?: string
+  apiKey?: string,
 ): Promise<{ valid: boolean; error?: string }> {
   return getSpeechService().validateElevenLabsApiKey(apiKey);
 }
@@ -55,10 +54,9 @@ export async function validateElevenLabsApiKey(
  */
 export async function transcribeAudio(
   audioData: Buffer,
-  mimeType: string = 'audio/webm'
+  mimeType: string = 'audio/webm',
 ): Promise<
-  | { success: true; result: TranscriptionResult }
-  | { success: false; error: TranscriptionError }
+  { success: true; result: TranscriptionResult } | { success: false; error: TranscriptionError }
 > {
   return getSpeechService().transcribeAudio(audioData, mimeType);
 }

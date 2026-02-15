@@ -16,7 +16,6 @@ import {
   type ThoughtStreamCheckpointEvent as CheckpointEvent,
 } from '@accomplish_ai/agent-core';
 
-
 // Store reference to main window
 let mainWindow: BrowserWindow | null = null;
 
@@ -33,17 +32,6 @@ export function initThoughtStreamApi(window: BrowserWindow): void {
 /**
  * Register a task ID as active (called when task starts)
  */
-function registerActiveTask(taskId: string): void {
-  thoughtStreamHandler.registerTask(taskId);
-}
-
-/**
- * Unregister a task ID (called when task completes)
- */
-function unregisterActiveTask(taskId: string): void {
-  thoughtStreamHandler.unregisterTask(taskId);
-}
-
 /**
  * Create and start the HTTP server for thought streaming
  */
@@ -109,7 +97,9 @@ export function startThoughtStreamServer(): http.Server {
 
   server.on('error', (error: NodeJS.ErrnoException) => {
     if (error.code === 'EADDRINUSE') {
-      console.warn(`[Thought Stream API] Port ${THOUGHT_STREAM_PORT} already in use, skipping server start`);
+      console.warn(
+        `[Thought Stream API] Port ${THOUGHT_STREAM_PORT} already in use, skipping server start`,
+      );
     } else {
       console.error('[Thought Stream API] Server error:', error);
     }

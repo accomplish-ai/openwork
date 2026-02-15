@@ -3,7 +3,9 @@ const { spawn } = require('child_process');
 const url = process.argv[2];
 if (!url) {
   console.error('Usage: pnpm dev:remote <url>');
-  console.error('Example: pnpm dev:remote https://accomplish-app-preview-42.accomplish.workers.dev');
+  console.error(
+    'Example: pnpm dev:remote https://accomplish-app-preview-42.accomplish.workers.dev',
+  );
   process.exit(1);
 }
 

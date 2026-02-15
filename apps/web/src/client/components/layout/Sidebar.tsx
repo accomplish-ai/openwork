@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -105,11 +104,7 @@ export function Sidebar() {
         <div className="px-3 py-4 border-t border-border flex items-center justify-between">
           {/* Logo - Bottom Left */}
           <div className="flex items-center">
-            <img
-              src={logoImage}
-              alt="Accomplish"
-              style={{ height: '20px', paddingLeft: '6px' }}
-            />
+            <img src={logoImage} alt="Accomplish" style={{ height: '20px', paddingLeft: '6px' }} />
           </div>
 
           {/* Settings Button - Bottom Right */}

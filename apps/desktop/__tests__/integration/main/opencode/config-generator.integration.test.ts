@@ -58,46 +58,47 @@ vi.mock('@accomplish_ai/agent-core', async () => {
         providerConfigs: {},
         enabledProviders: ['anthropic', 'openai', 'google'],
         modelOverride: undefined,
-      })
+      }),
     ),
 
     // syncApiKeysToOpenCodeAuth - syncs API keys to auth.json
     syncApiKeysToOpenCodeAuth: vi.fn(() => Promise.resolve()),
 
     // Config generator - creates real files for integration testing
-    generateConfig: vi.fn((options: {
-      userDataPath: string;
-      mcpToolsPath: string;
-      platform: string;
-      isPackaged: boolean;
-      bundledNodeBinPath?: string;
-      skills: unknown[];
-      providerConfigs: Record<string, unknown>;
-      permissionApiPort: number;
-      questionApiPort: number;
-      enabledProviders: string[];
-      model?: string;
-      smallModel?: string;
-    }) => {
-      const configDir = actualPath.join(options.userDataPath, 'opencode');
-      const configPath = actualPath.join(configDir, 'opencode.json');
+    generateConfig: vi.fn(
+      (options: {
+        userDataPath: string;
+        mcpToolsPath: string;
+        platform: string;
+        isPackaged: boolean;
+        bundledNodeBinPath?: string;
+        skills: unknown[];
+        providerConfigs: Record<string, unknown>;
+        permissionApiPort: number;
+        questionApiPort: number;
+        enabledProviders: string[];
+        model?: string;
+        smallModel?: string;
+      }) => {
+        const configDir = actualPath.join(options.userDataPath, 'opencode');
+        const configPath = actualPath.join(configDir, 'opencode.json');
 
-      // Create config directory
-      if (!actualFs.existsSync(configDir)) {
-        actualFs.mkdirSync(configDir, { recursive: true });
-      }
+        // Create config directory
+        if (!actualFs.existsSync(configDir)) {
+          actualFs.mkdirSync(configDir, { recursive: true });
+        }
 
-      // Build a realistic config object
-      const config = {
-        $schema: 'https://opencode.ai/config.json',
-        default_agent: 'accomplish',
-        permission: { '*': 'allow', todowrite: 'allow' },
-        enabled_providers: options.enabledProviders,
-        agent: {
-          accomplish: {
-            description: 'Browser automation assistant using dev-browser',
-            mode: 'primary',
-            prompt: `<environment>
+        // Build a realistic config object
+        const config = {
+          $schema: 'https://opencode.ai/config.json',
+          default_agent: 'accomplish',
+          permission: { '*': 'allow', todowrite: 'allow' },
+          enabled_providers: options.enabledProviders,
+          agent: {
+            accomplish: {
+              description: 'Browser automation assistant using dev-browser',
+              mode: 'primary',
+              prompt: `<environment>
 Platform: ${options.platform}
 </environment>
 
@@ -109,32 +110,37 @@ Use request_file_permission tool before modifying files.
 
 ## user-communication
 Use AskUserQuestion tool for user interaction.`,
-          },
-        },
-        mcp: {
-          'file-permission': {
-            type: 'local',
-            enabled: true,
-            command: ['npx', 'tsx', actualPath.join(options.mcpToolsPath, 'file-permission', 'src', 'index.ts')],
-            environment: {
-              PERMISSION_API_PORT: String(options.permissionApiPort),
             },
-            timeout: 30000,
           },
-        },
-      };
+          mcp: {
+            'file-permission': {
+              type: 'local',
+              enabled: true,
+              command: [
+                'npx',
+                'tsx',
+                actualPath.join(options.mcpToolsPath, 'file-permission', 'src', 'index.ts'),
+              ],
+              environment: {
+                PERMISSION_API_PORT: String(options.permissionApiPort),
+              },
+              timeout: 30000,
+            },
+          },
+        };
 
-      // Write config file
-      actualFs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        // Write config file
+        actualFs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
-      return {
-        configPath,
-        systemPrompt: config.agent.accomplish.prompt,
-        mcpServers: config.mcp,
-        providerConfigs: {},
-        enabledProviders: options.enabledProviders,
-      };
-    }),
+        return {
+          configPath,
+          systemPrompt: config.agent.accomplish.prompt,
+          mcpServers: config.mcp,
+          providerConfigs: {},
+          enabledProviders: options.enabledProviders,
+        };
+      },
+    ),
     ACCOMPLISH_AGENT_NAME: 'accomplish',
 
     // Proxy functions
@@ -142,61 +148,61 @@ Use AskUserQuestion tool for user interaction.`,
     ensureMoonshotProxy: vi.fn(() => Promise.resolve()),
 
     // Bundled Node.js utilities
-  getBundledNodePaths: vi.fn(() => null),
-  isBundledNodeAvailable: vi.fn(() => false),
-  getNodePath: vi.fn(() => 'node'),
-  getNpmPath: vi.fn(() => 'npm'),
-  getNpxPath: vi.fn(() => 'npx'),
-  logBundledNodeInfo: vi.fn(),
+    getBundledNodePaths: vi.fn(() => null),
+    isBundledNodeAvailable: vi.fn(() => false),
+    getNodePath: vi.fn(() => 'node'),
+    getNpmPath: vi.fn(() => 'npm'),
+    getNpxPath: vi.fn(() => 'npx'),
+    logBundledNodeInfo: vi.fn(),
 
-  // Provider settings
-  getProviderSettings: vi.fn(() => ({
-    activeProviderId: null,
-    connectedProviders: {},
-    debugMode: false,
-  })),
-  setActiveProvider: vi.fn(),
-  getActiveProviderId: vi.fn(() => null),
-  getConnectedProvider: vi.fn(() => null),
-  setConnectedProvider: vi.fn(),
-  removeConnectedProvider: vi.fn(),
-  updateProviderModel: vi.fn(),
-  setProviderDebugMode: vi.fn(),
-  getProviderDebugMode: vi.fn(() => false),
-  clearProviderSettings: vi.fn(),
-  getActiveProviderModel: vi.fn(() => null),
-  hasReadyProvider: vi.fn(() => false),
-  getConnectedProviderIds: vi.fn(() => []),
+    // Provider settings
+    getProviderSettings: vi.fn(() => ({
+      activeProviderId: null,
+      connectedProviders: {},
+      debugMode: false,
+    })),
+    setActiveProvider: vi.fn(),
+    getActiveProviderId: vi.fn(() => null),
+    getConnectedProvider: vi.fn(() => null),
+    setConnectedProvider: vi.fn(),
+    removeConnectedProvider: vi.fn(),
+    updateProviderModel: vi.fn(),
+    setProviderDebugMode: vi.fn(),
+    getProviderDebugMode: vi.fn(() => false),
+    clearProviderSettings: vi.fn(),
+    getActiveProviderModel: vi.fn(() => null),
+    hasReadyProvider: vi.fn(() => false),
+    getConnectedProviderIds: vi.fn(() => []),
 
-  // App settings
-  getDebugMode: vi.fn(() => false),
-  setDebugMode: vi.fn(),
-  getOnboardingComplete: vi.fn(() => false),
-  setOnboardingComplete: vi.fn(),
-  getSelectedModel: vi.fn(() => null),
-  setSelectedModel: vi.fn(),
-  getOllamaConfig: vi.fn(() => null),
-  setOllamaConfig: vi.fn(),
-  getLiteLLMConfig: vi.fn(() => null),
-  setLiteLLMConfig: vi.fn(),
-  getAzureFoundryConfig: vi.fn(() => null),
-  setAzureFoundryConfig: vi.fn(),
-  getLMStudioConfig: vi.fn(() => null),
-  setLMStudioConfig: vi.fn(),
-  getAppSettings: vi.fn(() => ({
-    debugMode: false,
-    onboardingComplete: false,
-    selectedModel: null,
-    ollamaConfig: null,
-    litellmConfig: null,
-    azureFoundryConfig: null,
-    lmstudioConfig: null,
-  })),
-  clearAppSettings: vi.fn(),
+    // App settings
+    getDebugMode: vi.fn(() => false),
+    setDebugMode: vi.fn(),
+    getOnboardingComplete: vi.fn(() => false),
+    setOnboardingComplete: vi.fn(),
+    getSelectedModel: vi.fn(() => null),
+    setSelectedModel: vi.fn(),
+    getOllamaConfig: vi.fn(() => null),
+    setOllamaConfig: vi.fn(),
+    getLiteLLMConfig: vi.fn(() => null),
+    setLiteLLMConfig: vi.fn(),
+    getAzureFoundryConfig: vi.fn(() => null),
+    setAzureFoundryConfig: vi.fn(),
+    getLMStudioConfig: vi.fn(() => null),
+    setLMStudioConfig: vi.fn(),
+    getAppSettings: vi.fn(() => ({
+      debugMode: false,
+      onboardingComplete: false,
+      selectedModel: null,
+      ollamaConfig: null,
+      litellmConfig: null,
+      azureFoundryConfig: null,
+      lmstudioConfig: null,
+    })),
+    clearAppSettings: vi.fn(),
 
-  // Constants needed by config-generator
-  PERMISSION_API_PORT: 9226,
-  QUESTION_API_PORT: 9227,
+    // Constants needed by config-generator
+    PERMISSION_API_PORT: 9226,
+    QUESTION_API_PORT: 9227,
   };
 });
 
@@ -228,7 +234,13 @@ describe('OpenCode Config Generator Integration', () => {
 
     // Create mcp-tools directory structure at node_modules/@accomplish_ai/agent-core/mcp-tools
     // In development, mcp-tools is inside the installed npm package
-    const mcpToolsDir = path.join(tempAppDir, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
+    const mcpToolsDir = path.join(
+      tempAppDir,
+      'node_modules',
+      '@accomplish_ai',
+      'agent-core',
+      'mcp-tools',
+    );
     fs.mkdirSync(mcpToolsDir, { recursive: true });
     fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
     fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
@@ -265,7 +277,9 @@ describe('OpenCode Config Generator Integration', () => {
         const result = getMcpToolsPath();
 
         // Assert - mcp-tools is inside the installed npm package
-        expect(result).toBe(path.join(tempAppDir, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools'));
+        expect(result).toBe(
+          path.join(tempAppDir, 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools'),
+        );
       });
     });
 
@@ -304,7 +318,7 @@ describe('OpenCode Config Generator Integration', () => {
       // Arrange - create config dir beforehand
       const configDir = path.join(tempUserDataDir, 'opencode');
       fs.mkdirSync(configDir, { recursive: true });
-      const statBefore = fs.statSync(configDir);
+      fs.statSync(configDir);
 
       // Act
       const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
@@ -476,7 +490,8 @@ describe('OpenCode Config Generator Integration', () => {
       vi.resetModules();
 
       // Act - generate again
-      const { generateOpenCodeConfig: regenerate } = await import('@main/opencode/config-generator');
+      const { generateOpenCodeConfig: regenerate } =
+        await import('@main/opencode/config-generator');
       const secondPath = await regenerate();
       const secondContent = fs.readFileSync(secondPath, 'utf-8');
 

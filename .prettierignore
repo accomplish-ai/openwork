@@ -1,0 +1,7 @@
+dist/
+.wrangler/
+release/
+node_modules/
+pnpm-lock.yaml
+*.min.js
+dist-electron/

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { springs } from '../../lib/animations';
@@ -9,13 +8,19 @@ import { cn } from '@/lib/utils';
 
 function getOperationBadgeClasses(operation?: string): string {
   switch (operation) {
-    case 'delete': return 'bg-red-500/10 text-red-600';
-    case 'overwrite': return 'bg-orange-500/10 text-orange-600';
-    case 'modify': return 'bg-yellow-500/10 text-yellow-600';
-    case 'create': return 'bg-green-500/10 text-green-600';
+    case 'delete':
+      return 'bg-red-500/10 text-red-600';
+    case 'overwrite':
+      return 'bg-orange-500/10 text-orange-600';
+    case 'modify':
+      return 'bg-yellow-500/10 text-yellow-600';
+    case 'create':
+      return 'bg-green-500/10 text-green-600';
     case 'rename':
-    case 'move': return 'bg-blue-500/10 text-blue-600';
-    default: return 'bg-gray-500/10 text-gray-600';
+    case 'move':
+      return 'bg-blue-500/10 text-blue-600';
+    default:
+      return 'bg-gray-500/10 text-gray-600';
   }
 }
 
@@ -72,12 +77,18 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
       >
         <Card className="w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
           <div className="flex items-start gap-4 p-6 pb-4 shrink-0">
-            <div className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full shrink-0",
-              isDeleteOperation(permissionRequest) ? "bg-red-500/10" :
-              permissionRequest.type === 'file' ? "bg-amber-500/10" :
-              permissionRequest.type === 'question' ? "bg-primary/10" : "bg-warning/10"
-            )}>
+            <div
+              className={cn(
+                'flex h-10 w-10 items-center justify-center rounded-full shrink-0',
+                isDeleteOperation(permissionRequest)
+                  ? 'bg-red-500/10'
+                  : permissionRequest.type === 'file'
+                    ? 'bg-amber-500/10'
+                    : permissionRequest.type === 'question'
+                      ? 'bg-primary/10'
+                      : 'bg-warning/10',
+              )}
+            >
               {isDeleteOperation(permissionRequest) ? (
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               ) : permissionRequest.type === 'file' ? (
@@ -88,197 +99,205 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                 <AlertCircle className="h-5 w-5 text-warning" />
               )}
             </div>
-            <h3 className={cn(
-              "text-lg font-semibold",
-              isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
-            )}>
+            <h3
+              className={cn(
+                'text-lg font-semibold',
+                isDeleteOperation(permissionRequest) ? 'text-red-600' : 'text-foreground',
+              )}
+            >
               {isDeleteOperation(permissionRequest)
                 ? 'File Deletion Warning'
                 : permissionRequest.type === 'file'
                   ? 'File Permission Required'
                   : permissionRequest.type === 'question'
-                    ? (permissionRequest.header || 'Question')
+                    ? permissionRequest.header || 'Question'
                     : 'Permission Required'}
             </h3>
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 min-h-0">
-              {permissionRequest.type === 'file' && (
-                <>
-                  {isDeleteOperation(permissionRequest) && (
-                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <p className="text-sm text-red-600">
-                        {(() => {
-                          const paths = getDisplayFilePaths(permissionRequest);
-                          return paths.length > 1
-                            ? `${paths.length} files will be permanently deleted:`
-                            : 'This file will be permanently deleted:';
-                        })()}
-                      </p>
-                    </div>
-                  )}
-
-                  {!isDeleteOperation(permissionRequest) && (
-                    <div className="mb-3">
-                      <span className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                        getOperationBadgeClasses(permissionRequest.fileOperation)
-                      )}>
-                        {permissionRequest.fileOperation?.toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className={cn(
-                    "mb-4 p-3 rounded-lg",
-                    isDeleteOperation(permissionRequest)
-                      ? "bg-red-500/5 border border-red-500/20"
-                      : "bg-muted"
-                  )}>
-                    {(() => {
-                      const paths = getDisplayFilePaths(permissionRequest);
-                      if (paths.length > 1) {
-                        return (
-                          <ul className="space-y-1">
-                            {paths.map((path, idx) => (
-                              <li key={idx} className={cn(
-                                "text-sm font-mono break-all",
-                                isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
-                              )}>
-                                • {path}
-                              </li>
-                            ))}
-                          </ul>
-                        );
-                      }
-                      return (
-                        <p className={cn(
-                          "text-sm font-mono break-all",
-                          isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
-                        )}>
-                          {paths[0]}
-                        </p>
-                      );
-                    })()}
-                    {permissionRequest.targetPath && (
-                      <p className="text-sm font-mono text-muted-foreground mt-1">
-                        → {permissionRequest.targetPath}
-                      </p>
-                    )}
+            {permissionRequest.type === 'file' && (
+              <>
+                {isDeleteOperation(permissionRequest) && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-sm text-red-600">
+                      {(() => {
+                        const paths = getDisplayFilePaths(permissionRequest);
+                        return paths.length > 1
+                          ? `${paths.length} files will be permanently deleted:`
+                          : 'This file will be permanently deleted:';
+                      })()}
+                    </p>
                   </div>
+                )}
 
-                  {isDeleteOperation(permissionRequest) && (
-                    <p className="text-sm text-red-600/80 mb-4">
-                      This action cannot be undone.
+                {!isDeleteOperation(permissionRequest) && (
+                  <div className="mb-3">
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                        getOperationBadgeClasses(permissionRequest.fileOperation),
+                      )}
+                    >
+                      {permissionRequest.fileOperation?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    'mb-4 p-3 rounded-lg',
+                    isDeleteOperation(permissionRequest)
+                      ? 'bg-red-500/5 border border-red-500/20'
+                      : 'bg-muted',
+                  )}
+                >
+                  {(() => {
+                    const paths = getDisplayFilePaths(permissionRequest);
+                    if (paths.length > 1) {
+                      return (
+                        <ul className="space-y-1">
+                          {paths.map((path, idx) => (
+                            <li
+                              key={idx}
+                              className={cn(
+                                'text-sm font-mono break-all',
+                                isDeleteOperation(permissionRequest)
+                                  ? 'text-red-600'
+                                  : 'text-foreground',
+                              )}
+                            >
+                              • {path}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    return (
+                      <p
+                        className={cn(
+                          'text-sm font-mono break-all',
+                          isDeleteOperation(permissionRequest) ? 'text-red-600' : 'text-foreground',
+                        )}
+                      >
+                        {paths[0]}
+                      </p>
+                    );
+                  })()}
+                  {permissionRequest.targetPath && (
+                    <p className="text-sm font-mono text-muted-foreground mt-1">
+                      → {permissionRequest.targetPath}
                     </p>
                   )}
+                </div>
 
-                  {permissionRequest.contentPreview && (
-                    <details className="mb-4">
-                      <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                        Preview content
-                      </summary>
-                      <pre className="mt-2 p-2 rounded bg-muted text-xs overflow-x-auto max-h-32 overflow-y-auto">
-                        {permissionRequest.contentPreview}
-                      </pre>
-                    </details>
-                  )}
-                </>
-              )}
+                {isDeleteOperation(permissionRequest) && (
+                  <p className="text-sm text-red-600/80 mb-4">This action cannot be undone.</p>
+                )}
 
-              {permissionRequest.type === 'question' && (
-                <>
-                  <p className="text-sm text-foreground mb-4">
-                    {permissionRequest.question}
-                  </p>
+                {permissionRequest.contentPreview && (
+                  <details className="mb-4">
+                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                      Preview content
+                    </summary>
+                    <pre className="mt-2 p-2 rounded bg-muted text-xs overflow-x-auto max-h-32 overflow-y-auto">
+                      {permissionRequest.contentPreview}
+                    </pre>
+                  </details>
+                )}
+              </>
+            )}
 
-                  {permissionRequest.options && permissionRequest.options.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                      {permissionRequest.options
-                        .filter((opt) => opt.label.toLowerCase() !== 'other')
-                        .map((option, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => {
-                              setCustomResponse('');
-                              if (permissionRequest.multiSelect) {
-                                setSelectedOptions((prev) =>
-                                  prev.includes(option.label)
-                                    ? prev.filter((o) => o !== option.label)
-                                    : [...prev, option.label]
-                                );
-                              } else {
-                                setSelectedOptions([option.label]);
-                              }
-                            }}
-                            className={cn(
-                              "w-full text-left p-3 rounded-lg border transition-colors",
-                              selectedOptions.includes(option.label)
-                                ? "border-primary bg-primary/10"
-                                : "border-border hover:border-primary/50"
-                            )}
-                          >
-                            <div className="font-medium text-sm">{option.label}</div>
-                            {option.description && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {option.description}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                    </div>
-                  )}
+            {permissionRequest.type === 'question' && (
+              <>
+                <p className="text-sm text-foreground mb-4">{permissionRequest.question}</p>
 
-                  {permissionRequest.options && permissionRequest.options.length > 0 && (
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-xs text-muted-foreground">or type your own</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                  )}
-
-                  <div className="mb-4">
-                    <textarea
-                      value={customResponse}
-                      onChange={(e) => {
-                        setSelectedOptions([]);
-                        setCustomResponse(e.target.value);
-                        e.target.style.height = 'auto';
-                        e.target.style.height = `${e.target.scrollHeight}px`;
-                      }}
-                      placeholder="Enter a different option..."
-                      aria-label="Custom response"
-                      maxLength={10000}
-                      rows={1}
-                      className="w-full resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                      style={{ minHeight: '38px', maxHeight: '150px' }}
-                      onKeyDown={(e) => {
-                        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && customResponse.trim()) {
-                          handleRespond(true);
-                        }
-                      }}
-                    />
+                {permissionRequest.options && permissionRequest.options.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    {permissionRequest.options
+                      .filter((opt) => opt.label.toLowerCase() !== 'other')
+                      .map((option, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setCustomResponse('');
+                            if (permissionRequest.multiSelect) {
+                              setSelectedOptions((prev) =>
+                                prev.includes(option.label)
+                                  ? prev.filter((o) => o !== option.label)
+                                  : [...prev, option.label],
+                              );
+                            } else {
+                              setSelectedOptions([option.label]);
+                            }
+                          }}
+                          className={cn(
+                            'w-full text-left p-3 rounded-lg border transition-colors',
+                            selectedOptions.includes(option.label)
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-primary/50',
+                          )}
+                        >
+                          <div className="font-medium text-sm">{option.label}</div>
+                          {option.description && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {option.description}
+                            </div>
+                          )}
+                        </button>
+                      ))}
                   </div>
-                </>
-              )}
+                )}
 
-              {permissionRequest.type === 'tool' && (
-                <>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Allow {permissionRequest.toolName}?
-                  </p>
-                  {permissionRequest.toolName && (
-                    <div className="mb-4 p-3 rounded-lg bg-muted text-xs font-mono overflow-x-auto">
-                      <p className="text-muted-foreground mb-1">Tool: {permissionRequest.toolName}</p>
-                      <pre className="text-foreground">
-                        {JSON.stringify(permissionRequest.toolInput, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </>
-              )}
+                {permissionRequest.options && permissionRequest.options.length > 0 && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">or type your own</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                )}
 
+                <div className="mb-4">
+                  <textarea
+                    value={customResponse}
+                    onChange={(e) => {
+                      setSelectedOptions([]);
+                      setCustomResponse(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    placeholder="Enter a different option..."
+                    aria-label="Custom response"
+                    maxLength={10000}
+                    rows={1}
+                    className="w-full resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    style={{ minHeight: '38px', maxHeight: '150px' }}
+                    onKeyDown={(e) => {
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && customResponse.trim()) {
+                        handleRespond(true);
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+            {permissionRequest.type === 'tool' && (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Allow {permissionRequest.toolName}?
+                </p>
+                {permissionRequest.toolName && (
+                  <div className="mb-4 p-3 rounded-lg bg-muted text-xs font-mono overflow-x-auto">
+                    <p className="text-muted-foreground mb-1">Tool: {permissionRequest.toolName}</p>
+                    <pre className="text-foreground">
+                      {JSON.stringify(permissionRequest.toolInput, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           <div className="flex gap-3 p-6 pt-4 shrink-0 border-t border-border">
@@ -293,8 +312,8 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
             <Button
               onClick={() => handleRespond(true)}
               className={cn(
-                "flex-1",
-                isDeleteOperation(permissionRequest) && "bg-red-600 hover:bg-red-700 text-white"
+                'flex-1',
+                isDeleteOperation(permissionRequest) && 'bg-red-600 hover:bg-red-700 text-white',
               )}
               data-testid="permission-allow-button"
               disabled={

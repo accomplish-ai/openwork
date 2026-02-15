@@ -31,7 +31,7 @@ function createMockTask(
   id: string,
   prompt: string = 'Test task',
   status: TaskStatus = 'running',
-  messages: TaskMessage[] = []
+  messages: TaskMessage[] = [],
 ): Task {
   return {
     id,
@@ -46,7 +46,7 @@ function createMockTask(
 function createMockMessage(
   id: string,
   type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
-  content: string = 'Test message'
+  content: string = 'Test message',
 ): TaskMessage {
   return {
     id,
@@ -164,9 +164,13 @@ vi.mock('framer-motion', () => ({
 
 // Mock StreamingText component
 vi.mock('@/components/ui/streaming-text', () => ({
-  StreamingText: ({ text, children }: { text: string; children: (text: string) => React.ReactNode }) => (
-    <>{children(text)}</>
-  ),
+  StreamingText: ({
+    text,
+    children,
+  }: {
+    text: string;
+    children: (text: string) => React.ReactNode;
+  }) => <>{children(text)}</>,
 }));
 
 // Mock Accomplish icon
@@ -183,7 +187,7 @@ function renderWithRouter(taskId: string = 'task-123') {
         <Route path="/execution/:id" element={<ExecutionPage />} />
         <Route path="/" element={<div>Home Page</div>} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -323,7 +327,7 @@ describe('Execution Page Integration', () => {
 
       // Assert - Look for the back arrow button
       const buttons = screen.getAllByRole('button');
-      const backButton = buttons.find(btn => btn.querySelector('svg'));
+      const backButton = buttons.find((btn) => btn.querySelector('svg'));
       expect(backButton).toBeInTheDocument();
     });
 
@@ -342,9 +346,7 @@ describe('Execution Page Integration', () => {
   describe('message display', () => {
     it('should display user messages', () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'user', 'Check my inbox'),
-      ];
+      const messages = [createMockMessage('msg-1', 'user', 'Check my inbox')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       // Act
@@ -356,9 +358,7 @@ describe('Execution Page Integration', () => {
 
     it('should display assistant messages', () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I will check your inbox now.'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I will check your inbox now.')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       // Act
@@ -414,7 +414,9 @@ describe('Execution Page Integration', () => {
       renderWithRouter('task-123');
 
       // Assert - matches any of the action-oriented thinking phrases
-      expect(screen.getByText(/^(Doing|Executing|Running|Handling it|Accomplishing)\.\.\.$/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/^(Doing|Executing|Running|Handling it|Accomplishing)\.\.\.$/),
+      ).toBeInTheDocument();
     });
 
     it('should display message timestamps', () => {
@@ -737,9 +739,7 @@ describe('Execution Page Integration', () => {
 
     it('should show inline waiting indicator for queued task with messages', () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'user', 'Previous message'),
-      ];
+      const messages = [createMockMessage('msg-1', 'user', 'Previous message')];
       mockStoreState.currentTask = createMockTask('task-123', 'Queued', 'queued', messages);
 
       // Act
@@ -1098,9 +1098,7 @@ describe('Execution Page Integration', () => {
 
     it('should show Continue button for interrupted task with session and messages', () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I was working on something')];
       const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
@@ -1115,7 +1113,11 @@ describe('Execution Page Integration', () => {
     it('should show Done Continue button for completed task with session when waiting for user', () => {
       // Arrange - message must contain a "waiting for user" pattern to show Done, Continue button
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'Please log in to your account. Let me know when you are done.'),
+        createMockMessage(
+          'msg-1',
+          'assistant',
+          'Please log in to your account. Let me know when you are done.',
+        ),
       ];
       const task = createMockTask('task-123', 'Done', 'completed', messages);
       task.sessionId = 'session-abc';
@@ -1130,9 +1132,7 @@ describe('Execution Page Integration', () => {
 
     it('should call sendFollowUp with continue when Continue button is clicked', async () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I was working on something')];
       const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
@@ -1153,9 +1153,7 @@ describe('Execution Page Integration', () => {
   describe('system messages', () => {
     it('should display system messages with System label', () => {
       // Arrange
-      const messages = [
-        createMockMessage('msg-1', 'system', 'System initialization complete'),
-      ];
+      const messages = [createMockMessage('msg-1', 'system', 'System initialization complete')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       // Act
@@ -1322,7 +1320,6 @@ describe('Execution Page Integration', () => {
       expect(screen.getByText('CustomTool')).toBeInTheDocument();
     });
   });
-
 
   describe('follow-up placeholder text variations', () => {
     it('should show follow-up input for interrupted task even without session', () => {

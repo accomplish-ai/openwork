@@ -54,23 +54,32 @@ export function assertNoConsoleErrors(errors: string[]) {
 
 export function assertLoadedFrom(window: Page, expectedOrigin: string) {
   const url = window.url();
-  expect(url.startsWith(expectedOrigin), `Expected URL to start with ${expectedOrigin}, got ${url}`).toBe(true);
+  expect(
+    url.startsWith(expectedOrigin),
+    `Expected URL to start with ${expectedOrigin}, got ${url}`,
+  ).toBe(true);
 }
 
 export async function assertAppRendered(window: Page) {
   const sidebar = window.getByTestId('sidebar-settings-button');
-  await expect(sidebar, 'React app did not render — sidebar not found').toBeVisible({ timeout: 10_000 });
+  await expect(sidebar, 'React app did not render — sidebar not found').toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 export async function assertBridgeWorks(window: Page) {
   const hasBridge = await window.evaluate(() => 'accomplish' in window);
   expect(hasBridge, 'Preload bridge not injected into renderer').toBe(true);
 
-  const version = await window.evaluate(() => (window as any).accomplish.getVersion());
+  const version = await window.evaluate(() =>
+    (window as unknown as { accomplish: { getVersion(): string } }).accomplish.getVersion(),
+  );
   expect(version, 'Bridge getVersion() returned falsy').toBeTruthy();
   expect(typeof version, 'Bridge getVersion() did not return a string').toBe('string');
 
-  const platform = await window.evaluate(() => (window as any).accomplish.getPlatform());
+  const platform = await window.evaluate(() =>
+    (window as unknown as { accomplish: { getPlatform(): string } }).accomplish.getPlatform(),
+  );
   expect(platform, `Unexpected platform: ${platform}`).toMatch(/^(darwin|win32|linux)$/);
 }
 
@@ -82,7 +91,10 @@ export async function assertSettingsDialogOpens(window: Page) {
   await expect(settingsDialog, 'Settings dialog did not open').toBeVisible({ timeout: 5_000 });
 }
 
-export async function runE2ESuite(app: Awaited<ReturnType<typeof electron.launch>>, expectedOrigin: string) {
+export async function runE2ESuite(
+  app: Awaited<ReturnType<typeof electron.launch>>,
+  expectedOrigin: string,
+) {
   try {
     const { window } = await getMainWindow(app);
     const console = collectAllConsoleLogs(window);
@@ -113,9 +125,13 @@ export async function startServeProcess(distPath: string, port: number): Promise
   const require = createRequire(import.meta.url);
   const serveBin = require.resolve('serve/build/main.js');
 
-  const proc = spawn(process.execPath, [serveBin, distPath, '-l', String(port), '--no-clipboard', '--single'], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  const proc = spawn(
+    process.execPath,
+    [serveBin, distPath, '-l', String(port), '--no-clipboard', '--single'],
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
 
   proc.stderr?.resume();
 
@@ -125,7 +141,10 @@ export async function startServeProcess(distPath: string, port: number): Promise
       proc.kill();
       reject(err);
     };
-    const timer = setTimeout(() => fail(new Error(`serve did not start within ${SERVE_STARTUP_TIMEOUT_MS}ms`)), SERVE_STARTUP_TIMEOUT_MS);
+    const timer = setTimeout(
+      () => fail(new Error(`serve did not start within ${SERVE_STARTUP_TIMEOUT_MS}ms`)),
+      SERVE_STARTUP_TIMEOUT_MS,
+    );
     proc.stdout?.on('data', (data: Buffer) => {
       if (data.toString().includes('Accepting connections')) {
         clearTimeout(timer);
@@ -152,7 +171,9 @@ export async function connectProviderViaUI(window: Page, providerId: string, api
   await input.fill(apiKey);
   const connect = window.getByTestId('connect-button');
   await connect.click();
-  await expect(window.getByTestId(`provider-connected-badge-${providerId}`)).toBeVisible({ timeout: 10_000 });
+  await expect(window.getByTestId(`provider-connected-badge-${providerId}`)).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 export async function connectAllProviders(window: Page) {
@@ -229,11 +250,15 @@ export function collectAllConsoleLogs(window: Page): ConsoleCollector {
 export function collectNetworkFailures(window: Page): string[] {
   const failures: string[] = [];
   window.on('requestfailed', (req) => {
-    failures.push(`[${new Date().toISOString()}] FAIL ${req.failure()?.errorText} ${req.method()} ${req.url()}`);
+    failures.push(
+      `[${new Date().toISOString()}] FAIL ${req.failure()?.errorText} ${req.method()} ${req.url()}`,
+    );
   });
   window.on('response', (res) => {
     if (res.status() >= 400) {
-      failures.push(`[${new Date().toISOString()}] HTTP ${res.status()} ${res.request().method()} ${res.url()}`);
+      failures.push(
+        `[${new Date().toISOString()}] HTTP ${res.status()} ${res.request().method()} ${res.url()}`,
+      );
     }
   });
   return failures;
@@ -281,16 +306,28 @@ export async function forceCloseApp(
   // Ask Electron to exit cleanly
   try {
     await Promise.race([
-      app.evaluate(({ app }) => { app.exit(0); }),
+      app.evaluate(({ app }) => {
+        app.exit(0);
+      }),
       new Promise((r) => setTimeout(r, 3_000)),
     ]);
-  } catch { /* may fail if process is already dead */ }
+  } catch {
+    /* may fail if process is already dead */
+  }
 
   // Force-kill the process group and the process itself
   const pid = proc.pid;
   if (pid && !proc.killed && proc.exitCode === null) {
-    try { process.kill(-pid, 'SIGKILL'); } catch {}
-    try { process.kill(pid, 'SIGKILL'); } catch {}
+    try {
+      process.kill(-pid, 'SIGKILL');
+    } catch {
+      /* process may already be dead */
+    }
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      /* process may already be dead */
+    }
   }
 
   // Clear Playwright's internal gracefullyCloseSet. On Linux, the child
@@ -307,8 +344,9 @@ export async function forceCloseApp(
       path.dirname(pwCorePath),
       'lib/server/utils/processLauncher.js',
     );
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { gracefullyCloseSet } = innerRequire(processLauncherPath);
     gracefullyCloseSet.clear();
-  } catch { /* best effort — if this fails, teardown just takes longer */ }
+  } catch {
+    /* best effort — if this fails, teardown just takes longer */
+  }
 }

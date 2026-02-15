@@ -5,13 +5,25 @@ const fs = require('fs');
 const esbuild = require('esbuild');
 const { execSync } = require('child_process');
 
-const skillsDir = path.join(__dirname, '..', 'node_modules', '@accomplish_ai', 'agent-core', 'mcp-tools');
+const skillsDir = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  '@accomplish_ai',
+  'agent-core',
+  'mcp-tools',
+);
 
 // Skills that have runtime dependencies (playwright) that cannot be bundled
 const SKILLS_WITH_RUNTIME_DEPS = ['dev-browser', 'dev-browser-mcp'];
 
 // Skills that are fully bundled (no runtime node_modules needed)
-const SKILLS_FULLY_BUNDLED = ['ask-user-question', 'file-permission', 'complete-task', 'start-task'];
+const SKILLS_FULLY_BUNDLED = [
+  'ask-user-question',
+  'file-permission',
+  'complete-task',
+  'start-task',
+];
 
 const bundles = [
   {
@@ -73,7 +85,9 @@ async function bundleSkill({ name, entry, outfile, external = [], banner: needsB
   if (!fs.existsSync(absEntry)) {
     // Source not available (e.g. using pre-built npm package) — skip if dist already exists
     if (fs.existsSync(absOutfile)) {
-      console.log(`[bundle-skills] Skipping ${name}: source not found but dist exists at ${absOutfile}`);
+      console.log(
+        `[bundle-skills] Skipping ${name}: source not found but dist exists at ${absOutfile}`,
+      );
       return;
     }
     throw new Error(`Entry not found for ${name}: ${absEntry}`);

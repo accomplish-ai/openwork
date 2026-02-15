@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -31,18 +30,21 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
   const filteredDebugLogs = useMemo(() => {
     if (!debugSearchQuery.trim()) return debugLogs;
     const query = debugSearchQuery.toLowerCase();
-    return debugLogs.filter(log =>
-      log.message.toLowerCase().includes(query) ||
-      log.type.toLowerCase().includes(query) ||
-      (log.data !== undefined &&
-        (typeof log.data === 'string' ? log.data : JSON.stringify(log.data))
-          .toLowerCase().includes(query))
+    return debugLogs.filter(
+      (log) =>
+        log.message.toLowerCase().includes(query) ||
+        log.type.toLowerCase().includes(query) ||
+        (log.data !== undefined &&
+          (typeof log.data === 'string' ? log.data : JSON.stringify(log.data))
+            .toLowerCase()
+            .includes(query)),
     );
   }, [debugLogs, debugSearchQuery]);
 
-  useEffect(() => {
+  const handleSearchChange = useCallback((value: string) => {
+    setDebugSearchQuery(value);
     setDebugSearchIndex(0);
-  }, [debugSearchQuery]);
+  }, []);
 
   useEffect(() => {
     if (debugPanelOpen && debugPanelRef.current) {
@@ -82,17 +84,22 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
     const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts.map((part, i) =>
       part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-500/40 text-yellow-200 rounded px-0.5">{part}</mark>
-      ) : part
+        <mark key={i} className="bg-yellow-500/40 text-yellow-200 rounded px-0.5">
+          {part}
+        </mark>
+      ) : (
+        part
+      ),
     );
   }, []);
 
   const handleExportDebugLogs = useCallback(() => {
     const text = debugLogs
       .map((log) => {
-        const dataStr = log.data !== undefined
-          ? ` ${typeof log.data === 'string' ? log.data : JSON.stringify(log.data)}`
-          : '';
+        const dataStr =
+          log.data !== undefined
+            ? ` ${typeof log.data === 'string' ? log.data : JSON.stringify(log.data)}`
+            : '';
         return `${new Date(log.timestamp).toISOString()} [${log.type}] ${log.message}${dataStr}`;
       })
       .join('\n');
@@ -217,7 +224,7 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
                     ref={debugSearchInputRef}
                     type="text"
                     value={debugSearchQuery}
-                    onChange={(e) => setDebugSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && debugSearchQuery.trim()) {
                         e.preventDefault();
@@ -257,19 +264,26 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
                         }}
                         className={cn(
                           'flex gap-2 px-1 -mx-1 rounded',
-                          debugSearchQuery.trim() && index === debugSearchIndex && 'bg-zinc-800/80 ring-1 ring-zinc-600'
+                          debugSearchQuery.trim() &&
+                            index === debugSearchIndex &&
+                            'bg-zinc-800/80 ring-1 ring-zinc-600',
                         )}
                       >
                         <span className="text-zinc-500 shrink-0">
                           {new Date(log.timestamp).toLocaleTimeString()}
                         </span>
-                        <span className={cn(
-                          'shrink-0 px-1 rounded',
-                          log.type === 'error' ? 'bg-red-500/20 text-red-400' :
-                          log.type === 'warn' ? 'bg-yellow-500/20 text-yellow-400' :
-                          log.type === 'info' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-zinc-700 text-zinc-400'
-                        )}>
+                        <span
+                          className={cn(
+                            'shrink-0 px-1 rounded',
+                            log.type === 'error'
+                              ? 'bg-red-500/20 text-red-400'
+                              : log.type === 'warn'
+                                ? 'bg-yellow-500/20 text-yellow-400'
+                                : log.type === 'info'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-zinc-700 text-zinc-400',
+                          )}
+                        >
                           [{highlightText(log.type, debugSearchQuery)}]
                         </span>
                         <span className="text-zinc-300 break-all">
@@ -277,8 +291,10 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
                           {log.data !== undefined && (
                             <span className="text-zinc-500 ml-2">
                               {highlightText(
-                                typeof log.data === 'string' ? log.data : JSON.stringify(log.data, null, 0),
-                                debugSearchQuery
+                                typeof log.data === 'string'
+                                  ? log.data
+                                  : JSON.stringify(log.data, null, 0),
+                                debugSearchQuery,
                               )}
                             </span>
                           )}

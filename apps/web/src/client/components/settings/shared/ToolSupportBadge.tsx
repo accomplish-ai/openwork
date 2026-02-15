@@ -16,7 +16,12 @@ export function ToolSupportBadge({ status }: { status: ToolSupportStatus }) {
       className: 'bg-red-500/20 text-red-400 border-red-500/30',
       icon: (
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       ),
     },
@@ -34,7 +39,9 @@ export function ToolSupportBadge({ status }: { status: ToolSupportStatus }) {
   const { label, className, icon } = config[status];
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}
+    >
       {icon}
       {label}
     </span>

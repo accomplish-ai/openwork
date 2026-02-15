@@ -141,6 +141,7 @@ command: /my-skill
 **Body:**
 
 Write clear instructions for using the skill. Include:
+
 - Overview of the skill's purpose
 - Step-by-step workflows
 - Examples when helpful
@@ -149,6 +150,7 @@ Write clear instructions for using the skill. Include:
 ### Step 5: Test and Iterate
 
 After creating the skill:
+
 1. Use it on real tasks
 2. Notice struggles or inefficiencies
 3. Update SKILL.md or bundled resources
@@ -169,6 +171,7 @@ Skills must be saved to the Accomplish user data directory under a `skills` fold
 **Linux:** `~/.config/Accomplish/skills/<skill-name>/SKILL.md`
 
 **NEVER:**
+
 - Ask the user where to save the skill file
 - Use any other path like `~/skills/`, `./skills/`, or custom paths
 - Offer the user choices about the save location
@@ -185,16 +188,19 @@ The path is determined by the operating system. Detect the OS and use the correc
    - Linux: `~/.config/Accomplish/skills/`
 
 2. **Create the skill directory** named after your skill (lowercase, hyphenated):
+
    ```
    <base-path>/my-awesome-skill/
    ```
 
 3. **Write the SKILL.md file** inside that directory:
+
    ```
    <base-path>/my-awesome-skill/SKILL.md
    ```
 
 4. **Add any bundled resources** as subdirectories if needed:
+
    ```
    <base-path>/my-awesome-skill/
    ├── SKILL.md
@@ -208,6 +214,7 @@ The path is determined by the operating system. Detect the OS and use the correc
 ### Skill Frontmatter Rules
 
 For custom skills in Accomplish:
+
 - `name`: Required - the skill's display name
 - `description`: Required - when to use this skill
 - `command`: Optional - slash command like `/my-skill`

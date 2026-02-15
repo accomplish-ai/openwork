@@ -50,7 +50,25 @@ interface AccomplishAPI {
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;
-  addApiKey(provider: 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'lmstudio' | 'elevenlabs', key: string, label?: string): Promise<ApiKeyConfig>;
+  addApiKey(
+    provider:
+      | 'anthropic'
+      | 'openai'
+      | 'openrouter'
+      | 'google'
+      | 'xai'
+      | 'deepseek'
+      | 'moonshot'
+      | 'zai'
+      | 'azure-foundry'
+      | 'custom'
+      | 'bedrock'
+      | 'litellm'
+      | 'lmstudio'
+      | 'elevenlabs',
+    key: string,
+    label?: string,
+  ): Promise<ApiKeyConfig>;
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
@@ -65,7 +83,11 @@ interface AccomplishAPI {
   setApiKey(key: string): Promise<void>;
   getApiKey(): Promise<string | null>;
   validateApiKey(key: string): Promise<{ valid: boolean; error?: string }>;
-  validateApiKeyForProvider(provider: string, key: string, options?: Record<string, any>): Promise<{ valid: boolean; error?: string }>;
+  validateApiKeyForProvider(
+    provider: string,
+    key: string,
+    options?: Record<string, unknown>,
+  ): Promise<{ valid: boolean; error?: string }>;
   clearApiKey(): Promise<void>;
 
   // Multi-provider API keys
@@ -81,23 +103,84 @@ interface AccomplishAPI {
   getClaudeVersion(): Promise<string | null>;
 
   // Model selection
-  getSelectedModel(): Promise<{ provider: string; model: string; baseUrl?: string; deploymentName?: string } | null>;
-  setSelectedModel(model: { provider: string; model: string; baseUrl?: string; deploymentName?: string }): Promise<void>;
+  getSelectedModel(): Promise<{
+    provider: string;
+    model: string;
+    baseUrl?: string;
+    deploymentName?: string;
+  } | null>;
+  setSelectedModel(model: {
+    provider: string;
+    model: string;
+    baseUrl?: string;
+    deploymentName?: string;
+  }): Promise<void>;
 
   // Ollama configuration
   testOllamaConnection(url: string): Promise<{
     success: boolean;
-    models?: Array<{ id: string; displayName: string; size: number; toolSupport?: ToolSupportStatus }>;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: ToolSupportStatus;
+    }>;
     error?: string;
   }>;
-  getOllamaConfig(): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; toolSupport?: ToolSupportStatus }> } | null>;
-  setOllamaConfig(config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; toolSupport?: ToolSupportStatus }> } | null): Promise<void>;
+  getOllamaConfig(): Promise<{
+    baseUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: ToolSupportStatus;
+    }>;
+  } | null>;
+  setOllamaConfig(
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        displayName: string;
+        size: number;
+        toolSupport?: ToolSupportStatus;
+      }>;
+    } | null,
+  ): Promise<void>;
 
   // Azure Foundry configuration
-  getAzureFoundryConfig(): Promise<{ baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null>;
-  setAzureFoundryConfig(config: { baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null): Promise<void>;
-  testAzureFoundryConnection(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<{ success: boolean; error?: string }>;
-  saveAzureFoundryConfig(config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<void>;
+  getAzureFoundryConfig(): Promise<{
+    baseUrl: string;
+    deploymentName: string;
+    authType: 'api-key' | 'entra-id';
+    enabled: boolean;
+    lastValidated?: number;
+  } | null>;
+  setAzureFoundryConfig(
+    config: {
+      baseUrl: string;
+      deploymentName: string;
+      authType: 'api-key' | 'entra-id';
+      enabled: boolean;
+      lastValidated?: number;
+    } | null,
+  ): Promise<void>;
+  testAzureFoundryConnection(config: {
+    endpoint: string;
+    deploymentName: string;
+    authType: 'api-key' | 'entra-id';
+    apiKey?: string;
+  }): Promise<{ success: boolean; error?: string }>;
+  saveAzureFoundryConfig(config: {
+    endpoint: string;
+    deploymentName: string;
+    authType: 'api-key' | 'entra-id';
+    apiKey?: string;
+  }): Promise<void>;
 
   // OpenRouter configuration
   fetchOpenRouterModels(): Promise<{
@@ -107,7 +190,10 @@ interface AccomplishAPI {
   }>;
 
   // LiteLLM configuration
-  testLiteLLMConnection(url: string, apiKey?: string): Promise<{
+  testLiteLLMConnection(
+    url: string,
+    apiKey?: string,
+  ): Promise<{
     success: boolean;
     models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
     error?: string;
@@ -117,8 +203,20 @@ interface AccomplishAPI {
     models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
     error?: string;
   }>;
-  getLiteLLMConfig(): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null>;
-  setLiteLLMConfig(config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null): Promise<void>;
+  getLiteLLMConfig(): Promise<{
+    baseUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+  } | null>;
+  setLiteLLMConfig(
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    } | null,
+  ): Promise<void>;
 
   // LM Studio configuration
   testLMStudioConnection(url: string): Promise<{
@@ -137,18 +235,24 @@ interface AccomplishAPI {
     lastValidated?: number;
     models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
   } | null>;
-  setLMStudioConfig(config: {
-    baseUrl: string;
-    enabled: boolean;
-    lastValidated?: number;
-    models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
-  } | null): Promise<void>;
+  setLMStudioConfig(
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
+    } | null,
+  ): Promise<void>;
 
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
-  fetchBedrockModels(credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }>;
+  fetchBedrockModels(credentials: string): Promise<{
+    success: boolean;
+    models: Array<{ id: string; name: string; provider: string }>;
+    error?: string;
+  }>;
 
   // E2E Testing
   isE2EMode(): Promise<boolean>;
@@ -168,7 +272,9 @@ interface AccomplishAPI {
 
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
-  onTaskUpdateBatch?(callback: (event: { taskId: string; messages: TaskMessage[] }) => void): () => void;
+  onTaskUpdateBatch?(
+    callback: (event: { taskId: string; messages: TaskMessage[] }) => void,
+  ): () => void;
   onPermissionRequest(callback: (request: PermissionRequest) => void): () => void;
   onTaskProgress(callback: (progress: TaskProgress) => void): () => void;
   onDebugLog(callback: (log: unknown) => void): () => void;
@@ -182,16 +288,26 @@ interface AccomplishAPI {
   speechIsConfigured(): Promise<boolean>;
   speechGetConfig(): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }>;
   speechValidate(apiKey?: string): Promise<{ valid: boolean; error?: string }>;
-  speechTranscribe(audioData: ArrayBuffer, mimeType?: string): Promise<{
-    success: true;
-    result: { text: string; confidence?: number; duration: number; timestamp: number };
-  } | {
-    success: false;
-    error: { code: string; message: string };
-  }>;
+  speechTranscribe(
+    audioData: ArrayBuffer,
+    mimeType?: string,
+  ): Promise<
+    | {
+        success: true;
+        result: { text: string; confidence?: number; duration: number; timestamp: number };
+      }
+    | {
+        success: false;
+        error: { code: string; message: string };
+      }
+  >;
 
   // Logging
-  logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;
+  logEvent(payload: {
+    level?: string;
+    message: string;
+    context?: Record<string, unknown>;
+  }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
 
   // Skills management
@@ -233,7 +349,9 @@ export function getAccomplish() {
   return {
     ...window.accomplish,
 
-    validateBedrockCredentials: async (credentials: BedrockCredentials): Promise<{ valid: boolean; error?: string }> => {
+    validateBedrockCredentials: async (
+      credentials: BedrockCredentials,
+    ): Promise<{ valid: boolean; error?: string }> => {
       return window.accomplish!.validateBedrockCredentials(JSON.stringify(credentials));
     },
 
@@ -255,4 +373,3 @@ export function getAccomplish() {
 export function isRunningInElectron(): boolean {
   return window.accomplishShell?.isElectron === true;
 }
-

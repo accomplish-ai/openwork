@@ -138,10 +138,13 @@ exports.default = async function sign(configuration) {
     // Use --simple mode which doesn't require signtool in PATH
     const args = [
       'sign',
-      '--keypair-alias', keypairAlias,
-      '--input', filePath,
+      '--keypair-alias',
+      keypairAlias,
+      '--input',
+      filePath,
       '--simple',
-      '--digalg', digalg,
+      '--digalg',
+      digalg,
     ];
 
     // Add dynamic-auth flag for local builds using DigiCert Trust Assistant

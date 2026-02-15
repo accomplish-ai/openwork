@@ -18,7 +18,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 const CONTENT_SECURITY_POLICY =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" // TODO: Add specific Auth0 domain to connect-src when auth integration is finalized;
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"; // TODO: Add specific Auth0 domain to connect-src when auth integration is finalized;
 
 app.use('*', async (c, next) => {
   await next();
@@ -68,7 +68,10 @@ app.get('*', async (c) => {
   }
 
   if (!response.ok) {
-    return new Response(response.body, { status: response.status, headers: new Headers(response.headers) });
+    return new Response(response.body, {
+      status: response.status,
+      headers: new Headers(response.headers),
+    });
   }
 
   const headers = new Headers(response.headers);

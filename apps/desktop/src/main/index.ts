@@ -12,14 +12,20 @@ if (process.platform === 'win32') {
   if (squirrelCommand === '--squirrel-install' || squirrelCommand === '--squirrel-updated') {
     const updateExe = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
     const exeName = path.basename(process.execPath);
-    const child = spawn(updateExe, ['--createShortcut=' + exeName], { detached: true, stdio: 'ignore' });
+    const child = spawn(updateExe, ['--createShortcut=' + exeName], {
+      detached: true,
+      stdio: 'ignore',
+    });
     child.unref();
     app.quit();
     process.exit(0);
   } else if (squirrelCommand === '--squirrel-uninstall') {
     const updateExe = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
     const exeName = path.basename(process.execPath);
-    const child = spawn(updateExe, ['--removeShortcut=' + exeName], { detached: true, stdio: 'ignore' });
+    const child = spawn(updateExe, ['--removeShortcut=' + exeName], {
+      detached: true,
+      stdio: 'ignore',
+    });
     child.unref();
     app.quit();
     process.exit(0);
@@ -39,7 +45,11 @@ import { initUpdater, autoCheckForUpdates } from './updater';
 import { initMenu } from './menu';
 
 const APP_DATA_NAME = process.env.ACCOMPLISH_USER_DATA_NAME || 'Accomplish';
-if (APP_DATA_NAME === '.' || APP_DATA_NAME === '..' || APP_DATA_NAME !== path.basename(APP_DATA_NAME)) {
+if (
+  APP_DATA_NAME === '.' ||
+  APP_DATA_NAME === '..' ||
+  APP_DATA_NAME !== path.basename(APP_DATA_NAME)
+) {
   throw new Error(`Invalid ACCOMPLISH_USER_DATA_NAME: must not contain path separators`);
 }
 app.setPath('userData', path.join(app.getPath('appData'), APP_DATA_NAME));
@@ -49,13 +59,8 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
-import {
-  FutureSchemaError,
-} from '@accomplish_ai/agent-core';
-import {
-  initThoughtStreamApi,
-  startThoughtStreamServer,
-} from './thought-stream-api';
+import { FutureSchemaError } from '@accomplish_ai/agent-core';
+import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
@@ -96,7 +101,8 @@ config({ path: envPath });
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
-const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
+const ROUTER_URL =
+  process.env.ACCOMPLISH_ROUTER_URL || 'https://accomplish-router.accomplish.workers.dev';
 
 function buildRouterUrl(): string {
   const url = new URL(ROUTER_URL);
@@ -220,14 +226,18 @@ process.on('uncaughtException', (error) => {
       name: error.name,
       stack: error.stack,
     });
-  } catch {}
+  } catch {
+    /* swallow – best-effort logging in crash handler */
+  }
 });
 
 process.on('unhandledRejection', (reason) => {
   try {
     const collector = getLogCollector();
     collector.log('ERROR', 'main', 'Unhandled promise rejection', { reason });
-  } catch {}
+  } catch {
+    /* swallow – best-effort logging in crash handler */
+  }
 });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -302,7 +312,9 @@ if (!gotTheLock) {
         if (!credType || credType === 'api_key') {
           const key = getApiKey(providerId);
           if (!key) {
-            console.warn(`[Main] Provider ${providerId} has api_key auth but key not found in secure storage`);
+            console.warn(
+              `[Main] Provider ${providerId} has api_key auth but key not found in secure storage`,
+            );
             storage.removeConnectedProvider(providerId);
             console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
@@ -360,9 +372,7 @@ app.on('before-quit', () => {
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {
-  app.setAsDefaultProtocolClient('accomplish', process.execPath, [
-    path.resolve(process.argv[1]),
-  ]);
+  app.setAsDefaultProtocolClient('accomplish', process.execPath, [path.resolve(process.argv[1])]);
 } else {
   app.setAsDefaultProtocolClient('accomplish');
 }
@@ -408,6 +418,8 @@ ipcMain.handle('app:platform', () => {
 });
 
 ipcMain.handle('app:is-e2e-mode', () => {
-  return (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
-    process.env.E2E_MOCK_TASK_EVENTS === '1';
+  return (
+    (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
+    process.env.E2E_MOCK_TASK_EVENTS === '1'
+  );
 });

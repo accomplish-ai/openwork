@@ -61,13 +61,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const textarea = screen.getByRole('textbox');
@@ -81,13 +75,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const textarea = screen.getByPlaceholderText('Assign a task or ask anything');
@@ -107,7 +95,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           placeholder={customPlaceholder}
-        />
+        />,
       );
 
       // Assert
@@ -122,13 +110,7 @@ describe('TaskInputBar Integration', () => {
       const taskValue = 'Review my inbox for urgent messages';
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value={taskValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value={taskValue} onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const textarea = screen.getByRole('textbox');
@@ -141,13 +123,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -161,13 +137,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Act
       const textarea = screen.getByRole('textbox');
@@ -184,12 +154,8 @@ describe('TaskInputBar Integration', () => {
 
       const { rerender } = render(
         <MemoryRouter>
-          <TaskInputBar
-            value=""
-            onChange={onChange}
-            onSubmit={onSubmit}
-          />
-        </MemoryRouter>
+          <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />
+        </MemoryRouter>,
       );
 
       // Act - First change
@@ -199,12 +165,8 @@ describe('TaskInputBar Integration', () => {
       // Rerender with updated value
       rerender(
         <MemoryRouter>
-          <TaskInputBar
-            value="First"
-            onChange={onChange}
-            onSubmit={onSubmit}
-          />
-        </MemoryRouter>
+          <TaskInputBar value="First" onChange={onChange} onSubmit={onSubmit} />
+        </MemoryRouter>,
       );
 
       // Act - Second change
@@ -224,13 +186,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -243,13 +199,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       // Act
-      renderWithRouter(
-        <TaskInputBar
-          value="   "
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="   " onChange={onChange} onSubmit={onSubmit} />);
 
       // Assert
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -263,11 +213,7 @@ describe('TaskInputBar Integration', () => {
 
       // Act
       renderWithRouter(
-        <TaskInputBar
-          value="Check my calendar"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Check my calendar" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       // Assert
@@ -281,11 +227,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Submit this task"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Submit this task" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       // Act
@@ -302,11 +244,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Submit via Enter"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Submit via Enter" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       // Act
@@ -323,11 +261,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Multiline text"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Multiline text" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       // Act
@@ -343,13 +277,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       // Act
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -373,7 +301,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       // Assert
@@ -393,7 +321,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       // Assert
@@ -413,7 +341,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       // Assert - Check for the animate-spin class on the loader icon
@@ -433,7 +361,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       // Assert - textarea is disabled, preventing real user interaction
@@ -457,7 +385,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           disabled={true}
-        />
+        />,
       );
 
       // Assert
@@ -477,7 +405,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           disabled={true}
-        />
+        />,
       );
 
       // Assert
@@ -494,12 +422,7 @@ describe('TaskInputBar Integration', () => {
 
       // Act
       renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-          large={true}
-        />
+        <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={true} />,
       );
 
       // Assert - now uses consistent text-[15px] regardless of large prop
@@ -514,12 +437,7 @@ describe('TaskInputBar Integration', () => {
 
       // Act
       renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-          large={false}
-        />
+        <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={false} />,
       );
 
       // Assert - now uses consistent text-[15px] regardless of large prop

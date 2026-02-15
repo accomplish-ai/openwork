@@ -20,10 +20,7 @@ export function AboutTab({ appVersion }: AboutTabProps) {
           </div>
           <div>
             <div className="text-sm text-muted-foreground">Have a question?</div>
-            <a
-              href="mailto:support@accomplish.ai"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:support@accomplish.ai" className="text-primary hover:underline">
               support@accomplish.ai
             </a>
           </div>

@@ -15,7 +15,7 @@ if (process.platform !== 'darwin') {
 
 const electronPath = path.join(
   __dirname,
-  '../node_modules/electron/dist/Electron.app/Contents/Info.plist'
+  '../node_modules/electron/dist/Electron.app/Contents/Info.plist',
 );
 
 if (!fs.existsSync(electronPath)) {
@@ -34,12 +34,12 @@ if (plist.includes(`<string>${APP_NAME}</string>`)) {
 // Replace CFBundleDisplayName and CFBundleName
 plist = plist.replace(
   /<key>CFBundleDisplayName<\/key>\s*<string>[^<]*<\/string>/,
-  `<key>CFBundleDisplayName</key>\n\t<string>${APP_NAME}</string>`
+  `<key>CFBundleDisplayName</key>\n\t<string>${APP_NAME}</string>`,
 );
 
 plist = plist.replace(
   /<key>CFBundleName<\/key>\s*<string>[^<]*<\/string>/,
-  `<key>CFBundleName</key>\n\t<string>${APP_NAME}</string>`
+  `<key>CFBundleName</key>\n\t<string>${APP_NAME}</string>`,
 );
 
 fs.writeFileSync(electronPath, plist);

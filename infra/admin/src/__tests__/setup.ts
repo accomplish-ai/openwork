@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 export interface MockKVEntry {
   value: string;
@@ -10,7 +10,7 @@ export function createMockKV(store: Map<string, MockKVEntry> = new Map()): KVNam
     get: vi.fn(async (key: string, options?: { type?: string }) => {
       const entry = store.get(key);
       if (!entry) return null;
-      if (options?.type === "json") return JSON.parse(entry.value);
+      if (options?.type === 'json') return JSON.parse(entry.value);
       return entry.value;
     }),
     put: vi.fn(async (key: string, value: string, options?: { metadata?: unknown }) => {
@@ -20,14 +20,14 @@ export function createMockKV(store: Map<string, MockKVEntry> = new Map()): KVNam
       store.delete(key);
     }),
     list: vi.fn(async (options?: { prefix?: string; limit?: number; cursor?: string }) => {
-      const prefix = options?.prefix ?? "";
+      const prefix = options?.prefix ?? '';
       const limit = options?.limit ?? 1000;
       const keys = [...store.keys()]
         .filter((k) => k.startsWith(prefix))
         .sort()
         .slice(0, limit)
         .map((name) => ({ name, expiration: undefined, metadata: store.get(name)?.metadata }));
-      return { keys, list_complete: keys.length < limit, cursor: "" };
+      return { keys, list_complete: keys.length < limit, cursor: '' };
     }),
     getWithMetadata: vi.fn(),
   } as unknown as KVNamespace;
@@ -48,7 +48,7 @@ export function createMockR2(objects: Map<string, unknown> = new Map()): R2Bucke
       };
     }),
     list: vi.fn(async (options?: { prefix?: string; delimiter?: string }) => {
-      const prefix = options?.prefix ?? "";
+      const prefix = options?.prefix ?? '';
       const delimiter = options?.delimiter;
       const allKeys = [...objects.keys()].filter((k) => k.startsWith(prefix));
 
@@ -90,9 +90,9 @@ export function createMockEnv(overrides?: {
     ROUTING_CONFIG: createMockKV(overrides?.kvStore),
     ASSETS: createMockR2(overrides?.r2Objects),
     DOWNLOADS_BUCKET: createMockR2(overrides?.r2Objects),
-    GITHUB_TOKEN: "test-github-token",
-    GITHUB_REPO: "test-org/test-repo",
-    AUDIT_WEBHOOK_SECRET: "test-webhook-secret",
+    GITHUB_TOKEN: 'test-github-token',
+    GITHUB_REPO: 'test-org/test-repo',
+    AUDIT_WEBHOOK_SECRET: 'test-webhook-secret',
   };
 }
 

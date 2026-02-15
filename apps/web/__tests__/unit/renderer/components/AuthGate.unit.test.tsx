@@ -8,9 +8,29 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 // Mock framer-motion (same pattern as App.integration.test.tsx)
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div className={className} {...domProps}>{children}</div>;
+    div: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        variants: _variants,
+        whileHover: _whileHover,
+        ...domProps
+      } = props;
+      return (
+        <div className={className} {...domProps}>
+          {children}
+        </div>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -25,7 +45,11 @@ import { AuthGate } from '@/components/enterprise/AuthGate';
 
 describe('AuthGate', () => {
   it('renders SSO login screen when not authenticated', () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     expect(screen.getByText('Enterprise Single Sign-On')).toBeInTheDocument();
     expect(screen.getByText('Sign in with SSO')).toBeInTheDocument();
@@ -34,14 +58,22 @@ describe('AuthGate', () => {
   });
 
   it('disables sign-in button when org identifier is empty', () => {
-    render(<AuthGate><div>App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div>App</div>
+      </AuthGate>,
+    );
 
     const button = screen.getByText('Sign in with SSO');
     expect(button).toBeDisabled();
   });
 
   it('enables sign-in button when org identifier is entered', () => {
-    render(<AuthGate><div>App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div>App</div>
+      </AuthGate>,
+    );
 
     fireEvent.change(screen.getByPlaceholderText('your-company'), {
       target: { value: 'acme-corp' },
@@ -52,7 +84,11 @@ describe('AuthGate', () => {
   });
 
   it('shows children after sign-in', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     fireEvent.change(screen.getByPlaceholderText('your-company'), {
       target: { value: 'acme-corp' },
@@ -65,7 +101,11 @@ describe('AuthGate', () => {
   });
 
   it('keeps sign-in button disabled for whitespace-only input', () => {
-    render(<AuthGate><div>App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div>App</div>
+      </AuthGate>,
+    );
 
     fireEvent.change(screen.getByPlaceholderText('your-company'), {
       target: { value: '   ' },
@@ -75,7 +115,11 @@ describe('AuthGate', () => {
   });
 
   it('does not sign in on Enter with empty input', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     const input = screen.getByPlaceholderText('your-company');
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -87,7 +131,11 @@ describe('AuthGate', () => {
   });
 
   it('shows loading spinner during sign-in', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     fireEvent.change(screen.getByPlaceholderText('your-company'), {
       target: { value: 'acme-corp' },
@@ -104,7 +152,11 @@ describe('AuthGate', () => {
   });
 
   it('prevents duplicate sign-in attempts via Enter key (re-entrancy guard)', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     const input = screen.getByPlaceholderText('your-company');
     fireEvent.change(input, { target: { value: 'acme-corp' } });
@@ -125,7 +177,11 @@ describe('AuthGate', () => {
   });
 
   it('submits on Enter key', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     const input = screen.getByPlaceholderText('your-company');
     fireEvent.change(input, { target: { value: 'acme-corp' } });
@@ -137,7 +193,11 @@ describe('AuthGate', () => {
   });
 
   it('displays dev-mode auth bypass banner', () => {
-    render(<AuthGate><div>App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div>App</div>
+      </AuthGate>,
+    );
 
     const banner = screen.getByTestId('dev-auth-banner');
     expect(banner).toBeInTheDocument();
@@ -145,7 +205,11 @@ describe('AuthGate', () => {
   });
 
   it('does not display error message after successful sign-in', async () => {
-    render(<AuthGate><div data-testid="app-content">App</div></AuthGate>);
+    render(
+      <AuthGate>
+        <div data-testid="app-content">App</div>
+      </AuthGate>,
+    );
 
     // No error initially
     expect(screen.queryByTestId('auth-error')).not.toBeInTheDocument();

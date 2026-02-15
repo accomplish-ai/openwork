@@ -14,8 +14,8 @@
  * @vitest-environment jsdom
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { Navigate } from 'react-router';
 
@@ -69,17 +69,76 @@ vi.mock('@/lib/accomplish', () => ({
 // Mock framer-motion to simplify testing animations
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div className={className} {...domProps}>{children}</div>;
+    div: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        variants: _variants,
+        whileHover: _whileHover,
+        ...domProps
+      } = props;
+      return (
+        <div className={className} {...domProps}>
+          {children}
+        </div>
+      );
     },
-    p: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, ...domProps } = props;
-      return <p className={className} {...domProps}>{children}</p>;
+    p: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial2,
+        animate: _animate2,
+        exit: _exit2,
+        transition: _transition2,
+        variants: _variants2,
+        ...domProps
+      } = props;
+      return (
+        <p className={className} {...domProps}>
+          {children}
+        </p>
+      );
     },
-    button: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <button className={className} {...domProps}>{children}</button>;
+    button: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial3,
+        animate: _animate3,
+        exit: _exit3,
+        transition: _transition3,
+        variants: _variants3,
+        whileHover: _whileHover3,
+        ...domProps
+      } = props;
+      return (
+        <button className={className} {...domProps}>
+          {children}
+        </button>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -164,12 +223,15 @@ describe('App Integration', () => {
           Component: App,
           children: [
             { index: true, element: <div data-testid="home-page">Home Page Content</div> },
-            { path: 'execution/:id', element: <div data-testid="execution-page">Execution Page Content</div> },
+            {
+              path: 'execution/:id',
+              element: <div data-testid="execution-page">Execution Page Content</div>,
+            },
             { path: '*', element: <Navigate to="/" replace /> },
           ],
         },
       ],
-      { initialEntries: [initialRoute] }
+      { initialEntries: [initialRoute] },
     );
     return render(<RouterProvider router={router} />);
   };

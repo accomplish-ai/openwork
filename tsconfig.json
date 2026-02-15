@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "apps/desktop" },
+    { "path": "apps/web" },
+    { "path": "tsconfig.eslint.json" }
+  ]
+}

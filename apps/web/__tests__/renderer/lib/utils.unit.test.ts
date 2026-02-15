@@ -422,12 +422,7 @@ describe('utils.ts', () => {
         const c = true;
 
         // Act
-        const result = cn(
-          'base',
-          a && 'a-true',
-          b && 'b-true',
-          c && ['c-true', b && 'cb-true']
-        );
+        const result = cn('base', a && 'a-true', b && 'b-true', c && ['c-true', b && 'cb-true']);
 
         // Assert
         expect(result).toBe('base a-true c-true');

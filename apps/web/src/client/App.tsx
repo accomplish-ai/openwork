@@ -15,7 +15,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { isEnterprise } from '@/lib/tier';
 
 const EnterpriseAuthGate = isEnterprise()
-  ? lazy(() => import('@/components/enterprise/AuthGate').then(m => ({ default: m.AuthGate })))
+  ? lazy(() => import('@/components/enterprise/AuthGate').then((m) => ({ default: m.AuthGate })))
   : null;
 
 type AppStatus = 'loading' | 'ready' | 'error';
@@ -59,7 +59,9 @@ export function App() {
   const [status, setStatus] = useState<AppStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authSettingsOpen, setAuthSettingsOpen] = useState(false);
-  const [authSettingsProvider, setAuthSettingsProvider] = useState<ProviderId | undefined>(undefined);
+  const [authSettingsProvider, setAuthSettingsProvider] = useState<ProviderId | undefined>(
+    undefined,
+  );
 
   // Get store state and actions
   const { openLauncher, authError, clearAuthError } = useTaskStore();
@@ -73,13 +75,16 @@ export function App() {
   }, [authError]);
 
   // Handle auth settings dialog close
-  const handleAuthSettingsClose = useCallback((open: boolean) => {
-    setAuthSettingsOpen(open);
-    if (!open) {
-      setAuthSettingsProvider(undefined);
-      clearAuthError();
-    }
-  }, [clearAuthError]);
+  const handleAuthSettingsClose = useCallback(
+    (open: boolean) => {
+      setAuthSettingsOpen(open);
+      if (!open) {
+        setAuthSettingsProvider(undefined);
+        clearAuthError();
+      }
+    },
+    [clearAuthError],
+  );
 
   // Cmd+K keyboard shortcut
   useEffect(() => {
@@ -156,11 +161,7 @@ export function App() {
       <TaskLauncher />
 
       {/* Auth Error Toast - shown when OAuth session expires */}
-      <AuthErrorToast
-        error={authError}
-        onReLogin={handleAuthReLogin}
-        onDismiss={clearAuthError}
-      />
+      <AuthErrorToast error={authError} onReLogin={handleAuthReLogin} onDismiss={clearAuthError} />
 
       {/* Settings Dialog for re-authentication */}
       <SettingsDialog
@@ -177,7 +178,13 @@ export function App() {
 
   if (EnterpriseAuthGate) {
     return (
-      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }
+      >
         <EnterpriseAuthGate>{appContent}</EnterpriseAuthGate>
       </Suspense>
     );

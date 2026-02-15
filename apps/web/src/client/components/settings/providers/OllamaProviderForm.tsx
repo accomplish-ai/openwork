@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ConnectedProvider, OllamaCredentials, ToolSupportStatus } from '@accomplish_ai/agent-core/common';
+import type {
+  ConnectedProvider,
+  OllamaCredentials,
+  ToolSupportStatus,
+} from '@accomplish_ai/agent-core/common';
 import {
   ConnectButton,
   ConnectedControls,
@@ -56,7 +60,7 @@ export function OllamaProviderForm({
         return;
       }
 
-      const models: OllamaModel[] = (result.models || []).map(m => ({
+      const models: OllamaModel[] = (result.models || []).map((m) => ({
         id: `ollama/${m.id}`,
         name: m.displayName,
         toolSupport: m.toolSupport || 'unknown',
@@ -72,7 +76,7 @@ export function OllamaProviderForm({
           serverUrl,
         } as OllamaCredentials,
         lastConnectedAt: new Date().toISOString(),
-        availableModels: models.map(m => ({
+        availableModels: models.map((m) => ({
           id: m.id,
           name: m.name,
           toolSupport: m.toolSupport,
@@ -87,14 +91,19 @@ export function OllamaProviderForm({
     }
   };
 
-  const models: OllamaModel[] = (connectedProvider?.availableModels || availableModels).map(m => ({
-    id: m.id,
-    name: m.name,
-    toolSupport: (m as { toolSupport?: ToolSupportStatus }).toolSupport || 'unknown',
-  }));
+  const models: OllamaModel[] = (connectedProvider?.availableModels || availableModels).map(
+    (m) => ({
+      id: m.id,
+      name: m.name,
+      toolSupport: (m as { toolSupport?: ToolSupportStatus }).toolSupport || 'unknown',
+    }),
+  );
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
       <ProviderFormHeader logoSrc={ollamaLogo} providerName="Ollama" />
 
       <div className="space-y-3">
@@ -110,7 +119,9 @@ export function OllamaProviderForm({
               className="space-y-3"
             >
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Ollama Server URL</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Ollama Server URL
+                </label>
                 <input
                   type="text"
                   value={serverUrl}
@@ -135,10 +146,15 @@ export function OllamaProviderForm({
               className="space-y-3"
             >
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Ollama Server URL</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Ollama Server URL
+                </label>
                 <input
                   type="text"
-                  value={(connectedProvider?.credentials as OllamaCredentials)?.serverUrl || 'http://localhost:11434'}
+                  value={
+                    (connectedProvider?.credentials as OllamaCredentials)?.serverUrl ||
+                    'http://localhost:11434'
+                  }
                   disabled
                   className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                 />

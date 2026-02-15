@@ -81,10 +81,12 @@ test.describe('updater smoke tests', () => {
       // The auto-check fires after a 5s delay in index.ts.
       // Verify the updater detects the newer version.
       // Note: download requires APPIMAGE on Linux, so we only assert detection.
-      await expect.poll(
-        () => app.evaluate(() => process.env.__UPDATER_AVAILABLE__),
-        { timeout: 30_000, intervals: [500] },
-      ).toBeTruthy();
+      await expect
+        .poll(() => app.evaluate(() => process.env.__UPDATER_AVAILABLE__), {
+          timeout: 30_000,
+          intervals: [500],
+        })
+        .toBeTruthy();
     } finally {
       await forceCloseApp(app);
     }
@@ -123,10 +125,12 @@ test.describe('updater smoke tests', () => {
       });
 
       // Verify update detected
-      await expect.poll(
-        () => app.evaluate(() => process.env.__UPDATER_AVAILABLE__),
-        { timeout: 30_000, intervals: [500] },
-      ).toBeTruthy();
+      await expect
+        .poll(() => app.evaluate(() => process.env.__UPDATER_AVAILABLE__), {
+          timeout: 30_000,
+          intervals: [500],
+        })
+        .toBeTruthy();
     } finally {
       await forceCloseApp(app);
     }
@@ -135,7 +139,11 @@ test.describe('updater smoke tests', () => {
   test('no update shown when server returns current version', async () => {
     // Create a server that returns the app's own version (no update available)
     const noUpdateServer = createServer((req: IncomingMessage, res: ServerResponse) => {
-      if (!req.url) { res.writeHead(400); res.end(); return; }
+      if (!req.url) {
+        res.writeHead(400);
+        res.end();
+        return;
+      }
       const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
 
       if (pathname.endsWith('.yml')) {

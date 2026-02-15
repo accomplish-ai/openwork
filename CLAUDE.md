@@ -15,9 +15,9 @@ docs/                                   Architecture plans + review documents
 ```
 
 **External dependency**: [`@accomplish_ai/agent-core`](https://github.com/accomplish-ai/accomplish) (npm package, not in workspace) — all agent/AI logic.
+
 - Desktop imports full package (v0.3.1) — validation, providers, task management
 - Web imports ONLY `@accomplish_ai/agent-core/common` (0.3.1) — types + shared utilities
-
 
 ### Infra: Cloudflare Workers
 
@@ -62,12 +62,14 @@ pnpm dev:workers:enterprise               # Same for enterprise tier
 pnpm dev:remote <url>                     # Point desktop app at a remote worker URL
 
 # Build
-pnpm build                                # Build all workspaces
+pnpm build                                # Build all workspaces (pnpm -r run build)
 pnpm build:desktop                        # Desktop only (also builds web + copies dist)
 pnpm build:web                            # Web only → apps/web/dist/
 
 # Quality
-pnpm typecheck                            # tsc --noEmit across all workspaces (aliased as pnpm lint)
+pnpm typecheck                            # tsc --noEmit across all workspaces (parallel)
+pnpm format:check                         # Prettier check (CI)
+pnpm format                               # Prettier auto-fix
 
 # Tests (vitest)
 pnpm -F @accomplish/desktop test:unit     # Desktop unit tests
@@ -95,29 +97,29 @@ cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 
 ### Environment Variables
 
-| Variable | Where | Purpose |
-|---|---|---|
-| `ACCOMPLISH_ROUTER_URL` | Desktop main | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev` |
-| `ACCOMPLISH_UPDATER_URL` | Desktop main | Feed URL for electron-updater auto-update checks. If unset, updater is disabled. |
-| `CLEAN_START=1` | Desktop main | Wipes userData directory on startup |
-| `ACCOMPLISH_USER_DATA_NAME` | Desktop main | Override userData dir name (default: `Accomplish`). Used by E2E for isolation |
-| `CLOUDFLARE_API_TOKEN` | CI / infra scripts | Wrangler auth for deploys |
-| `CLOUDFLARE_ACCOUNT_ID` | infra scripts | Required for KV operations |
-| `KV_NAMESPACE_ID` | CI / infra scripts | Cloudflare KV namespace ID for routing config |
-| `AUDIT_WEBHOOK_SECRET` | CI / admin worker | Shared secret for CI→admin audit webhook (`x-audit-secret` header) |
-| `GITHUB_REPO` | admin worker | GitHub repo (`owner/repo`) for workflow dispatch from admin dashboard |
-| `CF_SUBDOMAIN` | CI (repo var) | Workers subdomain for health checks |
-| `SLACK_RELEASE_WEBHOOK_URL` | CI | Optional Slack notification on desktop release |
-| `APP_TIER` | Web + Desktop build | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Web: controls feature tree-shaking. Desktop: sets router `type` param and artifact naming (enterprise builds produce `Accomplish-Enterprise-*` DMGs). |
-| `ANTHROPIC_API_KEY` | E2E AI tests | Anthropic provider key for AI task execution tests |
-| `OPEN_AI_API_KEY` | E2E AI tests | OpenAI provider key for AI task execution tests |
-| `GEMINI_API_KEY` | E2E AI tests | Google/Gemini provider key for AI task execution tests |
-| `R2_BUCKET` | CI / release scripts | Cloudflare R2 bucket name for desktop update artifacts |
-| `SM_HOST` | CI / release | DigiCert KeyLocker host for Windows code signing |
-| `SM_API_KEY` | CI / release | DigiCert API key for Windows code signing |
-| `SM_CLIENT_CERT_FILE` | CI / release | DigiCert client cert file for Windows code signing |
-| `SM_CLIENT_CERT_PASSWORD` | CI / release | DigiCert client cert password for Windows code signing |
-| `SM_KEYPAIR_ALIAS` | CI / release | DigiCert keypair alias for Windows code signing |
+| Variable                    | Where                | Purpose                                                                                                                                                                                                                                                         |
+| --------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ACCOMPLISH_ROUTER_URL`     | Desktop main         | URL loaded in BrowserWindow. Default: `https://accomplish-router.accomplish.workers.dev`                                                                                                                                                                        |
+| `ACCOMPLISH_UPDATER_URL`    | Desktop main         | Feed URL for electron-updater auto-update checks. If unset, updater is disabled.                                                                                                                                                                                |
+| `CLEAN_START=1`             | Desktop main         | Wipes userData directory on startup                                                                                                                                                                                                                             |
+| `ACCOMPLISH_USER_DATA_NAME` | Desktop main         | Override userData dir name (default: `Accomplish`). Used by E2E for isolation                                                                                                                                                                                   |
+| `CLOUDFLARE_API_TOKEN`      | CI / infra scripts   | Wrangler auth for deploys                                                                                                                                                                                                                                       |
+| `CLOUDFLARE_ACCOUNT_ID`     | infra scripts        | Required for KV operations                                                                                                                                                                                                                                      |
+| `KV_NAMESPACE_ID`           | CI / infra scripts   | Cloudflare KV namespace ID for routing config                                                                                                                                                                                                                   |
+| `AUDIT_WEBHOOK_SECRET`      | CI / admin worker    | Shared secret for CI→admin audit webhook (`x-audit-secret` header)                                                                                                                                                                                              |
+| `GITHUB_REPO`               | admin worker         | GitHub repo (`owner/repo`) for workflow dispatch from admin dashboard                                                                                                                                                                                           |
+| `CF_SUBDOMAIN`              | CI (repo var)        | Workers subdomain for health checks                                                                                                                                                                                                                             |
+| `SLACK_RELEASE_WEBHOOK_URL` | CI                   | Optional Slack notification on desktop release                                                                                                                                                                                                                  |
+| `APP_TIER`                  | Web + Desktop build  | `'lite'` (default) or `'enterprise'`. Injected as `__APP_TIER__` compile-time constant via Vite `define`. Web: controls feature tree-shaking. Desktop: sets router `type` param and artifact naming (enterprise builds produce `Accomplish-Enterprise-*` DMGs). |
+| `ANTHROPIC_API_KEY`         | E2E AI tests         | Anthropic provider key for AI task execution tests                                                                                                                                                                                                              |
+| `OPEN_AI_API_KEY`           | E2E AI tests         | OpenAI provider key for AI task execution tests                                                                                                                                                                                                                 |
+| `GEMINI_API_KEY`            | E2E AI tests         | Google/Gemini provider key for AI task execution tests                                                                                                                                                                                                          |
+| `R2_BUCKET`                 | CI / release scripts | Cloudflare R2 bucket name for desktop update artifacts                                                                                                                                                                                                          |
+| `SM_HOST`                   | CI / release         | DigiCert KeyLocker host for Windows code signing                                                                                                                                                                                                                |
+| `SM_API_KEY`                | CI / release         | DigiCert API key for Windows code signing                                                                                                                                                                                                                       |
+| `SM_CLIENT_CERT_FILE`       | CI / release         | DigiCert client cert file for Windows code signing                                                                                                                                                                                                              |
+| `SM_CLIENT_CERT_PASSWORD`   | CI / release         | DigiCert client cert password for Windows code signing                                                                                                                                                                                                          |
+| `SM_KEYPAIR_ALIAS`          | CI / release         | DigiCert keypair alias for Windows code signing                                                                                                                                                                                                                 |
 
 ## Verification Command
 
@@ -129,14 +131,14 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 
 ## CI/CD Workflows
 
-| Workflow | Trigger | Secrets | What it does |
-|---|---|---|---|
-| `ci.yml` | PR / push to main | — | 5 parallel test jobs + Windows CI |
-| `commitlint.yml` | PR open/edit | — | Enforces conventional commit PR titles |
-| `release-web.yml` | Manual dispatch | `CLOUDFLARE_API_TOKEN` | Build web → deploy versioned workers + router → update KV |
-| `preview-deploy.yml` | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN` | Build → deploy PR-namespaced workers → post preview URLs as PR comment |
-| `preview-cleanup.yml` | PR closed | `CLOUDFLARE_API_TOKEN` | Delete PR workers + KV keys |
-| `release.yml` | Manual dispatch | `SLACK_RELEASE_WEBHOOK_URL`, R2 creds | Build desktop (mac arm64+x64, win x64, lite+enterprise) → upload to R2 → generate update manifests → GitHub Release |
+| Workflow              | Trigger                | Secrets                               | What it does                                                                                                        |
+| --------------------- | ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`              | PR / push to main      | —                                     | 5 parallel test jobs + Windows CI                                                                                   |
+| `commitlint.yml`      | PR open/edit           | —                                     | Enforces conventional commit PR titles                                                                              |
+| `release-web.yml`     | Manual dispatch        | `CLOUDFLARE_API_TOKEN`                | Build web → deploy versioned workers + router → update KV                                                           |
+| `preview-deploy.yml`  | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN`                | Build → deploy PR-namespaced workers → post preview URLs as PR comment                                              |
+| `preview-cleanup.yml` | PR closed              | `CLOUDFLARE_API_TOKEN`                | Delete PR workers + KV keys                                                                                         |
+| `release.yml`         | Manual dispatch        | `SLACK_RELEASE_WEBHOOK_URL`, R2 creds | Build desktop (mac arm64+x64, win x64, lite+enterprise) → upload to R2 → generate update manifests → GitHub Release |
 
 All deploy/preview workflows validate required secrets at startup (`.github/actions/validate-secrets/`).
 
@@ -163,19 +165,30 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 
 ### Key Dependencies
 
-| Package | Where | Purpose |
-|---|---|---|
-| `@accomplish_ai/agent-core` | Desktop (full), Web (types) | Agent logic, validation, providers |
-| `opencode-ai` | Desktop | Task execution engine (binary in asar) |
-| `better-sqlite3` | Desktop | Structured data storage |
-| `electron-store` | Desktop | Settings persistence |
-| `node-pty` | Desktop | PTY for opencode process |
-| React 19 + react-router v7 | Web | UI framework (hash router) |
-| Hono | Web (server) | BFF server framework on Cloudflare Workers |
-| Zustand v5 | Web (client) | State management |
-| Radix UI | Web (client) | Accessible UI primitives |
-| Tailwind CSS 3 + Framer Motion | Web (client) | Styling + animations |
-| `wrangler` | Infra + Web | Cloudflare Workers CLI |
+| Package                        | Where                       | Purpose                                                                           |
+| ------------------------------ | --------------------------- | --------------------------------------------------------------------------------- |
+| `@accomplish_ai/agent-core`    | Desktop (full), Web (types) | Agent logic, validation, providers                                                |
+| `opencode-ai`                  | Desktop                     | Task execution engine (binary in asar)                                            |
+| `better-sqlite3`               | Desktop                     | Structured data storage                                                           |
+| `electron-store`               | Desktop                     | Settings persistence                                                              |
+| `node-pty`                     | Desktop                     | PTY for opencode process                                                          |
+| React 19 + react-router v7     | Web                         | UI framework (hash router)                                                        |
+| Hono                           | Web (server)                | BFF server framework on Cloudflare Workers                                        |
+| Zustand v5                     | Web (client)                | State management                                                                  |
+| Radix UI                       | Web (client)                | Accessible UI primitives                                                          |
+| Tailwind CSS 3 + Framer Motion | Web (client)                | Styling + animations                                                              |
+| `wrangler`                     | Infra + Web                 | Cloudflare Workers CLI                                                            |
+| ESLint v9                      | Root                        | Flat config (`eslint.config.js`) with typescript-eslint + react + Prettier compat |
+| Prettier                       | Root                        | Code formatting (`.prettierrc`: singleQuote, semi, trailingComma all)             |
+
+### Monorepo Config
+
+- **pnpm catalogs** (`pnpm-workspace.yaml`): Shared dependency versions via `catalog:` protocol. Add shared deps to the `catalog` section; workspaces reference them with `catalog:`.
+- **Shared tsconfig** (`tsconfig.base.json`): Base compiler options (`strict: true`, `isolatedModules`, etc.). Workspace tsconfigs extend this.
+- **Shared vitest** (`vitest.shared.ts`): Common test config (globals, excludes, timeouts). Workspace vitest configs merge via `mergeConfig`.
+- **ESLint** (`eslint.config.js`): v9 flat config with `typescript-eslint/recommended` (non-type-checked). React hooks + React plugin for web. Integrated with Prettier via `eslint-config-prettier`.
+- **Prettier** (`.prettierrc`): `singleQuote: true`, `semi: true`, `trailingComma: "all"`, `printWidth: 100`. Integrated with ESLint via `eslint-config-prettier`.
+- **Note**: `infra/` is outside the pnpm workspace (uses npm) and does not share these configs.
 
 ### Path Aliases
 
@@ -221,6 +234,7 @@ All deploy/preview workflows validate required secrets at startup (`.github/acti
 - For code changes, use a single agent — splitting edits across agents risks conflicts.
 
 ## Known Issues / Open Items
+
 - No staging environment — PR previews serve as staging
 - No deploy rollback mechanism
 - Router TODOs: canary routing, A/B experiments, Analytics Engine

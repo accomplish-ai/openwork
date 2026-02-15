@@ -14,7 +14,7 @@ describe('Fallback Page', () => {
   });
 
   it('is valid HTML with required structure', () => {
-    expect(html).toContain('<!DOCTYPE html>');
+    expect(html.toLowerCase()).toContain('<!doctype html>');
     expect(html).toContain('<html');
     expect(html).toContain('</html>');
   });

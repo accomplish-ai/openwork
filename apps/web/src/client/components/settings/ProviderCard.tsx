@@ -59,29 +59,21 @@ export const ProviderCard = memo(function ProviderCard({
           >
             <img
               src={connectedKeyIcon}
-              alt={providerReady ? "Ready" : "Connected"}
+              alt={providerReady ? 'Ready' : 'Connected'}
               className="h-5 w-5"
-              title={providerReady ? undefined : "Select a model to complete setup"}
+              title={providerReady ? undefined : 'Select a model to complete setup'}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="mb-2 h-10 w-10 flex items-center justify-center">
-        <img
-          src={logoSrc}
-          alt={`${meta.name} logo`}
-          className="h-8 w-8 object-contain"
-        />
+        <img src={logoSrc} alt={`${meta.name} logo`} className="h-8 w-8 object-contain" />
       </div>
 
-      <span className="text-sm font-medium text-foreground">
-        {meta.name}
-      </span>
+      <span className="text-sm font-medium text-foreground">{meta.name}</span>
 
-      <span className="text-xs text-muted-foreground">
-        {meta.label}
-      </span>
+      <span className="text-xs text-muted-foreground">{meta.label}</span>
     </button>
   );
 });

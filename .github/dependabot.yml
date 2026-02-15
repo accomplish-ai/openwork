@@ -1,52 +1,52 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     labels:
-      - "dependencies"
-      - "github-actions"
+      - 'dependencies'
+      - 'github-actions'
     groups:
       actions-all:
         patterns:
-          - "*"
+          - '*'
 
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     labels:
-      - "dependencies"
-      - "npm"
+      - 'dependencies'
+      - 'npm'
     open-pull-requests-limit: 10
     ignore:
-      - dependency-name: "@accomplish_ai/agent-core"
-      - dependency-name: "opencode-ai"
+      - dependency-name: '@accomplish_ai/agent-core'
+      - dependency-name: 'opencode-ai'
     groups:
       npm-minor-and-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
       npm-major:
         update-types:
-          - "major"
+          - 'major'
 
-  - package-ecosystem: "npm"
-    directory: "/infra"
+  - package-ecosystem: 'npm'
+    directory: '/infra'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     labels:
-      - "dependencies"
-      - "npm"
+      - 'dependencies'
+      - 'npm'
     groups:
       infra-minor-and-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
       infra-major:
         update-types:
-          - "major"
+          - 'major'

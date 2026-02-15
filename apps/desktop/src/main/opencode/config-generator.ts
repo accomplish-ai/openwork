@@ -84,7 +84,6 @@ export function getOpenCodeConfigPath(): string {
   return path.join(app.getPath('userData'), 'opencode', 'opencode.json');
 }
 
-
 /**
  * Syncs API keys to the OpenCode auth.json file.
  * Uses Electron-specific path resolution and secure storage access.

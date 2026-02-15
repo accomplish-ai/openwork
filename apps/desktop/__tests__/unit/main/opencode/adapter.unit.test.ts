@@ -77,7 +77,9 @@ class MockPty extends EventEmitter {
   // Helper to simulate exit
   simulateExit(exitCode: number, signal?: number) {
     const callbacks = this.listeners('exit');
-    callbacks.forEach((cb) => (cb as (params: { exitCode: number; signal?: number }) => void)({ exitCode, signal }));
+    callbacks.forEach((cb) =>
+      (cb as (params: { exitCode: number; signal?: number }) => void)({ exitCode, signal }),
+    );
   }
 
   // Override on to use onData/onExit interface
@@ -102,7 +104,7 @@ vi.mock('node-pty', () => ({
 
 // We need to import the mock PTY instance from the mock
 // This will be accessed by the mocked OpenCodeAdapter
-const mockPtyInstanceRef = { current: null as MockPty | null };
+const _mockPtyInstanceRef = { current: null as MockPty | null };
 
 // Mock @accomplish_ai/agent-core - agent-core package exports used by adapter
 vi.mock('@accomplish_ai/agent-core', async () => {
@@ -191,13 +193,17 @@ vi.mock('@accomplish_ai/agent-core', async () => {
 
   // Create mock CompletionEnforcer class that properly handles callbacks
   class MockCompletionEnforcer {
-    private callbacks: { onComplete?: () => void; onDebug?: (type: string, msg: string) => void } = {};
+    private callbacks: { onComplete?: () => void; onDebug?: (type: string, msg: string) => void } =
+      {};
     private toolsUsed = false;
     private completeTaskCalled = false;
     private attempts = 0;
     private maxAttempts = 20;
 
-    constructor(callbacks: { onComplete?: () => void; onDebug?: (type: string, msg: string) => void } = {}, maxAttempts = 20) {
+    constructor(
+      callbacks: { onComplete?: () => void; onDebug?: (type: string, msg: string) => void } = {},
+      maxAttempts = 20,
+    ) {
       this.callbacks = callbacks;
       this.maxAttempts = maxAttempts;
     }
@@ -214,7 +220,10 @@ vi.mock('@accomplish_ai/agent-core', async () => {
           return 'complete';
         }
         if (this.callbacks.onDebug) {
-          this.callbacks.onDebug('continuation', `Scheduled continuation (attempt ${this.attempts})`);
+          this.callbacks.onDebug(
+            'continuation',
+            `Scheduled continuation (attempt ${this.attempts})`,
+          );
         }
         return 'pending';
       }
@@ -242,15 +251,25 @@ vi.mock('@accomplish_ai/agent-core', async () => {
       }
       return Promise.resolve();
     }
-    shouldComplete() { return true; }
-    getState() { return 'DONE'; }
-    getContinuationAttempts() { return this.attempts; }
+    shouldComplete() {
+      return true;
+    }
+    getState() {
+      return 'DONE';
+    }
+    getContinuationAttempts() {
+      return this.attempts;
+    }
   }
 
   // Create mock LogWatcher that extends EventEmitter
   class MockLogWatcher extends EventEmitter {
-    start() { return Promise.resolve(); }
-    stop() { return Promise.resolve(); }
+    start() {
+      return Promise.resolve();
+    }
+    stop() {
+      return Promise.resolve();
+    }
     static getErrorMessage(error: { message?: string }) {
       return error.message || 'Unknown error';
     }
@@ -260,7 +279,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
   class MockOpenCodeCliNotFoundError extends Error {
     constructor() {
       super(
-        'OpenCode CLI is not available. The bundled CLI may be missing or corrupted. Please reinstall the application.'
+        'OpenCode CLI is not available. The bundled CLI may be missing or corrupted. Please reinstall the application.',
       );
       this.name = 'OpenCodeCliNotFoundError';
     }
@@ -318,7 +337,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
 
     private handleMessage(message: OpenCodeMessageMock): void {
       switch (message.type) {
-        case 'step_start':
+        case 'step_start': {
           this.currentSessionId = message.part?.sessionID;
           const modelDisplayName = this.options.getModelDisplayName?.('model') || 'AI';
           this.emit('progress', {
@@ -327,6 +346,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
             modelName: modelDisplayName,
           });
           break;
+        }
 
         case 'text':
           if (!this.currentSessionId && message.part?.sessionID) {
@@ -336,10 +356,14 @@ vi.mock('@accomplish_ai/agent-core', async () => {
           break;
 
         case 'tool_call':
-          this.handleToolCall(message.part?.tool || 'unknown', message.part?.input, message.part?.sessionID);
+          this.handleToolCall(
+            message.part?.tool || 'unknown',
+            message.part?.input,
+            message.part?.sessionID,
+          );
           break;
 
-        case 'tool_use':
+        case 'tool_use': {
           const toolUseName = message.part?.tool || 'unknown';
           const toolUseInput = message.part?.state?.input;
           const toolUseOutput = message.part?.state?.output || '';
@@ -356,13 +380,15 @@ vi.mock('@accomplish_ai/agent-core', async () => {
             this.handleAskUserQuestion(toolUseInput as AskUserQuestionInputMock);
           }
           break;
+        }
 
-        case 'tool_result':
+        case 'tool_result': {
           const toolOutput = message.part?.output || '';
           this.emit('tool-result', toolOutput);
           break;
+        }
 
-        case 'step_finish':
+        case 'step_finish': {
           if (message.part?.reason === 'error') {
             if (!this.hasCompleted) {
               this.hasCompleted = true;
@@ -384,6 +410,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
             });
           }
           break;
+        }
 
         case 'error':
           this.hasCompleted = true;
@@ -508,8 +535,11 @@ vi.mock('@accomplish_ai/agent-core', async () => {
 
       this.ptyProcess.onData((data: string) => {
         const cleanData = data
+          // eslint-disable-next-line no-control-regex
           .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
+          // eslint-disable-next-line no-control-regex
           .replace(/\x1B\][^\x07]*\x07/g, '')
+          // eslint-disable-next-line no-control-regex
           .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
         if (cleanData.trim()) {
           this.emit('debug', { type: 'stdout', message: cleanData });
@@ -694,10 +724,12 @@ vi.mock('child_process', () => ({
 
 // Mock secure storage
 vi.mock('@main/store/secureStorage', () => ({
-  getAllApiKeys: vi.fn(() => Promise.resolve({
-    anthropic: 'test-anthropic-key',
-    openai: 'test-openai-key',
-  })),
+  getAllApiKeys: vi.fn(() =>
+    Promise.resolve({
+      anthropic: 'test-anthropic-key',
+      openai: 'test-openai-key',
+    }),
+  ),
   getBedrockCredentials: vi.fn(() => null),
 }));
 
@@ -715,7 +747,9 @@ vi.mock('@main/opencode/config-generator', () => ({
 vi.mock('@main/opencode/electron-options', () => ({
   createElectronTaskManagerOptions: vi.fn(() => ({})),
   buildEnvironment: vi.fn((_taskId: string) => Promise.resolve({ PATH: '/usr/bin' })),
-  buildCliArgs: vi.fn((config: { prompt: string }) => Promise.resolve(['run', '--format', 'json', config.prompt])),
+  buildCliArgs: vi.fn((config: { prompt: string }) =>
+    Promise.resolve(['run', '--format', 'json', config.prompt]),
+  ),
   getCliCommand: vi.fn(() => ({ command: '/mock/opencode/cli', args: [] })),
   isCliAvailable: vi.fn(() => Promise.resolve(true)),
   onBeforeStart: vi.fn(() => Promise.resolve()),
@@ -757,7 +791,8 @@ describe('OpenCode Adapter Module', () => {
       tempPath: '/mock/temp',
       getCliCommand: () => ({ command: '/mock/opencode/cli', args: [] }),
       buildEnvironment: (_taskId: string) => Promise.resolve({ PATH: '/usr/bin' }),
-      buildCliArgs: (config: { prompt: string; sessionId?: string }) => Promise.resolve(['run', '--format', 'json', config.prompt]),
+      buildCliArgs: (config: { prompt: string; sessionId?: string }) =>
+        Promise.resolve(['run', '--format', 'json', config.prompt]),
       onBeforeStart: () => Promise.resolve(),
       getModelDisplayName: (model: string) => model,
     };
@@ -859,7 +894,7 @@ describe('OpenCode Adapter Module', () => {
 
         // Act & Assert
         await expect(adapter.startTask({ prompt: 'Test' })).rejects.toThrow(
-          'Adapter has been disposed'
+          'Adapter has been disposed',
         );
       });
     });
@@ -1075,7 +1110,7 @@ describe('OpenCode Adapter Module', () => {
         // Assert - should NOT emit complete yet (continuation scheduled)
         expect(completeEvents.length).toBe(0);
         // Should have emitted debug event about scheduled continuation
-        expect(debugEvents.some(e => e.type === 'continuation')).toBe(true);
+        expect(debugEvents.some((e) => e.type === 'continuation')).toBe(true);
       });
 
       it('should emit complete after max continuation attempts without complete_task', async () => {
@@ -1207,7 +1242,10 @@ describe('OpenCode Adapter Module', () => {
 
         // Assert
         expect(permissionRequests.length).toBe(1);
-        const req = permissionRequests[0] as { question: string; options: Array<{ label: string }> };
+        const req = permissionRequests[0] as {
+          question: string;
+          options: Array<{ label: string }>;
+        };
         expect(req.question).toBe('Do you want to proceed?');
         expect(req.options).toHaveLength(2);
       });
@@ -1295,7 +1333,7 @@ describe('OpenCode Adapter Module', () => {
 
         // Act
         mockPtyInstance.simulateData(
-          JSON.stringify(message1) + '\n' + JSON.stringify(message2) + '\n'
+          JSON.stringify(message1) + '\n' + JSON.stringify(message2) + '\n',
         );
 
         // Assert
@@ -1645,7 +1683,7 @@ describe('OpenCode Adapter Module', () => {
         mockPtyInstance.simulateData(JSON.stringify(validMessage) + '\n');
 
         // Assert - should have stdout debug events
-        expect(debugEvents.some(e => e.type === 'stdout')).toBe(true);
+        expect(debugEvents.some((e) => e.type === 'stdout')).toBe(true);
       });
 
       it('should handle Windows PowerShell ANSI sequences in resumed session', async () => {
@@ -1662,7 +1700,8 @@ describe('OpenCode Adapter Module', () => {
         };
 
         // Act - send JSON with DEC mode sequences (cursor visibility) and OSC sequences (window titles)
-        const windowsAnsi = '\x1B[?25l\x1B]0;PowerShell\x07' + JSON.stringify(validMessage) + '\x1B[?25h\n';
+        const windowsAnsi =
+          '\x1B[?25l\x1B]0;PowerShell\x07' + JSON.stringify(validMessage) + '\x1B[?25h\n';
         mockPtyInstance.simulateData(windowsAnsi);
 
         // Assert - message should be parsed

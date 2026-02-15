@@ -50,7 +50,10 @@ describe('BedrockApiKeyTab', () => {
       // Assert
       const helpLink = screen.getByText('How to get it?');
       expect(helpLink).toBeInTheDocument();
-      expect(helpLink).toHaveAttribute('href', 'https://console.aws.amazon.com/bedrock/home#/api-keys');
+      expect(helpLink).toHaveAttribute(
+        'href',
+        'https://console.aws.amazon.com/bedrock/home#/api-keys',
+      );
       expect(helpLink).toHaveAttribute('target', '_blank');
     });
 

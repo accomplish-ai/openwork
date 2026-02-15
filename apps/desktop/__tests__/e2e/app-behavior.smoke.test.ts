@@ -14,10 +14,9 @@ test.describe('app behavior smoke tests', () => {
       // Wait for did-fail-load to trigger fallback
       await window.waitForLoadState('domcontentloaded');
       // The fallback page is loaded via loadFile with query params
-      await expect.poll(
-        () => window.url(),
-        { timeout: 30_000, intervals: [500] },
-      ).toContain('fallback.html');
+      await expect
+        .poll(() => window.url(), { timeout: 30_000, intervals: [500] })
+        .toContain('fallback.html');
     } finally {
       await forceCloseApp(app);
     }

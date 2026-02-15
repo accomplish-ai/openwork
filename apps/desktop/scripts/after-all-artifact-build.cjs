@@ -78,10 +78,13 @@ function signFile(filePath, smctl, useEnvVars, useDynamicAuth) {
 
   const args = [
     'sign',
-    '--keypair-alias', keypairAlias,
-    '--input', filePath,
+    '--keypair-alias',
+    keypairAlias,
+    '--input',
+    filePath,
     '--simple',
-    '--digalg', 'SHA256',
+    '--digalg',
+    'SHA256',
   ];
 
   if (useDynamicAuth) {
@@ -89,7 +92,9 @@ function signFile(filePath, smctl, useEnvVars, useDynamicAuth) {
   }
 
   const authMode = useEnvVars ? 'CI' : 'dynamic-auth';
-  console.log(`[after-all-artifact-build] Signing installer (${authMode}): ${path.basename(filePath)}`);
+  console.log(
+    `[after-all-artifact-build] Signing installer (${authMode}): ${path.basename(filePath)}`,
+  );
 
   const result = spawnSync(smctl, args, {
     stdio: 'pipe',
@@ -118,7 +123,8 @@ exports.default = async function afterAllArtifactBuild(context) {
 
   const smctl = findSmctl();
   if (!smctl) {
-    if (process.env.CI) throw new Error('[after-all-artifact-build] smctl not found - required in CI');
+    if (process.env.CI)
+      throw new Error('[after-all-artifact-build] smctl not found - required in CI');
     console.log('[after-all-artifact-build] smctl not found - skipping installer signing');
     return context.artifactPaths;
   }
@@ -127,8 +133,13 @@ exports.default = async function afterAllArtifactBuild(context) {
   const useDynamicAuth = !useEnvVars && canUseDynamicAuth(smctl);
 
   if (!useEnvVars && !useDynamicAuth) {
-    if (process.env.CI) throw new Error('[after-all-artifact-build] No CI env vars and dynamic auth unavailable - required in CI');
-    console.log('[after-all-artifact-build] Skipping signing - no CI env vars and dynamic auth unavailable');
+    if (process.env.CI)
+      throw new Error(
+        '[after-all-artifact-build] No CI env vars and dynamic auth unavailable - required in CI',
+      );
+    console.log(
+      '[after-all-artifact-build] Skipping signing - no CI env vars and dynamic auth unavailable',
+    );
     return context.artifactPaths;
   }
 

@@ -144,7 +144,10 @@ function SelectDropdown({
 
 function SelectError({ message, testId }: { message: string; testId?: string }) {
   return (
-    <p className="mt-2 text-sm text-destructive" data-testid={testId ? `${testId}-error` : undefined}>
+    <p
+      className="mt-2 text-sm text-destructive"
+      data-testid={testId ? `${testId}-error` : undefined}
+    >
       {message}
     </p>
   );
@@ -197,7 +200,7 @@ export function SearchableSelect({
     ? items.filter(
         (item) =>
           item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.id.toLowerCase().includes(search.toLowerCase())
+          item.id.toLowerCase().includes(search.toLowerCase()),
       )
     : items;
 

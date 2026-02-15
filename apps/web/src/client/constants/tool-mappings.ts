@@ -1,8 +1,30 @@
 import {
-  FileText, Search, Terminal, Brain, Clock, AlertCircle, Globe,
-  MousePointer2, Type, Image, Code, Keyboard, ArrowUpDown, ListChecks,
-  Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck,
-  MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Play,
+  FileText,
+  Search,
+  Terminal,
+  Brain,
+  Clock,
+  AlertCircle,
+  Globe,
+  MousePointer2,
+  Type,
+  Image,
+  Code,
+  Keyboard,
+  ArrowUpDown,
+  ListChecks,
+  Layers,
+  Highlighter,
+  ListOrdered,
+  Upload,
+  Move,
+  Frame,
+  ShieldCheck,
+  MessageCircleQuestion,
+  CheckCircle,
+  Lightbulb,
+  Flag,
+  Play,
 } from 'lucide-react';
 
 export const THINKING_PHRASES = [
@@ -69,7 +91,9 @@ export function getBaseToolName(toolName: string): string {
   return toolName;
 }
 
-export function getToolDisplayInfo(toolName: string): { label: string; icon: typeof FileText } | undefined {
+export function getToolDisplayInfo(
+  toolName: string,
+): { label: string; icon: typeof FileText } | undefined {
   if (TOOL_PROGRESS_MAP[toolName]) {
     return TOOL_PROGRESS_MAP[toolName];
   }

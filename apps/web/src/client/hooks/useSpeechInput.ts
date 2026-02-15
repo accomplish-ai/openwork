@@ -19,7 +19,7 @@ class SpeechRecognitionError extends Error {
   constructor(
     public code: string,
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'SpeechRecognitionError';
@@ -162,6 +162,9 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
     };
   }, [cleanup]);
 
+  // Ref to break circular dependency: startRecording needs stopRecording which is declared after
+  const stopRecordingRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
   /**
    * Start recording audio
    */
@@ -173,7 +176,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
     if (!state.isConfigured) {
       const error = new SpeechRecognitionError(
         'NOT_CONFIGURED',
-        'ElevenLabs API is not configured. Please add your API key in settings.'
+        'ElevenLabs API is not configured. Please add your API key in settings.',
       );
       setState((prev) => ({ ...prev, error }));
       onError?.(error);
@@ -202,10 +205,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
 
       // Handle recording errors
       mediaRecorder.onerror = () => {
-        const error = new SpeechRecognitionError(
-          'RECORDING_ERROR',
-          'Recording error occurred'
-        );
+        const error = new SpeechRecognitionError('RECORDING_ERROR', 'Recording error occurred');
         setState((prev) => ({ ...prev, isRecording: false, error }));
         onError?.(error);
         cleanup();
@@ -225,7 +225,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
       // Set max duration timeout
       recordingTimeoutRef.current = setTimeout(() => {
         if (mediaRecorderRef.current?.state === 'recording') {
-          stopRecording();
+          stopRecordingRef.current?.();
         }
       }, maxDuration);
     } catch (error) {
@@ -236,26 +236,34 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
         speechError = new SpeechRecognitionError(
           'MICROPHONE_DENIED',
           'Microphone access denied. Please allow microphone access in settings.',
-          error
+          error,
         );
       } else if (error instanceof DOMException && error.name === 'NotFoundError') {
         speechError = new SpeechRecognitionError(
           'NO_MICROPHONE',
           'No microphone found. Please check your audio devices.',
-          error
+          error,
         );
       } else {
         speechError = new SpeechRecognitionError(
           'RECORDING_FAILED',
           `Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          error instanceof Error ? error : undefined
+          error instanceof Error ? error : undefined,
         );
       }
 
       setState((prev) => ({ ...prev, error: speechError, isRecording: false }));
       onError?.(speechError);
     }
-  }, [state.isRecording, state.isTranscribing, state.isConfigured, maxDuration, onRecordingStateChange, onError, cleanup]);
+  }, [
+    state.isRecording,
+    state.isTranscribing,
+    state.isConfigured,
+    maxDuration,
+    onRecordingStateChange,
+    onError,
+    cleanup,
+  ]);
 
   /**
    * Stop recording and transcribe via IPC
@@ -317,7 +325,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
       } else {
         const error = new SpeechRecognitionError(
           result.error.code,
-          formatErrorMessage(result.error.message)
+          formatErrorMessage(result.error.message),
         );
         setState((prev) => ({
           ...prev,
@@ -331,7 +339,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
       cleanup();
       const speechError = new SpeechRecognitionError(
         'TRANSCRIPTION_FAILED',
-        error instanceof Error ? error.message : 'Failed to transcribe audio'
+        error instanceof Error ? error.message : 'Failed to transcribe audio',
       );
       setState((prev) => ({
         ...prev,
@@ -341,7 +349,20 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
       }));
       onError?.(speechError);
     }
-  }, [state.isRecording, onRecordingStateChange, onTranscriptionComplete, onError, cleanup, accomplish, formatErrorMessage]);
+  }, [
+    state.isRecording,
+    onRecordingStateChange,
+    onTranscriptionComplete,
+    onError,
+    cleanup,
+    accomplish,
+    formatErrorMessage,
+  ]);
+
+  // Keep ref in sync for startRecording's timeout callback
+  useEffect(() => {
+    stopRecordingRef.current = stopRecording;
+  }, [stopRecording]);
 
   /**
    * Cancel recording without transcribing
@@ -390,7 +411,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
       } else {
         const error = new SpeechRecognitionError(
           result.error.code,
-          formatErrorMessage(result.error.message)
+          formatErrorMessage(result.error.message),
         );
         setState((prev) => ({ ...prev, isTranscribing: false, error }));
         onError?.(error);
@@ -398,12 +419,19 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
     } catch (error) {
       const speechError = new SpeechRecognitionError(
         'TRANSCRIPTION_FAILED',
-        error instanceof Error ? error.message : 'Failed to transcribe audio'
+        error instanceof Error ? error.message : 'Failed to transcribe audio',
       );
       setState((prev) => ({ ...prev, isTranscribing: false, error: speechError }));
       onError?.(speechError);
     }
-  }, [state.isTranscribing, state.isRecording, onTranscriptionComplete, onError, accomplish, formatErrorMessage]);
+  }, [
+    state.isTranscribing,
+    state.isRecording,
+    onTranscriptionComplete,
+    onError,
+    accomplish,
+    formatErrorMessage,
+  ]);
 
   /**
    * Clear the current error

@@ -44,12 +44,8 @@ export function AuthGate({ children }: AuthGateProps) {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Building2 className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="text-3xl font-light tracking-tight text-foreground">
-            Accomplish
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Enterprise Single Sign-On
-          </p>
+          <h1 className="text-3xl font-light tracking-tight text-foreground">Accomplish</h1>
+          <p className="text-sm text-muted-foreground">Enterprise Single Sign-On</p>
           {/* TODO(auth0): Remove this banner once real Auth0 is integrated */}
           <div
             data-testid="dev-auth-banner"
@@ -69,10 +65,7 @@ export function AuthGate({ children }: AuthGateProps) {
           <Card className="w-full bg-card/95 backdrop-blur-md shadow-xl">
             <CardContent className="p-6 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="org-identifier"
-                  className="text-sm font-medium text-foreground"
-                >
+                <label htmlFor="org-identifier" className="text-sm font-medium text-foreground">
                   Organization
                 </label>
                 <Input

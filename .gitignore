@@ -5,17 +5,11 @@ node_modules/
 dist/
 dist-electron/
 release/
-.next/
-out/
-
 # Environment files
 .env
 .env.local
 .env*.local
 .env.e2e
-
-# Vercel
-.vercel/
 
 # TypeScript
 *.tsbuildinfo
@@ -47,10 +41,6 @@ apps/desktop/e2e/test-results.json
 # Test coverage
 coverage/
 
-# Prisma
-prisma/*.db
-prisma/*.db-journal
-
 # Docs
 docs/plans/
 
@@ -76,6 +66,3 @@ test-artifacts/
 
 # Generated configs
 .generated/
-
-# Internal tracking
-changes-from-plan.md

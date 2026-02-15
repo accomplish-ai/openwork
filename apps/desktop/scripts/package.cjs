@@ -53,9 +53,10 @@ try {
   if (tier !== 'lite' && tier !== 'enterprise') {
     throw new Error(`Invalid APP_TIER: "${tier}". Must be "lite" or "enterprise".`);
   }
-  const artifactNameFlag = tier === 'enterprise'
-    ? ` --config.artifactName='Accomplish-Enterprise-\${version}-\${os}-\${arch}.\${ext}'`
-    : '';
+  const artifactNameFlag =
+    tier === 'enterprise'
+      ? ` --config.artifactName='Accomplish-Enterprise-\${version}-\${os}-\${arch}.\${ext}'`
+      : '';
 
   // Use npx to run electron-builder to ensure it's found in node_modules
   const command = `npx electron-builder ${args}${npmRebuildFlag}${artifactNameFlag}`;
@@ -65,7 +66,6 @@ try {
     console.log('(Skipping native module rebuild on Windows - using prebuilt binaries)');
   }
   execSync(command, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
-
 } finally {
   // Restore the symlinks
   const packagesToRestore = Object.keys(symlinkTargets);

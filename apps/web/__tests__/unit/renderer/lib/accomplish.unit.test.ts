@@ -94,18 +94,16 @@ describe('Accomplish API', () => {
     });
 
     it('should throw when accomplish API is not available', async () => {
-      const unavailableScenarios = [
-        { accomplish: undefined },
-        {},
-      ];
+      const unavailableScenarios = [{ accomplish: undefined }, {}];
 
       for (const scenario of unavailableScenarios) {
         vi.resetModules();
         (globalThis as unknown as { window: Record<string, unknown> }).window = scenario;
         const { getAccomplish } = await import('@/lib/accomplish');
-        expect(() => getAccomplish()).toThrow('Accomplish API not available - not running in Electron');
+        expect(() => getAccomplish()).toThrow(
+          'Accomplish API not available - not running in Electron',
+        );
       }
     });
   });
-
 });

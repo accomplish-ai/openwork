@@ -8,9 +8,29 @@ import { render, screen } from '@testing-library/react';
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div className={className} {...domProps}>{children}</div>;
+    div: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        variants: _variants,
+        whileHover: _whileHover,
+        ...domProps
+      } = props;
+      return (
+        <div className={className} {...domProps}>
+          {children}
+        </div>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,

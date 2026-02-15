@@ -50,16 +50,16 @@
     "@playwright/test": "^1.58.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "catalog:",
     "electron": "^35.2.1",
     "electron-builder": "^25.1.8",
     "esbuild": "^0.27.3",
-    "jsdom": "^27.4.0",
+    "jsdom": "catalog:",
     "serve": "^14.2.5",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.6",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vite-plugin-electron": "^0.29.0",
-    "vitest": "^4.0.18"
+    "vitest": "catalog:"
   },
   "build": {
     "npmRebuild": false,

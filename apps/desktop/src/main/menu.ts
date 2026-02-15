@@ -5,73 +5,95 @@ export function buildAppMenu(): void {
   const isMac = process.platform === 'darwin';
   const { updateAvailable, downloadedVersion } = getUpdateState();
 
-  const updateMenuItem: Electron.MenuItemConstructorOptions = updateAvailable && downloadedVersion
-    ? { label: `Restart to Update (v${downloadedVersion})...`, click: () => quitAndInstall() }
-    : { label: 'Check for Updates...', click: () => checkForUpdates(false) };
+  const updateMenuItem: Electron.MenuItemConstructorOptions =
+    updateAvailable && downloadedVersion
+      ? { label: `Restart to Update (v${downloadedVersion})...`, click: () => quitAndInstall() }
+      : { label: 'Check for Updates...', click: () => checkForUpdates(false) };
 
   const template: Electron.MenuItemConstructorOptions[] = [
-    ...(isMac ? [{
-      label: app.name,
-      submenu: [
-        { role: 'about' as const },
-        { type: 'separator' as const },
-        updateMenuItem,
-        { type: 'separator' as const },
-        { role: 'services' as const },
-        { type: 'separator' as const },
-        { role: 'hide' as const },
-        { role: 'hideOthers' as const },
-        { role: 'unhide' as const },
-        { type: 'separator' as const },
-        { role: 'quit' as const },
-      ],
-    }] : []),
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              updateMenuItem,
+              { type: 'separator' as const },
+              { role: 'services' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'Edit',
       submenu: [
-        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
-        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
       ],
     },
     {
       label: 'View',
       submenu: [
-        { role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' },
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
         { type: 'separator' },
-        { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
-        { type: 'separator' }, { role: 'togglefullscreen' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
       ],
     },
     {
       label: 'Window',
       submenu: [
-        { role: 'minimize' }, { role: 'zoom' },
-        ...(isMac ? [{ type: 'separator' as const }, { role: 'front' as const }] : [{ role: 'close' as const }]),
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac
+          ? [{ type: 'separator' as const }, { role: 'front' as const }]
+          : [{ role: 'close' as const }]),
       ],
     },
     {
       label: 'Help',
       submenu: [
-        ...(!isMac ? [
-          { label: 'Check for Updates...', click: () => checkForUpdates(false) },
-          { type: 'separator' as const },
-        ] : []),
+        ...(!isMac
+          ? [
+              { label: 'Check for Updates...', click: () => checkForUpdates(false) },
+              { type: 'separator' as const },
+            ]
+          : []),
         { label: 'Learn More', click: () => shell.openExternal('https://accomplish.ai') },
-        ...(!isMac ? [
-          { type: 'separator' as const },
-          {
-            label: 'About Accomplish',
-            click: async () => {
-              await dialog.showMessageBox({
-                type: 'info',
-                title: 'About Accomplish',
-                message: 'Accomplish',
-                detail: `Version ${app.getVersion()}\n\nA desktop automation assistant.\n\n© ${new Date().getFullYear()} Accomplish AI`,
-                buttons: ['OK'],
-              });
-            },
-          },
-        ] : []),
+        ...(!isMac
+          ? [
+              { type: 'separator' as const },
+              {
+                label: 'About Accomplish',
+                click: async () => {
+                  await dialog.showMessageBox({
+                    type: 'info',
+                    title: 'About Accomplish',
+                    message: 'Accomplish',
+                    detail: `Version ${app.getVersion()}\n\nA desktop automation assistant.\n\n© ${new Date().getFullYear()} Accomplish AI`,
+                    buttons: ['OK'],
+                  });
+                },
+              },
+            ]
+          : []),
       ],
     },
   ];
@@ -79,7 +101,9 @@ export function buildAppMenu(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-export function refreshAppMenu(): void { buildAppMenu(); }
+export function refreshAppMenu(): void {
+  buildAppMenu();
+}
 
 export function initMenu(): void {
   buildAppMenu();

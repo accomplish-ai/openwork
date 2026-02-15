@@ -50,7 +50,9 @@ async function fetchWindowsUpdateInfo(): Promise<WindowsUpdateInfo | null> {
       }
 
       let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
       res.on('end', () => {
         try {
           const lines = data.split('\n');
@@ -164,9 +166,10 @@ async function checkForUpdatesWindows(silent: boolean): Promise<void> {
     return;
   }
 
-  const downloadUrl = updateInfo.path.startsWith('http://') || updateInfo.path.startsWith('https://')
-    ? updateInfo.path
-    : `${getFeedUrl()}/${updateInfo.path}`;
+  const downloadUrl =
+    updateInfo.path.startsWith('http://') || updateInfo.path.startsWith('https://')
+      ? updateInfo.path
+      : `${getFeedUrl()}/${updateInfo.path}`;
 
   updateAvailable = {
     version: updateInfo.version,
@@ -188,7 +191,7 @@ let _autoUpdater: AppUpdater | null = null;
 async function lazyAutoUpdater(): Promise<AppUpdater> {
   if (!_autoUpdater) {
     if (!app.isPackaged) {
-      (app as any).setVersion(__APP_VERSION__);
+      (app as unknown as { setVersion(v: string): void }).setVersion(__APP_VERSION__);
     }
     const mod = await import('electron-updater');
     _autoUpdater = mod.autoUpdater;
@@ -213,7 +216,10 @@ export async function initUpdater(window: BrowserWindow): Promise<void> {
     if (!app.isPackaged) {
       const appPath = app.getAppPath();
       fs.mkdirSync(appPath, { recursive: true });
-      fs.writeFileSync(path.join(appPath, 'dev-app-update.yml'), `provider: generic\nurl: ${getFeedUrl()}\n`);
+      fs.writeFileSync(
+        path.join(appPath, 'dev-app-update.yml'),
+        `provider: generic\nurl: ${getFeedUrl()}\n`,
+      );
       autoUpdater.forceDevUpdateConfig = true;
     }
     const tier = __APP_TIER__;
@@ -259,9 +265,11 @@ export async function checkForUpdates(silent: boolean): Promise<void> {
     const autoUpdater = await lazyAutoUpdater();
     await autoUpdater.checkForUpdates();
     getStore().set('lastUpdateCheck', Date.now());
-  } catch (err: any) {
-    if (!silent && !process.env.__UPDATER_AUTO_ACCEPT__) dialog.showErrorBox('Update Check Failed', err.message);
-    console.error('[Updater] Check failed:', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!silent && !process.env.__UPDATER_AUTO_ACCEPT__)
+      dialog.showErrorBox('Update Check Failed', message);
+    console.error('[Updater] Check failed:', message);
   }
 }
 
@@ -284,8 +292,16 @@ export function autoCheckForUpdates(): void {
   checkForUpdates(true);
 }
 
-export function getUpdateState(): { updateAvailable: boolean; downloadedVersion: string | null; availableVersion: string | null } {
-  return { updateAvailable: !!updateAvailable, downloadedVersion, availableVersion: updateAvailable?.version || null };
+export function getUpdateState(): {
+  updateAvailable: boolean;
+  downloadedVersion: string | null;
+  availableVersion: string | null;
+} {
+  return {
+    updateAvailable: !!updateAvailable,
+    downloadedVersion,
+    availableVersion: updateAvailable?.version || null,
+  };
 }
 
 export function setOnUpdateDownloaded(callback: () => void): void {
@@ -294,10 +310,13 @@ export function setOnUpdateDownloaded(callback: () => void): void {
 
 async function showUpdateReadyDialog(version: string): Promise<void> {
   const { response } = await dialog.showMessageBox({
-    type: 'info', title: 'Update Ready',
+    type: 'info',
+    title: 'Update Ready',
     message: `Version ${version} has been downloaded.`,
     detail: 'The update will be installed when you restart the app. Would you like to restart now?',
-    buttons: ['Restart Now', 'Later'], defaultId: 0, cancelId: 1,
+    buttons: ['Restart Now', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
   });
   if (response === 0) await quitAndInstall();
 }

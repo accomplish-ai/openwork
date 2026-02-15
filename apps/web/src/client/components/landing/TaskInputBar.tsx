@@ -46,7 +46,7 @@ export function TaskInputBar({
   placeholder = 'Assign a task or ask anything',
   isLoading = false,
   disabled = false,
-  large = false,
+  large: _large = false,
   autoFocus = false,
   onOpenSpeechSettings,
   onOpenSettings,
@@ -176,56 +176,56 @@ export function TaskInputBar({
 
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-          {/* Model Indicator */}
-          {onOpenModelSettings && (
-            <ModelIndicator
-              isRunning={false}
-              onOpenSettings={onOpenModelSettings}
-              hideWhenNoModel={hideModelWhenNoModel}
-            />
-          )}
-
-          {/* Divider */}
-          <div className="w-px h-6 bg-border" />
-
-          {/* Speech Input Button */}
-          <SpeechInputButton
-            isRecording={speechInput.isRecording}
-            isTranscribing={speechInput.isTranscribing}
-            recordingDuration={speechInput.recordingDuration}
-            error={speechInput.error}
-            isConfigured={speechInput.isConfigured}
-            disabled={isDisabled}
-            onStartRecording={() => speechInput.startRecording()}
-            onStopRecording={() => speechInput.stopRecording()}
-            onCancel={() => speechInput.cancelRecording()}
-            onRetry={() => speechInput.retry()}
-            onOpenSettings={onOpenSpeechSettings}
-            size="md"
-          />
-
-          {/* Submit button */}
-          <button
-            data-testid="task-input-submit"
-            type="button"
-            onClick={() => {
-              accomplish.logEvent({
-                level: 'info',
-                message: 'Task input submit clicked',
-                context: { prompt: value },
-              });
-              onSubmit();
-            }}
-            disabled={!value.trim() || isDisabled || speechInput.isRecording}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Submit"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CornerDownLeft className="h-4 w-4" />
+            {/* Model Indicator */}
+            {onOpenModelSettings && (
+              <ModelIndicator
+                isRunning={false}
+                onOpenSettings={onOpenModelSettings}
+                hideWhenNoModel={hideModelWhenNoModel}
+              />
             )}
-          </button>
+
+            {/* Divider */}
+            <div className="w-px h-6 bg-border" />
+
+            {/* Speech Input Button */}
+            <SpeechInputButton
+              isRecording={speechInput.isRecording}
+              isTranscribing={speechInput.isTranscribing}
+              recordingDuration={speechInput.recordingDuration}
+              error={speechInput.error}
+              isConfigured={speechInput.isConfigured}
+              disabled={isDisabled}
+              onStartRecording={() => speechInput.startRecording()}
+              onStopRecording={() => speechInput.stopRecording()}
+              onCancel={() => speechInput.cancelRecording()}
+              onRetry={() => speechInput.retry()}
+              onOpenSettings={onOpenSpeechSettings}
+              size="md"
+            />
+
+            {/* Submit button */}
+            <button
+              data-testid="task-input-submit"
+              type="button"
+              onClick={() => {
+                accomplish.logEvent({
+                  level: 'info',
+                  message: 'Task input submit clicked',
+                  context: { prompt: value },
+                });
+                onSubmit();
+              }}
+              disabled={!value.trim() || isDisabled || speechInput.isRecording}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+              title="Submit"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CornerDownLeft className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
       </div>

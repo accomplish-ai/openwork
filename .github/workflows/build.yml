@@ -21,16 +21,16 @@ jobs:
         tier: [lite, enterprise]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install dependencies
@@ -39,7 +39,7 @@ jobs:
         run: pnpm -F @accomplish/desktop download:nodejs
       - name: Import macOS certificates
         if: inputs.sign_mac == true
-        uses: apple-actions/import-codesign-certs@v2
+        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93 # v2
         with:
           p12-file-base64: ${{ secrets.MAC_CERTIFICATES_P12 }}
           p12-password: ${{ secrets.MAC_CERTIFICATES_PASSWORD }}
@@ -68,7 +68,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           APP_TIER: ${{ matrix.tier }}
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ matrix.tier == 'enterprise' && 'Accomplish-Enterprise-macOS-arm64' || 'Accomplish-macOS-arm64' }}
           path: |
@@ -84,16 +84,16 @@ jobs:
         tier: [lite, enterprise]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install dependencies
@@ -102,7 +102,7 @@ jobs:
         run: pnpm -F @accomplish/desktop download:nodejs
       - name: Import macOS certificates
         if: inputs.sign_mac == true
-        uses: apple-actions/import-codesign-certs@v2
+        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93 # v2
         with:
           p12-file-base64: ${{ secrets.MAC_CERTIFICATES_P12 }}
           p12-password: ${{ secrets.MAC_CERTIFICATES_PASSWORD }}
@@ -131,7 +131,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           APP_TIER: ${{ matrix.tier }}
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ matrix.tier == 'enterprise' && 'Accomplish-Enterprise-macOS-x64' || 'Accomplish-macOS-x64' }}
           path: |

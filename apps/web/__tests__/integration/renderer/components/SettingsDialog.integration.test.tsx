@@ -74,7 +74,18 @@ vi.mock('framer-motion', () => {
   const createMotionMock = (Element: string) => {
     return ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
       // Filter out motion-specific props
-      const { initial, animate, exit, transition, variants, whileHover, whileTap, layout, layoutId, ...domProps } = props;
+      const {
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        variants: _variants,
+        whileHover: _whileHover,
+        whileTap: _whileTap,
+        layout: _layout,
+        layoutId: _layoutId,
+        ...domProps
+      } = props;
       const Component = Element as keyof JSX.IntrinsicElements;
       return <Component {...domProps}>{children}</Component>;
     };
@@ -94,15 +105,16 @@ vi.mock('framer-motion', () => {
 
 // Mock Radix Dialog to simplify testing
 vi.mock('@radix-ui/react-dialog', () => ({
-  Root: ({ children, open }: { children: React.ReactNode; open: boolean }) => (
-    open ? <div data-testid="dialog-root">{children}</div> : null
-  ),
+  Root: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+    open ? <div data-testid="dialog-root">{children}</div> : null,
   Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Overlay: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dialog-overlay">{children}</div>
   ),
   Content: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-    <div data-testid="dialog-content" role="dialog" {...props}>{children}</div>
+    <div data-testid="dialog-content" role="dialog" {...props}>
+      {children}
+    </div>
   ),
   Title: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <h2 className={className}>{children}</h2>
@@ -128,11 +140,18 @@ describe('SettingsDialog Integration', () => {
     mockGetApiKeys.mockResolvedValue([]);
     mockGetDebugMode.mockResolvedValue(false);
     mockGetVersion.mockResolvedValue('1.0.0');
-    mockGetSelectedModel.mockResolvedValue({ provider: 'anthropic', model: 'anthropic/claude-opus-4-5' });
+    mockGetSelectedModel.mockResolvedValue({
+      provider: 'anthropic',
+      model: 'anthropic/claude-opus-4-5',
+    });
     mockSetDebugMode.mockResolvedValue(undefined);
     mockSetSelectedModel.mockResolvedValue(undefined);
     mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-    mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+    mockAddApiKey.mockResolvedValue({
+      id: 'key-1',
+      provider: 'anthropic',
+      keyPrefix: 'sk-ant-...',
+    });
     mockRemoveApiKey.mockResolvedValue(undefined);
   });
 
@@ -371,7 +390,9 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'invalid-key' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'invalid-key' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -383,14 +404,20 @@ describe('SettingsDialog Integration', () => {
     it('should validate and save valid API key', async () => {
       // Arrange
       mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAddApiKey.mockResolvedValue({
+        id: 'key-1',
+        provider: 'anthropic',
+        keyPrefix: 'sk-ant-...',
+      });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'sk-ant-test123' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'sk-ant-test123' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -409,7 +436,9 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'sk-ant-invalid' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'sk-ant-invalid' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -421,14 +450,20 @@ describe('SettingsDialog Integration', () => {
     it('should show success message after saving API key', async () => {
       // Arrange
       mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAddApiKey.mockResolvedValue({
+        id: 'key-1',
+        provider: 'anthropic',
+        keyPrefix: 'sk-ant-...',
+      });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'sk-ant-valid123' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'sk-ant-valid123' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -441,14 +476,20 @@ describe('SettingsDialog Integration', () => {
       // Arrange
       const onApiKeySaved = vi.fn();
       mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAddApiKey.mockResolvedValue({
+        id: 'key-1',
+        provider: 'anthropic',
+        keyPrefix: 'sk-ant-...',
+      });
       render(<SettingsDialog {...defaultProps} onApiKeySaved={onApiKeySaved} />);
 
       // Act
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'sk-ant-valid123' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'sk-ant-valid123' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -460,7 +501,7 @@ describe('SettingsDialog Integration', () => {
     it('should show Saving... while saving is in progress', async () => {
       // Arrange
       mockValidateApiKeyForProvider.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ valid: true }), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve({ valid: true }), 100)),
       );
       render(<SettingsDialog {...defaultProps} />);
 
@@ -468,7 +509,9 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText('sk-ant-...')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), { target: { value: 'sk-ant-valid123' } });
+      fireEvent.change(screen.getByPlaceholderText('sk-ant-...'), {
+        target: { value: 'sk-ant-valid123' },
+      });
       fireEvent.click(screen.getByRole('button', { name: /save api key/i }));
 
       // Assert
@@ -565,7 +608,7 @@ describe('SettingsDialog Integration', () => {
     it('should show loading skeleton while fetching keys', async () => {
       // Arrange
       mockGetApiKeys.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 500))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 500)),
       );
       render(<SettingsDialog {...defaultProps} />);
 
@@ -646,7 +689,9 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByRole('combobox')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'anthropic/claude-sonnet-4-5' } });
+      fireEvent.change(screen.getByRole('combobox'), {
+        target: { value: 'anthropic/claude-sonnet-4-5' },
+      });
 
       // Assert
       await waitFor(() => {
@@ -669,7 +714,9 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByRole('combobox')).toBeInTheDocument();
       });
-      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'anthropic/claude-sonnet-4-5' } });
+      fireEvent.change(screen.getByRole('combobox'), {
+        target: { value: 'anthropic/claude-sonnet-4-5' },
+      });
 
       // Assert
       await waitFor(() => {
@@ -679,7 +726,10 @@ describe('SettingsDialog Integration', () => {
 
     it('should show warning when selected model has no API key', async () => {
       // Arrange - Selected Google AI model but no Google AI key
-      mockGetSelectedModel.mockResolvedValue({ provider: 'google', model: 'google/gemini-3-pro-preview' });
+      mockGetSelectedModel.mockResolvedValue({
+        provider: 'google',
+        model: 'google/gemini-3-pro-preview',
+      });
       mockGetApiKeys.mockResolvedValue([
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ]);
@@ -763,7 +813,7 @@ describe('SettingsDialog Integration', () => {
     it('should show loading skeleton while fetching debug setting', async () => {
       // Arrange
       mockGetDebugMode.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(false), 500))
+        () => new Promise((resolve) => setTimeout(() => resolve(false), 500)),
       );
       render(<SettingsDialog {...defaultProps} />);
 

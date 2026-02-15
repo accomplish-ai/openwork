@@ -7,9 +7,29 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div className={className} {...domProps}>{children}</div>;
+    div: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      [key: string]: unknown;
+    }) => {
+      const {
+        initial: _initial,
+        animate: _animate,
+        exit: _exit,
+        transition: _transition,
+        variants: _variants,
+        whileHover: _whileHover,
+        ...domProps
+      } = props;
+      return (
+        <div className={className} {...domProps}>
+          {children}
+        </div>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -26,7 +46,7 @@ describe('AuthErrorToast', () => {
 
   it('returns null when error is null', () => {
     const { container } = render(
-      <AuthErrorToast error={null} onReLogin={vi.fn()} onDismiss={vi.fn()} />
+      <AuthErrorToast error={null} onReLogin={vi.fn()} onDismiss={vi.fn()} />,
     );
     expect(container.innerHTML).toBe('');
   });
@@ -51,7 +71,7 @@ describe('AuthErrorToast', () => {
         error={{ providerId: 'custom-provider', message: 'error' }}
         onReLogin={vi.fn()}
         onDismiss={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('custom-provider Session Expired')).toBeInTheDocument();

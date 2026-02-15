@@ -3,10 +3,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssTypography from '@tailwindcss/typography';
 
 const config: Config = {
-  content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -47,7 +44,7 @@ const config: Config = {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         'background-card': 'hsl(var(--card))',
-        'text': 'hsl(var(--foreground))',
+        text: 'hsl(var(--foreground))',
         'text-secondary': 'hsl(var(--foreground))',
         'text-muted': 'hsl(var(--muted-foreground))',
         danger: {
@@ -94,10 +91,10 @@ const config: Config = {
         ],
       },
       transitionTimingFunction: {
-        'accomplish': 'cubic-bezier(0.64, 0, 0.78, 0)',
+        accomplish: 'cubic-bezier(0.64, 0, 0.78, 0)',
       },
       animation: {
-        'shimmer': 'shimmer 2s infinite',
+        shimmer: 'shimmer 2s infinite',
         'spin-ccw': 'spinCcw 1s linear infinite',
       },
       keyframes: {

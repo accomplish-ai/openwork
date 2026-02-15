@@ -1,14 +1,8 @@
-
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ProviderId, ConnectedProvider } from '@accomplish_ai/agent-core/common';
 import { hasAnyReadyProvider, isProviderReady } from '@accomplish_ai/agent-core/common';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
@@ -44,7 +38,9 @@ export function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills' | 'about'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'providers' | 'voice' | 'skills' | 'about'>(
+    initialTab,
+  );
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
@@ -72,75 +68,82 @@ export function SettingsDialog({
     accomplish.getVersion().then(setAppVersion);
   }, [open, refetch, accomplish]);
 
-  // Auto-select active provider (or initialProvider) and expand grid if needed when dialog opens
-  useEffect(() => {
-    if (!open || loading) return;
-
-    // Use initialProvider if provided, otherwise fall back to activeProviderId
-    const providerToSelect = initialProvider || settings?.activeProviderId;
-    if (!providerToSelect) return;
-
-    // Auto-select the provider to show its connection details immediately
-    setSelectedProvider(providerToSelect);
-
-    // Auto-expand grid if selected provider is not in the first 4 visible providers
-    if (!FIRST_FOUR_PROVIDERS.includes(providerToSelect)) {
-      setGridExpanded(true);
-    }
-  }, [open, loading, initialProvider, settings?.activeProviderId]);
-
-  // Reset state when dialog closes, set initial tab when it opens
+  // Reset/initialize state when dialog opens or closes
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset on close
       setSelectedProvider(null);
       setGridExpanded(false);
       setCloseWarning(false);
       setShowModelError(false);
     } else {
-      // Set the tab when dialog opens based on initialTab prop
       setActiveTab(initialTab);
     }
   }, [open, initialTab]);
 
-  // Handle close attempt
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (!newOpen && settings) {
-      // Check if user is trying to close
-      if (!hasAnyReadyProvider(settings)) {
-        // No ready provider - show warning
-        setCloseWarning(true);
-        return;
-      }
+  // Auto-select active provider (or initialProvider) and expand grid if needed when dialog opens
+  useEffect(() => {
+    if (!open || loading) return;
+
+    const providerToSelect = initialProvider || settings?.activeProviderId;
+    if (!providerToSelect) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: auto-select on open
+    setSelectedProvider(providerToSelect);
+
+    if (!FIRST_FOUR_PROVIDERS.includes(providerToSelect)) {
+      setGridExpanded(true);
     }
-    setCloseWarning(false);
-    onOpenChange(newOpen);
-  }, [settings, onOpenChange]);
+  }, [open, loading, initialProvider, settings?.activeProviderId]);
+
+  // Handle close attempt
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen && settings) {
+        // Check if user is trying to close
+        if (!hasAnyReadyProvider(settings)) {
+          // No ready provider - show warning
+          setCloseWarning(true);
+          return;
+        }
+      }
+      setCloseWarning(false);
+      onOpenChange(newOpen);
+    },
+    [settings, onOpenChange],
+  );
 
   // Handle provider selection
-  const handleSelectProvider = useCallback(async (providerId: ProviderId) => {
-    setSelectedProvider(providerId);
-    setCloseWarning(false);
-    setShowModelError(false);
+  const handleSelectProvider = useCallback(
+    async (providerId: ProviderId) => {
+      setSelectedProvider(providerId);
+      setCloseWarning(false);
+      setShowModelError(false);
 
-    // Auto-set as active if the selected provider is ready
-    const provider = settings?.connectedProviders?.[providerId];
-    if (provider && isProviderReady(provider)) {
-      await setActiveProvider(providerId);
-    }
-  }, [settings?.connectedProviders, setActiveProvider]);
+      // Auto-set as active if the selected provider is ready
+      const provider = settings?.connectedProviders?.[providerId];
+      if (provider && isProviderReady(provider)) {
+        await setActiveProvider(providerId);
+      }
+    },
+    [settings?.connectedProviders, setActiveProvider],
+  );
 
   // Handle provider connection
-  const handleConnect = useCallback(async (provider: ConnectedProvider) => {
-    await connectProvider(provider.providerId, provider);
+  const handleConnect = useCallback(
+    async (provider: ConnectedProvider) => {
+      await connectProvider(provider.providerId, provider);
 
-    // Auto-set as active if the new provider is ready (connected + has model selected)
-    // This ensures newly connected ready providers become active, regardless of
-    // whether another provider was already active
-    if (isProviderReady(provider)) {
-      await setActiveProvider(provider.providerId);
-      onApiKeySaved?.();
-    }
-  }, [connectProvider, setActiveProvider, onApiKeySaved]);
+      // Auto-set as active if the new provider is ready (connected + has model selected)
+      // This ensures newly connected ready providers become active, regardless of
+      // whether another provider was already active
+      if (isProviderReady(provider)) {
+        await setActiveProvider(provider.providerId);
+        onApiKeySaved?.();
+      }
+    },
+    [connectProvider, setActiveProvider, onApiKeySaved],
+  );
 
   // Handle provider disconnection
   const handleDisconnect = useCallback(async () => {
@@ -152,30 +155,34 @@ export function SettingsDialog({
     // If we just removed the active provider, auto-select another ready provider
     if (wasActiveProvider && settings?.connectedProviders) {
       const readyProviderId = Object.keys(settings.connectedProviders).find(
-        (id) => id !== selectedProvider && isProviderReady(settings.connectedProviders[id as ProviderId])
+        (id) =>
+          id !== selectedProvider && isProviderReady(settings.connectedProviders[id as ProviderId]),
       ) as ProviderId | undefined;
       if (readyProviderId) {
         await setActiveProvider(readyProviderId);
       }
     }
-  }, [selectedProvider, disconnectProvider, settings?.activeProviderId, settings?.connectedProviders, setActiveProvider]);
+  }, [selectedProvider, disconnectProvider, settings, setActiveProvider]);
 
   // Handle model change
-  const handleModelChange = useCallback(async (modelId: string) => {
-    if (!selectedProvider) return;
-    await updateModel(selectedProvider, modelId);
+  const handleModelChange = useCallback(
+    async (modelId: string) => {
+      if (!selectedProvider) return;
+      await updateModel(selectedProvider, modelId);
 
-    // Auto-set as active if this provider is now ready
-    const provider = settings?.connectedProviders[selectedProvider];
-    if (provider && isProviderReady({ ...provider, selectedModelId: modelId })) {
-      if (!settings?.activeProviderId || settings.activeProviderId !== selectedProvider) {
-        await setActiveProvider(selectedProvider);
+      // Auto-set as active if this provider is now ready
+      const provider = settings?.connectedProviders[selectedProvider];
+      if (provider && isProviderReady({ ...provider, selectedModelId: modelId })) {
+        if (!settings?.activeProviderId || settings.activeProviderId !== selectedProvider) {
+          await setActiveProvider(selectedProvider);
+        }
       }
-    }
 
-    setShowModelError(false);
-    onApiKeySaved?.();
-  }, [selectedProvider, updateModel, settings, setActiveProvider, onApiKeySaved]);
+      setShowModelError(false);
+      onApiKeySaved?.();
+    },
+    [selectedProvider, updateModel, settings, setActiveProvider, onApiKeySaved],
+  );
 
   // Handle debug mode toggle - writes to appSettings (correct store)
   const handleDebugToggle = useCallback(async () => {
@@ -210,8 +217,8 @@ export function SettingsDialog({
       const activeProvider = settings.connectedProviders[settings.activeProviderId];
       if (!isProviderReady(activeProvider)) {
         // Active provider is no longer ready - find a ready provider to set as active
-        const readyProviderId = Object.keys(settings.connectedProviders).find(
-          (id) => isProviderReady(settings.connectedProviders[id as ProviderId])
+        const readyProviderId = Object.keys(settings.connectedProviders).find((id) =>
+          isProviderReady(settings.connectedProviders[id as ProviderId]),
         ) as ProviderId | undefined;
         if (readyProviderId) {
           setActiveProvider(readyProviderId);
@@ -219,8 +226,8 @@ export function SettingsDialog({
       }
     } else {
       // No active provider set - auto-select first ready provider
-      const readyProviderId = Object.keys(settings.connectedProviders).find(
-        (id) => isProviderReady(settings.connectedProviders[id as ProviderId])
+      const readyProviderId = Object.keys(settings.connectedProviders).find((id) =>
+        isProviderReady(settings.connectedProviders[id as ProviderId]),
       ) as ProviderId | undefined;
       if (readyProviderId) {
         setActiveProvider(readyProviderId);
@@ -314,7 +321,7 @@ export function SettingsDialog({
             {activeTab === 'skills' && (
               <div className="pb-2">
                 <AddSkillDropdown
-                  onSkillAdded={() => setSkillsRefreshTrigger(t => t + 1)}
+                  onSkillAdded={() => setSkillsRefreshTrigger((t) => t + 1)}
                   onClose={() => onOpenChange(false)}
                 />
               </div>
@@ -333,8 +340,18 @@ export function SettingsDialog({
                 transition={settingsTransitions.enter}
               >
                 <div className="flex items-start gap-3">
-                  <svg className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    className="h-5 w-5 text-warning flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-warning">No provider ready</p>
@@ -434,7 +451,12 @@ export function SettingsDialog({
               data-testid="settings-done-button"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               Done
             </button>

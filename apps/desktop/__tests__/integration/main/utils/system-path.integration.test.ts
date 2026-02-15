@@ -8,8 +8,6 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import path from 'path';
-
 // Store original values
 const originalPlatform = process.platform;
 const originalEnv = { ...process.env };
@@ -42,7 +40,6 @@ vi.mock('child_process', () => ({
 }));
 
 describe('System PATH Utilities', () => {
-  let getExtendedNodePath: typeof import('@main/utils/system-path').getExtendedNodePath;
   let findCommandInPath: typeof import('@main/utils/system-path').findCommandInPath;
 
   beforeEach(async () => {
@@ -55,7 +52,6 @@ describe('System PATH Utilities', () => {
 
     // Re-import module to get fresh state
     const module = await import('@main/utils/system-path');
-    getExtendedNodePath = module.getExtendedNodePath;
     findCommandInPath = module.findCommandInPath;
   });
 
@@ -108,10 +104,7 @@ describe('System PATH Utilities', () => {
       it('should include common Node.js paths', async () => {
         // Arrange
         mockFs.existsSync.mockImplementation((p: string) => {
-          const existingPaths = [
-            '/opt/homebrew/bin',
-            '/usr/local/bin',
-          ];
+          const existingPaths = ['/opt/homebrew/bin', '/usr/local/bin'];
           return existingPaths.includes(p);
         });
         mockFs.readdirSync.mockReturnValue([]);

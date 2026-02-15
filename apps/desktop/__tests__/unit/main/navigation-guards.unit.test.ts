@@ -20,11 +20,17 @@ describe('Navigation Guard Logic', () => {
 
   describe('will-navigate / will-redirect guard', () => {
     it('allows navigation to the router origin', () => {
-      expect(shouldBlockNavigation('https://accomplish-router.accomplish.workers.dev/some/path')).toBe(false);
+      expect(
+        shouldBlockNavigation('https://accomplish-router.accomplish.workers.dev/some/path'),
+      ).toBe(false);
     });
 
     it('allows navigation with query params on the router origin', () => {
-      expect(shouldBlockNavigation('https://accomplish-router.accomplish.workers.dev?type=lite&build=0.3.8')).toBe(false);
+      expect(
+        shouldBlockNavigation(
+          'https://accomplish-router.accomplish.workers.dev?type=lite&build=0.3.8',
+        ),
+      ).toBe(false);
     });
 
     it('blocks navigation to external origins', () => {

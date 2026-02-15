@@ -22,7 +22,7 @@ const mockOnTaskUpdate = vi.fn();
 function createMockTask(
   id: string,
   prompt: string = 'Test task',
-  status: TaskStatus = 'completed'
+  status: TaskStatus = 'completed',
 ): Task {
   return {
     id,
@@ -83,13 +83,18 @@ vi.mock('@/stores/taskStore', () => ({
 
 // Mock the SettingsDialog to simplify testing
 vi.mock('@/components/layout/SettingsDialog', () => ({
-  SettingsDialog: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  SettingsDialog: ({
+    open,
+    onOpenChange,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) =>
     open ? (
       <div data-testid="settings-dialog">
         <button onClick={() => onOpenChange(false)}>Close Settings</button>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock framer-motion to simplify testing animations
@@ -126,7 +131,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - sidebar should be present (260px width)
@@ -139,7 +144,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -152,7 +157,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -164,7 +169,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -177,7 +182,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -190,7 +195,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -211,7 +216,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -227,7 +232,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -247,7 +252,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -258,16 +263,14 @@ describe('Sidebar Integration', () => {
 
     it('should show running indicator for running tasks', () => {
       // Arrange
-      const tasks = [
-        createMockTask('task-1', 'Running task', 'running'),
-      ];
+      const tasks = [createMockTask('task-1', 'Running task', 'running')];
       mockStoreState.tasks = tasks;
 
       // Act
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Check for spinning loader icon
@@ -278,16 +281,14 @@ describe('Sidebar Integration', () => {
 
     it('should show completed indicator for completed tasks', () => {
       // Arrange
-      const tasks = [
-        createMockTask('task-1', 'Completed task', 'completed'),
-      ];
+      const tasks = [createMockTask('task-1', 'Completed task', 'completed')];
       mockStoreState.tasks = tasks;
 
       // Act
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Check for checkmark icon (CheckCircle2)
@@ -306,7 +307,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - element is a div with role="button" for accessibility
@@ -323,7 +324,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskItem = screen.getByText('Navigate task').closest('[role="button"]');
@@ -346,7 +347,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/execution/task-123']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -365,7 +366,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/execution/task-1']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Second task should not be highlighted with the active class
@@ -373,7 +374,7 @@ describe('Sidebar Integration', () => {
       const secondTaskItem = screen.getByText('Second task').closest('[role="button"]');
       const classNames = (secondTaskItem?.className || '').split(' ');
       // Filter to find only exact 'bg-accent' class, not 'hover:bg-accent'
-      const hasBgAccent = classNames.some(c => c === 'bg-accent');
+      const hasBgAccent = classNames.some((c) => c === 'bg-accent');
       expect(hasBgAccent).toBe(false);
     });
   });
@@ -384,7 +385,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/execution/task-123']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -402,7 +403,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -418,7 +419,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -436,7 +437,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act - Open dialog
@@ -464,7 +465,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -476,7 +477,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -490,7 +491,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Check for border classes
@@ -503,7 +504,7 @@ describe('Sidebar Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Sidebar />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert

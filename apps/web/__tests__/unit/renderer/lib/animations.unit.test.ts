@@ -8,12 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  springs,
-  variants,
-  staggerContainer,
-  staggerItem,
-} from '@/lib/animations';
+import { springs, variants, staggerContainer, staggerItem } from '@/lib/animations';
 
 describe('Animation Library', () => {
   describe('Spring Configurations', () => {
@@ -111,7 +106,13 @@ describe('Animation Library', () => {
   describe('Export Structure', () => {
     it('should export all required animations', () => {
       expect(Object.keys(springs)).toEqual(['bouncy', 'gentle', 'snappy']);
-      expect(Object.keys(variants)).toEqual(['fadeUp', 'fadeIn', 'scaleIn', 'slideInRight', 'slideInLeft']);
+      expect(Object.keys(variants)).toEqual([
+        'fadeUp',
+        'fadeIn',
+        'scaleIn',
+        'slideInRight',
+        'slideInLeft',
+      ]);
       expect(staggerContainer).toBeDefined();
       expect(staggerItem).toBeDefined();
     });
