@@ -20,10 +20,9 @@ export class OpenCodeCliNotFoundError extends Error {
   }
 }
 
-export interface SandboxPaths {
-  configDir: string;
-  openDataHome: string;
-}
+import type { SandboxPaths } from '../../opencode/sandbox-types.js';
+
+export type { SandboxPaths };
 
 export interface AdapterOptions {
   platform: NodeJS.Platform;
