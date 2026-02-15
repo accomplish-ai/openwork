@@ -133,8 +133,12 @@ function formatChatPrompt(messages: ChatMessage[], tokenizer: any): string {
     // Manual fallback
     return messages
         .map((m) => {
-            if (m.role === 'system') return `System: ${m.content}`;
-            if (m.role === 'user') return `User: ${m.content}`;
+            if (m.role === 'system') {
+                return `System: ${m.content}`;
+            }
+            if (m.role === 'user') {
+                return `User: ${m.content}`;
+            }
             return `Assistant: ${m.content}`;
         })
         .join('\n') + '\nAssistant:';
