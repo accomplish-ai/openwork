@@ -171,7 +171,8 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **Desktop Automation**: Control native desktop applications — take screenshots, click, type, press hotkeys, list/focus windows, and open apps
+- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -291,6 +292,7 @@ function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platfor
     path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
     path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
     path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'desktop-control', 'node_modules', '.bin', tsxBin),
   ];
 
   for (const candidate of candidates) {
@@ -440,6 +442,23 @@ Use empty array [] if no skills apply to your task.
         nodePath
       ),
       enabled: true,
+      timeout: 30000,
+    },
+    'desktop-control': {
+      type: 'local',
+      command: resolveMcpCommand(
+        tsxCommand,
+        mcpToolsPath,
+        'desktop-control',
+        'src/index.ts',
+        'dist/index.mjs',
+        isPackaged,
+        nodePath
+      ),
+      enabled: true,
+      environment: {
+        PERMISSION_API_PORT: String(permissionApiPort),
+      },
       timeout: 30000,
     },
   };
