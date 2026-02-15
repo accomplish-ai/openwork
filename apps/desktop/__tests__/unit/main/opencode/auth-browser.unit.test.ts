@@ -139,6 +139,12 @@ describe('OAuthBrowserFlow', () => {
   });
 
   afterEach(() => {
+    // Dispose to prevent process leaks
+    try {
+      oauthBrowserFlow.dispose();
+    } catch {
+      /* cleanup best-effort */
+    }
     vi.restoreAllMocks();
   });
 

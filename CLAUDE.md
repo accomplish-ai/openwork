@@ -126,8 +126,10 @@ cd infra && bash deploy.sh admin          # Deploy admin dashboard worker only
 Run this after completing any changes:
 
 ```bash
-pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
+pnpm typecheck && pnpm lint:eslint && pnpm format:check && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/web test:unit
 ```
+
+A pre-commit hook (husky) runs `pnpm typecheck && pnpm lint:eslint && pnpm format:check` automatically on every commit. This mirrors the CI "Type Check" job. If the hook fails, fix the issues before committing — do NOT use `--no-verify`.
 
 ## CI/CD Workflows
 

@@ -24,14 +24,23 @@ const electron = spawn('pnpm', ['-F', '@accomplish/desktop', 'dev:remote'], {
 
 electron.on('exit', () => process.exit());
 
-function cleanup() {
+function cleanup(codeOrError) {
   if (!electron.killed) {
     try {
       process.kill(-electron.pid, 'SIGTERM');
     } catch {}
   }
-  process.exit();
+  const isError = codeOrError instanceof Error || (codeOrError && typeof codeOrError === 'object');
+  process.exit(isError ? 1 : 0);
 }
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
+process.on('uncaughtException', (err) => {
+  console.error(err);
+  cleanup(err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+  cleanup(err);
+});

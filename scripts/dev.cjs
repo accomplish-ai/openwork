@@ -38,7 +38,7 @@ waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
     cleanup();
   });
 
-function cleanup() {
+function cleanup(codeOrError) {
   // Kill entire process groups (negative PID) to catch all grandchildren
   for (const child of [web, electron]) {
     if (!child || child.killed) continue;
@@ -50,8 +50,17 @@ function cleanup() {
   try {
     execSync('lsof -ti:5173 | xargs kill -9', { stdio: 'ignore' });
   } catch {}
-  process.exit();
+  const isError = codeOrError instanceof Error || (codeOrError && typeof codeOrError === 'object');
+  process.exit(isError ? 1 : 0);
 }
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
+process.on('uncaughtException', (err) => {
+  console.error(err);
+  cleanup(err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+  cleanup(err);
+});

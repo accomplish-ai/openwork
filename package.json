@@ -30,7 +30,8 @@
     "release": "pnpm build",
     "lint:eslint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=22.0.0",
@@ -49,6 +50,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "typescript-eslint": "^8.55.0",
     "wait-on": "^9.0.3"

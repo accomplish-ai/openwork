@@ -55,7 +55,7 @@ waitOn({ resources: ['http://localhost:8787/health'], timeout: 120000 })
     cleanup();
   });
 
-function cleanup() {
+function cleanup(codeOrError) {
   for (const child of [workers, electron]) {
     if (!child || child.killed) continue;
     try {
@@ -66,8 +66,17 @@ function cleanup() {
   try {
     execSync('lsof -ti:8787 | xargs kill -9', { stdio: 'ignore' });
   } catch {}
-  process.exit();
+  const isError = codeOrError instanceof Error || (codeOrError && typeof codeOrError === 'object');
+  process.exit(isError ? 1 : 0);
 }
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
+process.on('uncaughtException', (err) => {
+  console.error(err);
+  cleanup(err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+  cleanup(err);
+});

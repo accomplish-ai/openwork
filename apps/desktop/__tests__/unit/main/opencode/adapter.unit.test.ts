@@ -782,6 +782,9 @@ describe('OpenCode Adapter Module', () => {
   let getOpenCodeCliVersion: typeof import('@main/opencode').getOpenCodeCliVersion;
   let OpenCodeCliNotFoundError: typeof import('@main/opencode').OpenCodeCliNotFoundError;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const trackedAdapters: InstanceType<any>[] = [];
+
   // Helper function to create adapter instances for testing
   // Note: OpenCodeAdapter is now internal to agent-core, so we get it from the mocked module
   function createTestAdapter(taskId?: string) {
@@ -796,7 +799,9 @@ describe('OpenCode Adapter Module', () => {
       onBeforeStart: () => Promise.resolve(),
       getModelDisplayName: (model: string) => model,
     };
-    return new OpenCodeAdapter(options, taskId);
+    const adapter = new OpenCodeAdapter(options, taskId);
+    trackedAdapters.push(adapter);
+    return adapter;
   }
 
   beforeEach(async () => {
@@ -818,6 +823,14 @@ describe('OpenCode Adapter Module', () => {
   });
 
   afterEach(() => {
+    for (const adapter of trackedAdapters) {
+      try {
+        adapter.dispose();
+      } catch {
+        /* cleanup best-effort */
+      }
+    }
+    trackedAdapters.length = 0;
     vi.restoreAllMocks();
     vi.resetModules();
   });
