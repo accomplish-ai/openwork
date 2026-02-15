@@ -18,6 +18,8 @@ export class CompletionEnforcer {
   private currentTodos: TodoItem[] = [];
   private toolsWereUsed: boolean = false;
   private todoDowngradeAttempts: number = 0;
+  // If more downgrade reasons are added, replace this boolean with a union type:
+  // private downgradeReason: 'none' | 'incomplete_todos' | '...' = 'none';
   private todoDowngradeTriggered: boolean = false;
 
   constructor(callbacks: CompletionEnforcerCallbacks, maxContinuationAttempts: number = 10) {
