@@ -634,8 +634,9 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'openrouter') {
       args.push('--model', selectedModel.model);
     } else if (selectedModel.provider === 'ollama') {
-      const modelId = selectedModel.model.replace(/^ollama\//, '');
-      args.push('--model', `ollama/${modelId}`);
+      // Accept both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
+      const normalizedModelId = selectedModel.model.replace(/^ollama\//, '');
+      args.push('--model', `ollama/${normalizedModelId}`);
     } else if (selectedModel.provider === 'litellm') {
       const modelId = selectedModel.model.replace(/^litellm\//, '');
       args.push('--model', `litellm/${modelId}`);

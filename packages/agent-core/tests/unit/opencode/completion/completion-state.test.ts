@@ -37,8 +37,8 @@ describe('CompletionState', () => {
       expect(state.isDone()).toBe(false);
     });
 
-    it('should use default max continuation attempts of 50', () => {
-      expect(state.getMaxContinuationAttempts()).toBe(50);
+    it('should use default max continuation attempts of 10', () => {
+      expect(state.getMaxContinuationAttempts()).toBe(10);
     });
   });
 
