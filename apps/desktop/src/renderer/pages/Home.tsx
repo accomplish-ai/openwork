@@ -86,8 +86,7 @@ export default function HomePage() {
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, getFavoriteTasks } = useTaskStore();
-  const [favoriteTasks, setFavoriteTasks] = useState<Task[]>([]);
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, favoriteTasks, loadFavoriteTasks } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
 
@@ -109,12 +108,8 @@ export default function HomePage() {
 
   // Load favorite tasks
   useEffect(() => {
-    const loadFavorites = async () => {
-      const favorites = await getFavoriteTasks();
-      setFavoriteTasks(favorites);
-    };
-    loadFavorites();
-  }, [getFavoriteTasks]);
+    loadFavoriteTasks();
+  }, [loadFavoriteTasks]);
 
   const executeTask = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;

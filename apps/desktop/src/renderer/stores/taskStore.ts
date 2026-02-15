@@ -42,6 +42,7 @@ interface TaskState {
 
   // Task history
   tasks: Task[];
+  favoriteTasks: Task[];
 
   // Permission handling
   permissionRequest: PermissionRequest | null;
@@ -72,6 +73,7 @@ interface TaskState {
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   setTaskSummary: (taskId: string, summary: string) => void;
   loadTasks: () => Promise<void>;
+  loadFavoriteTasks: () => Promise<void>;
   loadTaskById: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -89,6 +91,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   isLoading: false,
   error: null,
   tasks: [],
+  favoriteTasks: [],
   permissionRequest: null,
   setupProgress: null,
   setupProgressTaskId: null,
@@ -466,6 +469,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ tasks });
   },
 
+  loadFavoriteTasks: async () => {
+    const accomplish = getAccomplish();
+    const favoriteTasks = await accomplish.getFavoriteTasks();
+    set({ favoriteTasks });
+  },
+
   loadTaskById: async (taskId: string) => {
     const accomplish = getAccomplish();
     const task = await accomplish.getTask(taskId);
@@ -523,15 +532,26 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   toggleTaskFavorite: async (taskId: string) => {
     const accomplish = getAccomplish();
     await accomplish.toggleTaskFavorite(taskId);
-    // Update the task in the store
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
+    
+    // Update the task in the main lists
+    set((state) => {
+      const updatedTasks = state.tasks.map((task) =>
         task.id === taskId ? { ...task, favorite: !task.favorite } : task
-      ),
-      currentTask: state.currentTask?.id === taskId
+      );
+      
+      const updatedCurrentTask = state.currentTask?.id === taskId
         ? { ...state.currentTask, favorite: !state.currentTask.favorite }
-        : state.currentTask,
-    }));
+        : state.currentTask;
+        
+      return {
+        tasks: updatedTasks,
+        currentTask: updatedCurrentTask,
+      };
+    });
+    
+    // Refresh the favorites list from source of truth
+    const favoriteTasks = await accomplish.getFavoriteTasks();
+    set({ favoriteTasks });
   },
 
   getFavoriteTasks: async () => {

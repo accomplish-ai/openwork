@@ -320,7 +320,9 @@ export function toggleTaskFavorite(taskId: string): void {
 export function getFavoriteTasks(): StoredTask[] {
   const db = getDatabase();
   const rows = db
-    .prepare('SELECT * FROM tasks WHERE favorite = 1 ORDER BY created_at DESC')
+    .prepare(
+      'SELECT * FROM tasks WHERE favorite = 1 ORDER BY created_at DESC LIMIT 100'
+    )
     .all() as TaskRow[];
 
   return rows.map(rowToTask);

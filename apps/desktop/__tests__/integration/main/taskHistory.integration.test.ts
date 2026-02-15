@@ -371,4 +371,39 @@ describe('taskHistory Integration', () => {
       expect(() => flushPendingTasks()).not.toThrow();
     });
   });
+  describe('Favorites', () => {
+    it('should toggle a task as favorite', async () => {
+      const { toggleTaskFavorite, getTask, saveTask } = await import('@accomplish_ai/agent-core');
+      const taskId = 'task-fav-1';
+      const task = createMockTask(taskId, 'Favorite test');
+      
+      saveTask(task);
+      expect(mockTaskStore.get(taskId)?.favorite).toBe(false);
+      
+      toggleTaskFavorite(taskId);
+      expect(mockTaskStore.get(taskId)?.favorite).toBe(true);
+      
+      toggleTaskFavorite(taskId);
+      expect(mockTaskStore.get(taskId)?.favorite).toBe(false);
+    });
+
+    it('should retrieve only favorite tasks', async () => {
+      const { saveTask, getFavoriteTasks } = await import('@accomplish_ai/agent-core');
+      
+      const t1 = createMockTask('t1', 'Normal', false);
+      const t2 = createMockTask('t2', 'Fav 1', true);
+      const t3 = createMockTask('t3', 'Fav 2', true);
+      
+      saveTask(t1);
+      saveTask(t2);
+      saveTask(t3);
+      
+      const favorites = getFavoriteTasks();
+      expect(favorites).toHaveLength(2);
+      expect(favorites.map(f => f.id)).toContain('t2');
+      expect(favorites.map(f => f.id)).toContain('t3');
+      expect(favorites.map(f => f.id)).not.toContain('t1');
+    });
+  });
+
 });

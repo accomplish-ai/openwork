@@ -116,6 +116,7 @@ const mockTasks: Array<{
   status: string;
   messages: unknown[];
   createdAt: string;
+  favorite: boolean;
 }> = [];
 
 // Mock app settings state
@@ -695,8 +696,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -784,7 +783,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -820,8 +818,7 @@ describe('IPC Handlers Integration', () => {
           messages: [],
           createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        },
+      },
         {
           id: 'task_2',
           prompt: 'Task 2',
@@ -829,8 +826,7 @@ describe('IPC Handlers Integration', () => {
           messages: [],
           createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        }
+      }
       );
 
       // Act
@@ -849,7 +845,6 @@ describe('IPC Handlers Integration', () => {
         status: 'completed',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -871,8 +866,7 @@ describe('IPC Handlers Integration', () => {
           messages: [],
           createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        },
+      },
         {
           id: 'task_2',
           prompt: 'Task 2',
@@ -880,8 +874,7 @@ describe('IPC Handlers Integration', () => {
           messages: [],
           createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        }
+      }
       );
 
       // Act
@@ -929,7 +922,6 @@ describe('IPC Handlers Integration', () => {
         status: 'completed',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1247,8 +1239,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -1282,7 +1272,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1355,7 +1344,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -1377,7 +1365,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act - start two tasks
@@ -1398,7 +1385,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1423,7 +1409,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1452,7 +1437,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1488,7 +1472,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1554,7 +1537,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -1584,7 +1566,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act
@@ -1610,7 +1591,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
@@ -1726,7 +1706,6 @@ describe('IPC Handlers Integration', () => {
         messages: [],
         createdAt: new Date().toISOString(),
         favorite: false,
-        favorite: false,
       });
 
       // Act & Assert
@@ -1755,7 +1734,6 @@ describe('IPC Handlers Integration', () => {
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-        favorite: false,
         favorite: false,
       });
 
