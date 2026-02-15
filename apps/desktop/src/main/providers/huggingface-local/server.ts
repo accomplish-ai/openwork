@@ -378,9 +378,29 @@ export async function startServer(
                     try {
                         chatReq = JSON.parse(body);
                     } catch {
-                        res.writeHead(400, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: { message: 'Invalid JSON in request body', type: 'invalid_request_error' } }));
                         return;
+                    }
+
+                    if (!Array.isArray(chatReq.messages) || chatReq.messages.length === 0) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: { message: 'messages must be a non-empty array', type: 'invalid_request_error' } }));
+                        return;
+                    }
+
+                    for (const message of chatReq.messages) {
+                        if (
+                            !message ||
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (message as any).role === undefined ||
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (message as any).content === undefined ||
+                            typeof message.content !== 'string'
+                        ) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: { message: 'Invalid message format', type: 'invalid_request_error' } }));
+                            return;
+                        }
                     }
 
                     if (chatReq.stream) {
