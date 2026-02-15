@@ -1,4 +1,4 @@
-// packages/shared/src/index.ts
+// packages/agent-core/src/common/index.ts
 
 // === TYPES ===
 

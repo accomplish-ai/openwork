@@ -12,6 +12,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import path from 'path';
 
 const originalPlatform = process.platform;
+const originalHome = process.env.HOME;
+const originalUseGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
 
 // Mock electron module before importing the module under test
 const mockApp = {
@@ -162,11 +164,22 @@ describe('OpenCode CLI Path Module', () => {
     mockApp.isPackaged = false;
     // Reset HOME environment variable
     process.env.HOME = '/Users/testuser';
+    delete process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     Object.defineProperty(process, 'platform', { value: originalPlatform });
+    if (originalHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = originalHome;
+    }
+    if (originalUseGlobal === undefined) {
+      delete process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
+    } else {
+      process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE = originalUseGlobal;
+    }
   });
 
   describe('getOpenCodeCliPath()', () => {

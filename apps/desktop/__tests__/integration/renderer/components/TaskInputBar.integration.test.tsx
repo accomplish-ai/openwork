@@ -632,7 +632,7 @@ describe('TaskInputBar Integration', () => {
     it('should not show file drop overlay for non-file drag data', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
-      const { container } = renderWithRouter(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -640,8 +640,7 @@ describe('TaskInputBar Integration', () => {
         />
       );
 
-      const dropZone = container.querySelector('.relative.rounded-xl') as HTMLDivElement;
-      expect(dropZone).toBeTruthy();
+      const dropZone = screen.getByTestId('task-input-dropzone');
 
       fireEvent.dragEnter(dropZone, {
         dataTransfer: {
@@ -657,7 +656,7 @@ describe('TaskInputBar Integration', () => {
     it('should show file drop overlay for file drag data', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
-      const { container } = renderWithRouter(
+      renderWithRouter(
         <TaskInputBar
           value=""
           onChange={onChange}
@@ -666,8 +665,7 @@ describe('TaskInputBar Integration', () => {
         />
       );
 
-      const dropZone = container.querySelector('.relative.rounded-xl') as HTMLDivElement;
-      expect(dropZone).toBeTruthy();
+      const dropZone = screen.getByTestId('task-input-dropzone');
 
       fireEvent.dragEnter(dropZone, {
         dataTransfer: {

@@ -120,6 +120,12 @@ export default function TaskInputBar({
     buildPromptWithAttachments(value, attachments).length > PROMPT_DEFAULT_MAX_LENGTH;
   const hasInput = !!value.trim() || attachments.length > 0;
   const canSubmit = hasInput && !isDisabled && !isOverLimit && !isProcessingAttachments;
+  const getSubmitTooltipText = () => {
+    if (isOverLimit) return 'Message is too long';
+    if (isProcessingAttachments) return 'Processing files';
+    if (!hasInput) return 'Enter a message';
+    return 'Submit';
+  };
 
   // Auto-focus on mount
   useEffect(() => {
@@ -433,6 +439,7 @@ export default function TaskInputBar({
 
       {/* Input container - two rows: textarea top, toolbar bottom */}
       <div
+        data-testid="task-input-dropzone"
         className={cn(
           'relative rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring',
           dragOver && 'border-dashed border-primary bg-primary/5'
@@ -612,15 +619,7 @@ export default function TaskInputBar({
               </button>
             </TooltipTrigger>
             <TooltipContent>
-              <span>
-                {isOverLimit
-                  ? 'Message is too long'
-                  : isProcessingAttachments
-                    ? 'Processing files'
-                    : !hasInput
-                      ? 'Enter a message'
-                      : 'Submit'}
-              </span>
+              <span>{getSubmitTooltipText()}</span>
             </TooltipContent>
           </Tooltip>
           </div>

@@ -449,7 +449,7 @@ describe('System PATH Utilities', () => {
       const expectedPath = path.join('/usr/local/bin', 'node');
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        if (normalizePath(p).includes('/nonexistent/')) {
+        if (normalizePath(p).startsWith('/nonexistent')) {
           throw new Error('Directory does not exist');
         }
         return p === expectedPath;
