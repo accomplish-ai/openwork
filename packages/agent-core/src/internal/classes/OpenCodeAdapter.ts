@@ -478,17 +478,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         if (toolUseName === 'AskUserQuestion') {
           this.handleAskUserQuestion(toolUseInput as AskUserQuestionInput);
         }
-
-        // Emit the complete_task summary as a final assistant message
-        // AFTER the tool_use message, so it appears as the last bubble.
-        if (toolUseName === 'complete_task' || toolUseName.endsWith('_complete_task')) {
-          if (this.completionEnforcer.getState() === CompletionFlowState.DONE) {
-            const summary = (toolUseInput as { summary?: string })?.summary?.trim();
-            if (summary) {
-              this.emitSummaryMessage(summary, toolUseMessage.part.sessionID || this.currentSessionId || '');
-            }
-          }
-        }
         break;
 
       case 'tool_result':
@@ -579,6 +568,17 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
       this.completionEnforcer.handleCompleteTaskDetection(toolInput);
+
+      // Emit the complete_task summary as a final assistant message
+      // so the UI displays the result regardless of model behavior.
+      // Only emit when state is DONE (not PARTIAL) to avoid duplicates
+      // during continuation retry loops.
+      if (this.completionEnforcer.getState() === CompletionFlowState.DONE) {
+        const summary = (toolInput as { summary?: string })?.summary?.trim();
+        if (summary) {
+          this.emitSummaryMessage(summary, sessionID || this.currentSessionId || '');
+        }
+      }
     }
 
     if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {

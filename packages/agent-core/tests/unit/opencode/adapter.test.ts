@@ -485,8 +485,9 @@ describe('complete_task summary emission', () => {
     expect(taskMessage.content).toContain('**validation**');
   });
 
-  it('should treat whitespace-only summary as truthy (adapter behavior)', () => {
-    // The adapter checks `if (summary)` — whitespace-only strings are truthy in JS
+  it('should NOT emit summary when summary is whitespace-only (adapter trims first)', () => {
+    // The adapter calls `.trim()` before checking truthiness, so whitespace-only
+    // summaries become empty strings which are falsy — no emission occurs.
     const toolInput = {
       status: 'success',
       summary: '   ',
@@ -499,10 +500,10 @@ describe('complete_task summary emission', () => {
     expect(isFirstCall).toBe(true);
     expect(state).toBe(CompletionFlowState.DONE);
 
-    // Whitespace-only is truthy, so the adapter WILL emit — documenting this behavior
-    const summary = (toolInput as { summary?: string }).summary;
+    // Adapter calls .trim() first, so '   ' becomes '' (falsy) — no emission
+    const summary = (toolInput as { summary?: string }).summary?.trim();
     const shouldEmitSummary = isFirstCall && state === CompletionFlowState.DONE && summary;
-    expect(shouldEmitSummary).toBeTruthy();
+    expect(shouldEmitSummary).toBeFalsy();
   });
 
   it('should return complete from handleStepFinish after DONE state (no continuation)', () => {
