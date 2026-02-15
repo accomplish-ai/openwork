@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
-import TaskInputBar from '@/components/landing/TaskInputBar';
+import TaskInputBar, { buildPromptWithAttachments, type FileAttachment } from '@/components/landing/TaskInputBar';
 
 // Helper to render with Router context (required for PlusMenu -> CreateSkillModal -> useNavigate)
 const renderWithRouter = (ui: React.ReactElement) => {
@@ -579,6 +579,163 @@ describe('TaskInputBar Integration', () => {
 
       const textarea = screen.getByRole('textbox');
       expect(textarea.className).toContain('text-[15px]');
+    });
+  });
+
+  describe('buildPromptWithAttachments', () => {
+    it('should return prompt unchanged when no attachments', () => {
+      const prompt = 'Summarize this';
+      expect(buildPromptWithAttachments(prompt, [])).toBe(prompt);
+    });
+
+    it('should append text file content to prompt', () => {
+      const prompt = 'Review this file';
+      const attachments: FileAttachment[] = [
+        {
+          id: '1',
+          name: 'notes.txt',
+          path: '/path/notes.txt',
+          type: 'text',
+          content: 'File content here',
+          size: 100,
+        },
+      ];
+      const result = buildPromptWithAttachments(prompt, attachments);
+      expect(result).toContain(prompt);
+      expect(result).toContain('[Contents of notes.txt]');
+      expect(result).toContain('File content here');
+    });
+
+    it('should append file path for non-text attachments', () => {
+      const prompt = 'Analyze this image';
+      const attachments: FileAttachment[] = [
+        {
+          id: '1',
+          name: 'photo.png',
+          path: '/path/photo.png',
+          type: 'image',
+          size: 1024,
+        },
+      ];
+      const result = buildPromptWithAttachments(prompt, attachments);
+      expect(result).toContain(prompt);
+      expect(result).toContain('[Attached file: photo.png at /path/photo.png]');
+    });
+  });
+
+  describe('file attachments', () => {
+    it('should have drop zone for drag-and-drop', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Review this"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      expect(screen.getByTestId('task-input-drop-zone')).toBeInTheDocument();
+    });
+
+    it('should call onSubmit with undefined when no attachments', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Base prompt"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const submitButton = screen.getByTestId('task-input-submit');
+      fireEvent.click(submitButton);
+
+      expect(onSubmit).toHaveBeenCalledWith(undefined);
+    });
+
+    it('should show error when file exceeds 10MB limit', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const largeFile = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large.bin');
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Process this"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [largeFile], types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/exceeds 10MB limit/)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when dropping more than 5 files', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const files = Array.from({ length: 6 }, (_, i) =>
+        new File(['content'], `file${i}.txt`) as File & { path?: string }
+      );
+      files.forEach((f, i) => {
+        (f as File & { path?: string }).path = `/path/file${i}.txt`;
+      });
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Process these"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files, types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Maximum 5 files/)).toBeInTheDocument();
+      });
+    });
+
+    it('should remove attachment when chip remove button is clicked', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const file = new File([], 'test.bin') as File & { path?: string };
+      file.path = '/path/test.bin';
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Review this"
+          onChange={onChange}
+          onSubmit={onSubmit}
+        />
+      );
+
+      const dropZone = screen.getByTestId('task-input-drop-zone');
+      fireEvent.dragOver(dropZone, { dataTransfer: { types: ['Files'] } });
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [file], types: ['Files'] },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('attachment-chip-test.bin')).toBeInTheDocument();
+      });
+
+      const removeButton = screen.getByRole('button', { name: /Remove test.bin/ });
+      fireEvent.click(removeButton);
+
+      expect(screen.queryByTestId('attachment-chip-test.bin')).not.toBeInTheDocument();
     });
   });
 });
