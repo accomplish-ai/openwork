@@ -88,11 +88,20 @@ async function loadModel(modelId: string): Promise<void> {
             local_files_only: true,
         });
 
-        state.model = await AutoModelForCausalLM.from_pretrained(modelId, {
-            cache_dir: cacheDir,
-            dtype: 'q4',
-            local_files_only: true,
-        });
+        try {
+            state.model = await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'q4',
+                local_files_only: true,
+            });
+        } catch (err) {
+            console.warn(`[HF Server] Failed to load q4 model, trying fp32: ${err}`);
+            state.model = await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'fp32',
+                local_files_only: true,
+            });
+        }
 
         state.loadedModelId = modelId;
         console.log(`[HF Server] Model loaded: ${modelId}`);

@@ -117,10 +117,23 @@ export async function downloadModel(
             progress: 30,
         });
 
-        await AutoModelForCausalLM.from_pretrained(modelId, {
-            cache_dir: cacheDir,
-            dtype: 'q4', // Use quantized model by default for smaller size
-        });
+        try {
+            await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'q4', // Try quantized first
+            });
+        } catch (err) {
+            console.warn(`[HF Manager] Failed to download q4 model, trying fp32: ${err}`);
+            onProgress?.({
+                modelId,
+                status: 'downloading',
+                progress: 50,
+            });
+            await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'fp32', // Fallback to fp32
+            });
+        }
 
         onProgress?.({
             modelId,
