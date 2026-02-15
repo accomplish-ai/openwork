@@ -67,7 +67,6 @@ export function HuggingFaceLocalProviderForm({
 
     const isConnected = connectedProvider?.connectionStatus === 'connected';
 
-    // Load models on mount
     const loadModels = useCallback(async () => {
         try {
             const accomplish = getAccomplish();
@@ -94,7 +93,6 @@ export function HuggingFaceLocalProviderForm({
         loadModels();
     }, [loadModels]);
 
-    // Listen for download progress events
     useEffect(() => {
         const accomplish = getAccomplish();
         const cleanup = accomplish.onHuggingFaceDownloadProgress?.((progress) => {
@@ -222,7 +220,6 @@ export function HuggingFaceLocalProviderForm({
                             transition={settingsTransitions.enter}
                             className="space-y-3"
                         >
-                            {/* Download Section */}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-foreground">
                                     Download Model
@@ -246,7 +243,6 @@ export function HuggingFaceLocalProviderForm({
                                     </button>
                                 </div>
 
-                                {/* Download Progress */}
                                 {downloading && (
                                     <div className="mt-2">
                                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
@@ -263,7 +259,6 @@ export function HuggingFaceLocalProviderForm({
                                 )}
                             </div>
 
-                            {/* Suggested Models */}
                             {suggestedModels.length > 0 && (
                                 <div>
                                     <label className="mb-2 block text-xs font-medium text-muted-foreground">
@@ -285,7 +280,6 @@ export function HuggingFaceLocalProviderForm({
                                 </div>
                             )}
 
-                            {/* Cached Models */}
                             {cachedModels.length > 0 && (
                                 <div>
                                     <label className="mb-2 block text-xs font-medium text-muted-foreground">
