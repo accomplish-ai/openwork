@@ -167,7 +167,6 @@ async function handleChatCompletion(req: ChatCompletionRequest): Promise<object>
         do_sample: temperature > 0,
     });
 
-    // Decode only the generated tokens (skip prompt tokens)
     const promptLength = inputs.input_ids.dims?.[1] || 0;
     const generatedTokens = outputs.slice(null, [promptLength, null]);
     const text = state.tokenizer.decode(generatedTokens[0], { skip_special_tokens: true });
