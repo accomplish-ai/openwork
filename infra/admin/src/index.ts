@@ -108,6 +108,145 @@ let websiteErrorCache: { expiry: number } | null = null;
 const WEBSITE_CACHE_TTL_MS = 5 * 60 * 1000;
 const WEBSITE_ERROR_CACHE_TTL_MS = 30 * 1000;
 
+interface AgentCoreVersionEntry {
+  version: string;
+  publishedAt: string;
+  distTags: string[];
+}
+
+interface AgentCoreVersionsResult {
+  versions: AgentCoreVersionEntry[];
+}
+
+let agentCoreVersionsCache: { data: AgentCoreVersionsResult; expiry: number } | null = null;
+let agentCoreErrorCache: { expiry: number } | null = null;
+
+async function handleAgentCoreVersions(): Promise<Response> {
+  if (agentCoreVersionsCache && Date.now() < agentCoreVersionsCache.expiry) {
+    return jsonResponse(agentCoreVersionsCache.data, 200);
+  }
+
+  if (agentCoreErrorCache && Date.now() < agentCoreErrorCache.expiry) {
+    return jsonResponse({ error: 'fetch_failed', cached: true }, 502);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+  let res: Response;
+  try {
+    res = await fetch('https://registry.npmjs.org/@accomplish_ai%2Fagent-core', {
+      signal: controller.signal,
+    });
+  } catch {
+    agentCoreErrorCache = { expiry: Date.now() + WEBSITE_ERROR_CACHE_TTL_MS };
+    return jsonResponse({ error: 'fetch_failed', message: 'Network error or timeout' }, 502);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    agentCoreErrorCache = { expiry: Date.now() + WEBSITE_ERROR_CACHE_TTL_MS };
+    return jsonResponse({ error: 'fetch_failed', status: res.status }, 502);
+  }
+
+  const data = (await res.json()) as {
+    time: Record<string, string>;
+    'dist-tags': Record<string, string>;
+  };
+
+  const distTags = data['dist-tags'] || {};
+  const timeEntries = data.time || {};
+
+  // Build reverse map: version -> list of tag names
+  const tagsByVersion: Record<string, string[]> = {};
+  for (const [tag, ver] of Object.entries(distTags)) {
+    if (!tagsByVersion[ver]) tagsByVersion[ver] = [];
+    tagsByVersion[ver].push(tag);
+  }
+
+  // Get all versions with publish dates, excluding internal keys
+  const versions: AgentCoreVersionEntry[] = [];
+  for (const [key, timestamp] of Object.entries(timeEntries)) {
+    if (key === 'created' || key === 'modified') continue;
+    versions.push({
+      version: key,
+      publishedAt: timestamp,
+      distTags: tagsByVersion[key] || [],
+    });
+  }
+
+  // Sort newest first
+  versions.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+  // Keep last 20
+  const result: AgentCoreVersionsResult = { versions: versions.slice(0, 20) };
+  agentCoreVersionsCache = { data: result, expiry: Date.now() + WEBSITE_CACHE_TTL_MS };
+
+  return jsonResponse(result, 200);
+}
+
+interface AgentCoreInstalledResult {
+  desktop: string;
+  web: string;
+  override: string;
+}
+
+let agentCoreInstalledCache: { data: AgentCoreInstalledResult; expiry: number } | null = null;
+let agentCoreInstalledErrorCache: { expiry: number } | null = null;
+
+async function handleAgentCoreInstalled(env: Env): Promise<Response> {
+  if (agentCoreInstalledCache && Date.now() < agentCoreInstalledCache.expiry) {
+    return jsonResponse(agentCoreInstalledCache.data, 200);
+  }
+
+  if (agentCoreInstalledErrorCache && Date.now() < agentCoreInstalledErrorCache.expiry) {
+    return jsonResponse({ error: 'fetch_failed', cached: true }, 502);
+  }
+
+  const files = ['apps/desktop/package.json', 'apps/web/package.json', 'package.json'];
+
+  const headers = {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Accept: 'application/vnd.github+v3+json',
+    'User-Agent': 'accomplish-admin',
+  };
+
+  const responses = await Promise.all(
+    files.map((path) =>
+      fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/contents/${path}?ref=main`, {
+        headers,
+      }),
+    ),
+  );
+
+  for (const r of responses) {
+    if (!r.ok) {
+      agentCoreInstalledErrorCache = { expiry: Date.now() + WEBSITE_ERROR_CACHE_TTL_MS };
+      return jsonResponse({ error: 'github_api_error', status: r.status }, 502);
+    }
+  }
+
+  const [desktopData, webData, rootData] = await Promise.all(
+    responses.map((r) => r.json() as Promise<{ content: string }>),
+  );
+
+  const decode = (d: { content: string }) => JSON.parse(atob(d.content.replace(/\n/g, '')));
+
+  const desktopPkg = decode(desktopData);
+  const webPkg = decode(webData);
+  const rootPkg = decode(rootData);
+
+  const result: AgentCoreInstalledResult = {
+    desktop: desktopPkg.dependencies?.['@accomplish_ai/agent-core'] ?? '',
+    web: webPkg.dependencies?.['@accomplish_ai/agent-core'] ?? '',
+    override: rootPkg.pnpm?.overrides?.['@accomplish_ai/agent-core'] ?? '',
+  };
+
+  agentCoreInstalledCache = { data: result, expiry: Date.now() + WEBSITE_CACHE_TTL_MS };
+  return jsonResponse(result, 200);
+}
+
 async function handleWebsiteVersion(): Promise<Response> {
   if (websiteVersionCache && Date.now() < websiteVersionCache.expiry) {
     return jsonResponse(websiteVersionCache.data, 200);
@@ -845,6 +984,13 @@ export default {
         }
         if (pathname === '/api/desktop/package-version' && request.method === 'GET') {
           return await handleDesktopPackageVersion(env);
+        }
+
+        if (pathname === '/api/agent-core/versions' && request.method === 'GET') {
+          return await handleAgentCoreVersions();
+        }
+        if (pathname === '/api/agent-core/installed' && request.method === 'GET') {
+          return await handleAgentCoreInstalled(env);
         }
 
         return jsonResponse({ error: 'not_found' }, 404);

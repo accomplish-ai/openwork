@@ -519,6 +519,9 @@ var desktopWorkflowsPollTimer = null;
 var expandedDesktopVersions = {};
 var desktopLoading = false;
 var websiteVersion = null;
+var agentCoreVersions = null;
+var agentCoreInstalled = null;
+var expandedPrGroups = {};
 
 // ── API ──
 function loadManifests() {
@@ -646,6 +649,20 @@ function loadWebsiteVersion() {
     .catch(function(err) { showToast('Failed to load website version: ' + err.message, 'error'); });
 }
 
+function loadAgentCoreVersions() {
+  fetch('/api/agent-core/versions')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { agentCoreVersions = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load agent-core versions: ' + err.message, 'error'); });
+}
+
+function loadAgentCoreInstalled() {
+  fetch('/api/agent-core/installed')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { agentCoreInstalled = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load agent-core installed versions: ' + err.message, 'error'); });
+}
+
 function startDesktopPoll() {
   stopDesktopPoll();
   desktopWorkflowsPollTimer = setInterval(function() {
@@ -671,6 +688,11 @@ function triggerDesktopRelease(updateLatestMac, updateLatestWin) {
 
 function toggleDesktopVersion(version) {
   if (expandedDesktopVersions[version]) { delete expandedDesktopVersions[version]; } else { expandedDesktopVersions[version] = true; }
+  renderAll();
+}
+
+function togglePrGroup(pr) {
+  if (expandedPrGroups[pr]) { delete expandedPrGroups[pr]; } else { expandedPrGroups[pr] = true; }
   renderAll();
 }
 
@@ -1406,13 +1428,17 @@ function switchTab(tab) {
   } else {
     stopDesktopPoll();
   }
+  if (tab === 'agent-core') {
+    if (!agentCoreVersions) { loadAgentCoreVersions(); }
+    if (!agentCoreInstalled) { loadAgentCoreInstalled(); }
+  }
   updateHeaderButtons();
   renderAll();
 }
 
 function initTabFromHash() {
   var hash = window.location.hash.replace('#', '');
-  if (hash === 'audit' || hash === 'releases' || hash === 'desktop') {
+  if (hash === 'audit' || hash === 'releases' || hash === 'desktop' || hash === 'agent-core') {
     currentTab = hash;
   }
 }
@@ -1420,7 +1446,7 @@ function initTabFromHash() {
 function updateHeaderButtons() {
   var deployBtn = document.getElementById('deploy-btn');
   var desktopReleaseBtn = document.getElementById('desktop-release-btn');
-  if (deployBtn) deployBtn.style.display = currentTab === 'desktop' ? 'none' : '';
+  if (deployBtn) deployBtn.style.display = currentTab === 'releases' ? '' : 'none';
   if (desktopReleaseBtn) desktopReleaseBtn.style.display = currentTab === 'desktop' ? '' : 'none';
 }
 
@@ -1428,6 +1454,7 @@ function renderTabBar() {
   return '<div class="tab-bar">' +
     '<button class="tab' + (currentTab === 'desktop' ? ' active' : '') + '" data-action="switchTab" data-arg="desktop">Desktop Releases</button>' +
     '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Web Releases</button>' +
+    '<button class="tab' + (currentTab === 'agent-core' ? ' active' : '') + '" data-action="switchTab" data-arg="agent-core">Agent Core</button>' +
     '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" data-action="switchTab" data-arg="audit">Audit Log</button>' +
   '</div>';
 }
@@ -1827,6 +1854,168 @@ function confirmDesktopRelease() {
   });
 }
 
+// ── Agent Core Tab ──
+function renderAgentCoreInstalled() {
+  if (!agentCoreInstalled) {
+    return '<div class="section"><div class="section-header"><h2>Installed Versions</h2></div>' +
+      '<div class="card" style="padding:20px 24px;"><div class="loading-sm">Loading installed versions...</div></div></div>';
+  }
+
+  var latestNpm = null;
+  if (agentCoreVersions && agentCoreVersions.versions) {
+    for (var i = 0; i < agentCoreVersions.versions.length; i++) {
+      if (agentCoreVersions.versions[i].distTags.indexOf('latest') !== -1) {
+        latestNpm = agentCoreVersions.versions[i].version;
+        break;
+      }
+    }
+  }
+
+  function makeTile(label, version) {
+    if (!version) {
+      return '<div class="version-tile">' +
+        '<div class="version-tile-header"><span class="version-tile-label">' + esc(label) + '</span><span class="status-dot amber"></span></div>' +
+        '<div class="version-value missing">Not set</div></div>';
+    }
+    var cleanVer = version.replace(/^[\^~]/, '');
+    var isLatest = latestNpm && cleanVer === latestNpm;
+    var dot = isLatest ? 'green' : 'amber';
+    var badge = isLatest
+      ? '<span class="status-badge match">&#10003; Up to date</span>'
+      : '<span class="status-badge drift">&#9888; Update available</span>';
+    return '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">' + esc(label) + '</span><span class="status-dot ' + dot + '"></span></div>' +
+      '<div class="version-value">' + esc(version) + '</div>' +
+      badge + '</div>';
+  }
+
+  var desktopTile = makeTile('Desktop', agentCoreInstalled.desktop);
+  var webTile = makeTile('Web', agentCoreInstalled.web);
+  var overrideTile = makeTile('pnpm Override', agentCoreInstalled.override);
+
+  return '<div class="section">' +
+    '<div class="section-header"><h2>Installed Versions</h2></div>' +
+    '<div class="card" style="padding:24px;">' +
+    '<div class="version-grid">' + desktopTile + webTile + overrideTile + '</div></div></div>';
+}
+
+function renderAgentCoreRegistry() {
+  if (!agentCoreVersions) {
+    return '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
+      '<div class="card" style="padding:20px 24px;"><div class="loading-sm">Loading versions...</div></div></div>';
+  }
+  var versions = agentCoreVersions.versions || [];
+  if (!versions.length) {
+    return '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
+      '<div class="card" style="padding:20px 24px;"><div class="loading">No versions found</div></div></div>';
+  }
+
+  var installedSet = {};
+  if (agentCoreInstalled) {
+    [agentCoreInstalled.desktop, agentCoreInstalled.web, agentCoreInstalled.override].forEach(function(v) {
+      if (v) installedSet[v.replace(/^[\^~]/, '')] = true;
+    });
+  }
+
+  var official = [];
+  var prs = [];
+  versions.forEach(function(v) {
+    if (v.version.indexOf('-pr-') !== -1) { prs.push(v); } else { official.push(v); }
+  });
+
+  function buildRows(list) {
+    var rows = '';
+    list.forEach(function(v) {
+      var published = new Date(v.publishedAt).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+      var tags = '';
+      v.distTags.forEach(function(tag) {
+        var cls = tag === 'latest' ? 'badge-blue' : 'badge-gray';
+        tags += '<span class="badge ' + cls + '" style="margin-right:4px;">' + esc(tag) + '</span>';
+      });
+      var statusBadge = installedSet[v.version] ? '<span class="badge badge-green">installed</span>' : '';
+      rows += '<tr>' +
+        '<td><strong>' + esc(v.version) + '</strong></td>' +
+        '<td class="audit-time">' + esc(published) + '</td>' +
+        '<td>' + tags + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+      '</tr>';
+    });
+    return rows;
+  }
+
+  var officialHtml = '';
+  if (official.length) {
+    officialHtml = '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
+      '<div class="card"><table><thead><tr>' +
+        '<th style="padding-top:16px;">Version</th>' +
+        '<th style="padding-top:16px;">Published</th>' +
+        '<th style="padding-top:16px;">Tags</th>' +
+        '<th style="padding-top:16px;">Status</th>' +
+      '</tr></thead><tbody>' + buildRows(official) + '</tbody></table></div></div>';
+  }
+
+  var prHtml = '';
+  if (prs.length) {
+    var prGroups = {};
+    var prOrder = [];
+    prs.forEach(function(v) {
+      var match = v.version.match(/-pr-(\\d+)-/);
+      var prNum = match ? match[1] : 'unknown';
+      if (!prGroups[prNum]) { prGroups[prNum] = []; prOrder.push(prNum); }
+      prGroups[prNum].push(v);
+    });
+
+    var prRows = '';
+    prOrder.forEach(function(prNum) {
+      var group = prGroups[prNum];
+      var latest = group[0];
+      var isExpanded = !!expandedPrGroups[prNum];
+      var expandIcon = isExpanded ? '&#9660;' : '&#9654;';
+      var latestPublished = new Date(latest.publishedAt).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+      var tags = '';
+      latest.distTags.forEach(function(tag) {
+        var cls = tag === 'latest' ? 'badge-blue' : 'badge-gray';
+        tags += '<span class="badge ' + cls + '" style="margin-right:4px;">' + esc(tag) + '</span>';
+      });
+
+      prRows += '<tr class="desktop-version-row" data-action="togglePrGroup" data-arg="' + esc(prNum) + '">' +
+        '<td><strong>PR #' + esc(prNum) + '</strong> <span style="color:var(--muted-foreground);font-size:13px;">' + esc(String(group.length)) + ' build(s)</span></td>' +
+        '<td class="audit-time">' + esc(latestPublished) + '</td>' +
+        '<td>' + tags + '</td>' +
+        '<td style="text-align:right;"><span class="expand-btn">' + expandIcon + '</span></td>' +
+      '</tr>';
+
+      if (isExpanded) {
+        var fileRows = '';
+        group.forEach(function(v) {
+          var pub = new Date(v.publishedAt).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+          });
+          fileRows += '<div class="desktop-file-row">' +
+            '<span>' + esc(v.version) + '</span>' +
+            '<span style="color:var(--muted-foreground);">' + esc(pub) + '</span>' +
+          '</div>';
+        });
+        prRows += '<tr><td colspan="4" style="padding:0;"><div class="desktop-files">' + fileRows + '</div></td></tr>';
+      }
+    });
+
+    prHtml = '<div class="section"><div class="section-header"><h2>PR Releases</h2></div>' +
+      '<div class="card"><table><thead><tr>' +
+        '<th style="padding-top:16px;">PR</th>' +
+        '<th style="padding-top:16px;">Latest Build</th>' +
+        '<th style="padding-top:16px;">Tags</th>' +
+        '<th style="padding-top:16px;"></th>' +
+      '</tr></thead><tbody>' + prRows + '</tbody></table></div></div>';
+  }
+
+  return officialHtml + prHtml;
+}
+
 // ── Render All ──
 function renderAll() {
   if (!config) return;
@@ -1835,6 +2024,8 @@ function renderAll() {
     content += renderHero() + renderVersions() + renderOverrides() + renderKV();
   } else if (currentTab === 'desktop') {
     content += renderVersionStatus() + renderDownloads() + renderNextBuild() + renderDesktopWorkflows() + renderDesktopVersions();
+  } else if (currentTab === 'agent-core') {
+    content += renderAgentCoreInstalled() + renderAgentCoreRegistry();
   } else if (currentTab === 'audit') {
     content += renderAuditLog();
   }
@@ -1865,6 +2056,7 @@ document.getElementById('app-root').addEventListener('click', function(e) {
       break;
     case 'toggleAuditEntry': toggleAuditEntry(arg); break;
     case 'toggleDesktopVersion': toggleDesktopVersion(arg); break;
+    case 'togglePrGroup': togglePrGroup(arg); break;
     case 'showDesktopReleaseModal': showDesktopReleaseModal(); break;
   }
 });
@@ -1953,7 +2145,7 @@ document.getElementById('dark-toggle').addEventListener('click', toggleDarkMode)
 // ── Hash change listener ──
 window.addEventListener('hashchange', function() {
   var hash = window.location.hash.replace('#', '');
-  if ((hash === 'audit' || hash === 'releases' || hash === 'desktop') && hash !== currentTab) {
+  if ((hash === 'audit' || hash === 'releases' || hash === 'desktop' || hash === 'agent-core') && hash !== currentTab) {
     switchTab(hash);
   }
 });
@@ -1967,6 +2159,7 @@ checkHealth();
 loadBuilds();
 if (currentTab === 'audit') { loadAuditLog(); startAuditPoll(); }
 if (currentTab === 'desktop') { loadDesktopManifests(); loadDesktopWorkflows(); loadDesktopVersions(); loadDesktopPackageVersion(); startDesktopPoll(); }
+if (currentTab === 'agent-core') { loadAgentCoreVersions(); loadAgentCoreInstalled(); }
 updateHeaderButtons();
 </script>
 </body>
