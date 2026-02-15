@@ -35,7 +35,7 @@ catalogs:
       version: 4.0.18
 
 overrides:
-  '@accomplish_ai/agent-core': 0.3.1
+  '@accomplish_ai/agent-core': 0.3.3
 
 importers:
 
@@ -78,8 +78,8 @@ importers:
   apps/desktop:
     dependencies:
       '@accomplish_ai/agent-core':
-        specifier: 0.3.1
-        version: 0.3.1
+        specifier: 0.3.3
+        version: 0.3.3
       better-sqlite3:
         specifier: ^12.6.2
         version: 12.6.2
@@ -151,8 +151,8 @@ importers:
   apps/web:
     dependencies:
       '@accomplish_ai/agent-core':
-        specifier: 0.3.1
-        version: 0.3.1
+        specifier: 0.3.3
+        version: 0.3.3
       '@radix-ui/react-avatar':
         specifier: ^1.1.2
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -268,8 +268,8 @@ packages:
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
 
-  '@accomplish_ai/agent-core@0.3.1':
-    resolution: {integrity: sha512-hlXt52G3s5Cu90T9i1i9OeXnlErm/lb2MPg0EDkkpvIO0ftPSkrZTFWHFdQc9e9hOqV46Sq+YPYwDkhRqGaLAg==}
+  '@accomplish_ai/agent-core@0.3.3':
+    resolution: {integrity: sha512-8Y0JBd5LL2ZOoSJEHKVZZajYHNrtGBNt5BVvkTGB2U3OZrl3uUWdrXvUXyjnLk7LztQ8Ue4D4TmD5RZOo8wyDg==}
     engines: {node: '>=20.0.0'}
 
   '@acemir/cssom@0.9.31':
@@ -5893,7 +5893,7 @@ snapshots:
 
   7zip-bin@5.2.0: {}
 
-  '@accomplish_ai/agent-core@0.3.1':
+  '@accomplish_ai/agent-core@0.3.3':
     dependencies:
       '@aws-sdk/client-bedrock': 3.971.0
       '@aws-sdk/credential-providers': 3.971.0

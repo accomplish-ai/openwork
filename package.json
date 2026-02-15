@@ -40,7 +40,7 @@
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "overrides": {
-      "@accomplish_ai/agent-core": "0.3.1"
+      "@accomplish_ai/agent-core": "0.3.3"
     }
   },
   "devDependencies": {
