@@ -19,7 +19,7 @@ deploy_app_worker() {
 }
 
 deploy_admin_worker() {
-  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  ensure_kv_namespace
   : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
 
   echo "Deploying admin worker..."
@@ -63,7 +63,7 @@ deploy_admin_worker() {
 }
 
 release() {
-  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  ensure_kv_namespace
   : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
   : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
 
@@ -133,7 +133,7 @@ release() {
 preview() {
   local pr_number="$1"
   [[ "$pr_number" =~ ^[0-9]+$ ]] || { echo "ERROR: PR number must be numeric"; exit 1; }
-  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  ensure_kv_namespace
   : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
   : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
 
@@ -176,6 +176,11 @@ preview() {
   echo "Preview deployed!"
   if [[ -n "${WORKERS_SUBDOMAIN:-}" ]]; then
     echo "Router: https://accomplish-pr-${pr_number}-router.${WORKERS_SUBDOMAIN}.workers.dev"
+  fi
+
+  # Output namespace ID for CI (env vars don't propagate from child process)
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    echo "namespace_id=$KV_NAMESPACE_ID" >> "$GITHUB_OUTPUT"
   fi
 }
 

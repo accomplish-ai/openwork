@@ -12,12 +12,6 @@ inputs:
   require_cf_subdomain:
     required: false
     default: 'false'
-  kv_namespace_id:
-    required: false
-    default: ''
-  require_kv_namespace_id:
-    required: false
-    default: 'false'
 
 runs:
   using: composite
@@ -28,7 +22,6 @@ runs:
         [ -z "$CF_API_TOKEN" ] && missing+=("CLOUDFLARE_API_TOKEN")
         [ -z "$CF_ACCOUNT_ID" ] && missing+=("CLOUDFLARE_ACCOUNT_ID")
         [ "$REQUIRE_CF_SUB" = "true" ] && [ -z "$CF_SUB" ] && missing+=("CF_SUBDOMAIN")
-        [ "$REQUIRE_KV_NS" = "true" ] && [ -z "$KV_NS" ] && missing+=("KV_NAMESPACE_ID")
         if [ ${#missing[@]} -gt 0 ]; then
           echo "::error::Missing required configuration (secrets/vars): ${missing[*]}"
           exit 1
@@ -38,5 +31,3 @@ runs:
         CF_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
         CF_SUB: ${{ inputs.cf_subdomain }}
         REQUIRE_CF_SUB: ${{ inputs.require_cf_subdomain }}
-        KV_NS: ${{ inputs.kv_namespace_id }}
-        REQUIRE_KV_NS: ${{ inputs.require_kv_namespace_id }}

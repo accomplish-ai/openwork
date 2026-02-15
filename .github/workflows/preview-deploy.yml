@@ -25,12 +25,10 @@ jobs:
       - name: Validate required secrets
         uses: ./.github/actions/validate-secrets
         with:
-          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          cf_subdomain: ${{ vars.CF_SUBDOMAIN }}
+          cloudflare_api_token: ${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}
+          cloudflare_account_id: ${{ secrets.STAGING_CLOUDFLARE_ACCOUNT_ID }}
+          cf_subdomain: ${{ vars.STAGING_CF_SUBDOMAIN }}
           require_cf_subdomain: 'true'
-          kv_namespace_id: ${{ vars.KV_NAMESPACE_ID }}
-          require_kv_namespace_id: 'true'
 
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
 
@@ -53,19 +51,19 @@ jobs:
           echo "build_id=${VERSION}-${BUILD_NUM}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy preview
+        id: deploy
         run: cd infra && bash deploy.sh preview "$PR_NUMBER"
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
-          CF_SUBDOMAIN: ${{ vars.CF_SUBDOMAIN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.STAGING_CLOUDFLARE_ACCOUNT_ID }}
+          CF_SUBDOMAIN: ${{ vars.STAGING_CF_SUBDOMAIN }}
 
       - name: Comment preview URL
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
-          CF_SUBDOMAIN: ${{ vars.CF_SUBDOMAIN }}
-          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+          CF_SUBDOMAIN: ${{ vars.STAGING_CF_SUBDOMAIN }}
+          KV_NAMESPACE_ID: ${{ steps.deploy.outputs.namespace_id }}
           BUILD_ID: ${{ steps.build-id.outputs.build_id }}
         with:
           script: |

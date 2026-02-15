@@ -21,6 +21,48 @@ get_build_id() {
 WORKER_PREFIX="accomplish"
 TIERS=("lite" "enterprise")
 WORKERS_SUBDOMAIN="${CF_SUBDOMAIN:-}"
+KV_NAMESPACE_TITLE="accomplish-routing-config"
+
+# --- KV namespace auto-provisioning ---
+ensure_kv_namespace() {
+  : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
+  : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
+
+  if [ -n "${KV_NAMESPACE_ID:-}" ]; then
+    return
+  fi
+
+  local api_base="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces"
+  local response
+
+  response=$(curl -sf \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    "$api_base") || { echo "ERROR: Failed to list KV namespaces" >&2; exit 1; }
+
+  local id
+  id=$(echo "$response" | jq -r --arg title "$KV_NAMESPACE_TITLE" '.result[] | select(.title == $title) | .id')
+
+  if [ -n "$id" ]; then
+    export KV_NAMESPACE_ID="$id"
+    echo "KV namespace found: $KV_NAMESPACE_TITLE ($id)"
+    return
+  fi
+
+  response=$(curl -sf -X POST \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{\"title\":\"$KV_NAMESPACE_TITLE\"}" \
+    "$api_base") || { echo "ERROR: Failed to create KV namespace" >&2; exit 1; }
+
+  id=$(echo "$response" | jq -r '.result.id')
+  if [ -z "$id" ] || [ "$id" = "null" ]; then
+    echo "ERROR: KV namespace creation returned no ID: $response" >&2
+    exit 1
+  fi
+
+  export KV_NAMESPACE_ID="$id"
+  echo "KV namespace created: $KV_NAMESPACE_TITLE ($id)"
+}
 
 # --- Naming helpers ---
 preview_worker_name() { echo "${WORKER_PREFIX}-pr-$1-$2"; }

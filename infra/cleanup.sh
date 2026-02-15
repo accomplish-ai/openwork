@@ -6,7 +6,7 @@ source "$SCRIPT_DIR/lib.sh"
 
 cleanup_preview() {
   local pr="$1"
-  : "${KV_NAMESPACE_ID:?KV_NAMESPACE_ID is required}"
+  ensure_kv_namespace
   : "${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is required}"
   : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is required}"
   echo "Cleaning up PR preview: #${pr}"
