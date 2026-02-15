@@ -39,11 +39,14 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'kimi-latest': 'Kimi Latest',
   // Z.AI
   'glm-4.7-flashx': 'GLM-4.7 FlashX',
+  'glm-5': 'GLM-5',
   'glm-4.7': 'GLM-4.7',
   'glm-4.7-flash': 'GLM-4.7 Flash',
   'glm-4.6': 'GLM-4.6',
   'glm-4.5-flash': 'GLM-4.5 Flash',
   // MiniMax
+  'MiniMax-M2.5': 'MiniMax M2.5',
+  'minimax-m2.5': 'MiniMax M2.5',
   'MiniMax-M2': 'MiniMax M2',
   'MiniMax-M2.1': 'MiniMax M2.1',
 };

@@ -158,7 +158,7 @@ export async function validateApiKey(
               'anthropic-version': '2023-06-01',
             },
             body: JSON.stringify({
-              model: 'MiniMax-M2',
+              model: 'MiniMax-M2.5',
               max_tokens: 1,
               messages: [{ role: 'user', content: 'test' }],
             }),
