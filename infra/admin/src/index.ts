@@ -91,6 +91,80 @@ async function parseJsonBody(request: Request): Promise<{ data: unknown } | Resp
 }
 
 const BUILD_ID_PATTERN = /^\d+\.\d+\.\d+-\d+$/;
+
+interface WebsiteDownload {
+  platform: string;
+  arch: string;
+  url: string;
+}
+
+interface WebsiteVersionResult {
+  version: string;
+  downloads: WebsiteDownload[];
+}
+
+let websiteVersionCache: { data: WebsiteVersionResult; expiry: number } | null = null;
+let websiteErrorCache: { expiry: number } | null = null;
+const WEBSITE_CACHE_TTL_MS = 5 * 60 * 1000;
+const WEBSITE_ERROR_CACHE_TTL_MS = 30 * 1000;
+
+async function handleWebsiteVersion(): Promise<Response> {
+  if (websiteVersionCache && Date.now() < websiteVersionCache.expiry) {
+    return jsonResponse(websiteVersionCache.data, 200);
+  }
+
+  if (websiteErrorCache && Date.now() < websiteErrorCache.expiry) {
+    return jsonResponse({ error: 'fetch_failed', cached: true }, 502);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+  let res: Response;
+  try {
+    res = await fetch('https://accomplish.ai/', { signal: controller.signal });
+  } catch {
+    websiteErrorCache = { expiry: Date.now() + WEBSITE_ERROR_CACHE_TTL_MS };
+    return jsonResponse({ error: 'fetch_failed', message: 'Network error or timeout' }, 502);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    websiteErrorCache = { expiry: Date.now() + WEBSITE_ERROR_CACHE_TTL_MS };
+    return jsonResponse({ error: 'fetch_failed', status: res.status }, 502);
+  }
+
+  const html = await res.text();
+  const downloadPattern = /https:\/\/downloads\.accomplish\.ai\/downloads\/(\d+\.\d+\.\d+)\/(macos|windows)\/([^\s"'<]+)/g;
+  const downloads: WebsiteDownload[] = [];
+  let version = '';
+  let match: RegExpExecArray | null;
+
+  const seen = new Set<string>();
+  while ((match = downloadPattern.exec(html)) !== null) {
+    if (!version) version = match[1];
+    if (match[1] !== version) continue;
+    const dir = match[2];
+    const filename = match[3];
+    const platform = dir === 'macos' ? 'macOS' : 'Windows';
+    const arch = dir === 'macos' && filename.includes('arm64') ? 'ARM64' : 'x64';
+    const key = platform + '-' + arch;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    downloads.push({ platform, arch, url: match[0] });
+  }
+
+  if (!version) {
+    return jsonResponse({ error: 'version_not_found' }, 404);
+  }
+
+  const result: WebsiteVersionResult = { version, downloads };
+  websiteVersionCache = { data: result, expiry: Date.now() + WEBSITE_CACHE_TTL_MS };
+
+  return jsonResponse(result, 200);
+}
+
 const WORKFLOW_POLL_DELAY_MS = 2000;
 
 function validateConfig(data: unknown): data is RoutingConfig {
@@ -738,6 +812,10 @@ export default {
         }
         if (pathname === '/api/builds' && request.method === 'GET') {
           return await handleListBuilds(env);
+        }
+
+        if (pathname === '/api/website-version' && request.method === 'GET') {
+          return await handleWebsiteVersion();
         }
 
         if (pathname === '/api/desktop/workflows' && request.method === 'GET') {

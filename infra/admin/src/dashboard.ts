@@ -398,16 +398,43 @@ export function getDashboardHtml(nonce: string): string {
     .loading { text-align: center; padding: 60px 0; color: var(--muted-foreground); font-size: 14px; }
     .loading-sm { text-align: center; padding: 16px 0; color: var(--muted-foreground); font-size: 13px; }
 
-    /* Desktop manifest cards */
-    .manifest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    /* Desktop manifest cards (legacy) */
     .manifest-card {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm);
     }
-    .manifest-card .manifest-tier { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .manifest-card .manifest-version { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
-    .manifest-card .manifest-meta { font-size: 13px; color: var(--muted-foreground); margin-top: 6px; }
     .manifest-card.empty { display: flex; align-items: center; justify-content: center; color: var(--muted-foreground); font-size: 14px; min-height: 120px; }
+
+    /* Version Status tiles */
+    .version-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .version-tile { background: var(--background); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .version-tile-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .version-tile-label { font-size: 12px; font-weight: 500; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.amber { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+    .version-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .version-value.missing { color: var(--muted-foreground); font-size: 20px; font-weight: 500; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+    .status-badge.match { background: #e6f5ed; color: var(--success); }
+    .status-badge.drift { background: #fef3e2; color: var(--warning); }
+    html.dark .status-badge.match { background: #14532d; color: #86efac; }
+    html.dark .status-badge.drift { background: #451a03; color: #fbbf24; }
+
+    /* Downloads grid */
+    .downloads-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .download-item { display: flex; align-items: center; gap: 12px; background: var(--background); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; cursor: pointer; transition: border-color 0.15s ease; text-decoration: none; color: inherit; }
+    .download-item:hover { border-color: var(--primary); }
+    .download-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--secondary); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .download-label { font-size: 14px; font-weight: 500; }
+    .download-sub { font-size: 12px; color: var(--muted-foreground); }
+
+    /* Next Build row */
+    .next-build-row { display: flex; align-items: center; gap: 16px; }
+    .next-build-version { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .next-build-detail { font-size: 13px; color: var(--muted-foreground); }
+
+    /* Desktop card with padding and title inside */
 
     /* Desktop version expand */
     .desktop-version-row { cursor: pointer; transition: background 0.12s; }
@@ -491,6 +518,7 @@ var desktopPackageVersion = null;
 var desktopWorkflowsPollTimer = null;
 var expandedDesktopVersions = {};
 var desktopLoading = false;
+var websiteVersion = null;
 
 // ── API ──
 function loadManifests() {
@@ -609,6 +637,13 @@ function loadDesktopPackageVersion() {
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) { desktopPackageVersion = data.version; renderAll(); })
     .catch(function(err) { showToast('Failed to load desktop package version: ' + err.message, 'error'); });
+}
+
+function loadWebsiteVersion() {
+  fetch('/api/website-version')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { websiteVersion = data; renderAll(); })
+    .catch(function(err) { showToast('Failed to load website version: ' + err.message, 'error'); });
 }
 
 function startDesktopPoll() {
@@ -747,7 +782,118 @@ function extractRunId(url) {
   return match ? match[1] : null;
 }
 
-// ── Render Hero ──
+// ── Render Version Status ──
+function renderVersionStatus() {
+  var webVer = websiteVersion ? websiteVersion.version : null;
+  var liteManifest = desktopManifests && desktopManifests.lite;
+  var entManifest = desktopManifests && desktopManifests.enterprise;
+  var liteVer = liteManifest ? liteManifest.version : null;
+
+  // Website tile
+  var webTile;
+  if (!webVer) {
+    webTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Website</span></div>' +
+      '<div class="version-value missing">Loading...</div></div>';
+  } else {
+    var webDot = 'green';
+    var webBadge = liteVer && webVer === liteVer
+      ? '<span class="status-badge match">&#10003; In sync</span>'
+      : '<span class="status-badge match">&#10003; Live</span>';
+    webTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Website</span><span class="status-dot ' + webDot + '"></span></div>' +
+      '<div class="version-value">v' + esc(webVer) + '</div>' +
+      webBadge + '</div>';
+  }
+
+  // Lite tile
+  var liteTile;
+  if (!liteManifest) {
+    liteTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Auto-Updater Lite</span><span class="status-dot amber"></span></div>' +
+      '<div class="version-value missing">No manifest found</div>' +
+      '<span class="status-badge drift">&#9888; Missing</span></div>';
+  } else {
+    var liteDot = webVer && liteVer === webVer ? 'green' : 'amber';
+    var liteBadge = webVer && liteVer === webVer
+      ? '<span class="status-badge match">&#10003; Matches website</span>'
+      : '<span class="status-badge drift">&#9888; Version drift</span>';
+    liteTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Auto-Updater Lite</span><span class="status-dot ' + liteDot + '"></span></div>' +
+      '<div class="version-value">v' + esc(String(liteVer)) + '</div>' +
+      liteBadge + '</div>';
+  }
+
+  // Enterprise tile
+  var entTile;
+  if (!entManifest) {
+    entTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Auto-Updater Enterprise</span><span class="status-dot amber"></span></div>' +
+      '<div class="version-value missing">Not configured</div>' +
+      '<span class="status-badge drift">&#9888; Missing</span></div>';
+  } else {
+    var entVer = entManifest.version;
+    var entDot = webVer && entVer === webVer ? 'green' : 'amber';
+    var entBadge = webVer && entVer === webVer
+      ? '<span class="status-badge match">&#10003; Matches website</span>'
+      : '<span class="status-badge drift">&#9888; Version drift</span>';
+    entTile = '<div class="version-tile">' +
+      '<div class="version-tile-header"><span class="version-tile-label">Auto-Updater Enterprise</span><span class="status-dot ' + entDot + '"></span></div>' +
+      '<div class="version-value">v' + esc(String(entVer)) + '</div>' +
+      entBadge + '</div>';
+  }
+
+  return '<div class="section">' +
+    '<div class="section-header"><h2>Version Status</h2></div>' +
+    '<div class="card" style="padding:24px;">' +
+    '<div class="version-grid">' + webTile + liteTile + entTile + '</div></div></div>';
+}
+
+// ── Render Downloads ──
+function renderDownloads() {
+  if (!websiteVersion) return '';
+  var downloads = websiteVersion.downloads || [];
+  var seen = {};
+  var unique = [];
+  for (var i = 0; i < downloads.length; i++) {
+    var key = downloads[i].platform + '-' + downloads[i].arch;
+    if (!seen[key]) { seen[key] = true; unique.push(downloads[i]); }
+  }
+  if (!unique.length) return '';
+
+  var items = '';
+  for (var j = 0; j < unique.length; j++) {
+    var d = unique[j];
+    var icon = d.platform === 'macOS' ? '&#127822;' : '&#128187;';
+    var sub = d.platform === 'macOS'
+      ? (d.arch === 'ARM64' ? 'Apple Silicon' : 'Intel') + ' &middot; .dmg'
+      : '64-bit &middot; .exe';
+    items += '<a class="download-item" href="' + esc(d.url) + '" target="_blank" rel="noopener">' +
+      '<div class="download-icon">' + icon + '</div>' +
+      '<div><div class="download-label">' + esc(d.platform) + ' ' + esc(d.arch) + '</div>' +
+      '<div class="download-sub">' + sub + '</div></div></a>';
+  }
+
+  return '<div class="section">' +
+    '<div class="section-header"><h2>Downloads</h2>' +
+    '<a href="https://accomplish.ai" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Visit Site &#8599;</a></div>' +
+    '<div class="card" style="padding:24px;">' +
+    '<div class="downloads-row">' + items + '</div></div></div>';
+}
+
+// ── Render Next Build ──
+function renderNextBuild() {
+  if (!desktopPackageVersion) return '';
+  return '<div class="section">' +
+    '<div class="section-header"><h2>Next Build Version</h2></div>' +
+    '<div class="card" style="padding:20px 24px;">' +
+    '<div class="next-build-row">' +
+      '<div class="next-build-version">' + esc(desktopPackageVersion) + '</div>' +
+      '<div class="next-build-detail">Next desktop release version</div>' +
+      '<div style="margin-left:auto;"><button class="btn btn-primary" data-action="showDesktopReleaseModal">&#9654; Trigger Release</button></div>' +
+    '</div></div></div>';
+}
+
 function renderHero() {
   var versionCount = config.activeVersions ? config.activeVersions.length : 0;
   var workerCount = versionCount * 2;
@@ -1280,7 +1426,7 @@ function updateHeaderButtons() {
 
 function renderTabBar() {
   return '<div class="tab-bar">' +
-    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Releases</button>' +
+    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Web Releases</button>' +
     '<button class="tab' + (currentTab === 'desktop' ? ' active' : '') + '" data-action="switchTab" data-arg="desktop">Desktop Releases</button>' +
     '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" data-action="switchTab" data-arg="audit">Audit Log</button>' +
   '</div>';
@@ -1484,32 +1630,6 @@ function renderAuditLog() {
 }
 
 // ── Render Desktop ──
-function renderDesktopHero() {
-  function manifestCard(manifest, tierName, colorClass) {
-    if (!manifest) {
-      return '<div class="manifest-card empty">No ' + tierName.toLowerCase() + ' manifest found</div>';
-    }
-    var fileCount = manifest.files ? manifest.files.length : 0;
-    var relDate = manifest.releaseDate ? new Date(manifest.releaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
-    return '<div class="manifest-card">' +
-      '<div class="manifest-tier"><span class="badge ' + colorClass + '">' + esc(tierName) + '</span></div>' +
-      '<div class="manifest-version">v' + esc(String(manifest.version || 'unknown')) + '</div>' +
-      '<div class="manifest-meta">' + esc(relDate) + ' &bull; ' + esc(String(fileCount)) + ' file(s)</div>' +
-    '</div>';
-  }
-
-  var liteCard = manifestCard(desktopManifests && desktopManifests.lite, 'Lite', 'badge-green');
-  var entCard = manifestCard(desktopManifests && desktopManifests.enterprise, 'Enterprise', 'badge-purple');
-
-  var nextVersion = desktopPackageVersion
-    ? '<div style="text-align:center;margin-bottom:24px;font-size:13px;color:var(--muted-foreground);">Next Build Version: <strong style="color:var(--foreground);">' + esc(desktopPackageVersion) + '</strong></div>'
-    : '';
-
-  return '<div class="section">' +
-    '<div class="section-header"><h2>Auto-Updater Current Versions</h2></div>' +
-    '<div class="manifest-grid">' + liteCard + entCard + '</div>' +
-  '</div>' + nextVersion;
-}
 
 function formatDuration(startIso, endIso) {
   var start = new Date(startIso).getTime();
@@ -1531,11 +1651,11 @@ function formatFileSize(bytes) {
 function renderDesktopWorkflows() {
   if (!desktopWorkflows) {
     return '<div class="section"><div class="section-header"><h2>Recent Release Workflows</h2></div>' +
-      '<div class="card"><div class="loading-sm">Loading workflows...</div></div></div>';
+      '<div class="card" style="padding:20px 24px;"><div class="loading-sm">Loading workflows...</div></div></div>';
   }
   if (!desktopWorkflows.length) {
     return '<div class="section"><div class="section-header"><h2>Recent Release Workflows</h2></div>' +
-      '<div class="card"><div class="loading">No workflow runs found</div></div></div>';
+      '<div class="card" style="padding:20px 24px;"><div class="loading">No workflow runs found</div></div></div>';
   }
 
   var rows = '';
@@ -1580,11 +1700,11 @@ function renderDesktopWorkflows() {
 function renderDesktopVersions() {
   if (!desktopVersions) {
     return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
-      '<div class="card"><div class="loading-sm">Loading versions...</div></div></div>';
+      '<div class="card" style="padding:20px 24px;"><div class="loading-sm">Loading versions...</div></div></div>';
   }
   if (!desktopVersions.length) {
     return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
-      '<div class="card"><div class="loading">No artifacts found in R2</div></div></div>';
+      '<div class="card" style="padding:20px 24px;"><div class="loading">No artifacts found in R2</div></div></div>';
   }
 
   var rows = '';
@@ -1702,7 +1822,7 @@ function renderAll() {
   if (currentTab === 'releases') {
     content += renderHero() + renderVersions() + renderOverrides() + renderKV();
   } else if (currentTab === 'desktop') {
-    content += renderDesktopHero() + renderDesktopWorkflows() + renderDesktopVersions();
+    content += renderVersionStatus() + renderDownloads() + renderNextBuild() + renderDesktopWorkflows() + renderDesktopVersions();
   } else if (currentTab === 'audit') {
     content += renderAuditLog();
   }
@@ -1733,6 +1853,7 @@ document.getElementById('app-root').addEventListener('click', function(e) {
       break;
     case 'toggleAuditEntry': toggleAuditEntry(arg); break;
     case 'toggleDesktopVersion': toggleDesktopVersion(arg); break;
+    case 'showDesktopReleaseModal': showDesktopReleaseModal(); break;
   }
 });
 
@@ -1829,6 +1950,7 @@ window.addEventListener('hashchange', function() {
 initDarkMode();
 initTabFromHash();
 loadConfig();
+loadWebsiteVersion();
 checkHealth();
 loadBuilds();
 if (currentTab === 'audit') { loadAuditLog(); startAuditPoll(); }
