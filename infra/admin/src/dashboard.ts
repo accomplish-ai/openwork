@@ -658,11 +658,11 @@ function stopDesktopPoll() {
   if (desktopWorkflowsPollTimer) { clearInterval(desktopWorkflowsPollTimer); desktopWorkflowsPollTimer = null; }
 }
 
-function triggerDesktopRelease(updateLatestMac) {
+function triggerDesktopRelease(updateLatestMac, updateLatestWin) {
   return fetch('/api/desktop/release', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ updateLatestMac: updateLatestMac })
+    body: JSON.stringify({ updateLatestMac: updateLatestMac, updateLatestWin: updateLatestWin })
   }).then(function(r) {
     if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'HTTP ' + r.status); });
     return r.json();
@@ -1731,10 +1731,15 @@ function renderDesktopVersions() {
 
     var expandIcon = isExpanded ? '&#9660;' : '&#9654;';
 
+    var r2Btn = '';
+    if (meta && meta.accountId) {
+      r2Btn = '<a href="https://dash.cloudflare.com/' + esc(meta.accountId) + '/r2/default/buckets/openwork?prefix=downloads/' + encodeURIComponent(v.version) + '/" target="_blank" rel="noopener" class="btn btn-outline btn-sm" onclick="event.stopPropagation();">View in R2</a> ';
+    }
+
     rows += '<tr class="desktop-version-row" data-action="toggleDesktopVersion" data-arg="' + esc(v.version) + '">' +
       '<td><strong style="font-weight:600;">' + esc(v.version) + '</strong>' + tierBadges + archBadges + '</td>' +
       '<td>' + esc(String(v.files.length)) + ' file(s)</td>' +
-      '<td style="text-align:right;"><span class="expand-btn">' + expandIcon + '</span></td>' +
+      '<td style="text-align:right;">' + r2Btn + '<span class="expand-btn">' + expandIcon + '</span></td>' +
     '</tr>';
 
     if (isExpanded) {
@@ -1749,7 +1754,12 @@ function renderDesktopVersions() {
     }
   });
 
-  return '<div class="section"><div class="section-header"><h2>R2 Artifacts</h2></div>' +
+  var r2BucketLink = '';
+  if (meta && meta.accountId) {
+    r2BucketLink = ' <a href="https://dash.cloudflare.com/' + esc(meta.accountId) + '/r2/default/buckets/openwork" target="_blank" rel="noopener" style="font-size:13px;font-weight:400;color:var(--muted-foreground);text-decoration:none;margin-left:8px;">Open R2 &#8599;</a>';
+  }
+
+  return '<div class="section"><div class="section-header"><h2>R2 Artifacts' + r2BucketLink + '</h2></div>' +
     '<div class="card"><table><thead><tr>' +
       '<th style="padding-top:16px;">Version</th>' +
       '<th style="padding-top:16px;">Files</th>' +
@@ -1764,6 +1774,7 @@ function showDesktopReleaseModal() {
     '<p class="modal-desc">This will trigger a new desktop build and release via GitHub Actions.</p>' +
     (desktopPackageVersion ? '<div style="margin-bottom:16px;font-size:13px;color:var(--muted-foreground);">Version: <strong style="color:var(--foreground);">' + esc(desktopPackageVersion) + '</strong></div>' : '') +
     '<label class="checkbox-row"><input type="checkbox" id="modal-update-latest-mac" checked> Update latest-mac manifest (enables auto-updates)</label>' +
+    '<label class="checkbox-row"><input type="checkbox" id="modal-update-latest-win" checked> Update latest-win manifest (enables auto-updates)</label>' +
     '<div id="desktop-release-result"></div>' +
     '<div class="actions">' +
       '<button class="btn btn-outline" id="desktop-release-cancel-btn" data-action="closeModal">Cancel</button>' +
@@ -1773,6 +1784,7 @@ function showDesktopReleaseModal() {
 
 function confirmDesktopRelease() {
   var updateLatestMac = document.getElementById('modal-update-latest-mac').checked;
+  var updateLatestWin = document.getElementById('modal-update-latest-win').checked;
   var confirmBtn = document.getElementById('desktop-release-confirm-btn');
   var cancelBtn = document.getElementById('desktop-release-cancel-btn');
   var result = document.getElementById('desktop-release-result');
@@ -1783,7 +1795,7 @@ function confirmDesktopRelease() {
   checkbox.style.opacity = '0.4';
   checkbox.style.pointerEvents = 'none';
 
-  triggerDesktopRelease(updateLatestMac).then(function(data) {
+  triggerDesktopRelease(updateLatestMac, updateLatestWin).then(function(data) {
     var runUrl = data.runUrl;
     var runLinkHtml = '';
     var actionsIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>';

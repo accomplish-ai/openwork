@@ -136,7 +136,8 @@ async function handleWebsiteVersion(): Promise<Response> {
   }
 
   const html = await res.text();
-  const downloadPattern = /https:\/\/downloads\.accomplish\.ai\/downloads\/(\d+\.\d+\.\d+)\/(macos|windows)\/([^\s"'<]+)/g;
+  const downloadPattern =
+    /https:\/\/downloads\.accomplish\.ai\/downloads\/(\d+\.\d+\.\d+)\/(macos|windows)\/([^\s"'<]+)/g;
   const downloads: WebsiteDownload[] = [];
   let version = '';
   let match: RegExpExecArray | null;
@@ -671,15 +672,22 @@ async function handleDesktopRelease(
   if (
     !body ||
     typeof body !== 'object' ||
-    typeof (body as Record<string, unknown>).updateLatestMac !== 'boolean'
+    typeof (body as Record<string, unknown>).updateLatestMac !== 'boolean' ||
+    typeof (body as Record<string, unknown>).updateLatestWin !== 'boolean'
   ) {
     return jsonResponse(
-      { error: 'invalid_body', message: 'Expected { updateLatestMac: boolean }' },
+      {
+        error: 'invalid_body',
+        message: 'Expected { updateLatestMac: boolean, updateLatestWin: boolean }',
+      },
       400,
     );
   }
 
-  const { updateLatestMac } = body as { updateLatestMac: boolean };
+  const { updateLatestMac, updateLatestWin } = body as {
+    updateLatestMac: boolean;
+    updateLatestWin: boolean;
+  };
 
   const response = await fetch(
     `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/release.yml/dispatches`,
@@ -693,7 +701,10 @@ async function handleDesktopRelease(
       },
       body: JSON.stringify({
         ref: 'main',
-        inputs: { update_latest_mac: String(updateLatestMac) },
+        inputs: {
+          update_latest_mac: String(updateLatestMac),
+          update_latest_win: String(updateLatestWin),
+        },
       }),
     },
   );
@@ -717,17 +728,17 @@ async function handleDesktopRelease(
   await writeAuditEntry(
     env,
     'desktop_release_triggered',
-    { updateLatestMac, runUrl },
+    { updateLatestMac, updateLatestWin, runUrl },
     'dashboard',
     user,
   );
   sendSlackNotification(
     env,
     ctx,
-    `Desktop release triggered${updateLatestMac ? ' (update latest-mac)' : ''}${user ? ` by ${user}` : ''}`,
+    `Desktop release triggered${updateLatestMac ? ' (update latest-mac)' : ''}${updateLatestWin ? ' (update latest-win)' : ''}${user ? ` by ${user}` : ''}`,
   );
 
-  return jsonResponse({ dispatched: true, updateLatestMac, runUrl }, 202);
+  return jsonResponse({ dispatched: true, updateLatestMac, updateLatestWin, runUrl }, 202);
 }
 
 async function handleDesktopPackageVersion(env: Env): Promise<Response> {
