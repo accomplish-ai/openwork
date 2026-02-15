@@ -63,6 +63,7 @@ export default defineConfig(() => ({
     alias: {
       '@': path.resolve(__dirname, 'src/renderer'),
       '@main': path.resolve(__dirname, 'src/main'),
+      '@locales': path.resolve(__dirname, 'locales'),
       '@renderer': path.resolve(__dirname, 'src/renderer'),
       '@accomplish_ai/agent-core/common': path.resolve(__dirname, '../../packages/agent-core/src/common'),
       '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),

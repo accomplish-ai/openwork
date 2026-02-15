@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback, memo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
@@ -47,13 +48,12 @@ const SpinningIcon = ({ className }: { className?: string }) => (
   />
 );
 
-// Action-oriented thinking phrases
-const THINKING_PHRASES = [
-  'Doing...',
-  'Executing...',
-  'Running...',
-  'Handling it...',
-  'Accomplishing...',
+const THINKING_PHRASE_KEYS = [
+  'thinkingPhrases.doing',
+  'thinkingPhrases.executing',
+  'thinkingPhrases.running',
+  'thinkingPhrases.handling',
+  'thinkingPhrases.accomplishing',
 ];
 
 // Tool name to human-readable progress mapping
@@ -181,6 +181,8 @@ export default function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
+  const { t } = useTranslation('execution');
+  const { t: tCommon } = useTranslation('common');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [followUp, setFollowUp] = useState('');
   const isFollowUpOverLimit = followUp.length > PROMPT_DEFAULT_MAX_LENGTH;
@@ -266,10 +268,11 @@ export default function ExecutionPage() {
   }, [debugLogs, debugSearchQuery]);
 
   // Pick a random thinking phrase when entering thinking state (currentTool becomes null)
-  const thinkingPhrase = useMemo(() => {
-    return THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)];
+  const thinkingPhraseKey = useMemo(() => {
+    return THINKING_PHRASE_KEYS[Math.floor(Math.random() * THINKING_PHRASE_KEYS.length)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTool]);
+  const thinkingPhrase = t(thinkingPhraseKey);
 
   // Reset search index when query changes
   useEffect(() => {
@@ -553,7 +556,6 @@ export default function ExecutionPage() {
       }
     }
 
-    // Send a simple "continue" message to resume the task
     await sendFollowUp('continue');
   };
 
@@ -637,7 +639,7 @@ export default function ExecutionPage() {
         <Card className="max-w-md w-full p-6 text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <p className="text-destructive mb-4">{error}</p>
-          <Button onClick={() => navigate('/')}>Go Home</Button>
+          <Button onClick={() => navigate('/')}>{tCommon('buttons.goHome')}</Button>
         </Card>
       </div>
     );
@@ -657,7 +659,7 @@ export default function ExecutionPage() {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 shrink-0">
             <Clock className="h-3 w-3" />
-            Queued
+            {t('status.queued')}
           </span>
         );
       case 'running':
@@ -666,7 +668,7 @@ export default function ExecutionPage() {
             <span
               className="animate-shimmer bg-gradient-to-r from-primary via-primary/50 to-primary bg-[length:200%_100%] bg-clip-text text-transparent"
             >
-              Running
+              {t('status.running')}
             </span>
           </span>
         );
@@ -674,28 +676,28 @@ export default function ExecutionPage() {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600 shrink-0">
             <CheckCircle2 className="h-3 w-3" />
-            Completed
+            {t('status.completed')}
           </span>
         );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive shrink-0">
             <XCircle className="h-3 w-3" />
-            Failed
+            {t('status.failed')}
           </span>
         );
       case 'cancelled':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground shrink-0">
             <XCircle className="h-3 w-3" />
-            Cancelled
+            {t('status.cancelled')}
           </span>
         );
       case 'interrupted':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 shrink-0">
             <Square className="h-3 w-3" />
-            Stopped
+            {t('status.stopped')}
           </span>
         );
       default:
@@ -769,10 +771,10 @@ export default function ExecutionPage() {
                   </div>
                   <div className="w-full">
                     <h3 className="text-lg font-semibold text-foreground mb-1">
-                      Chrome not installed
+                      {t('browserInstall.title')}
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      Installing browser for automation...
+                      {t('browserInstall.description')}
                     </p>
                     {/* Progress bar - combines all downloads into single 0-100% */}
                     {(() => {
@@ -793,7 +795,7 @@ export default function ExecutionPage() {
                       return (
                         <div className="w-full">
                           <div className="flex justify-between text-sm mb-2">
-                            <span className="text-muted-foreground">Downloading...</span>
+                            <span className="text-muted-foreground">{t('browserInstall.downloading')}</span>
                             <span className="text-foreground font-medium">{overallPercent}%</span>
                           </div>
                           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -808,7 +810,7 @@ export default function ExecutionPage() {
                       );
                     })()}
                     <p className="text-xs text-muted-foreground mt-4 text-center">
-                      One-time setup (~250 MB total)
+                      {t('browserInstall.oneTimeSetup')}
                     </p>
                   </div>
                 </div>
@@ -831,10 +833,10 @@ export default function ExecutionPage() {
           </div>
           <div className="text-center max-w-md">
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              Waiting for another task
+              {t('waiting.title')}
             </h2>
             <p className="text-muted-foreground">
-              Your task is queued and will start automatically when the current task completes.
+              {t('waiting.description')}
             </p>
           </div>
         </motion.div>
@@ -862,10 +864,10 @@ export default function ExecutionPage() {
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground">
-                  Waiting for another task
+                  {t('waiting.title')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Your follow-up will continue automatically
+                  {t('waiting.followUpDescription')}
                 </p>
               </div>
             </motion.div>
@@ -910,7 +912,7 @@ export default function ExecutionPage() {
                   isLastMessage={isLastMessage}
                   isRunning={currentTask.status === 'running'}
                   showContinueButton={showContinue}
-                  continueLabel={currentTask.status === 'interrupted' ? 'Continue' : 'Done, Continue'}
+                  continueLabel={currentTask.status === 'interrupted' ? tCommon('buttons.continue') : tCommon('buttons.doneContinue')}
                   onContinue={handleContinue}
                   isLoading={isLoading}
                 />
@@ -953,7 +955,7 @@ export default function ExecutionPage() {
                     {/* Cold start hint */}
                     {!currentTool && startupStageTaskId === id && startupStage?.isFirstTask && startupStage.stage === 'browser' && (
                       <span className="text-xs text-muted-foreground/50 ml-6">
-                        First task takes a bit longer...
+                        {t('coldStartHint')}
                       </span>
                     )}
                   </motion.div>
@@ -976,7 +978,7 @@ export default function ExecutionPage() {
                   <button
                     onClick={scrollToBottom}
                     className="h-8 w-8 rounded-full bg-muted hover:bg-muted/80 border border-border shadow-md flex items-center justify-center transition-colors pointer-events-auto"
-                    aria-label="Scroll to bottom"
+                    aria-label={tCommon('aria.scrollToBottom')}
                     data-testid="scroll-to-bottom-button"
                   >
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -1036,12 +1038,12 @@ export default function ExecutionPage() {
                     isDeleteOperation(permissionRequest) ? "text-red-600" : "text-foreground"
                   )}>
                     {isDeleteOperation(permissionRequest)
-                      ? 'File Deletion Warning'
+                      ? t('permission.fileDeleteTitle')
                       : permissionRequest.type === 'file'
-                        ? 'File Permission Required'
+                        ? t('permission.fileTitle')
                         : permissionRequest.type === 'question'
-                          ? (permissionRequest.header || 'Question')
-                          : 'Permission Required'}
+                          ? (permissionRequest.header || t('permission.questionTitle'))
+                          : t('permission.title')}
                   </h3>
                 </div>
 
@@ -1057,8 +1059,8 @@ export default function ExecutionPage() {
                               {(() => {
                                 const paths = getDisplayFilePaths(permissionRequest);
                                 return paths.length > 1
-                                  ? `${paths.length} files will be permanently deleted:`
-                                  : 'This file will be permanently deleted:';
+                                  ? t('permission.deleteWarningMultiple', { count: paths.length })
+                                  : t('permission.deleteWarningSingle');
                               })()}
                             </p>
                           </div>
@@ -1071,7 +1073,7 @@ export default function ExecutionPage() {
                               "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                               getOperationBadgeClasses(permissionRequest.fileOperation)
                             )}>
-                              {permissionRequest.fileOperation?.toUpperCase()}
+                              {t(`permission.operations.${permissionRequest.fileOperation}`, { defaultValue: permissionRequest.fileOperation?.toUpperCase() })}
                             </span>
                           </div>
                         )}
@@ -1118,14 +1120,14 @@ export default function ExecutionPage() {
                         {/* Delete warning text */}
                         {isDeleteOperation(permissionRequest) && (
                           <p className="text-sm text-red-600/80 mb-4">
-                            This action cannot be undone.
+                            {t('permission.cannotBeUndone')}
                           </p>
                         )}
 
                         {permissionRequest.contentPreview && (
                           <details className="mb-4">
                             <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                              Preview content
+                              {t('permission.previewContent')}
                             </summary>
                             <pre className="mt-2 p-2 rounded bg-muted text-xs overflow-x-auto max-h-32 overflow-y-auto">
                               {permissionRequest.contentPreview}
@@ -1184,7 +1186,7 @@ export default function ExecutionPage() {
                         {permissionRequest.options && permissionRequest.options.length > 0 && (
                           <div className="flex items-center gap-3 mb-4">
                             <div className="flex-1 h-px bg-border" />
-                            <span className="text-xs text-muted-foreground">or type your own</span>
+                            <span className="text-xs text-muted-foreground">{t('permission.orTypeOwn')}</span>
                             <div className="flex-1 h-px bg-border" />
                           </div>
                         )}
@@ -1200,8 +1202,8 @@ export default function ExecutionPage() {
                               e.target.style.height = 'auto';
                               e.target.style.height = `${e.target.scrollHeight}px`;
                             }}
-                            placeholder="Enter a different option..."
-                            aria-label="Custom response"
+                            placeholder={t('permission.enterDifferentOption')}
+                            aria-label={tCommon('aria.customResponse')}
                             rows={1}
                             className="w-full resize-none overflow-hidden rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             style={{ minHeight: '38px', maxHeight: '150px' }}
@@ -1222,11 +1224,11 @@ export default function ExecutionPage() {
                     {permissionRequest.type === 'tool' && (
                       <>
                         <p className="text-sm text-muted-foreground mb-4">
-                          Allow {permissionRequest.toolName}?
+                          {t('permission.toolQuestion', { toolName: permissionRequest.toolName })}
                         </p>
                         {permissionRequest.toolName && (
                           <div className="mb-4 p-3 rounded-lg bg-muted text-xs font-mono overflow-x-auto">
-                            <p className="text-muted-foreground mb-1">Tool: {permissionRequest.toolName}</p>
+                            <p className="text-muted-foreground mb-1">{t('permission.tool')}: {permissionRequest.toolName}</p>
                             <pre className="text-foreground">
                               {JSON.stringify(permissionRequest.toolInput, null, 2)}
                             </pre>
@@ -1245,7 +1247,7 @@ export default function ExecutionPage() {
                     className="flex-1"
                     data-testid="permission-deny-button"
                   >
-                    {permissionRequest.type === 'question' ? 'Cancel' : 'Deny'}
+                    {permissionRequest.type === 'question' ? tCommon('buttons.cancel') : tCommon('buttons.deny')}
                   </Button>
                   <Button
                     onClick={() => handlePermissionResponse(true)}
@@ -1262,11 +1264,11 @@ export default function ExecutionPage() {
                   >
                     {isDeleteOperation(permissionRequest)
                       ? getDisplayFilePaths(permissionRequest).length > 1
-                        ? 'Delete All'
-                        : 'Delete'
+                        ? tCommon('buttons.deleteAll')
+                        : tCommon('buttons.delete')
                       : permissionRequest.type === 'question'
-                        ? 'Submit'
-                        : 'Allow'}
+                        ? tCommon('buttons.submit')
+                        : tCommon('buttons.allow')}
                   </Button>
                 </div>
               </Card>
@@ -1282,7 +1284,7 @@ export default function ExecutionPage() {
             {/* All elements inside one bordered container */}
             <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
               <input
-                placeholder="Agent is working..."
+                placeholder={t('agentWorking')}
                 disabled
                 className="flex-1 bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
               />
@@ -1293,7 +1295,7 @@ export default function ExecutionPage() {
               <div className="w-px h-6 bg-border flex-shrink-0" />
               <button
                 onClick={interruptTask}
-                title="Stop agent (Ctrl+C)"
+                title={t('stopAgent')}
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
                 data-testid="execution-stop-button"
               >
@@ -1322,7 +1324,7 @@ export default function ExecutionPage() {
                       className="ml-2 underline hover:no-underline"
                       type="button"
                     >
-                      Retry
+                      {tCommon('buttons.retry')}
                     </button>
                   )}
                 </AlertDescription>
@@ -1351,10 +1353,10 @@ export default function ExecutionPage() {
                   }}
                   placeholder={
                     currentTask.status === 'interrupted'
-                      ? (hasSession ? "Reply..." : "Send a new instruction to retry...")
+                      ? (hasSession ? t('followUp.interruptedPlaceholder') : t('followUp.noSessionPlaceholder'))
                       : currentTask.status === 'completed'
-                        ? "Reply..."
-                        : "Ask for something..."
+                        ? t('followUp.completedPlaceholder')
+                        : t('followUp.defaultPlaceholder')
                   }
                   disabled={isLoading || speechInput.isRecording}
                   rows={1}
@@ -1402,7 +1404,7 @@ export default function ExecutionPage() {
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      aria-label="Send"
+                      aria-label={tCommon('buttons.send')}
                       onClick={handleFollowUp}
                       disabled={!followUp.trim() || isLoading || speechInput.isRecording || isFollowUpOverLimit}
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1425,10 +1427,10 @@ export default function ExecutionPage() {
       {isComplete && !canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
           <p className="text-sm text-muted-foreground mb-3">
-            Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
+            {t('taskStatus', { status: currentTask.status === 'interrupted' ? t('status.stopped').toLowerCase() : tCommon(`status.${currentTask.status}`).toLowerCase() })}
           </p>
           <Button onClick={() => navigate('/')}>
-            Start New Task
+            {tCommon('buttons.startNewTask')}
           </Button>
         </div>
       )}
@@ -1451,7 +1453,7 @@ export default function ExecutionPage() {
           >
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Bug className="h-4 w-4" />
-              <span className="font-medium">Debug Logs</span>
+              <span className="font-medium">{t('debug.title')}</span>
               {debugLogs.length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-zinc-700 text-zinc-300 text-xs">
                   {debugSearchQuery.trim() && filteredDebugLogs.length !== debugLogs.length
@@ -1477,7 +1479,7 @@ export default function ExecutionPage() {
                     ) : (
                       <Download className="h-3 w-3 mr-1" />
                     )}
-                    {debugExported ? 'Exported' : 'Export'}
+                    {debugExported ? tCommon('buttons.exported') : tCommon('buttons.export')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -1489,7 +1491,7 @@ export default function ExecutionPage() {
                     }}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
-                    Clear
+                    {tCommon('buttons.clear')}
                   </Button>
                 </>
               )}
@@ -1556,7 +1558,7 @@ export default function ExecutionPage() {
                             }
                           }
                         }}
-                        placeholder="Search logs... (⌘F)"
+                        placeholder={t('debug.searchPlaceholder')}
                         className="h-7 w-52 pl-7 pr-2 text-xs bg-zinc-800 border border-zinc-700 rounded text-zinc-300 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500"
                         data-testid="debug-search-input"
                       />
@@ -1569,11 +1571,11 @@ export default function ExecutionPage() {
                   >
                     {debugLogs.length === 0 ? (
                       <div className="flex items-center justify-center h-full text-zinc-500">
-                        No debug logs yet. Run a task to see logs.
+                        {t('debug.noLogs')}
                       </div>
                     ) : filteredDebugLogs.length === 0 ? (
                       <div className="flex items-center justify-center h-full text-zinc-500">
-                        No logs match your search
+                        {t('debug.noMatchingLogs')}
                       </div>
                     ) : (
                       <div className="space-y-1">
@@ -1643,6 +1645,8 @@ const COPIED_STATE_DURATION_MS = 1000
 
 // Memoized MessageBubble to prevent unnecessary re-renders and markdown re-parsing
 const MessageBubble = memo(function MessageBubble({ message, shouldStream = false, isLastMessage = false, isRunning = false, showContinueButton = false, continueLabel, onContinue, isLoading = false }: MessageBubbleProps) {
+  const { t } = useTranslation('execution');
+  const { t: tCommon } = useTranslation('common');
   const [streamComplete, setStreamComplete] = useState(!shouldStream);
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1741,7 +1745,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
         {isTool ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
             {ToolIcon ? <ToolIcon className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
-            <span>{toolDisplayInfo?.label || toolName || 'Processing'}</span>
+            <span>{toolDisplayInfo?.label || toolName || t('processing')}</span>
             {isLastMessage && isRunning && (
               <SpinningIcon className="h-3.5 w-3.5 ml-1" />
             )}
@@ -1751,7 +1755,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
             {isSystem && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5 font-medium">
                 <Terminal className="h-3.5 w-3.5" />
-                System
+                {t('system')}
               </div>
             )}
             {isUser ? (
@@ -1798,7 +1802,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
                 className="mt-3 gap-1.5"
               >
                 <Play className="h-3 w-3" />
-                {continueLabel || 'Continue'}
+                {continueLabel || tCommon('buttons.continue')}
               </Button>
             )}
           </>
@@ -1820,14 +1824,14 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
                     ? (!copied ? 'text-primary-foreground/70 hover:text-primary-foreground' : '!bg-green-500/20 !text-green-300')
                     : (!copied ? 'text-muted-foreground hover:text-foreground' : '!bg-green-500/10 !text-green-600')
                 )}
-                aria-label={'Copy to clipboard'}
+                aria-label={t('copyToClipboard')}
               >
                 <Check className={cn("absolute h-4 w-4", !copied && 'hidden')} />
                 <Copy className={cn("absolute h-4 w-4", copied && 'hidden')} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <span>Copy to clipboard</span>
+              <span>{t('copyToClipboard')}</span>
             </TooltipContent>
           </Tooltip>
         )}
