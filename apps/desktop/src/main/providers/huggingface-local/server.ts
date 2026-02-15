@@ -319,7 +319,13 @@ export async function startServer(
     return new Promise((resolve) => {
         const server = http.createServer(async (req, res) => {
             // CORS headers
-            res.setHeader('Access-Control-Allow-Origin', '127.0.0.1');
+            const origin = req.headers.origin;
+            if (origin && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+                res.setHeader('Vary', 'Origin');
+            } else {
+                res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1');
+            }
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
