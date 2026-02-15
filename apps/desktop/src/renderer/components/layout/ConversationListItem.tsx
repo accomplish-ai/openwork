@@ -3,7 +3,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, XCircle, Clock, Square, PauseCircle, X } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, Square, PauseCircle, X, Star } from 'lucide-react';
 import { useTaskStore } from '@/stores/taskStore';
 
 interface ConversationListItemProps {
@@ -75,6 +75,9 @@ export default function ConversationListItem({ task }: ConversationListItemProps
     >
       {getStatusIcon()}
       <span className="block truncate flex-1">{task.summary || task.prompt}</span>
+      {task.favorite && (
+        <Star className="h-3 w-3 text-yellow-500 fill-current shrink-0" />
+      )}
       <button
         onClick={handleDelete}
         className={cn(
