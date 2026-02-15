@@ -135,6 +135,7 @@ pnpm typecheck && pnpm -F @accomplish/desktop test:unit && pnpm -F @accomplish/w
 | --------------------- | ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `ci.yml`              | PR / push to main      | —                                     | 5 parallel test jobs + Windows CI                                                                                   |
 | `commitlint.yml`      | PR open/edit           | —                                     | Enforces conventional commit PR titles                                                                              |
+| `jira-ticket.yml`     | PR open/edit           | —                                     | Requires Jira ticket link (`accomplish-ai.atlassian.net/browse/...`) in PR description                              |
 | `release-web.yml`     | Manual dispatch        | `CLOUDFLARE_API_TOKEN`                | Build web → deploy versioned workers + router → update KV                                                           |
 | `preview-deploy.yml`  | PR (web/infra changes) | `CLOUDFLARE_API_TOKEN`                | Build → deploy PR-namespaced workers → post preview URLs as PR comment                                              |
 | `preview-cleanup.yml` | PR closed              | `CLOUDFLARE_API_TOKEN`                | Delete PR workers + KV keys                                                                                         |
