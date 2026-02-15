@@ -145,6 +145,10 @@ export async function downloadModel(
 
 /**
  * Cancel an active download.
+ *
+ * Note: Transformers.js does not currently support aborting in-progress downloads.
+ * This function marks the download as cancelled but the underlying network request
+ * will continue until completion. The downloaded files will remain in the cache.
  */
 export function cancelDownload(modelId: string): void {
     const download = activeDownloads.get(modelId);
