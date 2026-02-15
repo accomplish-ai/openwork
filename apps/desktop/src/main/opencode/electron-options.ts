@@ -184,7 +184,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     vertexServiceAccountKeyPath,
     bundledNodeBinPath: bundledNode?.binDir,
     taskId: taskId || undefined,
-    openAiBaseUrl: hfBaseUrl || configuredOpenAiBaseUrl || undefined,
+    openAiBaseUrl: hfProvider ? hfBaseUrl : (configuredOpenAiBaseUrl || undefined),
     ollamaHost,
   };
 

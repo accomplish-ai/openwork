@@ -10,6 +10,9 @@ import path from 'path';
 import { app } from 'electron';
 import type { HuggingFaceLocalModelInfo } from '@accomplish_ai/agent-core/common';
 
+/**
+ * Tracking information for an active model download.
+ */
 export interface DownloadProgress {
     modelId: string;
     status: 'downloading' | 'complete' | 'error';
@@ -19,6 +22,9 @@ export interface DownloadProgress {
     error?: string;
 }
 
+/**
+ * Callback function to receive download progress updates.
+ */
 export type ProgressCallback = (progress: DownloadProgress) => void;
 
 /** Default cache directory for HuggingFace models */
@@ -237,6 +243,9 @@ function getDirSize(dirPath: string): number {
     return total;
 }
 
+/**
+ * Get the absolute path to the local model cache directory.
+ */
 export function getCachePath(): string {
     return getDefaultCachePath();
 }

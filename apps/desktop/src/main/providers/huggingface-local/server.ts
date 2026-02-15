@@ -10,11 +10,17 @@ import http from 'http';
 import { app } from 'electron';
 import path from 'path';
 
+/**
+ * Structure of a chat message in the conversation.
+ */
 interface ChatMessage {
     role: 'system' | 'user' | 'assistant';
     content: string;
 }
 
+/**
+ * Request payload for the chat completion API.
+ */
 interface ChatCompletionRequest {
     model?: string;
     messages: ChatMessage[];
@@ -24,6 +30,9 @@ interface ChatCompletionRequest {
     top_p?: number;
 }
 
+/**
+ * Internal state of the inference server.
+ */
 interface ServerState {
     server: http.Server | null;
     port: number | null;

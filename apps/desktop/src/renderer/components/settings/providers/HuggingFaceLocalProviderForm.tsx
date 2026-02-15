@@ -12,6 +12,9 @@ import {
     ModelSelector,
 } from '../shared';
 
+/**
+ * Representation of a HuggingFace model in the UI.
+ */
 interface HuggingFaceLocalModel {
     id: string;
     name: string;
@@ -19,6 +22,9 @@ interface HuggingFaceLocalModel {
     downloaded: boolean;
 }
 
+/**
+ * Props for the HuggingFaceLocalProviderForm component.
+ */
 interface HuggingFaceLocalProviderFormProps {
     connectedProvider?: ConnectedProvider;
     onConnect: (provider: ConnectedProvider) => void;
@@ -27,6 +33,9 @@ interface HuggingFaceLocalProviderFormProps {
     showModelError: boolean;
 }
 
+/**
+ * Format a byte count into a human-readable string (e.g., "1.5 GB").
+ */
 function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -35,6 +44,10 @@ function formatBytes(bytes: number): string {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
+/**
+ * Form component for configuring and managing the HuggingFace Local provider.
+ * Allows downloading, selecting, and deleting local ONNX models.
+ */
 export function HuggingFaceLocalProviderForm({
     connectedProvider,
     onConnect,
