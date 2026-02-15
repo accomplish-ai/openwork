@@ -1,13 +1,19 @@
-
 import { useState } from 'react';
 import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 
+/**
+ * Props for the AwsAgentCoreForm component.
+ */
 interface AwsAgentCoreFormProps {
   config?: AwsAgentCoreConfig;
   onChange: (config: AwsAgentCoreConfig) => void;
   onTestConnection: (config: AwsAgentCoreConfig) => Promise<boolean>;
 }
 
+/**
+ * Form for configuring AWS AgentCore credentials.
+ * Includes validation logic and a test connection button.
+ */
 export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgentCoreFormProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);

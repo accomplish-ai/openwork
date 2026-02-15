@@ -1,12 +1,11 @@
-import { ipcMain } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
-import type { AwsAgentCoreConfig, BedrockCredentials } from '@accomplish_ai/agent-core';
-import { validateBedrockCredentials } from '@accomplish_ai/agent-core';
+import type { AccomplishAPI } from '../../preload';
+import type { BedrockCredentials } from '@accomplish_ai/agent-core';
+import { validateBedrockCredentials, AwsAgentCoreConfig } from '@accomplish_ai/agent-core';
 
 /**
- * Registers IPC handlers for cloud browser functionality.
- * 
- * @param handle - The electron ipcMain.handle function
+ * Registers IPC handlers for cloud browser operations.
+ * @param handle - The IPC handle function from the main process.
  */
 export function registerCloudBrowserHandlers(
   handle: (channel: string, handler: (event: IpcMainInvokeEvent, ...args: any[]) => any) => void

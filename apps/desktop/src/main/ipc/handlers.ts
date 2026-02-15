@@ -126,10 +126,7 @@ function isE2ESkipAuthEnabled(): boolean {
   );
 }
 
-function handle<Args extends unknown[], ReturnType = unknown>(
-  channel: string,
-  handler: (event: IpcMainInvokeEvent, ...args: Args) => ReturnType
-): void {
+const handle = <Args extends unknown[], ReturnType = unknown>(channel: string, handler: (event: IpcMainInvokeEvent, ...args: Args) => ReturnType) => {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
       return await handler(event, ...(args as Args));
@@ -140,7 +137,12 @@ function handle<Args extends unknown[], ReturnType = unknown>(
   });
 }
 
-export function registerIPCHandlers(): void {
+/**
+ * Registers all IPC handlers for the application.
+ * This includes task operations, settings, provider integrations, and cloud browsers.
+ * @param window - The main application window instance.
+ */
+export function registerHandlers(window: BrowserWindow) {
   const storage = getStorage();
   const taskManager = getTaskManager();
 
@@ -605,7 +607,6 @@ export function registerIPCHandlers(): void {
   // Vertex AI handlers
   registerVertexHandlers(handle);
 
-  // Cloud Browser handlers
   registerCloudBrowserHandlers(handle);
 
   handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {

@@ -11,7 +11,7 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('ai.accomplish.desktop');
 }
 
-import { registerIPCHandlers } from './ipc/handlers';
+import { registerHandlers } from './ipc/handlers';
 import {
   FutureSchemaError,
 } from '@accomplish_ai/agent-core';
@@ -252,10 +252,12 @@ if (!gotTheLock) {
       // First launch or corrupt DB — nativeTheme stays 'system'
     }
 
-    registerIPCHandlers();
-    console.log('[Main] IPC handlers registered');
-
     createWindow();
+
+    if (mainWindow) {
+      registerHandlers(mainWindow);
+      console.log('[Main] IPC handlers registered');
+    }
 
     if (mainWindow) {
       initThoughtStreamApi(mainWindow);

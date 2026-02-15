@@ -367,7 +367,7 @@ vi.mock('@main/permission-api', () => ({
 }));
 
 // Import after mocks are set up
-import { registerIPCHandlers } from '@main/ipc/handlers';
+import { registerHandlers } from '@main/ipc/handlers';
 import { ipcMain, BrowserWindow, shell } from 'electron';
 
 // Type the mocked ipcMain with helpers
@@ -428,10 +428,10 @@ describe('IPC Handlers Integration', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerIPCHandlers', () => {
+  describe('registerHandlers', () => {
     it('should register all expected IPC handlers', () => {
       // Arrange & Act
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
 
       // Assert
       const handlers = mockedIpcMain._getHandlers();
@@ -493,7 +493,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('API Key Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('api-key:exists should return false when no key is stored', async () => {
@@ -560,7 +560,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Settings Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('settings:debug-mode should return current debug mode', async () => {
@@ -682,7 +682,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Task Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('task:start should create and start a new task', async () => {
@@ -880,7 +880,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Onboarding Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('onboarding:complete should return false when not completed', async () => {
@@ -938,7 +938,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Permission Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('permission:respond should send response for active task', async () => {
@@ -1029,7 +1029,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Model Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('model:get should return selected model', async () => {
@@ -1082,7 +1082,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Shell Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('shell:open-external should open valid http URL', async () => {
@@ -1125,7 +1125,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('OpenCode Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('opencode:check should return CLI status', async () => {
@@ -1161,7 +1161,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Multi-Provider API Key Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('api-keys:all should return masked keys for all providers', async () => {
@@ -1216,7 +1216,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Session Handlers', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('session:resume should start a new task with session ID', async () => {
@@ -1294,7 +1294,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Log Event Handler', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('log:event should return ok response', async () => {
@@ -1315,7 +1315,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Task Callbacks and Message Batching', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
       vi.useFakeTimers();
     });
 
@@ -1504,7 +1504,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Session Resume with Existing Task', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('session:resume should add user message to existing task', async () => {
@@ -1589,7 +1589,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Permission Response Edge Cases', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('permission:respond should use selectedOptions when provided', async () => {
@@ -1636,7 +1636,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Window Trust Validation', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('should throw error when window is destroyed', async () => {
@@ -1725,7 +1725,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('E2E Skip Auth Mode', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('onboarding:complete should return true when E2E_SKIP_AUTH env is set', async () => {
@@ -1765,7 +1765,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('API Key Validation Timeout', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
       vi.useFakeTimers();
     });
 
@@ -1847,7 +1847,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Multi-Provider API Key Validation', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     afterEach(() => {
@@ -1983,7 +1983,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Settings Add API Key with Label', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('settings:add-api-key should accept and return custom label', async () => {
@@ -2030,7 +2030,7 @@ describe('IPC Handlers Integration', () => {
 
   describe('Settings API Keys with Empty Password', () => {
     beforeEach(() => {
-      registerIPCHandlers();
+      registerHandlers(mockWindow);
     });
 
     it('settings:api-keys should handle empty password', async () => {

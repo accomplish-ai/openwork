@@ -371,6 +371,11 @@ const accomplishAPI = {
   },
 
   // Cloud Browsers
+  /**
+   * Tests the connection to the AWS AgentCore cloud browser service.
+   * @param config - The AWS configuration to test.
+   * @returns Promise<boolean> - True if connection successful, false otherwise.
+   */
   testCloudBrowserConnection: (config: AwsAgentCoreConfig): Promise<boolean> =>
     ipcRenderer.invoke('cloud-browser:test-connection', config),
 };

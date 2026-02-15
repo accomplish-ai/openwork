@@ -74,3 +74,6 @@ apps/desktop/resources/nodejs/
 # Test local agent Chrome profile
 .accomplish-test-local-agent-chrome/
 .worktrees
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.agent/rules/snyk_rules.md

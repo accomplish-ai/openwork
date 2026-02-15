@@ -237,7 +237,11 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
-  // Cloud Browsers
+  /**
+   * Tests the connection to the AWS AgentCore cloud browser service.
+   * @param config - The AWS configuration to test.
+   * @returns Promise<boolean> - True if connection successful, false otherwise.
+   */
   testCloudBrowserConnection(config: AwsAgentCoreConfig): Promise<boolean>;
 }
 

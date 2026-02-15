@@ -3,6 +3,10 @@ import { AwsAgentCoreForm } from './AwsAgentCoreForm';
 import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 import { getAccomplish } from '@/lib/accomplish';
 
+/**
+ * Settings panel for configuring Cloud Browsers integrations.
+ * Supports switching between AWS AgentCore and Browserbase (placeholder).
+ */
 export function CloudBrowsersSettings() {
   const [selectedProvider, setSelectedProvider] = useState<'aws' | 'browserbase'>('aws');
   const [awsConfig, setAwsConfig] = useState<AwsAgentCoreConfig>({ region: 'us-east-1' });
