@@ -77,7 +77,7 @@
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
@@ -88,7 +88,7 @@
     "autoprefixer": "^10.4.20",
     "electron": "^35.2.1",
     "electron-builder": "^25.1.8",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.27.3",
     "happy-dom": "^20.1.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.4.49",
@@ -96,7 +96,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
-    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron": "^0.29.0",
     "vitest": "^4.0.17"
   },
   "build": {
