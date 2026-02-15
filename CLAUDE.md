@@ -74,6 +74,29 @@ Key packages:
 - `@accomplish_ai/agent-core` — Core business logic, types, storage, MCP tools (ESM, published to npm)
 - `@accomplish/desktop` — Electron app (main/preload/renderer)
 
+### Internationalization (i18n)
+
+**Locale Files**: `apps/desktop/locales/{en,zh-CN}/` with 7 namespace files:
+`common.json`, `settings.json`, `execution.json`, `history.json`, `home.json`, `sidebar.json`, `errors.json`
+
+**Language Preference Storage**: Migration v008 (`v008-language.ts`) adds a `language TEXT NOT NULL DEFAULT 'auto'` column to `app_settings`. Accessed via `getLanguage()`/`setLanguage()` in the appSettings repository.
+
+**Process Initialization**:
+- **Main** (`main/i18n/index.ts`): Custom lightweight module — loads translations synchronously from filesystem, supports `{{variable}}` interpolation, falls back to English. Initialized at app startup with stored preference or system locale (`app.getLocale()`).
+- **Renderer** (`renderer/i18n/index.ts`): Uses `i18next` + `react-i18next`. Loads translations from main via IPC on startup, subscribes to `i18n:language-changed` for hot switching.
+- **Preload**: Bridges renderer to main via `window.accomplish.i18n` (6 methods).
+
+**i18n IPC Channels**:
+
+| Channel | Direction | Purpose |
+|---------|-----------|---------|
+| `i18n:get-language` | Renderer → Main | Read stored language preference |
+| `i18n:set-language` | Renderer → Main | Persist preference, broadcast change |
+| `i18n:get-translations` | Renderer → Main | Load all namespace translations |
+| `i18n:get-supported-languages` | Renderer → Main | List supported language codes |
+| `i18n:get-resolved-language` | Renderer → Main | Resolve 'auto' to concrete code |
+| `i18n:language-changed` | Main → Renderer | Notify renderer of language switch |
+
 ## Code Conventions
 
 - TypeScript everywhere (no JS for app logic)

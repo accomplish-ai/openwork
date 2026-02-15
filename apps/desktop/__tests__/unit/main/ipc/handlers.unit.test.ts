@@ -77,6 +77,7 @@ vi.mock('electron', () => {
     app: {
       isPackaged: false,
       getPath: vi.fn(() => '/tmp/test-app'),
+      getLocale: vi.fn(() => 'en-US'),
     },
   };
 });
@@ -303,6 +304,10 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     validateLMStudioConfig: vi.fn(),
     validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
     validateMoonshotApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+
+    // i18n language settings
+    getLanguage: vi.fn(() => 'auto'),
+    setLanguage: vi.fn(),
   };
 });
 
@@ -338,6 +343,15 @@ vi.mock('@main/store/secureStorage', () => ({
 }));
 
 // Note: App settings and provider settings are now mocked via @accomplish/core mock above
+
+// Mock i18n module
+vi.mock('@main/i18n', () => ({
+  initializeI18n: vi.fn(),
+  getLanguage: vi.fn(() => 'en'),
+  setLanguage: vi.fn(),
+  getAllTranslations: vi.fn(() => ({})),
+  SUPPORTED_LANGUAGES: ['en', 'zh-CN'],
+}));
 
 // Mock config
 vi.mock('@main/config', () => ({
