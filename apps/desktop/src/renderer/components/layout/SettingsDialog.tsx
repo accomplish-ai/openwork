@@ -1,5 +1,3 @@
-"use client";
-
 import { AnimatePresence, motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { settingsVariants, settingsTransitions } from "@/lib/animations";
@@ -231,7 +229,11 @@ export default function SettingsDialog({
   const handleThemeChange = useCallback(
     async (value: string) => {
       setTheme(value as "light" | "dark" | "system");
-      await accomplish.setTheme(value);
+      try {
+        await accomplish.setTheme(value);
+      } catch (error) {
+        console.error("Failed to persist theme:", error);
+      }
     },
     [accomplish, setTheme],
   );
