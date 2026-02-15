@@ -286,14 +286,6 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     defaultModelId: 'minimax/MiniMax-M2.5',
     models: [
       {
-        id: 'MiniMax-M2.5',
-        displayName: 'MiniMax-M2.5',
-        provider: 'minimax',
-        fullId: 'minimax/MiniMax-M2.5',
-        contextWindow: 204800,
-        supportsVision: false,
-      },
-      {
         id: 'MiniMax-M2',
         displayName: 'MiniMax-M2',
         provider: 'minimax',
@@ -306,6 +298,14 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
         displayName: 'MiniMax-M2.1',
         provider: 'minimax',
         fullId: 'minimax/MiniMax-M2.1',
+        contextWindow: 204800,
+        supportsVision: false,
+      },
+      {
+        id: 'MiniMax-M2.5',
+        displayName: 'MiniMax-M2.5',
+        provider: 'minimax',
+        fullId: 'minimax/MiniMax-M2.5',
         contextWindow: 204800,
         supportsVision: false,
       },
