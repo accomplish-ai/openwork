@@ -526,7 +526,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         }
         break;
 
-      case 'error':
+      case 'error': {
         const errorDetails = classifyTaskError({
           message: message.error,
           raw: message.error,
@@ -540,6 +540,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           errorDetails,
         });
         break;
+      }
 
       default:
         const unknownMessage = message as unknown as { type: string };
