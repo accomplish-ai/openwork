@@ -5,10 +5,10 @@
  */
 
 // Import DTOs from common types
-import type { Task, TaskConfig, TaskStatus, TaskMessage, TaskResult } from '../common/types/task';
-import type { PermissionRequest } from '../common/types/permission';
-import type { TodoItem } from '../common/types/todo';
-import type { OpenCodeMessage } from '../common/types/opencode';
+import type { Task, TaskConfig, TaskStatus, TaskMessage, TaskResult } from '../common/types/task.js';
+import type { PermissionRequest } from '../common/types/permission.js';
+import type { TodoItem } from '../common/types/todo.js';
+import type { OpenCodeMessage } from '../common/types/opencode.js';
 
 /** Progress event emitted during task execution */
 export interface TaskProgressEvent {

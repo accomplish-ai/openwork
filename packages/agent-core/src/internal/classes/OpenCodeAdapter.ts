@@ -799,7 +799,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     }
 
     try {
-      execSync('docker info', { stdio: ['pipe', 'pipe', 'pipe'], timeout: 3000 });
+      execSync('docker info', { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 });
     } catch {
       return null;
     }
