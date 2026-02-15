@@ -852,17 +852,13 @@ test.describe('Execution Page', () => {
 
     await window.waitForLoadState('domcontentloaded');
 
-    // Start a task with code block keyword to get syntax-highlighted code
     await homePage.enterTask(TEST_SCENARIOS.CODE_BLOCK.keyword);
     await homePage.submitTask();
 
-    // Wait for navigation to execution page
     await window.waitForURL(/.*#\/execution.*/, { timeout: TEST_TIMEOUTS.NAVIGATION });
-
-    // Wait for task to complete
     await executionPage.waitForComplete();
 
-    // Capture state showing code blocks
+    // Capture for visual verification that code blocks render with syntax highlighting.
     await captureForAI(
       window,
       'execution-code-block',
@@ -875,56 +871,42 @@ test.describe('Execution Page', () => {
       ]
     );
 
-    // Get all code block copy buttons (should be at least two: TypeScript and Python)
     const codeBlockCopyButtonsCount = await executionPage.codeBlockCopyButtons.count();
     expect(codeBlockCopyButtonsCount).toBeGreaterThanOrEqual(2);
 
-    // Verify code block structure - find the code block containers
     const codeBlockContainers = window.locator('.group\\/code');
     const containerCount = await codeBlockContainers.count();
     expect(containerCount).toBeGreaterThanOrEqual(2);
 
-    // Verify syntax highlighting is applied - check for language labels
     const typescriptLabel = window.locator('text=typescript');
     const pythonLabel = window.locator('text=python');
     await expect(typescriptLabel.first()).toBeVisible();
     await expect(pythonLabel.first()).toBeVisible();
 
-    // Verify code content is rendered
     const pageContent = await window.textContent('body');
     expect(pageContent).toContain('function greet');
     expect(pageContent).toContain('def calculate_sum');
 
-    // Test hover behavior - button should become visible on hover
-    // Use nth(0) for a more stable reference
     const firstCodeBlockCopyButton = executionPage.codeBlockCopyButtons.nth(0);
     const codeBlockContainer = codeBlockContainers.nth(0);
 
-    // Scroll the code block into view
     await codeBlockContainer.scrollIntoViewIfNeeded();
 
-    // Before hover, button has opacity-0
     const initialClasses = await firstCodeBlockCopyButton.getAttribute('class');
     expect(initialClasses).toContain('opacity-0');
 
-    // Hover to reveal button
     await codeBlockContainer.hover();
     await window.waitForTimeout(100);
 
-    // Button should now be visible
     await firstCodeBlockCopyButton.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Verify button text shows "Copy"
     const buttonText = await firstCodeBlockCopyButton.textContent();
     expect(buttonText).toContain('Copy');
 
-    // Click the button - the React handler will fire and update state
     await firstCodeBlockCopyButton.click();
-
-    // Small wait for async clipboard operation
     await window.waitForTimeout(200);
 
-    // Verify clipboard contains the TypeScript code
+    // Clipboard assertion confirms the copy action writes actual code content.
     const clipboardText = await window.evaluate(async () => {
       return await navigator.clipboard.readText();
     });

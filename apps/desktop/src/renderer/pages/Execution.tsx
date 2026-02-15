@@ -178,15 +178,30 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
   return [];
 }
 
-// Custom Markdown renderer components
+// Override fenced code blocks to provide syntax highlighting and copy controls.
 const MarkdownPre = ({ children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
+  const copyResetTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimeoutRef.current !== null) {
+        clearTimeout(copyResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = useCallback(async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyResetTimeoutRef.current !== null) {
+        clearTimeout(copyResetTimeoutRef.current);
+      }
+      copyResetTimeoutRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyResetTimeoutRef.current = null;
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
     }
