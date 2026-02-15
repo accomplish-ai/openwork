@@ -20,7 +20,7 @@ export class CompletionState {
   private completeTaskArgs: CompleteTaskArgs | null = null;
   private readonly maxContinuationAttempts: number;
 
-  constructor(maxContinuationAttempts: number = 50) {
+  constructor(maxContinuationAttempts: number = 10) {
     this.maxContinuationAttempts = maxContinuationAttempts;
   }
 

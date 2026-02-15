@@ -64,7 +64,6 @@ export {
   CompletionFlowState,
   getContinuationPrompt,
   getPartialContinuationPrompt,
-  getIncompleteTodosPrompt,
 } from './completion/index.js';
 export type {
   CompletionEnforcerCallbacks,
