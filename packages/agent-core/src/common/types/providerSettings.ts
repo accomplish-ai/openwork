@@ -161,7 +161,7 @@ export function getActiveProvider(settings: ProviderSettings | null | undefined)
  * This map covers providers that don't have modelsEndpoint (bedrock) or as fallback.
  */
 export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
-  anthropic: 'anthropic/claude-opus-4-6',
+  anthropic: 'anthropic/claude-opus-4-5',
   openai: 'openai/gpt-5.2',
   google: 'google/gemini-3-pro-preview',
   xai: 'xai/grok-4',

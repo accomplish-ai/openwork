@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { OpenCodeCliNotFoundError } from '../../../src/opencode/adapter.js';
+import { serializeError } from '../../../src/utils/error.js';
 
 /**
  * Tests for OpenCodeAdapter module.
@@ -250,22 +251,14 @@ describe('AskUserQuestion handling', () => {
   });
 });
 
-describe('Error message serialization', () => {
-  // Tests the defensive coercion applied when constructing TaskResult.error
-  // from stream-parsed messages. JSON.parse() with a type assertion can produce
-  // non-string values at runtime even though the TS type says `error: string`.
-  const coerce = (error: unknown): string =>
-    typeof error === 'string'
-      ? error
-      : JSON.stringify(error) || 'Unknown error';
-
+describe('serializeError', () => {
   it('should pass through string errors unchanged', () => {
-    expect(coerce('API rate limit exceeded')).toBe('API rate limit exceeded');
+    expect(serializeError('API rate limit exceeded')).toBe('API rate limit exceeded');
   });
 
   it('should serialize an object error to JSON', () => {
     const objectError = { name: 'APIError', data: { message: 'Bad request', statusCode: 400 } };
-    const result = coerce(objectError);
+    const result = serializeError(objectError);
     expect(typeof result).toBe('string');
     expect(result).toContain('APIError');
     expect(result).toContain('400');
@@ -273,16 +266,16 @@ describe('Error message serialization', () => {
 
   it('should handle error with nested data', () => {
     const nested = { message: 'timeout', details: { retryAfter: 30 } };
-    const result = coerce(nested);
+    const result = serializeError(nested);
     expect(typeof result).toBe('string');
     expect(result).toContain('timeout');
   });
 
   it('should handle numeric error codes', () => {
-    expect(coerce(500)).toBe('500');
+    expect(serializeError(500)).toBe('500');
   });
 
   it('should handle null error', () => {
-    expect(coerce(null)).toBe('null');
+    expect(serializeError(null)).toBe('null');
   });
 });

@@ -109,11 +109,18 @@ export function ClassicProviderForm({
 
       const defaultModelId = providerConfig?.defaultModelId ?? null;
 
+      // Only auto-select if the defaultModelId exactly matches a fetched model.
+      // The API may return dated variants (e.g. "anthropic/claude-opus-4-5-20250514")
+      // that don't match — in that case, let the user pick manually.
+      const resolvedModelId = fetchedModels?.some(m => m.id === defaultModelId)
+        ? defaultModelId
+        : null;
+
       const trimmedKey = apiKey.trim();
       const provider: ConnectedProvider = {
         providerId,
         connectionStatus: 'connected',
-        selectedModelId: defaultModelId,
+        selectedModelId: resolvedModelId,
         credentials: {
           type: 'api_key',
           keyPrefix: trimmedKey.length > 40
