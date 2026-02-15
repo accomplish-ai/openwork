@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App';
 import { initTheme } from './lib/theme';
 import './styles/globals.css';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 initTheme();
 
@@ -16,7 +17,9 @@ const root = createRoot(container);
 root.render(
   <StrictMode>
     <HashRouter>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </HashRouter>
   </StrictMode>
 );
