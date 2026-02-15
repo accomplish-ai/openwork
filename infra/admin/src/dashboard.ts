@@ -500,7 +500,7 @@ var config = null;
 var meta = null;
 var manifests = {};
 var expandedVersions = {};
-var currentTab = 'releases';
+var currentTab = 'desktop';
 var auditEntries = null;
 var auditLoading = false;
 var expandedAuditEntries = {};
@@ -1426,8 +1426,8 @@ function updateHeaderButtons() {
 
 function renderTabBar() {
   return '<div class="tab-bar">' +
-    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Web Releases</button>' +
     '<button class="tab' + (currentTab === 'desktop' ? ' active' : '') + '" data-action="switchTab" data-arg="desktop">Desktop Releases</button>' +
+    '<button class="tab' + (currentTab === 'releases' ? ' active' : '') + '" data-action="switchTab" data-arg="releases">Web Releases</button>' +
     '<button class="tab' + (currentTab === 'audit' ? ' active' : '') + '" data-action="switchTab" data-arg="audit">Audit Log</button>' +
   '</div>';
 }
