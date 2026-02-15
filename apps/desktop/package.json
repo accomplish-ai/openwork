@@ -86,7 +86,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^4.0.17",
     "autoprefixer": "^10.4.20",
-    "electron": "^35.2.1",
+    "electron": "^40.4.1",
     "electron-builder": "^25.1.8",
     "esbuild": "^0.27.3",
     "happy-dom": "^20.1.0",
