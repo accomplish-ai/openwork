@@ -451,6 +451,7 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('start_task');
       expect(result.systemPrompt).toContain('todowrite');
       expect(result.systemPrompt).toContain('complete_task');
+      expect(result.systemPrompt).toContain('finish every non-conversational task workflow');
     });
 
     it('should include conversational bypass rules for simple chat', () => {
@@ -467,6 +468,10 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('Do NOT call start_task');
       expect(result.systemPrompt).toContain('Do NOT call complete_task');
       expect(result.systemPrompt).toContain('Keep responses concise by default');
+      expect(result.systemPrompt).toContain('Conversational-bypass interactions are not task workflows');
+      expect(result.systemPrompt).toContain(
+        'applies only to non-conversational task workflows'
+      );
     });
 
     it('should include filesystem rules', () => {
