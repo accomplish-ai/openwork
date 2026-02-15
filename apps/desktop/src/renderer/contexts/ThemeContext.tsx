@@ -56,8 +56,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const handleChange = () => {
       const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(mediaQuery.matches ? "dark" : "light");
+      root.classList.remove("dark");
+      if (mediaQuery.matches) {
+        root.classList.add("dark");
+      }
     };
 
     mediaQuery.addEventListener("change", handleChange);
