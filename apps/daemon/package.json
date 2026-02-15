@@ -1,0 +1,28 @@
+{
+    "name": "@accomplish/daemon",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Daemon Service",
+    "main": "dist/index.js",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "lint": "tsc --noEmit",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@accomplish_ai/agent-core": "workspace:*",
+        "fastify": "^4.26.2",
+        "@fastify/websocket": "^9.0.0",
+        "@fastify/cors": "^9.0.1",
+        "dotenv": "^16.4.5",
+        "zod": "^3.22.4"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.24",
+        "tsx": "^4.7.1",
+        "typescript": "^5.3.3"
+    }
+}
