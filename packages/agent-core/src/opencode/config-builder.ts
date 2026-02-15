@@ -296,7 +296,8 @@ export async function buildProviderConfigs(
     }
   }
 
-  if (activeModel?.provider === 'bedrock' && activeModel.model) {
+  // fix: modelID always choose anthropic/claude-haiku-4.5, cause This model is not available in your region problem
+  if (activeModel && activeModel.model) {
     modelOverride = {
       model: activeModel.model,
       smallModel: activeModel.model,
