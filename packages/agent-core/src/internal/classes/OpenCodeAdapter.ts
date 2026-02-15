@@ -531,6 +531,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     if (this.isStartTaskTool(toolName)) {
       this.startTaskCalled = true;
+      this.completionEnforcer.markStructuredTaskStarted();
       const startInput = toolInput as StartTaskInput;
       if (startInput?.goal && startInput?.steps) {
         this.emitPlanMessage(startInput, sessionID || this.currentSessionId || '');

@@ -224,6 +224,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
     markToolsUsed() {
       this.toolsUsed = true;
     }
+    markStructuredTaskStarted() {}
     forceComplete() {}
     reset() {
       this.toolsUsed = false;

@@ -188,6 +188,18 @@ describe('CompletionEnforcer', () => {
       );
     });
 
+    it('should return "pending" for structured tasks even when no tools were used in this turn', () => {
+      enforcer.markStructuredTaskStarted();
+
+      const result = enforcer.handleStepFinish('stop');
+
+      expect(result).toBe('pending');
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'continuation',
+        'Scheduled continuation prompt (attempt 1)'
+      );
+    });
+
     it('should return "complete" after complete_task with success', () => {
       enforcer.handleCompleteTaskDetection({
         status: 'success',
@@ -242,6 +254,20 @@ describe('CompletionEnforcer', () => {
 
       expect(onStartContinuationMock).toHaveBeenCalledWith(
         expect.stringContaining('REMINDER: You must call complete_task when finished')
+      );
+    });
+
+    it('should keep continuing after a text-only continuation turn when tools were used earlier', async () => {
+      enforcer.markToolsUsed();
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+
+      await enforcer.handleProcessExit(0);
+
+      const result = enforcer.handleStepFinish('stop');
+      expect(result).toBe('pending');
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'continuation',
+        'Scheduled continuation prompt (attempt 2)'
       );
     });
 
