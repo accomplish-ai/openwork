@@ -34,14 +34,30 @@ function normalizeProviderId(providerId?: string): string | undefined {
 }
 
 function inferProviderFromText(text: string): string | undefined {
-  if (/\bopenai\b/.test(text)) return 'openai';
-  if (/\b(gemini|google|google ai studio)\b/.test(text)) return 'gemini';
-  if (/\b(anthropic|claude)\b/.test(text)) return 'anthropic';
-  if (/\b(bedrock|aws bedrock)\b/.test(text)) return 'bedrock';
-  if (/\b(azure foundry|azure)\b/.test(text)) return 'azure-foundry';
-  if (/\bopenrouter\b/.test(text)) return 'openrouter';
-  if (/\bollama\b/.test(text)) return 'ollama';
-  if (/\b(lm studio|lmstudio)\b/.test(text)) return 'lmstudio';
+  if (/\bopenai\b/.test(text)) {
+    return 'openai';
+  }
+  if (/\b(gemini|google|google ai studio)\b/.test(text)) {
+    return 'gemini';
+  }
+  if (/\b(anthropic|claude)\b/.test(text)) {
+    return 'anthropic';
+  }
+  if (/\b(bedrock|aws bedrock)\b/.test(text)) {
+    return 'bedrock';
+  }
+  if (/\b(azure foundry|azure)\b/.test(text)) {
+    return 'azure-foundry';
+  }
+  if (/\bopenrouter\b/.test(text)) {
+    return 'openrouter';
+  }
+  if (/\bollama\b/.test(text)) {
+    return 'ollama';
+  }
+  if (/\b(lm studio|lmstudio)\b/.test(text)) {
+    return 'lmstudio';
+  }
   return undefined;
 }
 

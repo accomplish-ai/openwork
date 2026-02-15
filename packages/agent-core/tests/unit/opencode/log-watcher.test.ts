@@ -308,6 +308,29 @@ describe('OpenCodeLogWatcher', () => {
     });
   });
 
+  describe('line parsing', () => {
+    it('should match AI_APICallError lines even when hint tokens are absent', () => {
+      watcher = new OpenCodeLogWatcher(logDir);
+      const errors: OpenCodeLogError[] = [];
+      watcher.on('error', (error) => errors.push(error));
+
+      const line =
+        '{"name":"AI_APICallError","statusCode":418,"message":"request failed","providerID":"openai","modelID":"gpt-5","sessionID":"sess-123"}';
+
+      (
+        watcher as unknown as {
+          parseLine: (line: string) => void;
+        }
+      ).parseLine(line);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].errorName).toBe('AI_APICallError');
+      expect(errors[0].statusCode).toBe(418);
+      expect(errors[0].raw).toBe(line);
+      expect(errors[0].errorDetails?.providerId).toBe('openai');
+    });
+  });
+
   describe('OpenCodeLogError interface', () => {
     it('should have all required fields', () => {
       const error: OpenCodeLogError = {

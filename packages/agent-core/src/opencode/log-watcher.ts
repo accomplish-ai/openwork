@@ -264,7 +264,10 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
 
   private parseLine(line: string): void {
     if (!ERROR_LINE_HINTS.test(line)) {
-      return;
+      const maybeErrorPattern = ERROR_PATTERNS.some(({ pattern }) => pattern.test(line));
+      if (!maybeErrorPattern) {
+        return;
+      }
     }
 
     const timestampMatch = line.match(/^(\w+)\s+(\S+)\s+(\+\d+ms)/);
