@@ -458,6 +458,7 @@ export async function stopServer(): Promise<void> {
                 state.pipeline = null;
                 state.tokenizer = null;
                 state.model = null;
+                state.isLoading = false;
                 resolve();
             });
         });
