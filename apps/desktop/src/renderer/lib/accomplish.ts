@@ -236,6 +236,16 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // HuggingFace Local
+  startHuggingFaceServer(modelId: string): Promise<{ success: boolean; port?: number; error?: string }>;
+  stopHuggingFaceServer(): Promise<{ success: boolean }>;
+  getHuggingFaceServerStatus(): Promise<{ running: boolean; port: number | null; loadedModel: string | null; isLoading: boolean }>;
+  testHuggingFaceConnection(): Promise<{ success: boolean; error?: string }>;
+  downloadHuggingFaceModel(modelId: string): Promise<{ success: boolean; error?: string }>;
+  listHuggingFaceModels(): Promise<{ cached: Array<{ id: string; displayName: string; sizeBytes?: number; downloaded: boolean }>; suggested: Array<{ id: string; displayName: string; downloaded: boolean }> }>;
+  deleteHuggingFaceModel(modelId: string): Promise<{ success: boolean; error?: string }>;
+  onHuggingFaceDownloadProgress?(callback: (progress: { modelId: string; status: string; progress: number; error?: string }) => void): () => void;
 }
 
 interface AccomplishShell {

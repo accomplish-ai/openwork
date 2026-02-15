@@ -100,6 +100,16 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import {
+  startHuggingFaceServer,
+  stopHuggingFaceServer,
+  getHuggingFaceServerStatus,
+  testHuggingFaceConnection,
+  downloadModel as hfDownloadModel,
+  listCachedModels as hfListCachedModels,
+  deleteModel as hfDeleteModel,
+  SUGGESTED_MODELS as HF_SUGGESTED_MODELS,
+} from '../providers/huggingface-local';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -1260,6 +1270,45 @@ export function registerIPCHandlers(): void {
   handle('connectors:disconnect', async (_event, connectorId: string) => {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+
+  // ── HuggingFace Local Provider ──────────────────────────────────────
+
+  handle('huggingface-local:start-server', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    return startHuggingFaceServer(modelId);
+  });
+
+  handle('huggingface-local:stop-server', async () => {
+    await stopHuggingFaceServer();
+    return { success: true };
+  });
+
+  handle('huggingface-local:server-status', async () => {
+    return getHuggingFaceServerStatus();
+  });
+
+  handle('huggingface-local:test-connection', async () => {
+    return testHuggingFaceConnection();
+  });
+
+  handle('huggingface-local:download-model', async (event: IpcMainInvokeEvent, modelId: string) => {
+    return hfDownloadModel(modelId, (progress) => {
+      // Send progress updates back to the renderer
+      try {
+        event.sender.send('huggingface-local:download-progress', progress);
+      } catch {
+        // Window may have been closed
+      }
+    });
+  });
+
+  handle('huggingface-local:list-models', async () => {
+    const cached = hfListCachedModels();
+    return { cached, suggested: HF_SUGGESTED_MODELS };
+  });
+
+  handle('huggingface-local:delete-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    return hfDeleteModel(modelId);
   });
 }
 
