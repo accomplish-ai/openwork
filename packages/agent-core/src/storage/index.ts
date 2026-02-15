@@ -88,6 +88,8 @@ export {
   getTodosForTask,
   saveTodosForTask,
   clearTodosForTask,
+  toggleTaskFavorite,
+  getFavoriteTasks,
   type StoredTask,
 } from './repositories/index.js';
 

@@ -18,6 +18,7 @@ interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  favorite: boolean;
 }
 
 let mockTaskStore: Map<string, StoredTask> = new Map();
@@ -43,6 +44,7 @@ vi.mock('@accomplish_ai/agent-core', () => ({
       createdAt: task.createdAt,
       startedAt: task.startedAt,
       completedAt: task.completedAt,
+      favorite: task.favorite,
     };
     mockTaskStore.set(task.id, stored);
   }),
@@ -84,19 +86,31 @@ vi.mock('@accomplish_ai/agent-core', () => ({
     mockTaskStore.clear();
   }),
 
+  toggleTaskFavorite: vi.fn((taskId: string) => {
+    const task = mockTaskStore.get(taskId);
+    if (task) {
+      task.favorite = !task.favorite;
+    }
+  }),
+
+  getFavoriteTasks: vi.fn(() => {
+    return Array.from(mockTaskStore.values()).filter(task => task.favorite);
+  }),
+
   setMaxHistoryItems: vi.fn(),
   clearTaskHistoryStore: vi.fn(() => mockTaskStore.clear()),
   flushPendingTasks: vi.fn(),
 }));
 
 // Helper to create a mock task
-function createMockTask(id: string, prompt: string = 'Test task'): Task {
+function createMockTask(id: string, prompt: string = 'Test task', favorite: boolean = false): Task {
   return {
     id,
     prompt,
     status: 'pending',
     messages: [],
     createdAt: new Date().toISOString(),
+    favorite,
   };
 }
 

@@ -122,6 +122,7 @@ export class TaskManager {
       status: 'queued',
       messages: [],
       createdAt: new Date().toISOString(),
+      favorite: false,
     };
   }
 
@@ -212,6 +213,7 @@ export class TaskManager {
       status: 'running',
       messages: [],
       createdAt: new Date().toISOString(),
+      favorite: false,
     };
 
     const isFirstTask = this.isFirstTask;

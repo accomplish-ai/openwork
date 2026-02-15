@@ -259,6 +259,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       messages: [],
       createdAt: new Date().toISOString(),
       startedAt: new Date().toISOString(),
+      favorite: false,
     };
   }
 

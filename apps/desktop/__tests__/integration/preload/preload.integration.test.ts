@@ -142,6 +142,16 @@ describe('Preload Script Integration', () => {
         await (capturedAccomplishAPI.clearTaskHistory as () => Promise<void>)();
         expect(mockInvoke).toHaveBeenCalledWith('task:clear-history');
       });
+
+      it('toggleTaskFavorite should invoke task:toggle-favorite with taskId', async () => {
+        await (capturedAccomplishAPI.toggleTaskFavorite as (taskId: string) => Promise<void>)('task_123');
+        expect(mockInvoke).toHaveBeenCalledWith('task:toggle-favorite', 'task_123');
+      });
+
+      it('getFavoriteTasks should invoke task:get-favorites', async () => {
+        await (capturedAccomplishAPI.getFavoriteTasks as () => Promise<unknown[]>)();
+        expect(mockInvoke).toHaveBeenCalledWith('task:get-favorites');
+      });
     });
 
     describe('Permission Operations', () => {
