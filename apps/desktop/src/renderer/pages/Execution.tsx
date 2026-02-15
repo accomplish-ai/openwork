@@ -494,6 +494,12 @@ export default function ExecutionPage() {
   const isComplete = ['completed', 'failed', 'cancelled', 'interrupted'].includes(currentTask?.status ?? '');
   const hasSession = currentTask?.sessionId || currentTask?.result?.sessionId;
   const canFollowUp = isComplete && (hasSession || currentTask?.status === 'interrupted');
+  const failedTaskMessage =
+    currentTask?.status === 'failed'
+      ? currentTask.result?.errorDetails?.userMessage || currentTask.result?.error || 'Task failed due to an unknown error.'
+      : null;
+  const failedTaskHints =
+    currentTask?.status === 'failed' ? (currentTask.result?.errorDetails?.actionHints || []).slice(0, 3) : [];
 
   useEffect(() => {
     if (canFollowUp) {
@@ -1424,12 +1430,39 @@ export default function ExecutionPage() {
       {/* Completed/Failed state (no session to continue) */}
       {isComplete && !canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
-          </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          {currentTask.status === 'failed' ? (
+            <div className="mx-auto mb-4 max-w-2xl text-left">
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {failedTaskMessage}
+                </AlertDescription>
+              </Alert>
+              {failedTaskHints.length > 0 && (
+                <div className="mt-3 text-sm text-muted-foreground">
+                  <p className="font-medium mb-1">Next steps</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {failedTaskHints.map((hint) => (
+                      <li key={hint}>{hint}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-3">
+              Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-2">
+            {currentTask.status === 'failed' && (
+              <Button variant="outline" onClick={handleOpenModelSettings}>
+                Open Settings
+              </Button>
+            )}
+            <Button onClick={() => navigate('/')}>
+              Start New Task
+            </Button>
+          </div>
         </div>
       )}
 

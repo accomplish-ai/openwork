@@ -10,6 +10,8 @@ export type {
   TaskAttachment,
   TaskMessage,
   TaskResult,
+  TaskErrorCategory,
+  TaskErrorDetails,
   TaskProgress,
   TaskUpdateEvent,
 } from './types/task.js';

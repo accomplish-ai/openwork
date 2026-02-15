@@ -366,12 +366,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
       if (event.type === 'error') {
         newStatus = 'failed';
+        const fallbackErrorMessage =
+          event.errorDetails?.userMessage || event.error || 'Task failed due to an unknown error.';
 
         if (isCurrentTask && state.currentTask) {
           updatedCurrentTask = {
             ...state.currentTask,
             status: newStatus,
-            result: { status: 'error', error: event.error },
+            result: {
+              status: 'error',
+              error: fallbackErrorMessage,
+              errorDetails: event.errorDetails,
+            },
           };
         }
       }

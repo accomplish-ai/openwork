@@ -177,7 +177,40 @@ describe('OpenCodeLogWatcher', () => {
 
       const message = OpenCodeLogWatcher.getErrorMessage(error);
       expect(message).toContain('Model not available');
-      expect(message).toContain('unknown');
+    });
+
+    it('should classify Gemini resource exhausted as quota error', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        providerID: 'gemini',
+        errorName: 'QuotaExceededError',
+        statusCode: 429,
+        message: 'RESOURCE_EXHAUSTED',
+        raw: '429 RESOURCE_EXHAUSTED',
+      };
+
+      const details = OpenCodeLogWatcher.getErrorDetails(error);
+      expect(details.category).toBe('quota');
+      expect(details.providerId).toBe('gemini');
+      expect(details.userMessage).toContain('quota');
+    });
+
+    it('should classify OpenAI insufficient quota as quota error', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        providerID: 'openai',
+        errorName: 'AI_APICallError',
+        statusCode: 429,
+        message: 'You exceeded your current quota, please check your plan and billing details.',
+        raw: 'insufficient_quota',
+      };
+
+      const details = OpenCodeLogWatcher.getErrorDetails(error);
+      expect(details.category).toBe('quota');
+      expect(details.providerId).toBe('openai');
+      expect(details.userMessage).toContain('OpenAI');
     });
 
     it('should return user-friendly message for AI_APICallError with 429', () => {

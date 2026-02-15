@@ -904,6 +904,32 @@ describe('Execution Page Integration', () => {
   });
 
   describe('task complete states', () => {
+    it('should show actionable failure message and hints for failed task', () => {
+      const task = createMockTask('task-123', 'Failed', 'failed');
+      task.result = {
+        status: 'error',
+        error: 'OpenAI quota limit reached. Check your billing/quota and try again.',
+        errorDetails: {
+          category: 'quota',
+          providerId: 'openai',
+          retryable: true,
+          userMessage: 'OpenAI quota limit reached. Check your billing/quota and try again.',
+          actionHints: [
+            'Check provider quota/billing in your account.',
+            'Retry later or switch to another provider/model in Settings.',
+          ],
+        },
+      };
+      mockStoreState.currentTask = task;
+
+      renderWithRouter('task-123');
+
+      expect(screen.getByText(/OpenAI quota limit reached/i)).toBeInTheDocument();
+      expect(screen.getByText(/Next steps/i)).toBeInTheDocument();
+      expect(screen.getByText(/Check provider quota\/billing in your account/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Open Settings/i })).toBeInTheDocument();
+    });
+
     it('should navigate home when clicking Start New Task for failed task without session', async () => {
       mockStoreState.currentTask = createMockTask('task-123', 'Failed', 'failed');
 

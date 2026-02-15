@@ -6,7 +6,8 @@ import { spawn } from 'child_process';
 import { StreamParser } from './StreamParser.js';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './OpenCodeLogWatcher.js';
 import { CompletionEnforcer, CompletionEnforcerCallbacks } from '../../opencode/completion/index.js';
-import type { TaskConfig, Task, TaskMessage, TaskResult } from '../../common/types/task.js';
+import { classifyTaskError } from '../../opencode/error-classifier.js';
+import type { TaskConfig, Task, TaskMessage, TaskResult, TaskErrorDetails } from '../../common/types/task.js';
 import type { OpenCodeMessage } from '../../common/types/opencode.js';
 import type { PermissionRequest } from '../../common/types/permission.js';
 import type { TodoItem } from '../../common/types/todo.js';
@@ -60,6 +61,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
   private hasReceivedFirstTool: boolean = false;
   private startTaskCalled: boolean = false;
+  private lastErrorDetails: TaskErrorDetails | null = null;
   private options: AdapterOptions;
 
   constructor(options: AdapterOptions, taskId?: string) {
@@ -98,7 +100,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       if (!this.hasCompleted && this.ptyProcess) {
         console.log('[OpenCode Adapter] Log watcher detected error:', error.errorName);
 
-        const errorMessage = OpenCodeLogWatcher.getErrorMessage(error);
+        const errorDetails = OpenCodeLogWatcher.getErrorDetails(error);
+        const errorMessage = errorDetails.userMessage;
+        this.lastErrorDetails = errorDetails;
 
         this.emit('debug', {
           type: 'error',
@@ -109,6 +113,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
             providerID: error.providerID,
             modelID: error.modelID,
             message: error.message,
+            errorDetails,
           },
         });
 
@@ -125,6 +130,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
           error: errorMessage,
+          errorDetails,
         });
 
         if (this.ptyProcess) {
@@ -156,6 +162,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.lastWorkingDirectory = config.workingDirectory;
     this.hasReceivedFirstTool = false;
     this.startTaskCalled = false;
+    this.lastErrorDetails = null;
     if (this.waitingTransitionTimer) {
       clearTimeout(this.waitingTransitionTimer);
       this.waitingTransitionTimer = null;
@@ -352,6 +359,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.currentModelId = null;
     this.hasReceivedFirstTool = false;
     this.startTaskCalled = false;
+    this.lastErrorDetails = null;
 
     if (this.waitingTransitionTimer) {
       clearTimeout(this.waitingTransitionTimer);
@@ -489,11 +497,18 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       case 'step_finish':
         if (message.part.reason === 'error') {
           if (!this.hasCompleted) {
+            const errorDetails =
+              this.lastErrorDetails ||
+              classifyTaskError({
+                message: 'Task failed',
+                raw: 'Task failed',
+              });
             this.hasCompleted = true;
             this.emit('complete', {
               status: 'error',
               sessionId: this.currentSessionId || undefined,
-              error: 'Task failed',
+              error: errorDetails.userMessage,
+              errorDetails,
             });
           }
           break;
@@ -512,11 +527,17 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         break;
 
       case 'error':
+        const errorDetails = classifyTaskError({
+          message: message.error,
+          raw: message.error,
+        });
+        this.lastErrorDetails = errorDetails;
         this.hasCompleted = true;
         this.emit('complete', {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
-          error: message.error,
+          error: errorDetails.userMessage,
+          errorDetails,
         });
         break;
 
@@ -626,11 +647,17 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (code === 0 && !this.hasCompleted) {
       this.completionEnforcer.handleProcessExit(code).catch((error) => {
         console.error('[OpenCode Adapter] Completion enforcer error:', error);
+        const errorDetails = classifyTaskError({
+          message: `Failed to complete: ${error.message}`,
+          raw: error.stack || error.message,
+        });
+        this.lastErrorDetails = errorDetails;
         this.hasCompleted = true;
         this.emit('complete', {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
-          error: `Failed to complete: ${error.message}`,
+          error: errorDetails.userMessage,
+          errorDetails,
         });
       });
       return;

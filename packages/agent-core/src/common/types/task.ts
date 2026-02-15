@@ -54,6 +54,25 @@ export interface TaskResult {
   sessionId?: string;
   durationMs?: number;
   error?: string;
+  errorDetails?: TaskErrorDetails;
+}
+
+export type TaskErrorCategory =
+  | 'quota'
+  | 'rate_limit'
+  | 'auth'
+  | 'model_not_found'
+  | 'validation'
+  | 'provider_unavailable'
+  | 'unknown';
+
+export interface TaskErrorDetails {
+  category: TaskErrorCategory;
+  providerId?: string;
+  statusCode?: number;
+  retryable: boolean;
+  userMessage: string;
+  actionHints: string[];
 }
 
 export type StartupStage =
@@ -96,4 +115,5 @@ export interface TaskUpdateEvent {
   progress?: TaskProgress;
   result?: TaskResult;
   error?: string;
+  errorDetails?: TaskErrorDetails;
 }

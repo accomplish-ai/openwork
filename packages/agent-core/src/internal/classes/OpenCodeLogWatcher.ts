@@ -2,6 +2,8 @@ import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import type { TaskErrorDetails } from '../../common/types/task.js';
+import { classifyTaskError } from '../../opencode/error-classifier.js';
 
 export interface OpenCodeLogError {
   timestamp: string;
@@ -14,7 +16,11 @@ export interface OpenCodeLogError {
   message?: string;
   raw: string;
   isAuthError?: boolean;
+  errorDetails?: TaskErrorDetails;
 }
+
+const ERROR_LINE_HINTS =
+  /(ERROR|resource_exhausted|insufficient_quota|rate limit|throttl(?:e|ing)|quota|unauthorized|invalid[_\s-]?api[_\s-]?key|authentication)/i;
 
 const ERROR_PATTERNS: Array<{
   pattern: RegExp;
@@ -56,6 +62,22 @@ const ERROR_PATTERNS: Array<{
       errorName: 'ThrottlingException',
       statusCode: 429,
       message: match[1] || 'Rate limit exceeded. Please wait before trying again.',
+    }),
+  },
+  {
+    pattern: /RESOURCE_EXHAUSTED|resource_exhausted|insufficient_quota|quota exceeded|exceeded your current quota/i,
+    extract: () => ({
+      errorName: 'QuotaExceededError',
+      statusCode: 429,
+      message: 'Provider quota exhausted.',
+    }),
+  },
+  {
+    pattern: /rate limit|too many requests|throttl(?:e|ing)|status(?:Code)?["':=\s]*429/i,
+    extract: () => ({
+      errorName: 'RateLimitError',
+      statusCode: 429,
+      message: 'Rate limit exceeded.',
     }),
   },
   {
@@ -241,7 +263,7 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
   }
 
   private parseLine(line: string): void {
-    if (!line.includes('ERROR')) {
+    if (!ERROR_LINE_HINTS.test(line)) {
       return;
     }
 
@@ -255,8 +277,24 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
       const match = line.match(pattern);
       if (match) {
         const errorInfo = extract(match, line);
+        const providerID = errorInfo.providerID || providerMatch?.[1];
+        const errorDetails = classifyTaskError({
+          errorName: errorInfo.errorName,
+          statusCode: errorInfo.statusCode,
+          message: errorInfo.message,
+          providerID,
+          modelID: modelMatch?.[1],
+          isAuthError: errorInfo.isAuthError,
+          raw: line,
+        });
 
-        const errorKey = `${errorInfo.errorName}:${errorInfo.statusCode}:${sessionMatch?.[1] || ''}`;
+        const messageFragment = (errorInfo.message || '').slice(0, 80);
+        const errorKey =
+          `${errorDetails.category}:` +
+          `${errorDetails.providerId || ''}:` +
+          `${errorInfo.statusCode || ''}:` +
+          `${sessionMatch?.[1] || ''}:` +
+          `${messageFragment}`;
         if (this.seenErrors.has(errorKey)) {
           continue;
         }
@@ -265,12 +303,14 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
         const error: OpenCodeLogError = {
           timestamp: timestampMatch?.[2] || new Date().toISOString(),
           service: serviceMatch?.[1] || 'unknown',
-          providerID: providerMatch?.[1],
+          providerID,
           modelID: modelMatch?.[1],
           sessionID: sessionMatch?.[1],
           errorName: errorInfo.errorName || 'UnknownError',
           statusCode: errorInfo.statusCode,
           message: errorInfo.message,
+          isAuthError: errorInfo.isAuthError,
+          errorDetails,
           raw: line,
         };
 
@@ -281,31 +321,23 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
     }
   }
 
-  static getErrorMessage(error: OpenCodeLogError): string {
-    switch (error.errorName) {
-      case 'OAuthExpiredError':
-      case 'OAuthUnauthorizedError':
-      case 'OAuthAuthenticationError':
-        return error.message || 'Your session has expired. Please re-authenticate.';
-      case 'ThrottlingException':
-        return `Rate limit exceeded: ${error.message || 'Please wait before trying again.'}`;
-      case 'AuthenticationError':
-        return 'Authentication failed. Please check your API credentials in Settings.';
-      case 'ModelNotFoundError':
-        return `Model not available: ${error.modelID || 'unknown'}. Please select a different model.`;
-      case 'ValidationError':
-        return `Invalid request: ${error.message}`;
-      case 'AI_APICallError':
-        if (error.statusCode === 429) {
-          return `Rate limit exceeded: ${error.message || 'Please wait before trying again.'}`;
-        }
-        if (error.statusCode === 503) {
-          return 'Service temporarily unavailable. Please try again later.';
-        }
-        return `API error (${error.statusCode}): ${error.message || 'Unknown error'}`;
-      default:
-        return error.message || `Error: ${error.errorName}`;
+  static getErrorDetails(error: OpenCodeLogError): TaskErrorDetails {
+    if (error.errorDetails) {
+      return error.errorDetails;
     }
+    return classifyTaskError({
+      errorName: error.errorName,
+      statusCode: error.statusCode,
+      message: error.message,
+      providerID: error.providerID,
+      modelID: error.modelID,
+      isAuthError: error.isAuthError,
+      raw: error.raw,
+    });
+  }
+
+  static getErrorMessage(error: OpenCodeLogError): string {
+    return OpenCodeLogWatcher.getErrorDetails(error).userMessage;
   }
 }
 
