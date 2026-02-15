@@ -13,6 +13,7 @@ import path from 'path';
 // Store original values
 const originalPlatform = process.platform;
 const originalEnv = { ...process.env };
+const normalizePath = (p: string) => p.replace(/\\/g, '/');
 
 // Mock fs module
 const mockFs = {
@@ -53,6 +54,8 @@ describe('System PATH Utilities', () => {
     // Reset environment
     process.env = { ...originalEnv };
     process.env.HOME = '/Users/testuser';
+    process.env.PATH = '';
+    process.env.Path = '';
 
     // Re-import module to get fresh state
     const module = await import('@main/utils/system-path');
@@ -132,15 +135,16 @@ describe('System PATH Utilities', () => {
 
       it('should include NVM paths when available', async () => {
         // Arrange
-        const nvmPath = '/Users/testuser/.nvm/versions/node/v20.10.0/bin';
+        const nvmVersionsDir = path.join('/Users/testuser', '.nvm', 'versions', 'node');
+        const nvmPath = path.join(nvmVersionsDir, 'v20.10.0', 'bin');
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.nvm/versions/node') return true;
-          if (p === nvmPath) return true;
+          if (normalizePath(p) === normalizePath(nvmVersionsDir)) return true;
+          if (normalizePath(p) === normalizePath(nvmPath)) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.nvm/versions/node') return ['v20.10.0'];
+          if (normalizePath(p) === normalizePath(nvmVersionsDir)) return ['v20.10.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
@@ -158,15 +162,16 @@ describe('System PATH Utilities', () => {
 
       it('should include fnm paths when available', async () => {
         // Arrange
-        const fnmPath = '/Users/testuser/.fnm/node-versions/v20.10.0/installation/bin';
+        const fnmVersionsDir = path.join('/Users/testuser', '.fnm', 'node-versions');
+        const fnmPath = path.join(fnmVersionsDir, 'v20.10.0', 'installation', 'bin');
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.fnm/node-versions') return true;
-          if (p === fnmPath) return true;
+          if (normalizePath(p) === normalizePath(fnmVersionsDir)) return true;
+          if (normalizePath(p) === normalizePath(fnmPath)) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.fnm/node-versions') return ['v20.10.0'];
+          if (normalizePath(p) === normalizePath(fnmVersionsDir)) return ['v20.10.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
@@ -184,15 +189,15 @@ describe('System PATH Utilities', () => {
 
       it('should sort NVM versions with newest first', async () => {
         // Arrange
-        const nvmDir = '/Users/testuser/.nvm/versions/node';
+        const nvmDir = path.join('/Users/testuser', '.nvm', 'versions', 'node');
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === nvmDir) return true;
-          if (p.includes('.nvm/versions/node/v')) return true;
+          if (normalizePath(p) === normalizePath(nvmDir)) return true;
+          if (normalizePath(p).includes('/.nvm/versions/node/v')) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === nvmDir) return ['v18.17.0', 'v20.10.0', 'v16.20.0'];
+          if (normalizePath(p) === normalizePath(nvmDir)) return ['v18.17.0', 'v20.10.0', 'v16.20.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
@@ -338,10 +343,14 @@ describe('System PATH Utilities', () => {
   });
 
   describe('findCommandInPath()', () => {
+    beforeEach(() => {
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+    });
+
     it('should find executable command in PATH', () => {
       // Arrange
       const searchPath = '/usr/bin:/usr/local/bin';
-      const expectedPath = '/usr/local/bin/node';
+      const expectedPath = path.join('/usr/local/bin', 'node');
 
       mockFs.existsSync.mockImplementation((p: string) => {
         return p === expectedPath;
@@ -400,8 +409,8 @@ describe('System PATH Utilities', () => {
     it('should search directories in order', () => {
       // Arrange
       const searchPath = '/first/bin:/second/bin';
-      const firstPath = '/first/bin/node';
-      const secondPath = '/second/bin/node';
+      const firstPath = path.join('/first/bin', 'node');
+      const secondPath = path.join('/second/bin', 'node');
 
       mockFs.existsSync.mockImplementation((p: string) => {
         return p === firstPath || p === secondPath;
@@ -419,7 +428,7 @@ describe('System PATH Utilities', () => {
     it('should handle empty path segments', () => {
       // Arrange
       const searchPath = '/usr/bin::/usr/local/bin';
-      const expectedPath = '/usr/local/bin/node';
+      const expectedPath = path.join('/usr/local/bin', 'node');
 
       mockFs.existsSync.mockImplementation((p: string) => {
         return p === expectedPath;
@@ -437,10 +446,10 @@ describe('System PATH Utilities', () => {
     it('should handle directory access errors gracefully', () => {
       // Arrange
       const searchPath = '/nonexistent:/usr/local/bin';
-      const expectedPath = '/usr/local/bin/node';
+      const expectedPath = path.join('/usr/local/bin', 'node');
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        if (p.startsWith('/nonexistent')) {
+        if (normalizePath(p).includes('/nonexistent/')) {
           throw new Error('Directory does not exist');
         }
         return p === expectedPath;
@@ -458,11 +467,12 @@ describe('System PATH Utilities', () => {
     it('should handle statSync errors gracefully', () => {
       // Arrange
       const searchPath = '/usr/bin:/usr/local/bin';
-      const expectedPath = '/usr/local/bin/node';
+      const expectedPath = path.join('/usr/local/bin', 'node');
+      const usrBinPath = path.join('/usr/bin', 'node');
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockImplementation((p: string) => {
-        if (p === '/usr/bin/node') {
+        if (p === usrBinPath) {
           throw new Error('Stat error');
         }
         return { isFile: () => p === expectedPath };
@@ -481,17 +491,18 @@ describe('System PATH Utilities', () => {
     it('should prioritize version manager paths over system paths', async () => {
       // Arrange
       Object.defineProperty(process, 'platform', { value: 'darwin' });
-      const nvmPath = '/Users/testuser/.nvm/versions/node/v20.10.0/bin';
+      const nvmVersionsDir = path.join('/Users/testuser', '.nvm', 'versions', 'node');
+      const nvmPath = path.join(nvmVersionsDir, 'v20.10.0', 'bin');
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        if (p === '/Users/testuser/.nvm/versions/node') return true;
-        if (p === nvmPath) return true;
+        if (normalizePath(p) === normalizePath(nvmVersionsDir)) return true;
+        if (normalizePath(p) === normalizePath(nvmPath)) return true;
         if (p === '/opt/homebrew/bin') return true;
         if (p === '/usr/local/bin') return true;
         return false;
       });
       mockFs.readdirSync.mockImplementation((p: string) => {
-        if (p === '/Users/testuser/.nvm/versions/node') return ['v20.10.0'];
+        if (normalizePath(p) === normalizePath(nvmVersionsDir)) return ['v20.10.0'];
         return [];
       });
       mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
