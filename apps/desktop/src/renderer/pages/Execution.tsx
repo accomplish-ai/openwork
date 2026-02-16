@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
@@ -232,6 +232,7 @@ export default function ExecutionPage() {
     clearStartupStage,
     todos,
     todosTaskId,
+    toggleTaskFavorite,
   } = useTaskStore();
 
   const speechInput = useSpeechInput({
@@ -737,6 +738,18 @@ export default function ExecutionPage() {
               <span data-testid="execution-status-badge">
                 {getStatusBadge()}
               </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleTaskFavorite(currentTask.id)}
+                className={cn(
+                  "h-8 w-8 shrink-0 no-drag",
+                  currentTask.favorite ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground hover:text-foreground"
+                )}
+                title={currentTask.favorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Star className={cn("h-4 w-4", currentTask.favorite && "fill-current")} />
+              </Button>
             </div>
           </div>
         </div>

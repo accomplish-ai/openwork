@@ -528,6 +528,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
         messages: [],
         createdAt: new Date().toISOString(),
         startedAt: new Date().toISOString(),
+        favorite: false,
       };
     }
 
@@ -636,6 +637,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
     messages: unknown[];
     createdAt: string;
     startedAt: string;
+    favorite: boolean;
   }
 
   interface OpenCodeMessageMock {

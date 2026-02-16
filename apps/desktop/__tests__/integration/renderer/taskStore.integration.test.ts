@@ -8,13 +8,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Task, TaskConfig, TaskStatus, TaskMessage, TaskResult } from '@accomplish_ai/agent-core';
 
 // Helper to create a mock task
-function createMockTask(id: string, prompt: string = 'Test task', status: TaskStatus = 'pending'): Task {
+function createMockTask(id: string, prompt: string = 'Test task', status: TaskStatus = 'pending', favorite: boolean = false): Task {
   return {
     id,
     prompt,
     status,
     messages: [],
     createdAt: new Date().toISOString(),
+    favorite,
   };
 }
 
@@ -43,6 +44,8 @@ const mockAccomplish = {
   getTask: vi.fn(),
   deleteTask: vi.fn(),
   clearTaskHistory: vi.fn(),
+  toggleTaskFavorite: vi.fn(),
+  getFavoriteTasks: vi.fn(),
   logEvent: vi.fn().mockResolvedValue(undefined),
   getSelectedModel: vi.fn().mockResolvedValue({ provider: 'anthropic', id: 'claude-3-opus' }),
   getOllamaConfig: vi.fn().mockResolvedValue(null),

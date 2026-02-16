@@ -255,6 +255,14 @@ export function registerIPCHandlers(): void {
     storage.clearHistory();
   });
 
+  handle('task:toggle-favorite', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    storage.toggleTaskFavorite(taskId);
+  });
+
+  handle('task:get-favorites', async (_event: IpcMainInvokeEvent) => {
+    return storage.getFavoriteTasks();
+  });
+
   handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
     return storage.getTodosForTask(taskId);
   });

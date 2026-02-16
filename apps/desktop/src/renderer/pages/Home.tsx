@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
+import type { Task } from '@accomplish_ai/agent-core/common';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
@@ -85,7 +86,7 @@ export default function HomePage() {
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, favoriteTasks, loadFavoriteTasks } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
 
@@ -104,6 +105,11 @@ export default function HomePage() {
       unsubscribePermission();
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
+
+  // Load favorite tasks
+  useEffect(() => {
+    loadFavoriteTasks();
+  }, [loadFavoriteTasks]);
 
   const executeTask = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;
@@ -211,6 +217,45 @@ export default function HomePage() {
                 hideModelWhenNoModel={true}
               />
             </CardContent>
+
+            {/* Favorites Section */}
+            {favoriteTasks.length > 0 && (
+              <div className="border-t border-border">
+                <div className="px-6 py-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span>Your favorites</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {favoriteTasks.slice(0, 3).map((task) => (
+                      <button
+                        key={task.id}
+                        onClick={() => handleExampleClick(task.prompt)}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:border-ring hover:bg-muted/50 text-left transition-colors"
+                      >
+                        <Star className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {task.summary || task.prompt}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {task.status === 'completed' ? 'Completed' : 'In progress'}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    {favoriteTasks.length > 3 && (
+                      <Link
+                        to="/history"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center py-2"
+                      >
+                        View all {favoriteTasks.length} favorites
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Examples Toggle */}
             <div className="border-t border-border">
