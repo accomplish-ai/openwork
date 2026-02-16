@@ -288,10 +288,25 @@ async function handleStreamingCompletion(
 /**
  * Read the full request body as a string.
  */
-function readBody(req: http.IncomingMessage): Promise<string> {
+/**
+ * Read the full request body as a string.
+ * Enforces a max size limit (default 10MB) to prevent OOM.
+ */
+function readBody(req: http.IncomingMessage, limitBytes = 10 * 1024 * 1024): Promise<string> {
     return new Promise((resolve, reject) => {
+        let size = 0;
         const chunks: Buffer[] = [];
-        req.on('data', (chunk: Buffer) => chunks.push(chunk));
+
+        req.on('data', (chunk: Buffer) => {
+            size += chunk.length;
+            if (size > limitBytes) {
+                req.destroy(); // Stop receiving data
+                reject(new Error('PayloadTooLarge'));
+                return;
+            }
+            chunks.push(chunk);
+        });
+
         req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
         req.on('error', reject);
     });
@@ -432,8 +447,17 @@ export async function startServer(
                 // 404 for everything else
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: { message: 'Not found', type: 'invalid_request' } }));
-            } catch (error) {
+            } catch (error: any) {
                 console.error('[HF Server] Request error:', error);
+
+                if (error.message === 'PayloadTooLarge') {
+                    if (!res.headersSent) {
+                        res.writeHead(413, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: { message: 'Request entity too large', type: 'invalid_request_error' } }));
+                    }
+                    return;
+                }
+
                 if (!res.headersSent) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                 }
