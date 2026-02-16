@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { StarButton } from '../ui/StarButton';
@@ -11,6 +11,7 @@ interface TaskHistoryProps {
 
 export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
   const { tasks, loadTasks, deleteTask, clearHistory, toggleFavorite } = useTaskStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadTasks();
@@ -58,12 +59,13 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
       </div>
 
       {limit && tasks.length > limit && (
-        <Link
-          to="/history"
-          className="block mt-4 text-center text-sm text-text-muted hover:text-text transition-colors"
+        <button
+          type="button"
+          onClick={() => navigate('/history')}
+          className="block mt-4 text-center text-sm text-text-muted hover:text-text transition-colors w-full"
         >
           View all {tasks.length} tasks
-        </Link>
+        </button>
       )}
     </div>
   );
@@ -78,6 +80,7 @@ function TaskHistoryItem({
   onDelete: () => void;
   onToggleFavorite: () => void;
 }) {
+  const navigate = useNavigate();
   const statusConfig: Record<string, { color: string; label: string }> = {
     completed: { color: 'bg-success', label: 'Completed' },
     running: { color: 'bg-primary', label: 'Running' },
@@ -90,10 +93,25 @@ function TaskHistoryItem({
   const config = statusConfig[task.status] || statusConfig.pending;
   const timeAgo = getTimeAgo(task.createdAt);
 
+  const handleOpen = () => {
+    navigate(`/execution/${task.id}`);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpen();
+    }
+  };
+
   return (
-    <Link
-      to={`/execution/${task.id}`}
-      className="flex items-center gap-4 p-4 rounded-card border border-border bg-background-card hover:shadow-card-hover transition-all"
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open task ${task.summary || task.prompt}`}
+      className="flex items-center gap-4 p-4 rounded-card border border-border bg-background-card hover:shadow-card-hover transition-all cursor-pointer"
     >
       <div className={`w-2 h-2 rounded-full ${config.color}`} />
       <div className="flex-1 min-w-0">
@@ -111,6 +129,7 @@ function TaskHistoryItem({
           size="sm"
         />
         <button
+          type="button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -125,7 +144,7 @@ function TaskHistoryItem({
         </svg>
       </button>
     </div>
-    </Link>
+    </div>
   );
 }
 
