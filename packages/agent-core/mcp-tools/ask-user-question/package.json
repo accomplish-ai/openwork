@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "imports": {
-    "@/*": "./src/*"
+    "#*": "./src/*"
   },
   "scripts": {
     "start": "npx tsx src/index.ts",
