@@ -100,10 +100,16 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     ? [...providerConfigResult.enabledProviders]
     : [];
   let modelOverride = providerConfigResult.modelOverride;
-  const activeModel = storage.getActiveProviderModel();
-  const selectedModel = storage.getSelectedModel();
+  const activeModel = typeof storage.getActiveProviderModel === 'function'
+    ? storage.getActiveProviderModel()
+    : null;
+  const selectedModel = typeof storage.getSelectedModel === 'function'
+    ? storage.getSelectedModel()
+    : null;
 
-  const hfProvider = storage.getConnectedProvider('huggingface-local');
+  const hfProvider = typeof storage.getConnectedProvider === 'function'
+    ? storage.getConnectedProvider('huggingface-local')
+    : null;
   if (
     hfProvider?.connectionStatus === 'connected' &&
     hfProvider.credentials.type === 'huggingface-local' &&

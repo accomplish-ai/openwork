@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import http from 'http';
+import type { Socket } from 'net';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
@@ -11,6 +12,8 @@ import type {
 
 const SERVER_PORT = 9231;
 const MAX_REQUEST_SIZE = 10 * 1024 * 1024;
+const REQUEST_BODY_TIMEOUT_MS = 30_000;
+const SERVER_SHUTDOWN_TIMEOUT_MS = 3_000;
 const MANIFEST_VERSION = 1;
 
 const CURATED_MODELS: Array<{
@@ -113,6 +116,7 @@ interface PipelineRuntime {
 const progressEvents = new EventEmitter();
 const runtimeByKey = new Map<string, Promise<PipelineRuntime>>();
 const downloadByKey = new Map<string, Promise<HuggingFaceInstalledModel>>();
+const activeSockets = new Set<Socket>();
 
 let server: http.Server | null = null;
 let activeConfig: HuggingFaceLocalRuntimeConfig | null = null;
@@ -547,27 +551,68 @@ async function readRequestBody(req: http.IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let totalSize = 0;
+    let settled = false;
 
-    req.on('data', (chunk) => {
+    const cleanup = (): void => {
+      clearTimeout(timeout);
+      req.off('data', onData);
+      req.off('end', onEnd);
+      req.off('error', onError);
+      req.off('aborted', onAborted);
+    };
+
+    const finishResolve = (body: Buffer): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      resolve(body);
+    };
+
+    const finishReject = (error: Error): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const timeout = setTimeout(() => {
+      finishReject(new Error('Request body timed out'));
+      req.destroy();
+    }, REQUEST_BODY_TIMEOUT_MS);
+
+    const onData = (chunk: Buffer | string): void => {
       const buffer = Buffer.from(chunk);
       totalSize += buffer.length;
 
       if (totalSize > MAX_REQUEST_SIZE) {
-        reject(new Error('Request too large'));
+        finishReject(new Error('Request too large'));
         req.destroy();
         return;
       }
 
       chunks.push(buffer);
-    });
+    };
 
-    req.on('end', () => {
-      resolve(Buffer.concat(chunks));
-    });
+    const onEnd = (): void => {
+      finishResolve(Buffer.concat(chunks));
+    };
 
-    req.on('error', (error) => {
-      reject(error);
-    });
+    const onError = (error: Error): void => {
+      finishReject(error);
+    };
+
+    const onAborted = (): void => {
+      finishReject(new Error('Request aborted'));
+    };
+
+    req.on('data', onData);
+    req.on('end', onEnd);
+    req.on('error', onError);
+    req.on('aborted', onAborted);
   });
 }
 
@@ -847,6 +892,12 @@ export async function ensureHuggingFaceLocalServer(
 
   if (!server) {
     server = http.createServer(handleServerRequest);
+    server.on('connection', (socket: Socket) => {
+      activeSockets.add(socket);
+      socket.once('close', () => {
+        activeSockets.delete(socket);
+      });
+    });
 
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -883,13 +934,40 @@ export async function stopHuggingFaceLocalServer(): Promise<void> {
     return;
   }
 
-  await new Promise<void>((resolve) => {
-    server!.close(() => {
+  const serverToClose = server;
+  server = null;
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if (typeof serverToClose.closeAllConnections === 'function') {
+        serverToClose.closeAllConnections();
+      } else {
+        for (const socket of activeSockets) {
+          socket.destroy();
+        }
+      }
+      activeSockets.clear();
+      resolve();
+    }, SERVER_SHUTDOWN_TIMEOUT_MS);
+
+    serverToClose.close((error) => {
+      clearTimeout(timeout);
+      activeSockets.clear();
+      if (error) {
+        reject(error);
+        return;
+      }
       resolve();
     });
-  });
 
-  server = null;
+    if (typeof serverToClose.closeAllConnections === 'function') {
+      serverToClose.closeAllConnections();
+    } else {
+      for (const socket of activeSockets) {
+        socket.end();
+      }
+    }
+  });
 }
 
 export function getHuggingFaceHardwareInfo(): HuggingFaceHardwareInfo {

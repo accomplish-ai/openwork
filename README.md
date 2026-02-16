@@ -16,7 +16,7 @@
 
 # Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
 
-Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama, LM Studio, or Hugging Face Local.
+Accomplish is an open-source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama, LM Studio, or Hugging Face Local.
 
 <p align="center">
   <strong>Runs locally on your machine. Bring your own API keys or local models. MIT licensed.</strong>

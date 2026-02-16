@@ -90,7 +90,6 @@ export function getModelDisplayName(modelId: string): string {
     cleanId = cleanId.split('/').pop() || cleanId;
   }
 
-  // Strip local variant suffixes (e.g. "::q4::auto")
   if (cleanId.includes('::')) {
     cleanId = cleanId.split('::')[0];
   }

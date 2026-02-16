@@ -85,7 +85,9 @@ function buildProviderModelId(
 }
 
 function formatBytes(bytes?: number): string {
-  if (!bytes || bytes <= 0) return 'Unknown';
+  if (!bytes || bytes <= 0) {
+    return 'Unknown';
+  }
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let value = bytes;
   let idx = 0;
@@ -97,14 +99,22 @@ function formatBytes(bytes?: number): string {
 }
 
 function formatRelativeDate(input: string): string {
-  if (!input) return 'Unknown';
+  if (!input) {
+    return 'Unknown';
+  }
   const date = new Date(input);
-  if (Number.isNaN(date.getTime())) return 'Unknown';
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown';
+  }
 
   const diffMs = Date.now() - date.getTime();
   const dayMs = 24 * 60 * 60 * 1000;
-  if (diffMs < dayMs) return 'Today';
-  if (diffMs < 2 * dayMs) return 'Yesterday';
+  if (diffMs < dayMs) {
+    return 'Today';
+  }
+  if (diffMs < 2 * dayMs) {
+    return 'Yesterday';
+  }
   const days = Math.floor(diffMs / dayMs);
   return `${days}d ago`;
 }
@@ -133,8 +143,12 @@ export function HuggingFaceLocalProviderForm({
 
   const refreshInstalled = useCallback(async () => {
     const accomplish = getAccomplish();
-    const installed = await accomplish.listHuggingFaceModels();
-    setInstalledModels(installed);
+    try {
+      const installed = await accomplish.listHuggingFaceModels();
+      setInstalledModels(installed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load installed Hugging Face models');
+    }
   }, []);
 
   const searchModels = useCallback(async (value: string) => {
