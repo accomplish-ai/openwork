@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * Props for the AwsAgentCoreForm component.
@@ -50,24 +53,22 @@ export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgen
   return (
     <div className="space-y-4">
       <div className="grid gap-2">
-        <label className="text-sm font-medium">AWS Region</label>
-        <input
+        <Label>AWS Region</Label>
+        <Input
           type="text"
           value={config?.region || ''}
           onChange={(e) => handleChange('region', e.target.value)}
           placeholder="us-west-2"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium">Profile Name (Optional)</label>
-        <input
+        <Label>Profile Name (Optional)</Label>
+        <Input
           type="text"
           value={config?.profile || ''}
           onChange={(e) => handleChange('profile', e.target.value)}
           placeholder="default"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
         <p className="text-xs text-muted-foreground">
           Use a named profile from your ~/.aws/credentials file.
@@ -75,35 +76,33 @@ export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgen
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium">Access Key ID (Optional)</label>
-        <input
+        <Label>Access Key ID (Optional)</Label>
+        <Input
           type="password"
           value={config?.accessKeyId || ''}
           onChange={(e) => handleChange('accessKeyId', e.target.value)}
           placeholder="AKIA..."
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium">Secret Access Key (Optional)</label>
-        <input
+        <Label>Secret Access Key (Optional)</Label>
+        <Input
           type="password"
           value={config?.secretAccessKey || ''}
           onChange={(e) => handleChange('secretAccessKey', e.target.value)}
           placeholder="wJalr..."
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
       <div className="flex items-center gap-4">
-        <button
+        <Button
+          variant="outline"
           onClick={handleTest}
           disabled={testing || !config?.region}
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
         >
           {testing ? 'Testing...' : 'Test Connection'}
-        </button>
+        </Button>
         {testResult === 'success' && (
           <span className="text-sm text-green-600 flex items-center gap-1">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
