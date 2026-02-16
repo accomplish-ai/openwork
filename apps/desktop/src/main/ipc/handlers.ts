@@ -804,6 +804,172 @@ export function registerIPCHandlers(): void {
     storage.setLMStudioConfig(config);
   });
 
+  handle('huggingface:get-config', async (_event: IpcMainInvokeEvent) => {
+    return storage.getHuggingFaceConfig();
+  });
+
+  handle('huggingface:set-config', async (_event: IpcMainInvokeEvent, config: HuggingFaceConfig | null) => {
+    if (config !== null) {
+      if (typeof config.enabled !== 'boolean') {
+        throw new Error('Invalid HuggingFace configuration: enabled must be a boolean');
+      }
+      if (config.defaultModelId !== undefined && typeof config.defaultModelId !== 'string') {
+        throw new Error('Invalid HuggingFace configuration: defaultModelId must be a string');
+      }
+      if (config.quantization !== undefined && typeof config.quantization !== 'string') {
+        throw new Error('Invalid HuggingFace configuration: quantization must be a string');
+      }
+      if (config.devicePreference !== undefined && typeof config.devicePreference !== 'string') {
+        throw new Error('Invalid HuggingFace configuration: devicePreference must be a string');
+      }
+      if (config.lastValidated !== undefined && typeof config.lastValidated !== 'number') {
+        throw new Error('Invalid HuggingFace configuration: lastValidated must be a number');
+      }
+      if (config.models !== undefined) {
+        if (!Array.isArray(config.models)) {
+          throw new Error('Invalid HuggingFace configuration: models must be an array');
+        }
+        for (const model of config.models) {
+          if (typeof model.id !== 'string' || typeof model.displayName !== 'string' || typeof model.size !== 'number' || typeof model.quantization !== 'string') {
+            throw new Error('Invalid HuggingFace configuration: invalid model format');
+          }
+        }
+      }
+    }
+    storage.setHuggingFaceConfig(config);
+  });
+
+  handle('huggingface:list-models', async (_event: IpcMainInvokeEvent) => {
+    try {
+      const config = storage.getHuggingFaceConfig();
+      if (!config || !config.enabled) {
+        return { success: false, error: 'HuggingFace provider not enabled' };
+      }
+
+      // Create a temporary adapter to list available models
+      const { HuggingFaceAdapter } = await import('../providers/huggingface');
+      const adapter = new HuggingFaceAdapter({
+        modelId: config.defaultModelId || 'microsoft/Phi-3-mini-4k-instruct',
+        quantized: true,
+        device: 'cpu',
+        dtype: 'int8',
+      });
+
+      const models = await adapter.listAvailableModels();
+      return { success: true, models };
+    } catch (error) {
+      console.error('[HuggingFace] Failed to list models:', error);
+      return { success: false, error: normalizeIpcError(error), models: [] };
+    }
+  });
+
+  handle('huggingface:download-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    try {
+      const config = storage.getHuggingFaceConfig();
+      if (!config || !config.enabled) {
+        return { success: false, error: 'HuggingFace provider not enabled' };
+      }
+
+      const { HuggingFaceAdapter } = await import('../providers/huggingface');
+      const adapter = new HuggingFaceAdapter({
+        modelId,
+        quantized: config.quantization !== 'fp32',
+        device: (config.devicePreference as 'cpu' | 'webgpu') || 'cpu',
+        dtype: config.quantization as 'fp32' | 'fp16' | 'int8' | 'int4' || 'int8',
+      });
+
+      // Send progress updates via the event sender
+      const sender = _event.sender;
+      await adapter.downloadModel(modelId, (progress) => {
+        sender.send('huggingface:download-progress', progress);
+      });
+
+      // Update config to include the newly downloaded model
+      if (config.models) {
+        const modelDetails = await adapter.getModelDetails(modelId);
+        const existingModelIndex = config.models.findIndex(m => m.id === modelId);
+        
+        if (existingModelIndex >= 0) {
+          config.models[existingModelIndex] = {
+            ...config.models[existingModelIndex],
+            ...modelDetails
+          };
+        } else {
+          config.models.push({
+            id: modelId,
+            displayName: modelId.split('/').pop() || modelId,
+            size: modelDetails.size,
+            quantization: modelDetails.quantized ? 'int8' : 'fp32',
+          });
+        }
+        
+        storage.setHuggingFaceConfig(config);
+      }
+
+      return { success: true, message: 'Model downloaded successfully' };
+    } catch (error) {
+      console.error('[HuggingFace] Failed to download model:', error);
+      return { success: false, error: normalizeIpcError(error) };
+    }
+  });
+
+  handle('huggingface:check-model-downloaded', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    try {
+      const { HuggingFaceAdapter } = await import('../providers/huggingface');
+      const config = storage.getHuggingFaceConfig();
+      const adapter = new HuggingFaceAdapter({
+        modelId,
+        quantized: true,
+        device: 'cpu',
+        dtype: 'int8',
+      });
+
+      const isDownloaded = await adapter.checkModelDownloaded(modelId);
+      return { success: true, isDownloaded };
+    } catch (error) {
+      console.error('[HuggingFace] Failed to check model download status:', error);
+      return { success: false, error: normalizeIpcError(error), isDownloaded: false };
+    }
+  });
+
+  handle('huggingface:get-cache-stats', async (_event: IpcMainInvokeEvent) => {
+    try {
+      const { HuggingFaceAdapter } = await import('../providers/huggingface');
+      const config = storage.getHuggingFaceConfig();
+      const adapter = new HuggingFaceAdapter({
+        modelId: config?.defaultModelId || 'microsoft/Phi-3-mini-4k-instruct',
+        quantized: true,
+        device: 'cpu',
+        dtype: 'int8',
+      });
+
+      const stats = await adapter.getCacheStats();
+      return { success: true, stats };
+    } catch (error) {
+      console.error('[HuggingFace] Failed to get cache stats:', error);
+      return { success: false, error: normalizeIpcError(error), stats: { totalSize: 0, modelCount: 0 } };
+    }
+  });
+
+  handle('huggingface:clear-cache', async (_event: IpcMainInvokeEvent, modelId?: string) => {
+    try {
+      const { HuggingFaceAdapter } = await import('../providers/huggingface');
+      const config = storage.getHuggingFaceConfig();
+      const adapter = new HuggingFaceAdapter({
+        modelId: config?.defaultModelId || 'microsoft/Phi-3-mini-4k-instruct',
+        quantized: true,
+        device: 'cpu',
+        dtype: 'int8',
+      });
+
+      await adapter.clearModelCache(modelId);
+      return { success: true, message: modelId ? `Model ${modelId} cache cleared` : 'Entire model cache cleared' };
+    } catch (error) {
+      console.error('[HuggingFace] Failed to clear cache:', error);
+      return { success: false, error: normalizeIpcError(error) };
+    }
+  });
+
   handle('provider:fetch-models', async (_event: IpcMainInvokeEvent, providerId: string, options?: { baseUrl?: string; zaiRegion?: string }) => {
     const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
     if (!providerConfig?.modelsEndpoint) {
