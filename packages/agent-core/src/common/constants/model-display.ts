@@ -46,6 +46,14 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // MiniMax
   'MiniMax-M2': 'MiniMax M2',
   'MiniMax-M2.1': 'MiniMax M2.1',
+  // Groq
+  'kimi-k2-instruct-0905': 'Kimi K2 Instruct',
+  // Together AI
+  'Kimi-K2.5': 'Kimi K2.5',
+  // Fireworks
+  'kimi-k2p5': 'Kimi K2.5',
+  // Nebius
+  'DeepSeek-V3.2': 'DeepSeek V3.2',
 };
 
 export const PROVIDER_PREFIXES = [
@@ -65,6 +73,10 @@ export const PROVIDER_PREFIXES = [
   'lmstudio/',
   'azure-foundry/',
   'vertex/',
+  'nebius/',
+  'together/',
+  'fireworks/',
+  'groq/',
 ];
 
 /**

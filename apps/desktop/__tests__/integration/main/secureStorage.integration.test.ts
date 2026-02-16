@@ -252,6 +252,10 @@ describe('secureStorage Integration', () => {
         minimax: null,
         lmstudio: null,
         elevenlabs: null,
+        nebius: null,
+        together: null,
+        fireworks: null,
+        groq: null,
         custom: null,
       });
     });
@@ -369,6 +373,10 @@ describe('secureStorage Integration', () => {
         minimax: null,
         lmstudio: null,
         elevenlabs: null,
+        nebius: null,
+        together: null,
+        fireworks: null,
+        groq: null,
         custom: null,
       });
     });

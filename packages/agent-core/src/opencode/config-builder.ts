@@ -121,7 +121,7 @@ export async function buildProviderConfigs(
   const activeModel = getActiveProviderModel();
   const providerConfigs: ProviderConfig[] = [];
 
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'vertex', 'minimax'];
+  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'vertex', 'minimax', 'nebius', 'together', 'fireworks', 'groq'];
   let enabledProviders = baseProviders;
 
   if (connectedIds.length > 0) {
@@ -439,6 +439,69 @@ export async function buildProviderConfigs(
     }
   }
 
+  // Nebius provider
+  const nebiusProvider = providerSettings.connectedProviders.nebius;
+  if (nebiusProvider?.connectionStatus === 'connected' && nebiusProvider.selectedModelId) {
+    const modelId = nebiusProvider.selectedModelId.replace(/^nebius\//, '');
+    const nebiusApiKey = getApiKey('nebius');
+    providerConfigs.push({
+      id: 'nebius',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Nebius AI',
+      options: {
+        baseURL: 'https://api.studio.nebius.ai/v1',
+        ...(nebiusApiKey ? { apiKey: nebiusApiKey } : {}),
+      },
+      models: {
+        [modelId]: { name: modelId, tools: true },
+      },
+    });
+    console.log('[OpenCode Config Builder] Nebius configured:', modelId);
+  }
+
+  // Together AI provider
+  const togetherProvider = providerSettings.connectedProviders.together;
+  if (togetherProvider?.connectionStatus === 'connected' && togetherProvider.selectedModelId) {
+    const modelId = togetherProvider.selectedModelId.replace(/^together\//, '');
+    const togetherApiKey = getApiKey('together');
+    providerConfigs.push({
+      id: 'together',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Together AI',
+      options: {
+        baseURL: 'https://api.together.xyz/v1',
+        ...(togetherApiKey ? { apiKey: togetherApiKey } : {}),
+      },
+      models: {
+        [modelId]: { name: modelId, tools: true },
+      },
+    });
+    console.log('[OpenCode Config Builder] Together AI configured:', modelId);
+  }
+
+  // Fireworks AI provider
+  const fireworksProvider = providerSettings.connectedProviders.fireworks;
+  if (fireworksProvider?.connectionStatus === 'connected' && fireworksProvider.selectedModelId) {
+    const modelId = fireworksProvider.selectedModelId.replace(/^fireworks\//, '');
+    const fireworksApiKey = getApiKey('fireworks');
+    providerConfigs.push({
+      id: 'fireworks',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Fireworks AI',
+      options: {
+        baseURL: 'https://api.fireworks.ai/inference/v1',
+        ...(fireworksApiKey ? { apiKey: fireworksApiKey } : {}),
+      },
+      models: {
+        [modelId]: { name: modelId, tools: true },
+      },
+    });
+    console.log('[OpenCode Config Builder] Fireworks AI configured:', modelId);
+  }
+
+  // Groq is handled by OpenCode CLI natively (built-in provider)
+  // Just sync the API key to auth.json via syncApiKeysToOpenCodeAuth
+
   // Z.AI provider
   const zaiKey = getApiKey('zai');
   if (zaiKey) {
@@ -477,16 +540,6 @@ export async function buildProviderConfigs(
 
   return { providerConfigs, enabledProviders, modelOverride };
 }
-
-/**
- * API key mapping from internal provider IDs to OpenCode auth.json format.
- * Only providers that need special key mapping in auth.json are included here.
- */
-const AUTH_KEY_MAPPING: Record<string, string> = {
-  deepseek: 'deepseek',
-  zai: 'zai-coding-plan',
-  minimax: 'minimax',
-};
 
 /**
  * Syncs API keys to OpenCode auth.json file.
@@ -540,6 +593,38 @@ export async function syncApiKeysToOpenCodeAuth(
       auth.minimax = { type: 'api', key: apiKeys.minimax };
       updated = true;
       console.log('[OpenCode Auth] Synced MiniMax API key');
+    }
+  }
+
+  if (apiKeys.nebius) {
+    if (!auth.nebius || auth.nebius.key !== apiKeys.nebius) {
+      auth.nebius = { type: 'api', key: apiKeys.nebius };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Nebius API key');
+    }
+  }
+
+  if (apiKeys.together) {
+    if (!auth.together || auth.together.key !== apiKeys.together) {
+      auth.together = { type: 'api', key: apiKeys.together };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Together AI API key');
+    }
+  }
+
+  if (apiKeys.fireworks) {
+    if (!auth.fireworks || auth.fireworks.key !== apiKeys.fireworks) {
+      auth.fireworks = { type: 'api', key: apiKeys.fireworks };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Fireworks AI API key');
+    }
+  }
+
+  if (apiKeys.groq) {
+    if (!auth.groq || auth.groq.key !== apiKeys.groq) {
+      auth.groq = { type: 'api', key: apiKeys.groq };
+      updated = true;
+      console.log('[OpenCode Auth] Synced Groq API key');
     }
   }
 

@@ -203,6 +203,10 @@ export class SecureStorage {
       'minimax',
       'lmstudio',
       'elevenlabs',
+      'nebius',
+      'together',
+      'fireworks',
+      'groq',
     ];
 
     const result: Record<string, string | null> = {};

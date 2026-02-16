@@ -141,6 +141,10 @@ Accomplish 是一款开源 AI 桌面代理，可在您的本地机器上自动�
 - Moonshot AI (Kimi)
 - Z.AI (GLM)
 - MiniMax
+- Nebius AI
+- Together AI
+- Fireworks AI
+- Groq
 - Amazon Bedrock
 - Azure Foundry
 - OpenRouter

@@ -141,6 +141,10 @@ Accomplish adalah agen desktop AI open source yang mengotomatisasi manajemen fil
 - Moonshot AI (Kimi)
 - Z.AI (GLM)
 - MiniMax
+- Nebius AI
+- Together AI
+- Fireworks AI
+- Groq
 - Amazon Bedrock
 - Azure Foundry
 - OpenRouter
