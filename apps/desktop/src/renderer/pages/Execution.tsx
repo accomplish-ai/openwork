@@ -1693,7 +1693,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
     }
   }, [message.content]);
 
-  const showCopyButton = !isTool && !(isAssistant && showContinueButton);
+  const showCopyButton = !isTool && !!message.content?.trim();
 
   const proseClasses = cn(
     'text-sm prose prose-sm max-w-none',
