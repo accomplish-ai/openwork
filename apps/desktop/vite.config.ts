@@ -26,7 +26,7 @@ export default defineConfig(() => ({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3', '@huggingface/transformers', 'onnxruntime-node'],
             },
           },
         },

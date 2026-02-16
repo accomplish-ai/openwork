@@ -13,7 +13,8 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'huggingface';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -42,6 +43,7 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
   minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
   lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  huggingface: { id: 'huggingface', name: 'HuggingFace', category: 'local', label: 'Local Models', logoKey: 'huggingface' },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -90,6 +92,11 @@ export interface LMStudioCredentials {
   serverUrl: string;
 }
 
+export interface HuggingFaceCredentials {
+  type: 'huggingface';
+  serverUrl: string;
+}
+
 export interface AzureFoundryCredentials {
   type: 'azure-foundry';
   authMethod: 'api-key' | 'entra-id';
@@ -121,6 +128,7 @@ export type ProviderCredentials =
   | ZaiCredentials
   | AzureFoundryCredentials
   | LMStudioCredentials
+  | HuggingFaceCredentials
   | OAuthCredentials;
 
 export type ToolSupportStatus = 'supported' | 'unsupported' | 'unknown';
@@ -196,4 +204,5 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  huggingface: 'huggingface',
 };

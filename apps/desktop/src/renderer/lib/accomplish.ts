@@ -156,6 +156,17 @@ interface AccomplishAPI {
     models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
   } | null): Promise<void>;
 
+  // HuggingFace configuration
+  testHuggingFaceConnection(): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; size?: string; toolSupport: ToolSupportStatus; downloaded: boolean }>;
+    error?: string;
+  }>;
+  downloadHuggingFaceModel(modelId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;

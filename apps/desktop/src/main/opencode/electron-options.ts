@@ -8,6 +8,7 @@ import { DEV_BROWSER_PORT } from '@accomplish_ai/agent-core';
 import {
   getAzureEntraToken,
   ensureDevBrowserServer,
+  ensureHuggingFaceServer,
   resolveCliPath,
   isCliAvailable as coreIsCliAvailable,
   buildCliArgs as coreBuildCliArgs,
@@ -231,6 +232,12 @@ export async function onBeforeStart(): Promise<void> {
       throw new Error(tokenResult.error);
     }
     azureFoundryToken = tokenResult.token;
+  }
+
+  const huggingfaceProvider = storage.getConnectedProvider('huggingface');
+  if (huggingfaceProvider?.connectionStatus === 'connected') {
+    const modelsDir = path.join(app.getPath('userData'), 'huggingface-models');
+    await ensureHuggingFaceServer({ modelsDir });
   }
 
   await generateOpenCodeConfig(azureFoundryToken);

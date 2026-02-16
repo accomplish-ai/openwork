@@ -3,6 +3,7 @@ import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electro
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
@@ -41,6 +42,9 @@ import {
   testLMStudioConnection,
   fetchLMStudioModels,
   validateLMStudioConfig,
+  listHuggingFaceModels,
+  downloadHuggingFaceModel,
+  ensureHuggingFaceServer,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
 import { safeParseJson } from '@accomplish_ai/agent-core';
@@ -802,6 +806,24 @@ export function registerIPCHandlers(): void {
       validateLMStudioConfig(config);
     }
     storage.setLMStudioConfig(config);
+  });
+
+  // HuggingFace handlers
+  handle('huggingface:test-connection', async (_event: IpcMainInvokeEvent) => {
+    const modelsDir = path.join(app.getPath('userData'), 'huggingface-models');
+
+    const serverResult = await ensureHuggingFaceServer({ modelsDir });
+    if (!serverResult.ready) {
+      return { success: false, error: 'Failed to start HuggingFace inference server' };
+    }
+
+    const models = listHuggingFaceModels(modelsDir);
+    return { success: true, models };
+  });
+
+  handle('huggingface:download-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    const modelsDir = path.join(app.getPath('userData'), 'huggingface-models');
+    return downloadHuggingFaceModel(modelsDir, modelId);
   });
 
   handle('provider:fetch-models', async (_event: IpcMainInvokeEvent, providerId: string, options?: { baseUrl?: string; zaiRegion?: string }) => {

@@ -174,6 +174,14 @@ export {
   validateLMStudioConfig,
 } from './providers/lmstudio.js';
 
+export {
+  listHuggingFaceModels,
+  downloadHuggingFaceModel,
+  ensureHuggingFaceServer,
+  stopHuggingFaceServer,
+  HUGGINGFACE_DEFAULT_PORT,
+} from './providers/huggingface.js';
+
 export { fetchProviderModels } from './providers/fetch-models.js';
 export type { FetchProviderModelsResult } from './providers/fetch-models.js';
 
@@ -284,6 +292,7 @@ export type {
   LiteLLMModel,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceModel,
 } from './common/types/provider.js';
 export {
   DEFAULT_PROVIDERS,
@@ -308,6 +317,7 @@ export type {
   ZaiRegion,
   ZaiCredentials,
   LMStudioCredentials,
+  HuggingFaceCredentials,
   AzureFoundryCredentials,
   OAuthCredentials,
   ProviderCredentials,
