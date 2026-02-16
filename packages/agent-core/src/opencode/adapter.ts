@@ -582,16 +582,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           status: 'success',
           sessionId: sessionID || this.currentSessionId || undefined,
         });
-        // Kill PTY to stop wasting tokens on further model execution
-        if (this.ptyProcess) {
-          try {
-            this.ptyProcess.kill();
-          } catch {
-            // Best-effort kill — process may have already exited
-          }
-          this.ptyProcess = null;
-        }
-        return;
       }
     }
 
