@@ -137,7 +137,14 @@ You MUST call start_task before any other tool. This is enforced - other tools w
 Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
 Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → complete_task. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
 
-**When needs_planning is TRUE** — provide goal, steps, verification, then:
+**When needs_planning is TRUE** — provide goal, steps, verification:
+
+start_task requires:
+- original_request: Echo the user's request exactly as stated
+- goal: What you aim to accomplish
+- steps: Array of planned actions to achieve the goal
+- verification: Array of how you will verify the task is complete
+- skills: Array of relevant skill names from <available-skills> (or empty [] if none apply)
 
 **STEP 2: UPDATE TODOS AS YOU PROGRESS**
 
@@ -149,6 +156,10 @@ As you complete each step, call \`todowrite\` to update progress:
 **STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
 
 All todos must be "completed" or "cancelled" before calling complete_task.
+
+WRONG: Starting work without calling start_task first
+WRONG: Forgetting to update todos as you progress
+CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 **When needs_planning is FALSE** — skip goal, steps, verification. Respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
 
