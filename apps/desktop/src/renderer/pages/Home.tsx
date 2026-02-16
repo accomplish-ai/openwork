@@ -10,7 +10,7 @@ import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
-import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import { hasAnyReadyProvider, type TaskFileAttachment } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -82,6 +82,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<TaskFileAttachment[]>([]);
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
@@ -109,11 +110,12 @@ export default function HomePage() {
     if (!prompt.trim() || isLoading) return;
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const task = await startTask({ prompt: prompt.trim(), taskId, attachments });
     if (task) {
+      setAttachments([]);
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, isLoading, startTask, navigate, attachments]);
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -198,6 +200,8 @@ export default function HomePage() {
                 value={prompt}
                 onChange={setPrompt}
                 onSubmit={handleSubmit}
+                attachments={attachments}
+                onAttachmentsChange={setAttachments}
                 isLoading={isLoading}
                 placeholder="Describe a task and let AI handle the rest"
                 large={true}

@@ -8,6 +8,20 @@ export type TaskStatus =
   | 'cancelled'
   | 'interrupted';
 
+export const TASK_ATTACHMENT_MAX_FILES = 5;
+export const TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+export type TaskFileAttachmentType = 'image' | 'text' | 'document' | 'other';
+
+export interface TaskFileAttachment {
+  id: string;
+  name: string;
+  path: string;
+  type: TaskFileAttachmentType;
+  preview?: string;
+  size: number;
+}
+
 export interface TaskConfig {
   prompt: string;
   taskId?: string;
@@ -18,6 +32,7 @@ export interface TaskConfig {
   sessionId?: string;
   /** Model ID for display name in progress events */
   modelId?: string;
+  attachments?: TaskFileAttachment[];
 }
 
 export interface Task {

@@ -8,6 +8,7 @@
 import type {
   Task,
   TaskConfig,
+  TaskFileAttachment,
   TaskUpdateEvent,
   TaskStatus,
   PermissionRequest,
@@ -37,6 +38,7 @@ interface AccomplishAPI {
 
   // Task operations
   startTask(config: TaskConfig): Promise<Task>;
+  pickTaskFiles(): Promise<TaskFileAttachment[]>;
   cancelTask(taskId: string): Promise<void>;
   interruptTask(taskId: string): Promise<void>;
   getTask(taskId: string): Promise<Task | null>;

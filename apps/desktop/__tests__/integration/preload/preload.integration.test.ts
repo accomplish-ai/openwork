@@ -108,9 +108,14 @@ describe('Preload Script Integration', () => {
 
     describe('Task Operations', () => {
       it('startTask should invoke task:start with config', async () => {
-        const config = { description: 'Test task' };
-        await (capturedAccomplishAPI.startTask as (config: { description: string }) => Promise<unknown>)(config);
+        const config = { prompt: 'Test task' };
+        await (capturedAccomplishAPI.startTask as (config: { prompt: string }) => Promise<unknown>)(config);
         expect(mockInvoke).toHaveBeenCalledWith('task:start', config);
+      });
+
+      it('pickTaskFiles should invoke task:pick-files', async () => {
+        await (capturedAccomplishAPI.pickTaskFiles as () => Promise<unknown[]>)();
+        expect(mockInvoke).toHaveBeenCalledWith('task:pick-files');
       });
 
       it('cancelTask should invoke task:cancel with taskId', async () => {

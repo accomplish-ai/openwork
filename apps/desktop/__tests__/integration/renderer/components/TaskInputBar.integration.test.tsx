@@ -43,6 +43,7 @@ const mockAccomplish = {
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   speechIsConfigured: vi.fn().mockResolvedValue(true),
+  pickTaskFiles: vi.fn().mockResolvedValue([]),
 };
 
 // Mock the accomplish module
@@ -579,6 +580,116 @@ describe('TaskInputBar Integration', () => {
 
       const textarea = screen.getByRole('textbox');
       expect(textarea.className).toContain('text-[15px]');
+    });
+  });
+
+  describe('attachments', () => {
+    it('should call onAttachmentsChange when files are picked from plus menu', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const onAttachmentsChange = vi.fn();
+      mockAccomplish.pickTaskFiles.mockResolvedValueOnce([
+        {
+          path: '/tmp/readme.md',
+          name: 'readme.md',
+          type: 'text',
+          size: 512,
+        },
+      ]);
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Analyze attached file"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          onAttachmentsChange={onAttachmentsChange}
+          attachments={[]}
+        />
+      );
+
+      const plusButton = screen.getByTitle('Add content');
+      fireEvent.click(plusButton);
+      fireEvent.click(screen.getByText('Attach Files'));
+
+      await waitFor(() => {
+        expect(onAttachmentsChange).toHaveBeenCalledWith([
+          {
+            path: '/tmp/readme.md',
+            name: 'readme.md',
+            type: 'text',
+            size: 512,
+          },
+        ]);
+      });
+    });
+
+    it('should add dropped files via drag and drop', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const onAttachmentsChange = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Use dropped file"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          onAttachmentsChange={onAttachmentsChange}
+          attachments={[]}
+        />
+      );
+
+      const file = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+      Object.defineProperty(file, 'path', { value: '/tmp/notes.txt' });
+      const container = screen.getByTestId('task-input-textarea').closest('div.rounded-xl');
+      expect(container).toBeTruthy();
+
+      fireEvent.drop(container!, {
+        dataTransfer: {
+          files: [file],
+        },
+      });
+
+      await waitFor(() => {
+        expect(onAttachmentsChange).toHaveBeenCalledWith([
+          expect.objectContaining({
+            path: '/tmp/notes.txt',
+            name: 'notes.txt',
+            type: 'text',
+            size: 5,
+            id: expect.any(String),
+          }),
+        ]);
+      });
+    });
+
+    it('should render and remove attachment previews', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      const onAttachmentsChange = vi.fn();
+
+      renderWithRouter(
+        <TaskInputBar
+          value="Review files"
+          onChange={onChange}
+          onSubmit={onSubmit}
+          onAttachmentsChange={onAttachmentsChange}
+          attachments={[
+            {
+              path: '/tmp/report.pdf',
+              name: 'report.pdf',
+              type: 'document',
+              size: 1234,
+            },
+          ]}
+        />
+      );
+
+      expect(screen.getByTestId('task-input-attachments')).toBeInTheDocument();
+      expect(screen.getByText('report.pdf')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /remove report\.pdf/i }));
+
+      expect(onAttachmentsChange).toHaveBeenCalledWith([]);
     });
   });
 });
