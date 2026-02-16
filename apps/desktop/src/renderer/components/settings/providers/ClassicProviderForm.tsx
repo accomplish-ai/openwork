@@ -13,6 +13,15 @@ import {
 } from '../shared';
 import { PROVIDER_LOGOS, DARK_INVERT_PROVIDERS } from '@/lib/provider-logos';
 
+// Fallback models for OpenAI OAuth flow where no API key is available to call /v1/models.
+// Matches the static list that shipped before dynamic model fetching (agent-core < 0.3.3).
+const OPENAI_OAUTH_FALLBACK_MODELS: Array<{ id: string; name: string }> = [
+  { id: 'openai/gpt-5.2', name: 'GPT 5.2' },
+  { id: 'openai/gpt-5.2-codex', name: 'GPT 5.2 Codex' },
+  { id: 'openai/gpt-5.1-codex-max', name: 'GPT 5.1 Codex Max' },
+  { id: 'openai/gpt-5.1-codex-mini', name: 'GPT 5.1 Codex Mini' },
+];
+
 interface ClassicProviderFormProps {
   providerId: ProviderId;
   connectedProvider?: ConnectedProvider;
@@ -149,17 +158,8 @@ export function ClassicProviderForm({
       const status = await accomplish.getOpenAiOauthStatus();
 
       if (status.connected) {
-        // Fetch models dynamically if provider has a models endpoint
-        let fetchedModels: Array<{ id: string; name: string }> | undefined;
-        if (providerConfig?.modelsEndpoint) {
-          const fetchResult = await accomplish.fetchProviderModels(providerId, {
-            baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
-          });
-          if (fetchResult.success && fetchResult.models) {
-            fetchedModels = fetchResult.models;
-          }
-        }
-
+        // OAuth stores a refresh token — no API key is available for /v1/models.
+        // Use a hardcoded fallback list so the model dropdown works.
         const defaultModelId = providerConfig?.defaultModelId ?? null;
         const provider: ConnectedProvider = {
           providerId,
@@ -170,7 +170,7 @@ export function ClassicProviderForm({
             oauthProvider: 'chatgpt',
           } as OAuthCredentials,
           lastConnectedAt: new Date().toISOString(),
-          ...(fetchedModels ? { availableModels: fetchedModels } : {}),
+          availableModels: OPENAI_OAUTH_FALLBACK_MODELS,
         };
         onConnect(provider);
       }
