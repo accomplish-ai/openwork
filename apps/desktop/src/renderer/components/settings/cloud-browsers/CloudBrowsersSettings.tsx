@@ -1,15 +1,18 @@
-import { useState } from 'react';
+
 import { AwsAgentCoreForm } from './AwsAgentCoreForm';
 import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 import { getAccomplish } from '@/lib/accomplish';
 
-/**
- * Settings panel for configuring Cloud Browsers integrations.
- * Supports switching between AWS AgentCore and Browserbase (placeholder).
- */
-export function CloudBrowsersSettings() {
-  const [selectedProvider, setSelectedProvider] = useState<'aws' | 'browserbase'>('aws');
-  const [awsConfig, setAwsConfig] = useState<AwsAgentCoreConfig>({ region: 'us-east-1' });
+  import { useSettingsStore } from '@/stores/settingsStore';
+
+  /**
+   * Settings panel for configuring Cloud Browsers integrations.
+   * Supports switching between AWS AgentCore and Browserbase (placeholder).
+   */
+  export function CloudBrowsersSettings() {
+    const { selectedProvider, awsConfig } = useSettingsStore((state) => state.cloudBrowsers);
+    const setCloudBrowserProvider = useSettingsStore((state) => state.setCloudBrowserProvider);
+    const setAwsConfig = useSettingsStore((state) => state.setAwsConfig);
 
   const handleTestAws = async (config: AwsAgentCoreConfig) => {
     console.log('Testing AWS connection:', {
@@ -29,7 +32,7 @@ export function CloudBrowsersSettings() {
 
         <div className="flex gap-4 mb-6 border-b border-border pb-4">
            <button
-            onClick={() => setSelectedProvider('aws')}
+            onClick={() => setCloudBrowserProvider('aws')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               selectedProvider === 'aws'
                 ? 'bg-primary text-primary-foreground'
@@ -39,7 +42,7 @@ export function CloudBrowsersSettings() {
             AWS AgentCore
           </button>
            <button
-            onClick={() => setSelectedProvider('browserbase')}
+            onClick={() => setCloudBrowserProvider('browserbase')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               selectedProvider === 'browserbase'
                 ? 'bg-primary text-primary-foreground'

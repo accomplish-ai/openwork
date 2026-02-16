@@ -378,6 +378,7 @@ type MockedIpcMain = typeof ipcMain & {
 };
 
 const mockedIpcMain = ipcMain as MockedIpcMain;
+const mockWindow = BrowserWindow.getAllWindows()[0] as unknown as BrowserWindow;
 
 /**
  * Helper to invoke a registered handler
