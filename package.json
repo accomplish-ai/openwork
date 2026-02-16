@@ -30,7 +30,8 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-xml-parser": "^5.3.4"
+      "fast-xml-parser": "^5.3.4",
+      "@huggingface/transformers>sharp": "-"
     }
   },
   "packageManager": "pnpm@9.15.0",

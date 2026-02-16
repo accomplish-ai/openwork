@@ -6,6 +6,7 @@ settings:
 
 overrides:
   fast-xml-parser: ^5.3.4
+  '@huggingface/transformers>sharp': '-'
 
 importers:
 
@@ -6615,9 +6616,9 @@ snapshots:
       '@huggingface/jinja': 0.5.5
       onnxruntime-node: 1.21.0
       onnxruntime-web: 1.22.0-dev.20250409-89f8206ba4
-      sharp: 0.34.5
 
-  '@img/colour@1.0.0': {}
+  '@img/colour@1.0.0':
+    optional: true
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -10638,6 +10639,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
+    optional: true
 
   shebang-command@2.0.0:
     dependencies:
