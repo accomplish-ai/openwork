@@ -238,10 +238,6 @@ importers:
         version: 2.1.9(@types/node@22.19.11)(happy-dom@20.6.1)(jsdom@28.1.0)
 
   packages/agent-core/mcp-tools/ask-user-question:
-    dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
@@ -254,10 +250,6 @@ importers:
         version: 5.9.3
 
   packages/agent-core/mcp-tools/complete-task:
-    dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
@@ -265,9 +257,6 @@ importers:
 
   packages/agent-core/mcp-tools/dev-browser:
     dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
       playwright:
         specifier: npm:rebrowser-playwright@^1.52.0
         version: rebrowser-playwright@1.52.0
@@ -303,9 +292,6 @@ importers:
 
   packages/agent-core/mcp-tools/dev-browser-mcp:
     dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
       playwright:
         specifier: npm:rebrowser-playwright@^1.52.0
         version: rebrowser-playwright@1.52.0
@@ -318,10 +304,6 @@ importers:
         version: 1.6.1(@types/node@25.2.3)(happy-dom@20.6.1)(jsdom@28.1.0)
 
   packages/agent-core/mcp-tools/file-permission:
-    dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
@@ -335,9 +317,6 @@ importers:
 
   packages/agent-core/mcp-tools/start-task:
     dependencies:
-      '@accomplish/desktop':
-        specifier: file:../../../../apps/desktop
-        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
@@ -346,9 +325,6 @@ packages:
 
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
-
-  '@accomplish/desktop@file:apps/desktop':
-    resolution: {directory: apps/desktop, type: directory}
 
   '@acemir/cssom@0.9.31':
     resolution: {integrity: sha512-ZnR3GSaH+/vJ0YlHau21FjfLYjMpYVIzTD8M8vIEQvIGxeOXyXdzCI140rrCY862p/C/BbzWsjc1dgnM9mkoTA==}
@@ -6115,48 +6091,6 @@ packages:
 snapshots:
 
   7zip-bin@5.2.0: {}
-
-  '@accomplish/desktop@file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))':
-    dependencies:
-      '@accomplish_ai/agent-core': link:packages/agent-core
-      '@aws-sdk/client-bedrock': 3.990.0
-      '@aws-sdk/credential-providers': 3.990.0
-      '@azure/identity': 4.13.0
-      '@huggingface/transformers': 3.8.1
-      '@radix-ui/react-avatar': 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-label': 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-popover': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-select': 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-separator': 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-slot': 1.2.4(@types/react@19.2.14)(react@19.2.4)
-      '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      better-sqlite3: 12.6.2
-      class-variance-authority: 0.7.1
-      clsx: 2.1.1
-      dotenv: 17.3.1
-      electron-store: 8.2.0
-      framer-motion: 12.34.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      gray-matter: 4.0.3
-      lucide-react: 0.454.0(react@19.2.4)
-      node-pty: 1.1.0
-      opencode-ai: 1.2.1
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
-      react-markdown: 9.1.0(@types/react@19.2.14)(react@19.2.4)
-      react-router-dom: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      tailwind-merge: 3.4.1
-      zod: 3.25.76
-      zustand: 5.0.11(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-    transitivePeerDependencies:
-      - '@emotion/is-prop-valid'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - immer
-      - supports-color
-      - use-sync-external-store
 
   '@acemir/cssom@0.9.31': {}
 
