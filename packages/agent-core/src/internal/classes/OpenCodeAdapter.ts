@@ -576,13 +576,6 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
       this.completionEnforcer.handleCompleteTaskDetection(toolInput);
-      if (this.completionEnforcer.shouldComplete() && !this.hasCompleted) {
-        this.hasCompleted = true;
-        this.emit('complete', {
-          status: 'success',
-          sessionId: sessionID || this.currentSessionId || undefined,
-        });
-      }
     }
 
     if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {
