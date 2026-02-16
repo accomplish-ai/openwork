@@ -27,11 +27,12 @@ export function StarButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       className={`p-2 transition-all duration-200 ${className} ${
         isFavorite 
           ? 'text-yellow-500 hover:text-yellow-600' 
-          : 'text-text-muted hover:text-yellow-400'
+          : 'text-muted-foreground hover:text-yellow-400'
       }`}
       title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
     >

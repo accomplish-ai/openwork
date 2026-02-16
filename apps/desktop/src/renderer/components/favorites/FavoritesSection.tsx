@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { StarButton } from '../ui/StarButton';
@@ -13,7 +13,6 @@ export function FavoritesSection({ maxVisible = 3 }: FavoritesSectionProps) {
   const { tasks, toggleFavorite } = useTaskStore();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Filter favorites from the tasks in the store
   const favorites = tasks.filter(task => task.isFavorite === true);
 
   if (favorites.length === 0) {
@@ -31,9 +30,15 @@ export function FavoritesSection({ maxVisible = 3 }: FavoritesSectionProps) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffMins < 1) {
+      return 'just now';
+    }
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    }
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
     return `${diffDays}d ago`;
   };
 
@@ -97,11 +102,27 @@ interface FavoriteItemProps {
 
 function FavoriteItem({ task, onToggleFavorite, getTimeAgo }: FavoriteItemProps) {
   const timeAgo = getTimeAgo(task.createdAt);
+  const navigate = useNavigate();
+
+  const handleOpen = () => {
+    navigate(`/execution/${task.id}`);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpen();
+    }
+  };
 
   return (
-    <Link
-      to={`/execution/${task.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background-card hover:shadow-card-hover transition-all group"
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open task ${task.summary || task.prompt}`}
+      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background-card hover:shadow-card-hover transition-all group cursor-pointer"
     >
       <div className="w-2 h-2 rounded-full bg-success" />
       <div className="flex-1 min-w-0">
@@ -118,6 +139,6 @@ function FavoriteItem({ task, onToggleFavorite, getTimeAgo }: FavoriteItemProps)
         size="sm"
         className="opacity-0 group-hover:opacity-100 transition-opacity"
       />
-    </Link>
+    </div>
   );
 }
