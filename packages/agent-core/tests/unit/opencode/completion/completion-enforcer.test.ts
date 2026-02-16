@@ -165,7 +165,6 @@ describe('CompletionEnforcer', () => {
     });
 
     it('should return "complete" when no tools used and no complete_task called', () => {
-      // Don't mark tools as used
       const result = enforcer.handleStepFinish('stop');
 
       expect(result).toBe('complete');
@@ -245,6 +244,43 @@ describe('CompletionEnforcer', () => {
       );
     });
 
+    it('should use focused todowrite prompt when downgrade was triggered by todos', async () => {
+      const todos: TodoItem[] = [
+        { id: '1', content: 'Write tests', status: 'pending', priority: 'high' },
+      ];
+      enforcer.updateTodos(todos);
+
+      enforcer.handleCompleteTaskDetection({
+        status: 'success',
+        summary: 'Done',
+        original_request_summary: 'Test',
+      });
+
+      await enforcer.handleProcessExit(0);
+
+      const prompt = onStartContinuationMock.mock.calls[0][0] as string;
+      expect(prompt).toContain('complete_task call was rejected');
+      expect(prompt).toContain('Write tests');
+      expect(prompt).toContain('todowrite');
+      expect(prompt).not.toContain('## REQUIRED: Create a Continuation Plan');
+    });
+
+    it('should use generic partial prompt when agent genuinely says partial', async () => {
+      enforcer.handleCompleteTaskDetection({
+        status: 'partial',
+        summary: 'Partial done',
+        original_request_summary: 'Original request',
+        remaining_work: 'More work',
+      });
+
+      await enforcer.handleProcessExit(0);
+
+      const prompt = onStartContinuationMock.mock.calls[0][0] as string;
+      expect(prompt).toContain('You called complete_task with status="partial"');
+      expect(prompt).toContain('## REQUIRED: Create a Continuation Plan');
+      expect(prompt).not.toContain('rejected');
+    });
+
     it('should call onComplete when no pending actions', async () => {
       enforcer.handleCompleteTaskDetection({
         status: 'success',
@@ -281,6 +317,23 @@ describe('CompletionEnforcer', () => {
 
       expect(onCompleteMock).toHaveBeenCalled();
       expect(onStartContinuationMock).not.toHaveBeenCalled();
+    });
+
+    it('should include continuationPrompt in debug log', async () => {
+      enforcer.handleCompleteTaskDetection({
+        status: 'partial',
+        summary: 'Partial',
+        original_request_summary: 'Original request',
+        remaining_work: 'More work',
+      });
+
+      await enforcer.handleProcessExit(0);
+
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'partial_continuation',
+        expect.stringContaining('Starting partial continuation'),
+        expect.objectContaining({ continuationPrompt: expect.any(String) })
+      );
     });
   });
 
@@ -343,7 +396,6 @@ describe('CompletionEnforcer', () => {
       const maxAttempts = 3;
       const limitedEnforcer = new CompletionEnforcer(callbacks, maxAttempts);
 
-      // First attempt
       limitedEnforcer.markToolsUsed();
       limitedEnforcer.handleStepFinish('stop');
       await limitedEnforcer.handleProcessExit(0);
@@ -351,7 +403,6 @@ describe('CompletionEnforcer', () => {
       expect(limitedEnforcer.getContinuationAttempts()).toBe(1);
       expect(onStartContinuationMock).toHaveBeenCalledTimes(1);
 
-      // Second attempt
       limitedEnforcer.markToolsUsed();
       limitedEnforcer.handleStepFinish('stop');
       await limitedEnforcer.handleProcessExit(0);
@@ -359,7 +410,6 @@ describe('CompletionEnforcer', () => {
       expect(limitedEnforcer.getContinuationAttempts()).toBe(2);
       expect(onStartContinuationMock).toHaveBeenCalledTimes(2);
 
-      // Third attempt
       limitedEnforcer.markToolsUsed();
       limitedEnforcer.handleStepFinish('stop');
       await limitedEnforcer.handleProcessExit(0);
@@ -367,7 +417,7 @@ describe('CompletionEnforcer', () => {
       expect(limitedEnforcer.getContinuationAttempts()).toBe(3);
       expect(onStartContinuationMock).toHaveBeenCalledTimes(3);
 
-      // Fourth attempt - should hit max
+      // Exceeds maxAttempts — circuit breaker kicks in
       limitedEnforcer.markToolsUsed();
       const action = limitedEnforcer.handleStepFinish('stop');
 
