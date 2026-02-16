@@ -250,6 +250,8 @@ export type { GetApiKeyFn } from './services/summarizer.js';
 // Task types
 export type {
   TaskStatus,
+  TaskInputAttachmentType,
+  TaskInputAttachment,
   TaskConfig,
   Task,
   TaskAttachment,

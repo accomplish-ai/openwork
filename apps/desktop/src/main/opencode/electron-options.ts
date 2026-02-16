@@ -191,10 +191,16 @@ export async function buildCliArgs(config: TaskConfig, _taskId: string): Promise
   const storage = getStorage();
   const activeModel = storage.getActiveProviderModel();
   const selectedModel = activeModel || storage.getSelectedModel();
+  const filePaths = Array.isArray(config.attachments)
+    ? config.attachments
+        .map((attachment) => attachment.path)
+        .filter((path): path is string => typeof path === 'string' && path.trim().length > 0)
+    : undefined;
 
   return coreBuildCliArgs({
     prompt: config.prompt,
     sessionId: config.sessionId,
+    filePaths,
     selectedModel: selectedModel ? {
       provider: selectedModel.provider,
       model: selectedModel.model,

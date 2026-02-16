@@ -8,9 +8,14 @@ import SettingsDialog from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
+import {
+  type FileAttachment,
+  buildPromptWithAttachments,
+  toTaskConfigAttachments,
+} from '../lib/task-attachments';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
-import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import { hasAnyReadyProvider, PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -82,6 +87,7 @@ const USE_CASE_EXAMPLES = [
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
@@ -106,17 +112,32 @@ export default function HomePage() {
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
   const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
+    const trimmedPrompt = prompt.trim();
+    if ((!trimmedPrompt && attachments.length === 0) || isLoading) return;
+
+    const taskPrompt = buildPromptWithAttachments(trimmedPrompt, attachments);
+    if (taskPrompt.length > PROMPT_DEFAULT_MAX_LENGTH) {
+      return;
+    }
+
+    const taskAttachments = attachments.length > 0
+      ? toTaskConfigAttachments(attachments)
+      : undefined;
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const task = await startTask({
+      prompt: taskPrompt,
+      taskId,
+      ...(taskAttachments ? { attachments: taskAttachments } : {}),
+    });
     if (task) {
+      setAttachments([]);
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [attachments, prompt, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+    if ((!prompt.trim() && attachments.length === 0) || isLoading) return;
 
     // Check if any provider is ready before sending (skip in E2E mode)
     const isE2EMode = await accomplish.isE2EMode();
@@ -153,7 +174,7 @@ export default function HomePage() {
   const handleApiKeySaved = async () => {
     // API key was saved - close dialog and execute the task
     setShowSettingsDialog(false);
-    if (prompt.trim()) {
+    if (prompt.trim() || attachments.length > 0) {
       await executeTask();
     }
   };
@@ -198,6 +219,8 @@ export default function HomePage() {
                 value={prompt}
                 onChange={setPrompt}
                 onSubmit={handleSubmit}
+                attachments={attachments}
+                onAttachmentsChange={setAttachments}
                 isLoading={isLoading}
                 placeholder="Describe a task and let AI handle the rest"
                 large={true}

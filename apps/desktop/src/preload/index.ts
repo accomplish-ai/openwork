@@ -5,8 +5,8 @@
  * for communicating with the Electron main process via IPC.
  */
 
-import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import type { ProviderType, Skill, TodoItem, McpConnector, TaskConfig } from '@accomplish_ai/agent-core';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -19,8 +19,15 @@ const accomplishAPI = {
     ipcRenderer.invoke('shell:open-external', url),
 
   // Task operations
-  startTask: (config: { description: string }): Promise<unknown> =>
+  startTask: (config: TaskConfig): Promise<unknown> =>
     ipcRenderer.invoke('task:start', config),
+  getPathForFile: (file: File): string => {
+    try {
+      return webUtils.getPathForFile(file) || '';
+    } catch {
+      return '';
+    }
+  },
   cancelTask: (taskId: string): Promise<void> =>
     ipcRenderer.invoke('task:cancel', taskId),
   interruptTask: (taskId: string): Promise<void> =>

@@ -11,6 +11,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import path from 'path';
 
+const originalPlatform = process.platform;
+const originalHome = process.env.HOME;
+const originalUseGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
+
 // Mock electron module before importing the module under test
 const mockApp = {
   isPackaged: false,
@@ -43,22 +47,109 @@ vi.mock('child_process', () => ({
   execFile: vi.fn(),
 }));
 
-// Mock @accomplish_ai/agent-core cli-resolver functions - they use fs internally which is already mocked
-// We need to pass through to the actual implementation since it uses the mocked fs
-vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@accomplish_ai/agent-core')>();
+vi.mock('@accomplish_ai/agent-core', () => {
+  type CliResolverConfig = { isPackaged: boolean; resourcesPath?: string; appPath?: string };
+  type ResolvedCliPaths = { cliPath: string; cliDir: string; source: 'bundled' | 'local' | 'global' };
+
+  const getOpenCodePlatformInfo = () => {
+    if (process.platform === 'win32') {
+      return { packageName: 'opencode-windows-x64', binaryName: 'opencode.exe' };
+    }
+    return { packageName: 'opencode-ai', binaryName: 'opencode' };
+  };
+
+  const getNvmOpenCodePaths = (): string[] => {
+    const homeDir = process.env.HOME || '';
+    const nvmVersionsDir = path.join(homeDir, '.nvm/versions/node');
+    const paths: string[] = [];
+    try {
+      if (mockFs.existsSync(nvmVersionsDir)) {
+        const versions = mockFs.readdirSync(nvmVersionsDir) as string[];
+        for (const version of versions) {
+          const opencodePath = path.join(nvmVersionsDir, version, 'bin', 'opencode');
+          if (mockFs.existsSync(opencodePath)) {
+            paths.push(opencodePath);
+          }
+        }
+      }
+    } catch {
+    }
+    return paths;
+  };
+
+  const isOpenCodeOnPath = (): boolean => {
+    try {
+      const command = process.platform === 'win32' ? 'where opencode' : 'which opencode';
+      mockExecSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const resolveCliPath = (config: CliResolverConfig): ResolvedCliPaths | null => {
+    const { isPackaged, resourcesPath, appPath } = config;
+
+    if (isPackaged && resourcesPath) {
+      const { packageName, binaryName } = getOpenCodePlatformInfo();
+      const cliPath = path.join(resourcesPath, 'app.asar.unpacked', 'node_modules', packageName, 'bin', binaryName);
+      if (mockFs.existsSync(cliPath)) {
+        return { cliPath, cliDir: path.dirname(cliPath), source: 'bundled' };
+      }
+      return null;
+    }
+
+    const preferGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE === '1';
+    if (appPath && !preferGlobal) {
+      const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
+      const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
+      if (mockFs.existsSync(devCliPath)) {
+        return { cliPath: devCliPath, cliDir: path.dirname(devCliPath), source: 'local' };
+      }
+    }
+
+    const nvmPaths = getNvmOpenCodePaths();
+    for (const opencodePath of nvmPaths) {
+      return { cliPath: opencodePath, cliDir: path.dirname(opencodePath), source: 'global' };
+    }
+
+    const globalOpenCodePaths = process.platform === 'win32'
+      ? [
+          path.join(process.env.APPDATA || '', 'npm', 'opencode.cmd'),
+          path.join(process.env.LOCALAPPDATA || '', 'npm', 'opencode.cmd'),
+        ]
+      : ['/usr/local/bin/opencode', '/opt/homebrew/bin/opencode'];
+
+    for (const opencodePath of globalOpenCodePaths) {
+      if (mockFs.existsSync(opencodePath)) {
+        return { cliPath: opencodePath, cliDir: path.dirname(opencodePath), source: 'global' };
+      }
+    }
+
+    if (appPath) {
+      const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
+      const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
+      if (mockFs.existsSync(devCliPath)) {
+        return { cliPath: devCliPath, cliDir: path.dirname(devCliPath), source: 'local' };
+      }
+    }
+
+    if (isOpenCodeOnPath()) {
+      return { cliPath: 'opencode', cliDir: '', source: 'global' };
+    }
+
+    return null;
+  };
+
   return {
-    ...actual,
-    // The cli-resolver functions should use the mocked fs, so we don't need to mock them
-    // But we need to ensure other imports don't break the tests
-    getSelectedModel: vi.fn(() => null),
-    getAzureFoundryConfig: vi.fn(() => null),
-    getActiveProviderModel: vi.fn(() => null),
-    getConnectedProvider: vi.fn(() => null),
-    getAzureEntraToken: vi.fn(() => ({ success: true, token: 'mock-token' })),
-    getModelDisplayName: vi.fn(() => 'Mock Model'),
+    DEV_BROWSER_PORT: 9222,
+    resolveCliPath,
+    isCliAvailable: (config: CliResolverConfig) => resolveCliPath(config) !== null,
+    buildCliArgs: vi.fn(() => []),
+    buildOpenCodeEnvironment: vi.fn((env: NodeJS.ProcessEnv) => env),
     ensureDevBrowserServer: vi.fn(),
-    getOpenAiBaseUrl: vi.fn(() => ''),
+    getAzureEntraToken: vi.fn(async () => ({ success: true, token: 'mock-token' })),
+    getModelDisplayName: vi.fn(() => 'Mock Model'),
   };
 });
 
@@ -67,14 +158,28 @@ describe('OpenCode CLI Path Module', () => {
     vi.clearAllMocks();
     // Reset module state
     vi.resetModules();
+    // Make path resolution deterministic across host OS
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
     // Reset packaged state
     mockApp.isPackaged = false;
     // Reset HOME environment variable
     process.env.HOME = '/Users/testuser';
+    delete process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+    if (originalHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = originalHome;
+    }
+    if (originalUseGlobal === undefined) {
+      delete process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
+    } else {
+      process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE = originalUseGlobal;
+    }
   });
 
   describe('getOpenCodeCliPath()', () => {
@@ -82,7 +187,7 @@ describe('OpenCode CLI Path Module', () => {
       it('should return nvm OpenCode path when available', async () => {
         // Arrange
         mockApp.isPackaged = false;
-        const nvmVersionsDir = '/Users/testuser/.nvm/versions/node';
+        const nvmVersionsDir = path.join('/Users/testuser', '.nvm', 'versions', 'node');
         const expectedPath = path.join(nvmVersionsDir, 'v20.10.0', 'bin', 'opencode');
 
         mockFs.existsSync.mockImplementation((p: string) => {
@@ -184,10 +289,9 @@ describe('OpenCode CLI Path Module', () => {
 
     describe('Packaged Mode', () => {
       // Helper to get platform-specific package info
-      // Package is always 'opencode-ai', only binary name differs on Windows
       const getPlatformInfo = () => {
         return {
-          pkg: 'opencode-ai',
+          pkg: process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai',
           binary: process.platform === 'win32' ? 'opencode.exe' : 'opencode',
         };
       };
@@ -323,10 +427,9 @@ describe('OpenCode CLI Path Module', () => {
 
     describe('Packaged Mode', () => {
       // Helper to get platform-specific package info
-      // Package is always 'opencode-ai', only binary name differs on Windows
       const getPlatformInfo = () => {
         return {
-          pkg: 'opencode-ai',
+          pkg: process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai',
           binary: process.platform === 'win32' ? 'opencode.exe' : 'opencode',
         };
       };
@@ -379,8 +482,8 @@ describe('OpenCode CLI Path Module', () => {
   });
 
   describe('getBundledOpenCodeVersion()', () => {
-    // Package is always 'opencode-ai'
-    const getPlatformPackageName = () => 'opencode-ai';
+    const getPlatformPackageName = () =>
+      process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
 
     describe('Packaged Mode', () => {
       it('should read version from package.json in unpacked asar', async () => {
@@ -505,7 +608,7 @@ describe('OpenCode CLI Path Module', () => {
     it('should scan multiple nvm versions and return first found', async () => {
       // Arrange
       mockApp.isPackaged = false;
-      const nvmVersionsDir = '/Users/testuser/.nvm/versions/node';
+      const nvmVersionsDir = path.join('/Users/testuser', '.nvm', 'versions', 'node');
       const v18Path = path.join(nvmVersionsDir, 'v18.17.0', 'bin', 'opencode');
       const v20Path = path.join(nvmVersionsDir, 'v20.10.0', 'bin', 'opencode');
 
