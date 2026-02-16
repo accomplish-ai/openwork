@@ -9,6 +9,7 @@ import { mapResultToStatus } from '@accomplish_ai/agent-core';
 import { getTaskManager } from '../opencode';
 import type { TaskCallbacks } from '../opencode';
 import { getStorage } from '../store/storage';
+import { stopBrowserPreviewStream } from '../services/browserPreview';
 
 export interface TaskCallbacksOptions {
   taskId: string;
@@ -54,6 +55,8 @@ export function createTaskCallbacks(options: TaskCallbacksOptions): TaskCallback
         result,
       });
 
+      void stopBrowserPreviewStream(taskId);
+
       const taskStatus = mapResultToStatus(result);
       storage.updateTaskStatus(taskId, taskStatus, new Date().toISOString());
 
@@ -73,6 +76,8 @@ export function createTaskCallbacks(options: TaskCallbacksOptions): TaskCallback
         type: 'error',
         error: error.message,
       });
+
+      void stopBrowserPreviewStream(taskId);
 
       storage.updateTaskStatus(taskId, 'failed', new Date().toISOString());
     },

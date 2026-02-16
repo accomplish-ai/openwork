@@ -229,6 +229,12 @@ const accomplishAPI = {
   listVertexProjects: (): Promise<{ success: boolean; projects: Array<{ projectId: string; name: string }>; error?: string }> =>
     ipcRenderer.invoke('vertex:list-projects'),
 
+  // Embedded browser preview
+  startBrowserPreview: (taskId: string, pageName?: string): Promise<void> =>
+    ipcRenderer.invoke('browser-preview:start', taskId, pageName),
+  stopBrowserPreview: (taskId: string): Promise<void> =>
+    ipcRenderer.invoke('browser-preview:stop', taskId),
+
   // E2E Testing
   isE2EMode: (): Promise<boolean> =>
     ipcRenderer.invoke('app:is-e2e-mode'),
@@ -307,6 +313,57 @@ const accomplishAPI = {
     const listener = (_: unknown, data: { providerId: string; message: string }) => callback(data);
     ipcRenderer.on('auth:error', listener);
     return () => ipcRenderer.removeListener('auth:error', listener);
+  },
+  onBrowserFrame: (callback: (data: {
+    taskId: string;
+    pageName: string;
+    data: string;
+    width?: number;
+    height?: number;
+    timestamp: number;
+  }) => void) => {
+    const listener = (_: unknown, data: {
+      taskId: string;
+      pageName: string;
+      data: string;
+      width?: number;
+      height?: number;
+      timestamp: number;
+    }) => callback(data);
+    ipcRenderer.on('browser:frame', listener);
+    return () => ipcRenderer.removeListener('browser:frame', listener);
+  },
+  onBrowserNavigate: (callback: (data: {
+    taskId: string;
+    pageName: string;
+    url: string;
+    timestamp: number;
+  }) => void) => {
+    const listener = (_: unknown, data: {
+      taskId: string;
+      pageName: string;
+      url: string;
+      timestamp: number;
+    }) => callback(data);
+    ipcRenderer.on('browser:navigate', listener);
+    return () => ipcRenderer.removeListener('browser:navigate', listener);
+  },
+  onBrowserStatus: (callback: (data: {
+    taskId: string;
+    pageName: string;
+    status: 'starting' | 'streaming' | 'loading' | 'ready' | 'stopped' | 'error';
+    message?: string;
+    timestamp: number;
+  }) => void) => {
+    const listener = (_: unknown, data: {
+      taskId: string;
+      pageName: string;
+      status: 'starting' | 'streaming' | 'loading' | 'ready' | 'stopped' | 'error';
+      message?: string;
+      timestamp: number;
+    }) => callback(data);
+    ipcRenderer.on('browser:status', listener);
+    return () => ipcRenderer.removeListener('browser:status', listener);
   },
 
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>

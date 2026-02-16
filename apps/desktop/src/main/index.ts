@@ -27,6 +27,7 @@ import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } fr
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { stopAllBrowserPreviewStreams } from './services/browserPreview';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -278,6 +279,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  void stopAllBrowserPreviewStreams().catch((error) => {
+    console.warn('[Main] Failed to stop browser preview streams:', error);
+  });
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
