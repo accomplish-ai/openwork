@@ -26,7 +26,18 @@ export default defineConfig(() => ({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+              external: [
+                'electron', 
+                'electron-store', 
+                'keytar', 
+                'node-pty', 
+                'better-sqlite3',
+                // FOR HUGGINGFACE:
+                '@xenova/transformers',
+                'onnxruntime-node',
+                'onnxruntime-common',
+                'sharp',
+              ],
             },
           },
         },
@@ -77,10 +88,32 @@ export default defineConfig(() => ({
     },
   },
   optimizeDeps: {
-    exclude: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+    exclude: [
+      'electron', 
+      'electron-store', 
+      'keytar', 
+      'node-pty', 
+      'better-sqlite3',
+      // HUGGINGFACE:
+      '@xenova/transformers',
+      'onnxruntime-node',
+      'onnxruntime-common',
+      'sharp',
+    ],
     // Force exclude in development
     esbuildOptions: {
-      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+      external: [
+        'electron', 
+        'electron-store', 
+        'keytar', 
+        'node-pty', 
+        'better-sqlite3',
+        // ✅ ADD THESE FOR HUGGINGFACE:
+        '@xenova/transformers',
+        'onnxruntime-node',
+        'onnxruntime-common',
+        'sharp',
+      ],
     },
   },
 }));

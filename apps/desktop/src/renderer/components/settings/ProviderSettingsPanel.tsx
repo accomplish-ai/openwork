@@ -1,8 +1,11 @@
 // apps/desktop/src/renderer/components/settings/ProviderSettingsPanel.tsx
 
-import { AnimatePresence, motion } from 'framer-motion';
-import type { ProviderId, ConnectedProvider } from '@accomplish_ai/agent-core/common';
-import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
+import { AnimatePresence, motion } from "framer-motion";
+import type {
+  ProviderId,
+  ConnectedProvider,
+} from "@accomplish_ai/agent-core/common";
+import { PROVIDER_META } from "@accomplish_ai/agent-core/common";
 import {
   ClassicProviderForm,
   BedrockProviderForm,
@@ -12,9 +15,10 @@ import {
   LiteLLMProviderForm,
   LMStudioProviderForm,
   VertexProviderForm,
-} from './providers';
-import { ZaiProviderForm } from './providers/ZaiProviderForm';
-import { settingsVariants, settingsTransitions } from '@/lib/animations';
+} from "./providers";
+import { HuggingFaceProviderForm } from "./providers/HuggingFaceProviderForm";
+import { ZaiProviderForm } from "./providers/ZaiProviderForm";
+import { settingsVariants, settingsTransitions } from "@/lib/animations";
 
 interface ProviderSettingsPanelProps {
   providerId: ProviderId;
@@ -35,11 +39,23 @@ export function ProviderSettingsPanel({
 }: ProviderSettingsPanelProps) {
   const meta = PROVIDER_META[providerId];
 
-
   // Render form content based on provider category
   const renderForm = () => {
+    // Handle HuggingFace Local separately
+    if (providerId === "huggingface-local") {
+      return (
+        <HuggingFaceProviderForm
+          connectedProvider={connectedProvider}
+          onConnect={onConnect}
+          onDisconnect={onDisconnect}
+          onModelChange={onModelChange}
+          showModelError={showModelError}
+        />
+      );
+    }
+
     // Handle Z.AI separately (has region selector)
-    if (providerId === 'zai') {
+    if (providerId === "zai") {
       return (
         <ZaiProviderForm
           connectedProvider={connectedProvider}
@@ -53,7 +69,7 @@ export function ProviderSettingsPanel({
 
     // Then continue with switch for other providers
     switch (meta.category) {
-      case 'classic':
+      case "classic":
         return (
           <ClassicProviderForm
             providerId={providerId}
@@ -65,7 +81,7 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'aws':
+      case "aws":
         return (
           <BedrockProviderForm
             connectedProvider={connectedProvider}
@@ -76,7 +92,7 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'gcp':
+      case "gcp":
         return (
           <VertexProviderForm
             connectedProvider={connectedProvider}
@@ -87,7 +103,7 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'azure':
+      case "azure":
         return (
           <AzureFoundryProviderForm
             connectedProvider={connectedProvider}
@@ -98,9 +114,9 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'local':
+      case "local":
         // Handle different local providers
-        if (providerId === 'lmstudio') {
+        if (providerId === "lmstudio") {
           return (
             <LMStudioProviderForm
               connectedProvider={connectedProvider}
@@ -122,7 +138,7 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'proxy':
+      case "proxy":
         return (
           <OpenRouterProviderForm
             connectedProvider={connectedProvider}
@@ -133,7 +149,7 @@ export function ProviderSettingsPanel({
           />
         );
 
-      case 'hybrid':
+      case "hybrid":
         return (
           <LiteLLMProviderForm
             connectedProvider={connectedProvider}

@@ -1,383 +1,707 @@
-/**
- * Preload Script for Local Renderer
- *
- * This preload script exposes a secure API to the local React renderer
- * for communicating with the Electron main process via IPC.
- */
-
-import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import { contextBridge, ipcRenderer } from "electron";
+import type {
+  ProviderType,
+  Skill,
+  TodoItem,
+  McpConnector,
+} from "@accomplish_ai/agent-core";
+import { registerHuggingFaceHandlers } from '../main/ipc/huggingface';
+import type {
+  HuggingFaceConfig,
+  HuggingFaceModel,
+  ModelDownloadProgress,
+} from "../../../../packages/agent-core/src/common/types/provider";
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
   // App info
-  getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
-  getPlatform: (): Promise<string> => ipcRenderer.invoke('app:platform'),
+  getVersion: (): Promise<string> => ipcRenderer.invoke("app:version"),
+  getPlatform: (): Promise<string> => ipcRenderer.invoke("app:platform"),
 
   // Shell
   openExternal: (url: string): Promise<void> =>
-    ipcRenderer.invoke('shell:open-external', url),
+    ipcRenderer.invoke("shell:open-external", url),
 
   // Task operations
   startTask: (config: { description: string }): Promise<unknown> =>
-    ipcRenderer.invoke('task:start', config),
+    ipcRenderer.invoke("task:start", config),
   cancelTask: (taskId: string): Promise<void> =>
-    ipcRenderer.invoke('task:cancel', taskId),
+    ipcRenderer.invoke("task:cancel", taskId),
   interruptTask: (taskId: string): Promise<void> =>
-    ipcRenderer.invoke('task:interrupt', taskId),
+    ipcRenderer.invoke("task:interrupt", taskId),
   getTask: (taskId: string): Promise<unknown> =>
-    ipcRenderer.invoke('task:get', taskId),
-  listTasks: (): Promise<unknown[]> => ipcRenderer.invoke('task:list'),
+    ipcRenderer.invoke("task:get", taskId),
+  listTasks: (): Promise<unknown[]> => ipcRenderer.invoke("task:list"),
   deleteTask: (taskId: string): Promise<void> =>
-    ipcRenderer.invoke('task:delete', taskId),
-  clearTaskHistory: (): Promise<void> => ipcRenderer.invoke('task:clear-history'),
+    ipcRenderer.invoke("task:delete", taskId),
+  clearTaskHistory: (): Promise<void> =>
+    ipcRenderer.invoke("task:clear-history"),
   getTodosForTask: (taskId: string): Promise<TodoItem[]> =>
-    ipcRenderer.invoke('task:get-todos', taskId),
+    ipcRenderer.invoke("task:get-todos", taskId),
 
   // Permission responses
-  respondToPermission: (response: { taskId: string; allowed: boolean }): Promise<void> =>
-    ipcRenderer.invoke('permission:respond', response),
+  respondToPermission: (response: {
+    taskId: string;
+    allowed: boolean;
+  }): Promise<void> => ipcRenderer.invoke("permission:respond", response),
 
   // Session management
-  resumeSession: (sessionId: string, prompt: string, taskId?: string): Promise<unknown> =>
-    ipcRenderer.invoke('session:resume', sessionId, prompt, taskId),
+  resumeSession: (
+    sessionId: string,
+    prompt: string,
+    taskId?: string,
+  ): Promise<unknown> =>
+    ipcRenderer.invoke("session:resume", sessionId, prompt, taskId),
 
   // Settings
-  getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke('settings:api-keys'),
+  getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke("settings:api-keys"),
   addApiKey: (
     provider: ProviderType,
     key: string,
-    label?: string
+    label?: string,
   ): Promise<unknown> =>
-    ipcRenderer.invoke('settings:add-api-key', provider, key, label),
+    ipcRenderer.invoke("settings:add-api-key", provider, key, label),
   removeApiKey: (id: string): Promise<void> =>
-    ipcRenderer.invoke('settings:remove-api-key', id),
+    ipcRenderer.invoke("settings:remove-api-key", id),
   getDebugMode: (): Promise<boolean> =>
-    ipcRenderer.invoke('settings:debug-mode'),
+    ipcRenderer.invoke("settings:debug-mode"),
   setDebugMode: (enabled: boolean): Promise<void> =>
-    ipcRenderer.invoke('settings:set-debug-mode', enabled),
-  getTheme: (): Promise<string> =>
-    ipcRenderer.invoke('settings:theme'),
+    ipcRenderer.invoke("settings:set-debug-mode", enabled),
+  getTheme: (): Promise<string> => ipcRenderer.invoke("settings:theme"),
   setTheme: (theme: string): Promise<void> =>
-    ipcRenderer.invoke('settings:set-theme', theme),
-  onThemeChange: (callback: (data: { theme: string; resolved: string }) => void) => {
-    const listener = (_: unknown, data: { theme: string; resolved: string }) => callback(data);
-    ipcRenderer.on('settings:theme-changed', listener);
-    return () => ipcRenderer.removeListener('settings:theme-changed', listener);
+    ipcRenderer.invoke("settings:set-theme", theme),
+  onThemeChange: (
+    callback: (data: { theme: string; resolved: string }) => void,
+  ) => {
+    const listener = (_: unknown, data: { theme: string; resolved: string }) =>
+      callback(data);
+    ipcRenderer.on("settings:theme-changed", listener);
+    return () => ipcRenderer.removeListener("settings:theme-changed", listener);
   },
-  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }> =>
-    ipcRenderer.invoke('settings:app-settings'),
+  getAppSettings: (): Promise<{
+    debugMode: boolean;
+    onboardingComplete: boolean;
+    theme: string;
+  }> => ipcRenderer.invoke("settings:app-settings"),
   getOpenAiBaseUrl: (): Promise<string> =>
-    ipcRenderer.invoke('settings:openai-base-url:get'),
+    ipcRenderer.invoke("settings:openai-base-url:get"),
   setOpenAiBaseUrl: (baseUrl: string): Promise<void> =>
-    ipcRenderer.invoke('settings:openai-base-url:set', baseUrl),
+    ipcRenderer.invoke("settings:openai-base-url:set", baseUrl),
   getOpenAiOauthStatus: (): Promise<{ connected: boolean; expires?: number }> =>
-    ipcRenderer.invoke('opencode:auth:openai:status'),
+    ipcRenderer.invoke("opencode:auth:openai:status"),
   loginOpenAiWithChatGpt: (): Promise<{ ok: boolean; openedUrl?: string }> =>
-    ipcRenderer.invoke('opencode:auth:openai:login'),
+    ipcRenderer.invoke("opencode:auth:openai:login"),
 
   // API Key management (new simplified handlers)
-  hasApiKey: (): Promise<boolean> =>
-    ipcRenderer.invoke('api-key:exists'),
+  hasApiKey: (): Promise<boolean> => ipcRenderer.invoke("api-key:exists"),
   setApiKey: (key: string): Promise<void> =>
-    ipcRenderer.invoke('api-key:set', key),
-  getApiKey: (): Promise<string | null> =>
-    ipcRenderer.invoke('api-key:get'),
+    ipcRenderer.invoke("api-key:set", key),
+  getApiKey: (): Promise<string | null> => ipcRenderer.invoke("api-key:get"),
   validateApiKey: (key: string): Promise<{ valid: boolean; error?: string }> =>
-    ipcRenderer.invoke('api-key:validate', key),
-  validateApiKeyForProvider: (provider: string, key: string, options?: Record<string, any>): Promise<{ valid: boolean; error?: string }> =>
-    ipcRenderer.invoke('api-key:validate-provider', provider, key, options),
-  clearApiKey: (): Promise<void> =>
-    ipcRenderer.invoke('api-key:clear'),
+    ipcRenderer.invoke("api-key:validate", key),
+  validateApiKeyForProvider: (
+    provider: string,
+    key: string,
+    options?: Record<string, any>,
+  ): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke("api-key:validate-provider", provider, key, options),
+  clearApiKey: (): Promise<void> => ipcRenderer.invoke("api-key:clear"),
 
   // Onboarding
   getOnboardingComplete: (): Promise<boolean> =>
-    ipcRenderer.invoke('onboarding:complete'),
+    ipcRenderer.invoke("onboarding:complete"),
   setOnboardingComplete: (complete: boolean): Promise<void> =>
-    ipcRenderer.invoke('onboarding:set-complete', complete),
+    ipcRenderer.invoke("onboarding:set-complete", complete),
 
   // OpenCode CLI status
   checkOpenCodeCli: (): Promise<{
     installed: boolean;
     version: string | null;
     installCommand: string;
-  }> => ipcRenderer.invoke('opencode:check'),
+  }> => ipcRenderer.invoke("opencode:check"),
   getOpenCodeVersion: (): Promise<string | null> =>
-    ipcRenderer.invoke('opencode:version'),
+    ipcRenderer.invoke("opencode:version"),
 
   // Model selection
-  getSelectedModel: (): Promise<{ provider: string; model: string; baseUrl?: string; deploymentName?: string } | null> =>
-    ipcRenderer.invoke('model:get'),
-  setSelectedModel: (model: { provider: string; model: string; baseUrl?: string; deploymentName?: string }): Promise<void> =>
-    ipcRenderer.invoke('model:set', model),
+  getSelectedModel: (): Promise<{
+    provider: string;
+    model: string;
+    baseUrl?: string;
+    deploymentName?: string;
+  } | null> => ipcRenderer.invoke("model:get"),
+  setSelectedModel: (model: {
+    provider: string;
+    model: string;
+    baseUrl?: string;
+    deploymentName?: string;
+  }): Promise<void> => ipcRenderer.invoke("model:set", model),
 
   // Multi-provider API keys
-  getAllApiKeys: (): Promise<Record<string, { exists: boolean; prefix?: string }>> =>
-    ipcRenderer.invoke('api-keys:all'),
-  hasAnyApiKey: (): Promise<boolean> =>
-    ipcRenderer.invoke('api-keys:has-any'),
+  getAllApiKeys: (): Promise<
+    Record<string, { exists: boolean; prefix?: string }>
+  > => ipcRenderer.invoke("api-keys:all"),
+  hasAnyApiKey: (): Promise<boolean> => ipcRenderer.invoke("api-keys:has-any"),
 
   // Ollama configuration
-  testOllamaConnection: (url: string): Promise<{
+  testOllamaConnection: (
+    url: string,
+  ): Promise<{
     success: boolean;
-    models?: Array<{ id: string; displayName: string; size: number; toolSupport?: 'supported' | 'unsupported' | 'unknown' }>;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: "supported" | "unsupported" | "unknown";
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('ollama:test-connection', url),
+  }> => ipcRenderer.invoke("ollama:test-connection", url),
 
-  getOllamaConfig: (): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; toolSupport?: 'supported' | 'unsupported' | 'unknown' }> } | null> =>
-    ipcRenderer.invoke('ollama:get-config'),
+  getOllamaConfig: (): Promise<{
+    baseUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: "supported" | "unsupported" | "unknown";
+    }>;
+  } | null> => ipcRenderer.invoke("ollama:get-config"),
 
-  setOllamaConfig: (config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; toolSupport?: 'supported' | 'unsupported' | 'unknown' }> } | null): Promise<void> =>
-    ipcRenderer.invoke('ollama:set-config', config),
+  setOllamaConfig: (
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        displayName: string;
+        size: number;
+        toolSupport?: "supported" | "unsupported" | "unknown";
+      }>;
+    } | null,
+  ): Promise<void> => ipcRenderer.invoke("ollama:set-config", config),
 
   // Azure Foundry configuration
-  getAzureFoundryConfig: (): Promise<{ baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null> =>
-    ipcRenderer.invoke('azure-foundry:get-config'),
+  getAzureFoundryConfig: (): Promise<{
+    baseUrl: string;
+    deploymentName: string;
+    authType: "api-key" | "entra-id";
+    enabled: boolean;
+    lastValidated?: number;
+  } | null> => ipcRenderer.invoke("azure-foundry:get-config"),
 
-  setAzureFoundryConfig: (config: { baseUrl: string; deploymentName: string; authType: 'api-key' | 'entra-id'; enabled: boolean; lastValidated?: number } | null): Promise<void> =>
-    ipcRenderer.invoke('azure-foundry:set-config', config),
+  setAzureFoundryConfig: (
+    config: {
+      baseUrl: string;
+      deploymentName: string;
+      authType: "api-key" | "entra-id";
+      enabled: boolean;
+      lastValidated?: number;
+    } | null,
+  ): Promise<void> => ipcRenderer.invoke("azure-foundry:set-config", config),
 
-  testAzureFoundryConnection: (config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<{
+  testAzureFoundryConnection: (config: {
+    endpoint: string;
+    deploymentName: string;
+    authType: "api-key" | "entra-id";
+    apiKey?: string;
+  }): Promise<{
     success: boolean;
     error?: string;
-  }> => ipcRenderer.invoke('azure-foundry:test-connection', config),
+  }> => ipcRenderer.invoke("azure-foundry:test-connection", config),
 
-  saveAzureFoundryConfig: (config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }): Promise<void> =>
-    ipcRenderer.invoke('azure-foundry:save-config', config),
+  saveAzureFoundryConfig: (config: {
+    endpoint: string;
+    deploymentName: string;
+    authType: "api-key" | "entra-id";
+    apiKey?: string;
+  }): Promise<void> => ipcRenderer.invoke("azure-foundry:save-config", config),
 
   // Dynamic model fetching (generic, config-driven)
-  fetchProviderModels: (providerId: string, options?: { baseUrl?: string; zaiRegion?: string }): Promise<{
+  fetchProviderModels: (
+    providerId: string,
+    options?: { baseUrl?: string; zaiRegion?: string },
+  ): Promise<{
     success: boolean;
     models?: Array<{ id: string; name: string }>;
     error?: string;
-  }> => ipcRenderer.invoke('provider:fetch-models', providerId, options),
+  }> => ipcRenderer.invoke("provider:fetch-models", providerId, options),
 
   // OpenRouter configuration
   fetchOpenRouterModels: (): Promise<{
     success: boolean;
-    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    models?: Array<{
+      id: string;
+      name: string;
+      provider: string;
+      contextLength: number;
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('openrouter:fetch-models'),
+  }> => ipcRenderer.invoke("openrouter:fetch-models"),
 
   // LiteLLM configuration
-  testLiteLLMConnection: (url: string, apiKey?: string): Promise<{
+  testLiteLLMConnection: (
+    url: string,
+    apiKey?: string,
+  ): Promise<{
     success: boolean;
-    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    models?: Array<{
+      id: string;
+      name: string;
+      provider: string;
+      contextLength: number;
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('litellm:test-connection', url, apiKey),
+  }> => ipcRenderer.invoke("litellm:test-connection", url, apiKey),
 
   fetchLiteLLMModels: (): Promise<{
     success: boolean;
-    models?: Array<{ id: string; name: string; provider: string; contextLength: number }>;
+    models?: Array<{
+      id: string;
+      name: string;
+      provider: string;
+      contextLength: number;
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('litellm:fetch-models'),
+  }> => ipcRenderer.invoke("litellm:fetch-models"),
 
-  getLiteLLMConfig: (): Promise<{ baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null> =>
-    ipcRenderer.invoke('litellm:get-config'),
+  getLiteLLMConfig: (): Promise<{
+    baseUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{
+      id: string;
+      name: string;
+      provider: string;
+      contextLength: number;
+    }>;
+  } | null> => ipcRenderer.invoke("litellm:get-config"),
 
-  setLiteLLMConfig: (config: { baseUrl: string; enabled: boolean; lastValidated?: number; models?: Array<{ id: string; name: string; provider: string; contextLength: number }> } | null): Promise<void> =>
-    ipcRenderer.invoke('litellm:set-config', config),
+  setLiteLLMConfig: (
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        name: string;
+        provider: string;
+        contextLength: number;
+      }>;
+    } | null,
+  ): Promise<void> => ipcRenderer.invoke("litellm:set-config", config),
 
   // LM Studio configuration
-  testLMStudioConnection: (url: string): Promise<{
+  testLMStudioConnection: (
+    url: string,
+  ): Promise<{
     success: boolean;
-    models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
+    models?: Array<{
+      id: string;
+      name: string;
+      toolSupport: "supported" | "unsupported" | "unknown";
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('lmstudio:test-connection', url),
+  }> => ipcRenderer.invoke("lmstudio:test-connection", url),
 
   fetchLMStudioModels: (): Promise<{
     success: boolean;
-    models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
+    models?: Array<{
+      id: string;
+      name: string;
+      toolSupport: "supported" | "unsupported" | "unknown";
+    }>;
     error?: string;
-  }> => ipcRenderer.invoke('lmstudio:fetch-models'),
+  }> => ipcRenderer.invoke("lmstudio:fetch-models"),
 
   getLMStudioConfig: (): Promise<{
     baseUrl: string;
     enabled: boolean;
     lastValidated?: number;
-    models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
-  } | null> => ipcRenderer.invoke('lmstudio:get-config'),
+    models?: Array<{
+      id: string;
+      name: string;
+      toolSupport: "supported" | "unsupported" | "unknown";
+    }>;
+  } | null> => ipcRenderer.invoke("lmstudio:get-config"),
 
-  setLMStudioConfig: (config: {
-    baseUrl: string;
-    enabled: boolean;
-    lastValidated?: number;
-    models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
-  } | null): Promise<void> => ipcRenderer.invoke('lmstudio:set-config', config),
+  setLMStudioConfig: (
+    config: {
+      baseUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        name: string;
+        toolSupport: "supported" | "unsupported" | "unknown";
+      }>;
+    } | null,
+  ): Promise<void> => ipcRenderer.invoke("lmstudio:set-config", config),
 
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>
-    ipcRenderer.invoke('bedrock:validate', credentials),
+    ipcRenderer.invoke("bedrock:validate", credentials),
   saveBedrockCredentials: (credentials: string) =>
-    ipcRenderer.invoke('bedrock:save', credentials),
-  getBedrockCredentials: () =>
-    ipcRenderer.invoke('bedrock:get-credentials'),
-  fetchBedrockModels: (credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }> =>
-    ipcRenderer.invoke('bedrock:fetch-models', credentials),
+    ipcRenderer.invoke("bedrock:save", credentials),
+  getBedrockCredentials: () => ipcRenderer.invoke("bedrock:get-credentials"),
+  fetchBedrockModels: (
+    credentials: string,
+  ): Promise<{
+    success: boolean;
+    models: Array<{ id: string; name: string; provider: string }>;
+    error?: string;
+  }> => ipcRenderer.invoke("bedrock:fetch-models", credentials),
 
   // Vertex AI
   validateVertexCredentials: (credentials: string) =>
-    ipcRenderer.invoke('vertex:validate', credentials),
+    ipcRenderer.invoke("vertex:validate", credentials),
   saveVertexCredentials: (credentials: string) =>
-    ipcRenderer.invoke('vertex:save', credentials),
-  getVertexCredentials: () =>
-    ipcRenderer.invoke('vertex:get-credentials'),
-  fetchVertexModels: (credentials: string): Promise<{ success: boolean; models: Array<{ id: string; name: string; provider: string }>; error?: string }> =>
-    ipcRenderer.invoke('vertex:fetch-models', credentials),
-  detectVertexProject: (): Promise<{ success: boolean; projectId: string | null }> =>
-    ipcRenderer.invoke('vertex:detect-project'),
-  listVertexProjects: (): Promise<{ success: boolean; projects: Array<{ projectId: string; name: string }>; error?: string }> =>
-    ipcRenderer.invoke('vertex:list-projects'),
+    ipcRenderer.invoke("vertex:save", credentials),
+  getVertexCredentials: () => ipcRenderer.invoke("vertex:get-credentials"),
+  fetchVertexModels: (
+    credentials: string,
+  ): Promise<{
+    success: boolean;
+    models: Array<{ id: string; name: string; provider: string }>;
+    error?: string;
+  }> => ipcRenderer.invoke("vertex:fetch-models", credentials),
+  detectVertexProject: (): Promise<{
+    success: boolean;
+    projectId: string | null;
+  }> => ipcRenderer.invoke("vertex:detect-project"),
+  listVertexProjects: (): Promise<{
+    success: boolean;
+    projects: Array<{ projectId: string; name: string }>;
+    error?: string;
+  }> => ipcRenderer.invoke("vertex:list-projects"),
 
   // E2E Testing
-  isE2EMode: (): Promise<boolean> =>
-    ipcRenderer.invoke('app:is-e2e-mode'),
+  isE2EMode: (): Promise<boolean> => ipcRenderer.invoke("app:is-e2e-mode"),
 
   // New Provider Settings API
   getProviderSettings: (): Promise<unknown> =>
-    ipcRenderer.invoke('provider-settings:get'),
+    ipcRenderer.invoke("provider-settings:get"),
   setActiveProvider: (providerId: string | null): Promise<void> =>
-    ipcRenderer.invoke('provider-settings:set-active', providerId),
+    ipcRenderer.invoke("provider-settings:set-active", providerId),
   getConnectedProvider: (providerId: string): Promise<unknown> =>
-    ipcRenderer.invoke('provider-settings:get-connected', providerId),
-  setConnectedProvider: (providerId: string, provider: unknown): Promise<void> =>
-    ipcRenderer.invoke('provider-settings:set-connected', providerId, provider),
+    ipcRenderer.invoke("provider-settings:get-connected", providerId),
+  setConnectedProvider: (
+    providerId: string,
+    provider: unknown,
+  ): Promise<void> =>
+    ipcRenderer.invoke("provider-settings:set-connected", providerId, provider),
   removeConnectedProvider: (providerId: string): Promise<void> =>
-    ipcRenderer.invoke('provider-settings:remove-connected', providerId),
-  updateProviderModel: (providerId: string, modelId: string | null): Promise<void> =>
-    ipcRenderer.invoke('provider-settings:update-model', providerId, modelId),
+    ipcRenderer.invoke("provider-settings:remove-connected", providerId),
+  updateProviderModel: (
+    providerId: string,
+    modelId: string | null,
+  ): Promise<void> =>
+    ipcRenderer.invoke("provider-settings:update-model", providerId, modelId),
   setProviderDebugMode: (enabled: boolean): Promise<void> =>
-    ipcRenderer.invoke('provider-settings:set-debug', enabled),
+    ipcRenderer.invoke("provider-settings:set-debug", enabled),
   getProviderDebugMode: (): Promise<boolean> =>
-    ipcRenderer.invoke('provider-settings:get-debug'),
+    ipcRenderer.invoke("provider-settings:get-debug"),
 
   // Event subscriptions
   onTaskUpdate: (callback: (event: unknown) => void) => {
     const listener = (_: unknown, event: unknown) => callback(event);
-    ipcRenderer.on('task:update', listener);
-    return () => ipcRenderer.removeListener('task:update', listener);
+    ipcRenderer.on("task:update", listener);
+    return () => ipcRenderer.removeListener("task:update", listener);
   },
   // Batched task updates for performance - multiple messages in single IPC call
-  onTaskUpdateBatch: (callback: (event: { taskId: string; messages: unknown[] }) => void) => {
-    const listener = (_: unknown, event: { taskId: string; messages: unknown[] }) => callback(event);
-    ipcRenderer.on('task:update:batch', listener);
-    return () => ipcRenderer.removeListener('task:update:batch', listener);
+  onTaskUpdateBatch: (
+    callback: (event: { taskId: string; messages: unknown[] }) => void,
+  ) => {
+    const listener = (
+      _: unknown,
+      event: { taskId: string; messages: unknown[] },
+    ) => callback(event);
+    ipcRenderer.on("task:update:batch", listener);
+    return () => ipcRenderer.removeListener("task:update:batch", listener);
   },
   onPermissionRequest: (callback: (request: unknown) => void) => {
     const listener = (_: unknown, request: unknown) => callback(request);
-    ipcRenderer.on('permission:request', listener);
-    return () => ipcRenderer.removeListener('permission:request', listener);
+    ipcRenderer.on("permission:request", listener);
+    return () => ipcRenderer.removeListener("permission:request", listener);
   },
   onTaskProgress: (callback: (progress: unknown) => void) => {
     const listener = (_: unknown, progress: unknown) => callback(progress);
-    ipcRenderer.on('task:progress', listener);
-    return () => ipcRenderer.removeListener('task:progress', listener);
+    ipcRenderer.on("task:progress", listener);
+    return () => ipcRenderer.removeListener("task:progress", listener);
   },
   onDebugLog: (callback: (log: unknown) => void) => {
     const listener = (_: unknown, log: unknown) => callback(log);
-    ipcRenderer.on('debug:log', listener);
-    return () => ipcRenderer.removeListener('debug:log', listener);
+    ipcRenderer.on("debug:log", listener);
+    return () => ipcRenderer.removeListener("debug:log", listener);
   },
   // Debug mode setting changes
   onDebugModeChange: (callback: (data: { enabled: boolean }) => void) => {
     const listener = (_: unknown, data: { enabled: boolean }) => callback(data);
-    ipcRenderer.on('settings:debug-mode-changed', listener);
-    return () => ipcRenderer.removeListener('settings:debug-mode-changed', listener);
+    ipcRenderer.on("settings:debug-mode-changed", listener);
+    return () =>
+      ipcRenderer.removeListener("settings:debug-mode-changed", listener);
   },
   // Task status changes (e.g., queued -> running)
-  onTaskStatusChange: (callback: (data: { taskId: string; status: string }) => void) => {
-    const listener = (_: unknown, data: { taskId: string; status: string }) => callback(data);
-    ipcRenderer.on('task:status-change', listener);
-    return () => ipcRenderer.removeListener('task:status-change', listener);
+  onTaskStatusChange: (
+    callback: (data: { taskId: string; status: string }) => void,
+  ) => {
+    const listener = (_: unknown, data: { taskId: string; status: string }) =>
+      callback(data);
+    ipcRenderer.on("task:status-change", listener);
+    return () => ipcRenderer.removeListener("task:status-change", listener);
   },
   // Task summary updates (AI-generated summary)
-  onTaskSummary: (callback: (data: { taskId: string; summary: string }) => void) => {
-    const listener = (_: unknown, data: { taskId: string; summary: string }) => callback(data);
-    ipcRenderer.on('task:summary', listener);
-    return () => ipcRenderer.removeListener('task:summary', listener);
+  onTaskSummary: (
+    callback: (data: { taskId: string; summary: string }) => void,
+  ) => {
+    const listener = (_: unknown, data: { taskId: string; summary: string }) =>
+      callback(data);
+    ipcRenderer.on("task:summary", listener);
+    return () => ipcRenderer.removeListener("task:summary", listener);
   },
   // Todo updates from OpenCode todowrite tool
-  onTodoUpdate: (callback: (data: { taskId: string; todos: Array<{ id: string; content: string; status: string; priority: string }> }) => void) => {
-    const listener = (_: unknown, data: { taskId: string; todos: Array<{ id: string; content: string; status: string; priority: string }> }) => callback(data);
-    ipcRenderer.on('todo:update', listener);
-    return () => ipcRenderer.removeListener('todo:update', listener);
+  onTodoUpdate: (
+    callback: (data: {
+      taskId: string;
+      todos: Array<{
+        id: string;
+        content: string;
+        status: string;
+        priority: string;
+      }>;
+    }) => void,
+  ) => {
+    const listener = (
+      _: unknown,
+      data: {
+        taskId: string;
+        todos: Array<{
+          id: string;
+          content: string;
+          status: string;
+          priority: string;
+        }>;
+      },
+    ) => callback(data);
+    ipcRenderer.on("todo:update", listener);
+    return () => ipcRenderer.removeListener("todo:update", listener);
   },
   // Auth error events (e.g., OAuth token expired)
-  onAuthError: (callback: (data: { providerId: string; message: string }) => void) => {
-    const listener = (_: unknown, data: { providerId: string; message: string }) => callback(data);
-    ipcRenderer.on('auth:error', listener);
-    return () => ipcRenderer.removeListener('auth:error', listener);
+  onAuthError: (
+    callback: (data: { providerId: string; message: string }) => void,
+  ) => {
+    const listener = (
+      _: unknown,
+      data: { providerId: string; message: string },
+    ) => callback(data);
+    ipcRenderer.on("auth:error", listener);
+    return () => ipcRenderer.removeListener("auth:error", listener);
   },
 
-  logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>
-    ipcRenderer.invoke('log:event', payload),
+  logEvent: (payload: {
+    level?: string;
+    message: string;
+    context?: Record<string, unknown>;
+  }) => ipcRenderer.invoke("log:event", payload),
 
   // Export application logs
-  exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
-    ipcRenderer.invoke('logs:export'),
+  exportLogs: (): Promise<{
+    success: boolean;
+    path?: string;
+    error?: string;
+    reason?: string;
+  }> => ipcRenderer.invoke("logs:export"),
 
   // Speech-to-Text API
   speechIsConfigured: (): Promise<boolean> =>
-    ipcRenderer.invoke('speech:is-configured'),
-  speechGetConfig: (): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }> =>
-    ipcRenderer.invoke('speech:get-config'),
-  speechValidate: (apiKey?: string): Promise<{ valid: boolean; error?: string }> =>
-    ipcRenderer.invoke('speech:validate', apiKey),
-  speechTranscribe: (audioData: ArrayBuffer, mimeType?: string): Promise<{
-    success: true;
-    result: { text: string; confidence?: number; duration: number; timestamp: number };
-  } | {
-    success: false;
-    error: { code: string; message: string };
-  }> => ipcRenderer.invoke('speech:transcribe', audioData, mimeType),
+    ipcRenderer.invoke("speech:is-configured"),
+  speechGetConfig: (): Promise<{
+    enabled: boolean;
+    hasApiKey: boolean;
+    apiKeyPrefix?: string;
+  }> => ipcRenderer.invoke("speech:get-config"),
+  speechValidate: (
+    apiKey?: string,
+  ): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke("speech:validate", apiKey),
+  speechTranscribe: (
+    audioData: ArrayBuffer,
+    mimeType?: string,
+  ): Promise<
+    | {
+        success: true;
+        result: {
+          text: string;
+          confidence?: number;
+          duration: number;
+          timestamp: number;
+        };
+      }
+    | {
+        success: false;
+        error: { code: string; message: string };
+      }
+  > => ipcRenderer.invoke("speech:transcribe", audioData, mimeType),
 
   // Skills management
-  getSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:list'),
-  getEnabledSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:list-enabled'),
+  getSkills: (): Promise<Skill[]> => ipcRenderer.invoke("skills:list"),
+  getEnabledSkills: (): Promise<Skill[]> =>
+    ipcRenderer.invoke("skills:list-enabled"),
   setSkillEnabled: (id: string, enabled: boolean): Promise<void> =>
-    ipcRenderer.invoke('skills:set-enabled', id, enabled),
+    ipcRenderer.invoke("skills:set-enabled", id, enabled),
   getSkillContent: (id: string): Promise<string | null> =>
-    ipcRenderer.invoke('skills:get-content', id),
+    ipcRenderer.invoke("skills:get-content", id),
   pickSkillFile: (): Promise<string | null> =>
-    ipcRenderer.invoke('skills:pick-file'),
+    ipcRenderer.invoke("skills:pick-file"),
   addSkillFromFile: (filePath: string): Promise<Skill> =>
-    ipcRenderer.invoke('skills:add-from-file', filePath),
+    ipcRenderer.invoke("skills:add-from-file", filePath),
   addSkillFromGitHub: (rawUrl: string): Promise<Skill> =>
-    ipcRenderer.invoke('skills:add-from-github', rawUrl),
-  deleteSkill: (id: string): Promise<void> => ipcRenderer.invoke('skills:delete', id),
-  resyncSkills: (): Promise<Skill[]> => ipcRenderer.invoke('skills:resync'),
-  openSkillInEditor: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:open-in-editor', filePath),
-  showSkillInFolder: (filePath: string): Promise<void> => ipcRenderer.invoke('skills:show-in-folder', filePath),
+    ipcRenderer.invoke("skills:add-from-github", rawUrl),
+  deleteSkill: (id: string): Promise<void> =>
+    ipcRenderer.invoke("skills:delete", id),
+  resyncSkills: (): Promise<Skill[]> => ipcRenderer.invoke("skills:resync"),
+  openSkillInEditor: (filePath: string): Promise<void> =>
+    ipcRenderer.invoke("skills:open-in-editor", filePath),
+  showSkillInFolder: (filePath: string): Promise<void> =>
+    ipcRenderer.invoke("skills:show-in-folder", filePath),
 
   // MCP Connectors
-  getConnectors: (): Promise<McpConnector[]> => ipcRenderer.invoke('connectors:list'),
+  getConnectors: (): Promise<McpConnector[]> =>
+    ipcRenderer.invoke("connectors:list"),
   addConnector: (name: string, url: string): Promise<McpConnector> =>
-    ipcRenderer.invoke('connectors:add', name, url),
-  deleteConnector: (id: string): Promise<void> => ipcRenderer.invoke('connectors:delete', id),
+    ipcRenderer.invoke("connectors:add", name, url),
+  deleteConnector: (id: string): Promise<void> =>
+    ipcRenderer.invoke("connectors:delete", id),
   setConnectorEnabled: (id: string, enabled: boolean): Promise<void> =>
-    ipcRenderer.invoke('connectors:set-enabled', id, enabled),
-  startConnectorOAuth: (connectorId: string): Promise<{ state: string; authUrl: string }> =>
-    ipcRenderer.invoke('connectors:start-oauth', connectorId),
-  completeConnectorOAuth: (state: string, code: string): Promise<McpConnector> =>
-    ipcRenderer.invoke('connectors:complete-oauth', state, code),
+    ipcRenderer.invoke("connectors:set-enabled", id, enabled),
+  startConnectorOAuth: (
+    connectorId: string,
+  ): Promise<{ state: string; authUrl: string }> =>
+    ipcRenderer.invoke("connectors:start-oauth", connectorId),
+  completeConnectorOAuth: (
+    state: string,
+    code: string,
+  ): Promise<McpConnector> =>
+    ipcRenderer.invoke("connectors:complete-oauth", state, code),
   disconnectConnector: (connectorId: string): Promise<void> =>
-    ipcRenderer.invoke('connectors:disconnect', connectorId),
+    ipcRenderer.invoke("connectors:disconnect", connectorId),
   onMcpAuthCallback: (callback: (url: string) => void) => {
     const listener = (_: unknown, url: string) => callback(url);
-    ipcRenderer.on('auth:mcp-callback', listener);
-    return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
+    ipcRenderer.on("auth:mcp-callback", listener);
+    return () => {
+      ipcRenderer.removeListener("auth:mcp-callback", listener);
+    };
+  },
+
+  huggingface: {
+    searchModels: (
+      query: string,
+      limit?: number,
+    ): Promise<HuggingFaceModel[]> =>
+      ipcRenderer.invoke("hf:search-models", query, limit),
+
+    getModelInfo: (modelId: string): Promise<HuggingFaceModel | null> =>
+      ipcRenderer.invoke("hf:get-model-info", modelId),
+
+    getInstalledModels: (): Promise<HuggingFaceModel[]> =>
+      ipcRenderer.invoke("hf:get-installed-models"),
+
+    getRecommendedModels: (): Promise<
+      Array<{ id: string; name: string; description: string }>
+    > => ipcRenderer.invoke("hf:get-recommended-models"),
+
+    isModelInstalled: (modelId: string): Promise<boolean> =>
+      ipcRenderer.invoke("hf:is-model-installed", modelId),
+
+    loadModel: (
+      config: HuggingFaceConfig,
+    ): Promise<{ success: boolean; message: string }> =>
+      ipcRenderer.invoke("hf:load-model", config),
+
+    unloadModel: (modelId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke("hf:unload-model", modelId),
+
+    removeModel: (modelId: string): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke("hf:remove-model", modelId),
+
+    generate: (
+      modelId: string,
+      messages: Array<{ role: string; content: string }>,
+      options?: { temperature?: number; maxTokens?: number; topP?: number },
+    ): Promise<string> =>
+      ipcRenderer.invoke("hf:generate", modelId, messages, options),
+
+    generateStream: (
+      modelId: string,
+      messages: Array<{ role: string; content: string }>,
+      options?: { temperature?: number; maxTokens?: number; topP?: number },
+    ): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke("hf:generate-stream", modelId, messages, options),
+
+    getCacheStats: (): Promise<{
+      totalSize: number;
+      modelCount: number;
+      cacheDir: string;
+      modelSizes: Array<{ modelId: string; size: number }>;
+    }> => ipcRenderer.invoke("hf:get-cache-stats"),
+
+    getLoadedModelInfo: (
+      modelId: string,
+    ): Promise<{
+      modelId: string;
+      quantization: string;
+      device: string;
+    } | null> => ipcRenderer.invoke("hf:get-loaded-model-info", modelId),
+
+    getLoadedModels: (): Promise<string[]> =>
+      ipcRenderer.invoke("hf:get-loaded-models"),
+
+    onDownloadProgress: (
+      callback: (progress: ModelDownloadProgress) => void,
+    ) => {
+      const listener = (_: unknown, progress: ModelDownloadProgress) =>
+        callback(progress);
+      ipcRenderer.on("hf:download-progress", listener);
+      return () => ipcRenderer.removeListener("hf:download-progress", listener);
+    },
+
+    onStreamChunk: (
+      callback: (data: { modelId: string; chunk: string }) => void,
+    ) => {
+      const listener = (_: unknown, data: { modelId: string; chunk: string }) =>
+        callback(data);
+      ipcRenderer.on("hf:stream-chunk", listener);
+      return () => ipcRenderer.removeListener("hf:stream-chunk", listener);
+    },
+
+    onStreamEnd: (callback: (data: { modelId: string }) => void) => {
+      const listener = (_: unknown, data: { modelId: string }) =>
+        callback(data);
+      ipcRenderer.on("hf:stream-end", listener);
+      return () => ipcRenderer.removeListener("hf:stream-end", listener);
+    },
+
+    onStreamError: (
+      callback: (data: { modelId: string; error: string }) => void,
+    ) => {
+      const listener = (_: unknown, data: { modelId: string; error: string }) =>
+        callback(data);
+      ipcRenderer.on("hf:stream-error", listener);
+      return () => ipcRenderer.removeListener("hf:stream-error", listener);
+    },
   },
 };
 
 // Expose the API to the renderer
-contextBridge.exposeInMainWorld('accomplish', accomplishAPI);
+contextBridge.exposeInMainWorld("accomplish", accomplishAPI);
 
 // Also expose shell info for compatibility checks
 const packageVersion = process.env.npm_package_version;
 if (!packageVersion) {
-  throw new Error('Package version is not defined. Build is misconfigured.');
+  throw new Error("Package version is not defined. Build is misconfigured.");
 }
-contextBridge.exposeInMainWorld('accomplishShell', {
+contextBridge.exposeInMainWorld("accomplishShell", {
   version: packageVersion,
   platform: process.platform,
   isElectron: true,
