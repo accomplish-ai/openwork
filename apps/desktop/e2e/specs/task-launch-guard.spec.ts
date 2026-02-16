@@ -173,6 +173,7 @@ test.describe('Task Launch Guard', () => {
     const providerIds = [
       'openai', 'anthropic', 'google', 'bedrock',
       'moonshot', 'azure-foundry', 'deepseek', 'zai',
+      'nebius', 'together', 'fireworks', 'groq',
       'ollama', 'lmstudio', 'xai', 'openrouter',
       'litellm', 'minimax',
     ];
@@ -186,7 +187,7 @@ test.describe('Task Launch Guard', () => {
       'task-launch-guard',
       'all-providers-visible',
       [
-        'All 10 provider cards are visible',
+        'All provider cards are visible',
         'Show All expanded the grid',
         'User can select any provider'
       ]

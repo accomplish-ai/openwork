@@ -546,7 +546,8 @@ Example bad narration (too terse):
   } else {
     const baseProviders = [
       'anthropic', 'openai', 'openrouter', 'google', 'xai',
-      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax',
+      'nebius', 'together', 'fireworks', 'groq',
     ];
     enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
   }

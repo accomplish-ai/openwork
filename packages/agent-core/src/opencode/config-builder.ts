@@ -121,7 +121,23 @@ export async function buildProviderConfigs(
   const activeModel = getActiveProviderModel();
   const providerConfigs: ProviderConfig[] = [];
 
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'vertex', 'minimax'];
+  const baseProviders = [
+    'anthropic',
+    'openai',
+    'openrouter',
+    'google',
+    'xai',
+    'deepseek',
+    'moonshot',
+    'zai-coding-plan',
+    'amazon-bedrock',
+    'vertex',
+    'minimax',
+    'nebius',
+    'together',
+    'fireworks',
+    'groq',
+  ];
   let enabledProviders = baseProviders;
 
   if (connectedIds.length > 0) {
@@ -486,13 +502,17 @@ const AUTH_KEY_MAPPING: Record<string, string> = {
   deepseek: 'deepseek',
   zai: 'zai-coding-plan',
   minimax: 'minimax',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };
 
 /**
  * Syncs API keys to OpenCode auth.json file.
  *
  * This function writes API keys to the OpenCode auth.json file so that the CLI
- * can access them. Only specific providers (deepseek, zai, minimax) are synced.
+ * can access them. Only providers in AUTH_KEY_MAPPING are synced.
  *
  * @param authPath - Path to the auth.json file
  * @param apiKeys - Record of provider IDs to API keys (null values are ignored)
@@ -519,27 +539,15 @@ export async function syncApiKeysToOpenCodeAuth(
 
   let updated = false;
 
-  if (apiKeys.deepseek) {
-    if (!auth['deepseek'] || auth['deepseek'].key !== apiKeys.deepseek) {
-      auth['deepseek'] = { type: 'api', key: apiKeys.deepseek };
-      updated = true;
-      console.log('[OpenCode Auth] Synced DeepSeek API key');
+  for (const [providerId, authProviderId] of Object.entries(AUTH_KEY_MAPPING)) {
+    const key = apiKeys[providerId];
+    if (!key) {
+      continue;
     }
-  }
-
-  if (apiKeys.zai) {
-    if (!auth['zai-coding-plan'] || auth['zai-coding-plan'].key !== apiKeys.zai) {
-      auth['zai-coding-plan'] = { type: 'api', key: apiKeys.zai };
+    if (!auth[authProviderId] || auth[authProviderId].key !== key) {
+      auth[authProviderId] = { type: 'api', key };
       updated = true;
-      console.log('[OpenCode Auth] Synced Z.AI Coding Plan API key');
-    }
-  }
-
-  if (apiKeys.minimax) {
-    if (!auth.minimax || auth.minimax.key !== apiKeys.minimax) {
-      auth.minimax = { type: 'api', key: apiKeys.minimax };
-      updated = true;
-      console.log('[OpenCode Auth] Synced MiniMax API key');
+      console.log(`[OpenCode Auth] Synced ${authProviderId} API key`);
     }
   }
 

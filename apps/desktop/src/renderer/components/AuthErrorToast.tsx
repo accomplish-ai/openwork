@@ -17,6 +17,10 @@ const PROVIDER_NAMES: Record<string, string> = {
   xai: 'xAI',
   deepseek: 'DeepSeek',
   moonshot: 'Moonshot AI',
+  nebius: 'Nebius AI',
+  together: 'Together AI',
+  fireworks: 'Fireworks AI',
+  groq: 'Groq',
   ollama: 'Ollama',
   litellm: 'LiteLLM',
 };

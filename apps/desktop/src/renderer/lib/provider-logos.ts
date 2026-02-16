@@ -14,6 +14,10 @@ import openrouterLogo from '/assets/ai-logos/openrouter.svg';
 import litellmLogo from '/assets/ai-logos/litellm.svg';
 import minimaxLogo from '/assets/ai-logos/minimax.svg';
 import lmstudioLogo from '/assets/ai-logos/lmstudio.png';
+import nebiusLogo from '/assets/ai-logos/nebius.jpg';
+import togetherLogo from '/assets/ai-logos/together.png';
+import fireworksLogo from '/assets/ai-logos/fireworks.png';
+import groqLogo from '/assets/ai-logos/groq.png';
 
 export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   anthropic: anthropicLogo,
@@ -31,6 +35,10 @@ export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   litellm: litellmLogo,
   minimax: minimaxLogo,
   lmstudio: lmstudioLogo,
+  nebius: nebiusLogo,
+  together: togetherLogo,
+  fireworks: fireworksLogo,
+  groq: groqLogo,
 };
 
 export const DARK_INVERT_PROVIDERS = new Set<ProviderId>(['openai', 'xai', 'ollama', 'openrouter']);

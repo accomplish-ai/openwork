@@ -202,6 +202,10 @@ export class SecureStorage {
       'litellm',
       'minimax',
       'lmstudio',
+      'nebius',
+      'together',
+      'fireworks',
+      'groq',
       'elevenlabs',
     ];
 

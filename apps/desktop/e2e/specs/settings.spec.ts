@@ -390,6 +390,7 @@ test.describe('Settings Dialog', () => {
     const providerIds = [
       'openai', 'anthropic', 'google', 'bedrock',
       'moonshot', 'azure-foundry', 'deepseek', 'zai',
+      'nebius', 'together', 'fireworks', 'groq',
       'ollama', 'lmstudio', 'xai', 'openrouter',
       'litellm', 'minimax',
     ];
