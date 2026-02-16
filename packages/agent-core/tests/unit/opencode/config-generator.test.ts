@@ -453,7 +453,7 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('complete_task');
     });
 
-    it('should include needs_planning true and false examples', () => {
+    it('should include needs_planning true and false instructions', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
         mcpToolsPath,
@@ -463,8 +463,8 @@ describe('ConfigGenerator', () => {
 
       const result = generateConfig(options);
 
-      expect(result.systemPrompt).toContain('"needs_planning": true');
-      expect(result.systemPrompt).toContain('"needs_planning": false');
+      expect(result.systemPrompt).toContain('needs_planning: true');
+      expect(result.systemPrompt).toContain('needs_planning: false');
     });
 
     it('should include filesystem rules', () => {
@@ -666,18 +666,14 @@ describe('ConfigGenerator', () => {
       );
     });
 
-    it('should contain JSON example with needs_planning true showing goal/steps/verification', () => {
-      expect(prompt).toContain('"needs_planning": true');
-      expect(prompt).toContain('"goal":');
-      expect(prompt).toContain('"steps":');
-      expect(prompt).toContain('"verification":');
+    it('should instruct providing goal/steps/verification when needs_planning is true', () => {
+      expect(prompt).toContain('needs_planning is TRUE');
+      expect(prompt).toContain('goal, steps, verification');
     });
 
-    it('should contain JSON example with needs_planning false showing only original_request and skills', () => {
-      // The false example has original_request, needs_planning, and skills but no goal/steps/verification
-      expect(prompt).toContain('"original_request": "Hello! How are you?"');
-      expect(prompt).toContain('"needs_planning": false');
-      expect(prompt).toContain('"skills": []');
+    it('should instruct skipping goal/steps/verification when needs_planning is false', () => {
+      expect(prompt).toContain('needs_planning is FALSE');
+      expect(prompt).toContain('skip goal, steps, verification');
     });
 
     it('should mention greetings/questions/knowledge as needs_planning=false examples', () => {
@@ -707,13 +703,9 @@ describe('ConfigGenerator', () => {
       );
     });
 
-    it('should contain "What is the capital of France?" as a needs_planning=false example', () => {
-      expect(prompt).toContain('"original_request": "What is the capital of France?"');
-    });
-
-    it('should contain restaurant search as a needs_planning=true example', () => {
-      expect(prompt).toContain('"original_request": "Find the top 3 Italian restaurants downtown"');
-      expect(prompt).toContain('"needs_planning": true');
+    it('should contain todo update instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('UPDATE TODOS AS YOU PROGRESS');
+      expect(prompt).toContain('COMPLETE ALL TODOS BEFORE FINISHING');
     });
   });
 
@@ -742,9 +734,16 @@ describe('ConfigGenerator', () => {
       expect(prompt).toContain('original_request_summary');
     });
 
-    it('should still reference skills array', () => {
-      expect(prompt).toContain('"skills": []');
-      expect(prompt).toContain('skills');
+    it('should include skills section when skills are configured', () => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        skills: [{ name: 'test-skill', command: '/test', description: 'A test skill', path: '/tmp/skill' }],
+      });
+      expect(result.systemPrompt).toContain('available-skills');
+      expect(result.systemPrompt).toContain('test-skill');
     });
   });
 });

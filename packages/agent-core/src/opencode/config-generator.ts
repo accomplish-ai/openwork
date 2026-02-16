@@ -137,56 +137,20 @@ You MUST call start_task before any other tool. This is enforced - other tools w
 Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
 Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → complete_task. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
 
-**When needs_planning is TRUE** — provide goal, steps, verification:
+**When needs_planning is TRUE** — provide goal, steps, verification, then:
 
-\`\`\`json
-{
-  "original_request": "Build a login form with validation",
-  "needs_planning": true,
-  "goal": "Create a login form with email/password validation",
-  "steps": ["Create HTML structure", "Add CSS styling", "Implement validation"],
-  "verification": ["Form submits correctly", "Validation errors display"],
-  "skills": []
-}
-\`\`\`
+**STEP 2: UPDATE TODOS AS YOU PROGRESS**
 
-Then update todos as you progress:
+As you complete each step, call \`todowrite\` to update progress:
 - Mark completed steps as "completed"
 - Mark the current step as "in_progress"
-- All todos must be "completed" or "cancelled" before calling complete_task
+- Keep the same step content - do NOT change the text
 
-**When needs_planning is FALSE** — skip goal, steps, verification:
+**STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
 
-\`\`\`json
-{
-  "original_request": "Hello! How are you?",
-  "needs_planning": false,
-  "skills": []
-}
-\`\`\`
+All todos must be "completed" or "cancelled" before calling complete_task.
 
-Then respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
-
-**More examples:**
-
-\`\`\`json
-{
-  "original_request": "What is the capital of France?",
-  "needs_planning": false,
-  "skills": []
-}
-\`\`\`
-
-\`\`\`json
-{
-  "original_request": "Find the top 3 Italian restaurants downtown",
-  "needs_planning": true,
-  "goal": "Find top 3 Italian restaurants",
-  "steps": ["Search for Italian restaurants", "Compare ratings", "Present top 3"],
-  "verification": ["3 restaurants listed with ratings"],
-  "skills": []
-}
-\`\`\`
+**When needs_planning is FALSE** — skip goal, steps, verification. Respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
 
 ##############################################################################
 </behavior>
