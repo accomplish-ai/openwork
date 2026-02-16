@@ -74,7 +74,29 @@ async function loadModel(modelId: string): Promise<void> {
         env.cacheDir = cacheDir;
         env.allowLocalModels = true;
 
-        // Dispose previous model if loaded
+        // Stage new model and tokenizer
+        const tokenizer = await AutoTokenizer.from_pretrained(modelId, {
+            cache_dir: cacheDir,
+            local_files_only: true,
+        });
+
+        let model;
+        try {
+            model = await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'q4',
+                local_files_only: true,
+            });
+        } catch (err) {
+            console.warn(`[HF Server] Failed to load q4 model, trying fp32: ${err}`);
+            model = await AutoModelForCausalLM.from_pretrained(modelId, {
+                cache_dir: cacheDir,
+                dtype: 'fp32',
+                local_files_only: true,
+            });
+        }
+
+        // Successfully loaded new model, safe to dispose old one
         if (state.model) {
             try {
                 await state.model.dispose?.();
@@ -83,25 +105,8 @@ async function loadModel(modelId: string): Promise<void> {
             }
         }
 
-        state.tokenizer = await AutoTokenizer.from_pretrained(modelId, {
-            cache_dir: cacheDir,
-            local_files_only: true,
-        });
-
-        try {
-            state.model = await AutoModelForCausalLM.from_pretrained(modelId, {
-                cache_dir: cacheDir,
-                dtype: 'q4',
-                local_files_only: true,
-            });
-        } catch (err) {
-            console.warn(`[HF Server] Failed to load q4 model, trying fp32: ${err}`);
-            state.model = await AutoModelForCausalLM.from_pretrained(modelId, {
-                cache_dir: cacheDir,
-                dtype: 'fp32',
-                local_files_only: true,
-            });
-        }
+        state.tokenizer = tokenizer;
+        state.model = model;
 
         state.loadedModelId = modelId;
         console.log(`[HF Server] Model loaded: ${modelId}`);
