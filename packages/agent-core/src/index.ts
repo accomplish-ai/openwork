@@ -140,7 +140,6 @@ export {
 // Errors
 export { FutureSchemaError } from './storage/migrations/errors.js';
 
-// Task history and favorites
 export {
   getTasks,
   getTask,

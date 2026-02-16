@@ -310,7 +310,6 @@ export function clearTodosForTask(taskId: string): void {
   db.prepare('DELETE FROM task_todos WHERE task_id = ?').run(taskId);
 }
 
-// Favorites management functions
 export function getFavoriteTasks(): StoredTask[] {
   const db = getDatabase();
   const rows = db

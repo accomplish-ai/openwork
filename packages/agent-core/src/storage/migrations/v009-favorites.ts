@@ -4,29 +4,25 @@ import type { Migration } from './index.js';
 export const migration: Migration = {
   version: 9,
   up: (db: Database) => {
-    // Check if is_favorite column already exists
     const tableInfo = db.prepare("PRAGMA table_info(tasks)").all() as { name: string }[];
     const hasIsFavoriteColumn = tableInfo.some(column => column.name === 'is_favorite');
     
     if (!hasIsFavoriteColumn) {
-      // Add is_favorite column to tasks table
       db.exec(`
         ALTER TABLE tasks ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0
       `);
     }
 
-    // Check if index exists before creating it
     const indexInfo = db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_tasks_is_favorite'").get();
     if (!indexInfo) {
-      // Create index for faster favorite queries
+      // Index improves query performance for favorite filtering
       db.exec(`CREATE INDEX idx_tasks_is_favorite ON tasks(is_favorite, created_at DESC)`);
     }
   },
   down: (db: Database) => {
-    // Remove the index
     db.exec(`DROP INDEX IF EXISTS idx_tasks_is_favorite`);
     
-    // Remove the column (SQLite doesn't support DROP COLUMN, so we need to recreate the table)
+    // SQLite doesn't support DROP COLUMN, so we need to recreate the table
     db.exec(`
       CREATE TABLE tasks_new (
         id TEXT PRIMARY KEY,
