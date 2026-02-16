@@ -1862,10 +1862,11 @@ function renderAgentCoreInstalled() {
   }
 
   var latestNpm = null;
-  if (agentCoreVersions && agentCoreVersions.versions) {
-    for (var i = 0; i < agentCoreVersions.versions.length; i++) {
-      if (agentCoreVersions.versions[i].distTags.indexOf('latest') !== -1) {
-        latestNpm = agentCoreVersions.versions[i].version;
+  if (agentCoreVersions) {
+    var allVersions = (agentCoreVersions.official || []).concat(agentCoreVersions.pr || []);
+    for (var i = 0; i < allVersions.length; i++) {
+      if (allVersions[i].distTags.indexOf('latest') !== -1) {
+        latestNpm = allVersions[i].version;
         break;
       }
     }
@@ -1877,12 +1878,14 @@ function renderAgentCoreInstalled() {
         '<div class="version-tile-header"><span class="version-tile-label">' + esc(label) + '</span><span class="status-dot amber"></span></div>' +
         '<div class="version-value missing">Not set</div></div>';
     }
-    var cleanVer = version.replace(/^[\^~]/, '');
-    var isLatest = latestNpm && cleanVer === latestNpm;
-    var dot = isLatest ? 'green' : 'amber';
-    var badge = isLatest
-      ? '<span class="status-badge match">&#10003; Up to date</span>'
-      : '<span class="status-badge drift">&#9888; Update available</span>';
+    var cleanVer = version.replace(/^[~^]/, '');
+    var isMatch = cleanVer === latestNpm;
+    var dot = !latestNpm ? 'amber' : isMatch ? 'green' : 'amber';
+    var badge = !latestNpm
+      ? '<span class="status-badge" style="opacity:0.6;">Checking...</span>'
+      : isMatch
+        ? '<span class="status-badge match">&#10003; Up to date</span>'
+        : '<span class="status-badge drift">&#9888; Update available</span>';
     return '<div class="version-tile">' +
       '<div class="version-tile-header"><span class="version-tile-label">' + esc(label) + '</span><span class="status-dot ' + dot + '"></span></div>' +
       '<div class="version-value">' + esc(version) + '</div>' +
@@ -1904,8 +1907,9 @@ function renderAgentCoreRegistry() {
     return '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
       '<div class="card" style="padding:20px 24px;"><div class="loading-sm">Loading versions...</div></div></div>';
   }
-  var versions = agentCoreVersions.versions || [];
-  if (!versions.length) {
+  var official = agentCoreVersions.official || [];
+  var prs = agentCoreVersions.pr || [];
+  if (!official.length && !prs.length) {
     return '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
       '<div class="card" style="padding:20px 24px;"><div class="loading">No versions found</div></div></div>';
   }
@@ -1913,15 +1917,9 @@ function renderAgentCoreRegistry() {
   var installedSet = {};
   if (agentCoreInstalled) {
     [agentCoreInstalled.desktop, agentCoreInstalled.web, agentCoreInstalled.override].forEach(function(v) {
-      if (v) installedSet[v.replace(/^[\^~]/, '')] = true;
+      if (v) installedSet[v.replace(/^[~^]/, '')] = true;
     });
   }
-
-  var official = [];
-  var prs = [];
-  versions.forEach(function(v) {
-    if (v.version.indexOf('-pr-') !== -1) { prs.push(v); } else { official.push(v); }
-  });
 
   function buildRows(list) {
     var rows = '';
@@ -1945,10 +1943,11 @@ function renderAgentCoreRegistry() {
     return rows;
   }
 
+  var scrollStyle = 'max-height:400px;overflow-y:auto;';
   var officialHtml = '';
   if (official.length) {
     officialHtml = '<div class="section"><div class="section-header"><h2>Official Releases</h2></div>' +
-      '<div class="card"><table><thead><tr>' +
+      '<div class="card" style="' + scrollStyle + '"><table><thead><tr>' +
         '<th style="padding-top:16px;">Version</th>' +
         '<th style="padding-top:16px;">Published</th>' +
         '<th style="padding-top:16px;">Tags</th>' +
@@ -2005,7 +2004,7 @@ function renderAgentCoreRegistry() {
     });
 
     prHtml = '<div class="section"><div class="section-header"><h2>PR Releases</h2></div>' +
-      '<div class="card"><table><thead><tr>' +
+      '<div class="card" style="' + scrollStyle + '"><table><thead><tr>' +
         '<th style="padding-top:16px;">PR</th>' +
         '<th style="padding-top:16px;">Latest Build</th>' +
         '<th style="padding-top:16px;">Tags</th>' +

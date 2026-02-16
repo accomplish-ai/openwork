@@ -115,7 +115,8 @@ interface AgentCoreVersionEntry {
 }
 
 interface AgentCoreVersionsResult {
-  versions: AgentCoreVersionEntry[];
+  official: AgentCoreVersionEntry[];
+  pr: AgentCoreVersionEntry[];
 }
 
 let agentCoreVersionsCache: { data: AgentCoreVersionsResult; expiry: number } | null = null;
@@ -179,8 +180,18 @@ async function handleAgentCoreVersions(): Promise<Response> {
   // Sort newest first
   versions.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
-  // Keep last 20
-  const result: AgentCoreVersionsResult = { versions: versions.slice(0, 20) };
+  // Split into official and PR releases
+  const official: AgentCoreVersionEntry[] = [];
+  const pr: AgentCoreVersionEntry[] = [];
+  for (const v of versions) {
+    if (v.version.includes('-pr-')) {
+      pr.push(v);
+    } else {
+      official.push(v);
+    }
+  }
+
+  const result: AgentCoreVersionsResult = { official, pr };
   agentCoreVersionsCache = { data: result, expiry: Date.now() + WEBSITE_CACHE_TTL_MS };
 
   return jsonResponse(result, 200);

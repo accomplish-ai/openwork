@@ -64,26 +64,31 @@ describe('GET /api/agent-core/versions', () => {
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as {
-      versions: Array<{ version: string; publishedAt: string; distTags: string[] }>;
+      official: Array<{ version: string; publishedAt: string; distTags: string[] }>;
+      pr: Array<{ version: string; publishedAt: string; distTags: string[] }>;
     };
 
-    expect(body.versions).toHaveLength(5);
-    // Newest first
-    expect(body.versions[0].version).toBe('0.4.0-beta.1');
-    expect(body.versions[0].distTags).toContain('beta');
-    expect(body.versions[1].version).toBe('0.3.1');
-    expect(body.versions[1].distTags).toContain('latest');
-    expect(body.versions[4].version).toBe('0.1.0');
-    expect(body.versions[4].distTags).toEqual([]);
+    // All 5 versions are official (none contain '-pr-')
+    expect(body.official).toHaveLength(5);
+    expect(body.official[0].version).toBe('0.4.0-beta.1');
+    expect(body.official[0].distTags).toContain('beta');
+    expect(body.official[1].version).toBe('0.3.1');
+    expect(body.official[1].distTags).toContain('latest');
+    expect(body.official[4].version).toBe('0.1.0');
+    expect(body.official[4].distTags).toEqual([]);
+    expect(body.pr).toHaveLength(0);
   });
 
-  it('limits to 20 versions', async () => {
+  it('returns all versions split by type', async () => {
     const manyVersions: Record<string, string> = {
       created: '2024-01-01T00:00:00.000Z',
       modified: '2025-01-01T00:00:00.000Z',
     };
-    for (let i = 1; i <= 25; i++) {
+    for (let i = 1; i <= 10; i++) {
       manyVersions[`0.0.${i}`] = `2024-${String(i).padStart(2, '0')}-01T00:00:00.000Z`;
+    }
+    for (let i = 1; i <= 15; i++) {
+      manyVersions[`0.0.0-pr-${i}-20240101`] = `2024-${String(i).padStart(2, '0')}-15T00:00:00.000Z`;
     }
 
     globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
@@ -98,8 +103,9 @@ describe('GET /api/agent-core/versions', () => {
 
     const res = await worker.fetch(makeRequest('/api/agent-core/versions'), env, ctx);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { versions: unknown[] };
-    expect(body.versions).toHaveLength(20);
+    const body = (await res.json()) as { official: unknown[]; pr: unknown[] };
+    expect(body.official).toHaveLength(10);
+    expect(body.pr).toHaveLength(15);
   });
 
   it('caches results for 5 minutes', async () => {
@@ -153,9 +159,10 @@ describe('GET /api/agent-core/versions', () => {
 
     const res = await worker.fetch(makeRequest('/api/agent-core/versions'), env, ctx);
     const body = (await res.json()) as {
-      versions: Array<{ version: string }>;
+      official: Array<{ version: string }>;
+      pr: Array<{ version: string }>;
     };
-    const versionNames = body.versions.map((v) => v.version);
+    const versionNames = body.official.concat(body.pr).map((v) => v.version);
     expect(versionNames).not.toContain('created');
     expect(versionNames).not.toContain('modified');
   });
