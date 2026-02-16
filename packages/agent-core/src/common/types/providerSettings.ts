@@ -177,9 +177,9 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   moonshot: 'moonshot/kimi-k2.5',
   zai: 'zai/glm-4.7-flashx',
   minimax: 'minimax/MiniMax-M2',
-  nebius: 'nebius/meta-llama/Llama-3.1-70B-Instruct',
+  nebius: 'nebius/meta-llama/Meta-Llama-3.1-70B-Instruct',
   together: 'together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-  fireworks: 'fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct',
+  fireworks: 'fireworks/llama-v3p1-70b-instruct',
   groq: 'groq/llama-3.3-70b-versatile',
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
 };

@@ -320,10 +320,10 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     name: 'Nebius AI',
     requiresApiKey: true,
     apiKeyEnvVar: 'NEBIUS_API_KEY',
-    baseUrl: 'https://api.studio.nebius.ai/v1',
-    defaultModelId: 'nebius/meta-llama/Llama-3.1-70B-Instruct',
+    baseUrl: 'https://api.studio.nebius.com/v1/',
+    defaultModelId: 'nebius/meta-llama/Meta-Llama-3.1-70B-Instruct',
     modelsEndpoint: {
-      url: 'https://api.studio.nebius.ai/v1/models',
+      url: 'https://api.tokenfactory.nebius.com/v1/models',
       authStyle: 'bearer',
       responseFormat: 'openai',
       modelIdPrefix: 'nebius/',
@@ -351,7 +351,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     requiresApiKey: true,
     apiKeyEnvVar: 'FIREWORKS_API_KEY',
     baseUrl: 'https://api.fireworks.ai/inference/v1',
-    defaultModelId: 'fireworks/accounts/fireworks/models/llama-v3p1-70b-instruct',
+    defaultModelId: 'fireworks/llama-v3p1-70b-instruct',
     modelsEndpoint: {
       url: 'https://api.fireworks.ai/inference/v1/models',
       authStyle: 'bearer',
