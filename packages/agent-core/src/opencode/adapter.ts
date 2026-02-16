@@ -540,7 +540,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       if (startInput?.needs_planning) {
         this.completionEnforcer.markTaskRequiresCompletion();
       }
-      if (startInput?.goal && startInput?.steps) {
+      if (startInput?.needs_planning && startInput?.goal && startInput?.steps) {
         this.emitPlanMessage(startInput, sessionID || this.currentSessionId || '');
         const todos: TodoItem[] = startInput.steps.map((step, i) => ({
           id: String(i + 1),
