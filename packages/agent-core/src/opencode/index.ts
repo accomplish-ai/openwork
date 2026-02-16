@@ -94,6 +94,8 @@ export {
   MESSAGE_BATCH_DELAY_MS,
   extractScreenshots,
   sanitizeToolOutput,
+  sanitizeAssistantTextForDisplay,
+  getToolDisplayName,
   toTaskMessage,
   createMessageBatcher,
   queueMessage,

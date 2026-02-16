@@ -70,6 +70,52 @@ export function extractScreenshots(output: string): {
   return { cleanedText, attachments };
 }
 
+const TOOL_DISPLAY_NAMES: Record<string, string | null> = {
+  browser_evaluate: 'Evaluating page',
+  browser_snapshot: 'Taking screenshot',
+  browser_canvas_type: 'Typing text',
+  browser_script: 'Running script',
+  browser_click: 'Clicking element',
+  browser_keyboard: 'Typing',
+  discard: null,
+  extract: null,
+  context_info: null,
+};
+
+const INSTRUCTION_BLOCK_RE = /<instruction\b[^>]*>[\s\S]*?<\/instruction>/gi;
+const NUDGE_BLOCK_RE = /<nudge>[\s\S]*?<\/nudge>/gi;
+const THOUGHT_BLOCK_RE = /<thought>[\s\S]*?<\/thought>/gi;
+const SCRATCHPAD_BLOCK_RE = /<scratchpad>[\s\S]*?<\/scratchpad>/gi;
+const THINKING_BLOCK_RE = /<thinking>[\s\S]*?<\/thinking>/gi;
+const REFLECTION_BLOCK_RE = /<reflection>[\s\S]*?<\/reflection>/gi;
+const UNCLOSED_INTERNAL_TAG_RE = /<(?:thought|nudge|instruction|scratchpad|thinking|reflection)(?:\b[^>]*)?>[\s\S]*$/gi;
+const ORPHAN_TAGS_RE = /<\/?(?:nudge|thought|scratchpad|thinking|reflection)>|<instruction\b[^>]*>|<\/instruction>/gi;
+const INTERNAL_LINES_RE = /^.*(?:context_management_protocol|policy_level=critical|<prunable-tools>|thoughtSignature).*$/gm;
+const EXCESSIVE_NEWLINES_RE = /\n{3,}/g;
+
+export function sanitizeAssistantTextForDisplay(text: string): string | null {
+  let result = text;
+  result = result.replace(INSTRUCTION_BLOCK_RE, '');
+  result = result.replace(NUDGE_BLOCK_RE, '');
+  result = result.replace(THOUGHT_BLOCK_RE, '');
+  result = result.replace(SCRATCHPAD_BLOCK_RE, '');
+  result = result.replace(THINKING_BLOCK_RE, '');
+  result = result.replace(REFLECTION_BLOCK_RE, '');
+  result = result.replace(UNCLOSED_INTERNAL_TAG_RE, '');
+  result = result.replace(ORPHAN_TAGS_RE, '');
+  result = result.replace(INTERNAL_LINES_RE, '');
+  result = result.replace(EXCESSIVE_NEWLINES_RE, '\n\n');
+  result = result.trim();
+  return result.length > 0 ? result : null;
+}
+
+export function getToolDisplayName(toolName: string): string | null {
+  if (Object.prototype.hasOwnProperty.call(TOOL_DISPLAY_NAMES, toolName)) {
+    return TOOL_DISPLAY_NAMES[toolName];
+  }
+  return toolName;
+}
+
 /**
  * Sanitizes tool output for display by removing ANSI codes,
  * connection URLs, call logs, and simplifying error messages.
@@ -81,8 +127,11 @@ export function sanitizeToolOutput(text: string, isError: boolean): string {
   result = result.replace(/\x1B\[2m|\x1B\[22m|\x1B\[0m/g, '');
 
   result = result.replace(/ws:\/\/[^\s\]]+/g, '[connection]');
+  result = result.replace(/\[ref=e\d+\]/g, '');
+  result = result.replace(/\[cursor=\w+\]/g, '');
 
   result = result.replace(/\s*Call log:[\s\S]*/i, '');
+  result = result.replace(/ {2,}/g, ' ');
 
   if (isError) {
     const timeoutMatch = result.match(/timed? ?out after (\d+)ms/i);
@@ -111,11 +160,12 @@ export function sanitizeToolOutput(text: string, isError: boolean): string {
  */
 export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
   if (message.type === 'text') {
-    if (message.part.text) {
+    const sanitized = sanitizeAssistantTextForDisplay(message.part.text || '');
+    if (sanitized) {
       return {
         id: createMessageId(),
         type: 'assistant',
-        content: message.part.text,
+        content: sanitized,
         timestamp: new Date().toISOString(),
       };
     }
@@ -123,10 +173,14 @@ export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
   }
 
   if (message.type === 'tool_call') {
+    const displayName = getToolDisplayName(message.part.tool);
+    if (displayName === null) {
+      return null;
+    }
     return {
       id: createMessageId(),
       type: 'tool',
-      content: `Using tool: ${message.part.tool}`,
+      content: `Using tool: ${displayName}`,
       toolName: message.part.tool,
       toolInput: message.part.input,
       timestamp: new Date().toISOString(),
@@ -136,6 +190,10 @@ export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
   if (message.type === 'tool_use') {
     const toolUseMsg = message as OpenCodeToolUseMessage;
     const toolName = toolUseMsg.part.tool || 'unknown';
+    const displayName = getToolDisplayName(toolName);
+    if (displayName === null) {
+      return null;
+    }
     const toolInput = toolUseMsg.part.state?.input;
     const toolOutput = toolUseMsg.part.state?.output || '';
     const status = toolUseMsg.part.state?.status;

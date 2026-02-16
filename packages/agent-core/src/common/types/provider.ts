@@ -214,14 +214,15 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     id: "anthropic",
     name: "Anthropic",
     requiresApiKey: true,
-    apiKeyEnvVar: "ANTHROPIC_API_KEY",
-    defaultModelId: "anthropic/claude-opus-4-6",
+    apiKeyEnvVar: 'ANTHROPIC_API_KEY',
+    defaultModelId: 'anthropic/claude-opus-4-5',
     modelsEndpoint: {
-      url: "https://api.anthropic.com/v1/models",
-      authStyle: "x-api-key",
-      extraHeaders: { "anthropic-version": "2023-06-01" },
-      responseFormat: "anthropic",
-      modelIdPrefix: "anthropic/",
+      url: 'https://api.anthropic.com/v1/models',
+      authStyle: 'x-api-key',
+      extraHeaders: { 'anthropic-version': '2023-06-01' },
+      responseFormat: 'anthropic',
+      modelIdPrefix: 'anthropic/',
+      modelFilter: /^claude-(?!opus-4-6)/,
     },
     models: [],
   },
@@ -355,6 +356,6 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
 ];
 
 export const DEFAULT_MODEL: SelectedModel = {
-  provider: "anthropic",
-  model: "anthropic/claude-opus-4-6",
+  provider: 'anthropic',
+  model: 'anthropic/claude-opus-4-5',
 };
