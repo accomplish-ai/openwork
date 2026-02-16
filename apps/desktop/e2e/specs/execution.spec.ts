@@ -845,4 +845,73 @@ test.describe('Execution Page', () => {
     const buttonClasses = await firstCopyButton.getAttribute('class');
     expect(buttonClasses).toContain('bg-green-500');
   });
+
+  test('should display code blocks with syntax highlighting and copy buttons', async ({ window }) => {
+    const homePage = new HomePage(window);
+    const executionPage = new ExecutionPage(window);
+
+    await window.waitForLoadState('domcontentloaded');
+
+    await homePage.enterTask(TEST_SCENARIOS.CODE_BLOCK.keyword);
+    await homePage.submitTask();
+
+    await window.waitForURL(/.*#\/execution.*/, { timeout: TEST_TIMEOUTS.NAVIGATION });
+    await executionPage.waitForComplete();
+
+    // Capture for visual verification that code blocks render with syntax highlighting.
+    await captureForAI(
+      window,
+      'execution-code-block',
+      'syntax-highlighting',
+      [
+        'Task is completed with code blocks',
+        'Syntax highlighted code is visible',
+        'TypeScript and Python code blocks are rendered',
+        'Copy buttons are present on code blocks'
+      ]
+    );
+
+    const codeBlockCopyButtonsCount = await executionPage.codeBlockCopyButtons.count();
+    expect(codeBlockCopyButtonsCount).toBeGreaterThanOrEqual(2);
+
+    const codeBlockContainers = window.locator('.group\\/code');
+    const containerCount = await codeBlockContainers.count();
+    expect(containerCount).toBeGreaterThanOrEqual(2);
+
+    const typescriptLabel = window.locator('text=typescript');
+    const pythonLabel = window.locator('text=python');
+    await expect(typescriptLabel.first()).toBeVisible();
+    await expect(pythonLabel.first()).toBeVisible();
+
+    const pageContent = await window.textContent('body');
+    expect(pageContent).toContain('function greet');
+    expect(pageContent).toContain('def calculate_sum');
+
+    const firstCodeBlockCopyButton = executionPage.codeBlockCopyButtons.nth(0);
+    const codeBlockContainer = codeBlockContainers.nth(0);
+
+    await codeBlockContainer.scrollIntoViewIfNeeded();
+
+    const initialClasses = await firstCodeBlockCopyButton.getAttribute('class');
+    expect(initialClasses).toContain('opacity-0');
+
+    await codeBlockContainer.hover();
+    await window.waitForTimeout(100);
+
+    await firstCodeBlockCopyButton.waitFor({ state: 'visible', timeout: 5000 });
+
+    const buttonText = await firstCodeBlockCopyButton.textContent();
+    expect(buttonText).toContain('Copy');
+
+    await firstCodeBlockCopyButton.click();
+    await window.waitForTimeout(200);
+
+    // Clipboard assertion confirms the copy action writes actual code content.
+    const clipboardText = await window.evaluate(async () => {
+      return await navigator.clipboard.readText();
+    });
+    expect(clipboardText).toBeTruthy();
+    expect(clipboardText).toContain('function greet');
+    expect(clipboardText).toContain('Hello');
+  });
 });
