@@ -32,6 +32,18 @@ interface SettingsDialogProps {
   initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers';
 }
 
+/**
+ * Render the settings dialog for configuring providers, connectors, cloud browsers, skills, voice input, appearance, and about information.
+ *
+ * This client component presents a multi-tab settings UI that manages provider connections, model selection, theme, debug mode, log export, and other app settings. It coordinates selection and activation of providers, validates readiness before closing, and persists theme/debug preferences via the Accomplish API.
+ *
+ * @param open - Whether the dialog is visible
+ * @param onOpenChange - Called when the dialog open state should change; receives the new open boolean
+ * @param onApiKeySaved - Optional callback invoked after an API key or model selection is saved and a provider becomes ready
+ * @param initialProvider - Optional provider id to auto-select when the dialog opens
+ * @param initialTab - Optional tab to show when the dialog opens (defaults to `'providers'`)
+ * @returns The rendered settings dialog React element
+ */
 export default function SettingsDialog({
   open,
   onOpenChange,

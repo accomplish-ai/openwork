@@ -6,9 +6,13 @@ import { getAccomplish } from '@/lib/accomplish';
   import { useSettingsStore } from '@/stores/settingsStore';
 
   /**
-   * Settings panel for configuring Cloud Browsers integrations.
-   * Supports switching between AWS AgentCore and Browserbase (placeholder).
-   */
+ * Render the Cloud Browsers settings panel for selecting and configuring cloud browser providers.
+ *
+ * Displays a provider switcher between AWS AgentCore and Browserbase; when AWS is selected,
+ * shows the AWS AgentCore configuration form and a control to test the AWS connection.
+ *
+ * @returns The rendered settings panel as a JSX element
+ */
   export function CloudBrowsersSettings() {
     const { selectedProvider, awsConfig } = useSettingsStore((state) => state.cloudBrowsers);
     const setCloudBrowserProvider = useSettingsStore((state) => state.setCloudBrowserProvider);

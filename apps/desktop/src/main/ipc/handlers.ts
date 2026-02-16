@@ -105,6 +105,13 @@ import { registerCloudBrowserHandlers } from './cloud-browsers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
+/**
+ * Validate that a BrowserWindow reference is trusted and, when multiple windows exist, that it is the focused window.
+ *
+ * @param window - The BrowserWindow instance to validate
+ * @returns The validated `BrowserWindow`
+ * @throws Error if `window` is `null` or destroyed, or if more than one window exists and `window` is not the focused window
+ */
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   if (!window || window.isDestroyed()) {
     throw new Error('Untrusted window');
@@ -118,6 +125,13 @@ function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   return window;
 }
 
+/**
+ * Detects whether end-to-end tests should bypass authentication.
+ *
+ * Checks for a global flag, a command-line switch, or an environment variable to enable skip-auth.
+ *
+ * @returns `true` if E2E skip-auth is enabled via `global.E2E_SKIP_AUTH === true`, the `--e2e-skip-auth` CLI flag, or `process.env.E2E_SKIP_AUTH === '1'`; `false` otherwise.
+ */
 function isE2ESkipAuthEnabled(): boolean {
   return (
     (global as Record<string, unknown>).E2E_SKIP_AUTH === true ||

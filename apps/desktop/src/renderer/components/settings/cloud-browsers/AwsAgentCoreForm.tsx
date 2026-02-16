@@ -11,8 +11,12 @@ interface AwsAgentCoreFormProps {
 }
 
 /**
- * Form for configuring AWS AgentCore credentials.
- * Includes validation logic and a test connection button.
+ * Render a form for editing an AwsAgentCoreConfig and testing AWS credentials.
+ *
+ * @param config - Optional initial AWS agent core configuration values to populate the form
+ * @param onChange - Called with the updated configuration whenever a form field changes
+ * @param onTestConnection - Called with the current configuration to verify credentials; should resolve to `true` on successful connection and `false` otherwise
+ * @returns The rendered form UI for configuring AWS AgentCore credentials and initiating a connection test
  */
 export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgentCoreFormProps) {
   const [testing, setTesting] = useState(false);

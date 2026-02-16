@@ -260,8 +260,10 @@ declare global {
 }
 
 /**
- * Get the accomplish API
- * Throws if not running in Electron
+ * Retrieve the Accomplish API exposed on `window` and augment it with helpers that serialize Bedrock and Vertex credential objects and expose cloud-browser testing.
+ *
+ * @returns The `AccomplishAPI` object from `window` with added/overridden helpers for validating, saving, and fetching Bedrock/Vertex credentials and `testCloudBrowserConnection`.
+ * @throws Error if the global Accomplish API is not available (e.g., not running in Electron).
  */
 export function getAccomplish() {
   if (!window.accomplish) {

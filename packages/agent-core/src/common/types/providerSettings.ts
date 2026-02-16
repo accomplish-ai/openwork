@@ -268,8 +268,10 @@ export interface ProviderSettings {
 }
 
 /**
- * Checks if a provider is fully connected and ready for use (has status 'connected' and a selected model).
+ * Determine whether a provider is ready for use.
+ *
  * @param provider - The provider configuration to check
+ * @returns `true` if the provider's connectionStatus is 'connected' and `selectedModelId` is not null, `false` otherwise.
  */
 export function isProviderReady(provider: ConnectedProvider | undefined): boolean {
   if (!provider) return false;
@@ -277,7 +279,10 @@ export function isProviderReady(provider: ConnectedProvider | undefined): boolea
 }
 
 /**
- * Checks if any configured provider is ready for use.
+ * Determine whether any configured provider is ready for use.
+ *
+ * @param settings - Provider settings to inspect; may be `null` or `undefined`.
+ * @returns `true` if at least one connected provider is ready, `false` otherwise.
  */
 export function hasAnyReadyProvider(settings: ProviderSettings | null | undefined): boolean {
   if (!settings?.connectedProviders) return false;
@@ -285,7 +290,9 @@ export function hasAnyReadyProvider(settings: ProviderSettings | null | undefine
 }
 
 /**
- * Retrieves the currently active provider configuration.
+ * Return the currently selected connected provider from settings.
+ *
+ * @returns The active `ConnectedProvider`, or `null` if no active provider is set or the provider is not found.
  */
 export function getActiveProvider(settings: ProviderSettings | null | undefined): ConnectedProvider | null {
   if (!settings?.activeProviderId) return null;
