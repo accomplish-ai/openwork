@@ -5,6 +5,7 @@ import os from 'os';
 import {
   generateConfig,
   getOpenCodeConfigPath,
+  buildCliArgs,
   ACCOMPLISH_AGENT_NAME,
   ConfigGeneratorOptions,
   ProviderConfig,
@@ -423,36 +424,50 @@ describe('ConfigGenerator', () => {
     });
   });
 
-  describe('systemPromptAppend support', () => {
-    it('should accept systemPromptAppend on TaskConfig for session continuation', () => {
-      // TaskConfig already has systemPromptAppend as an optional field.
-      // This test verifies the field exists and can carry continuation context.
-      // The adapter uses this field to prepend recovery summaries to prompts.
-      const taskConfig: import('../../../src/common/types/task.js').TaskConfig = {
+  describe('buildCliArgs for session continuation', () => {
+    it('should include --session flag when sessionId is provided', () => {
+      const args = buildCliArgs({
         prompt: 'Continue the task',
-        systemPromptAppend: `## Session Continuation Context
-This is a continuation of a previous session that exceeded the context limit.
+        sessionId: 'ses_abc123',
+      });
 
-<prior-session-summary>
-GOAL: Navigate to example.com
-PROGRESS: Logged in successfully.
-</prior-session-summary>
-
-Resume the task from where the prior session left off. Do NOT repeat completed steps.`,
-      };
-
-      expect(taskConfig.systemPromptAppend).toBeDefined();
-      expect(taskConfig.systemPromptAppend).toContain('Session Continuation Context');
-      expect(taskConfig.systemPromptAppend).toContain('Navigate to example.com');
-      expect(taskConfig.systemPromptAppend).toContain('Do NOT repeat');
+      expect(args).toContain('--session');
+      expect(args).toContain('ses_abc123');
     });
 
-    it('should allow TaskConfig without systemPromptAppend', () => {
-      const taskConfig: import('../../../src/common/types/task.js').TaskConfig = {
+    it('should NOT include --session flag when sessionId is absent', () => {
+      const args = buildCliArgs({
         prompt: 'Normal task',
-      };
+      });
 
-      expect(taskConfig.systemPromptAppend).toBeUndefined();
+      expect(args).not.toContain('--session');
+    });
+
+    it('should pass the continuation prompt as the final argument', () => {
+      // When recovery injects a continuation prompt, it becomes the prompt arg.
+      // Verify it ends up as the last CLI argument.
+      const continuationPrompt = '## Session Continuation Context\nResume the task...';
+      const args = buildCliArgs({
+        prompt: continuationPrompt,
+      });
+
+      // The prompt should be the last argument
+      expect(args[args.length - 1]).toBe(continuationPrompt);
+      // And it should include json format
+      expect(args).toContain('--format');
+      expect(args).toContain('json');
+    });
+
+    it('should omit sessionId for fresh retry sessions after context overflow', () => {
+      // After overflow recovery, the adapter starts a fresh session (no sessionId).
+      // Verify buildCliArgs produces a clean argument list with no --session.
+      const args = buildCliArgs({
+        prompt: '## Session Continuation Context\nSummary here\n---\nOriginal task',
+        sessionId: undefined,
+      });
+
+      expect(args).not.toContain('--session');
+      expect(args[args.length - 1]).toContain('Session Continuation Context');
     });
   });
 

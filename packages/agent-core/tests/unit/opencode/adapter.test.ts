@@ -283,6 +283,36 @@ describe('context overflow recovery', () => {
       const promptIndex = result.indexOf('Do the thing');
       expect(contextIndex).toBeLessThan(promptIndex);
     });
+
+    it('should preserve multi-line summaries with exact formatting', () => {
+      const summary = [
+        'GOAL: Fill out a tax form on irs.gov',
+        'PROGRESS:',
+        '  - Navigated to irs.gov/forms',
+        '  - Downloaded Form 1040',
+        'BROWSER STATE: https://irs.gov/forms, logged in as john@test.com',
+        'FAILED ATTEMPTS: Tried direct URL /submit — returned 404',
+      ].join('\n');
+
+      const result = buildContinuationPrompt('Continue', summary);
+
+      // Every line of the summary should survive round-trip
+      expect(result).toContain('GOAL: Fill out a tax form on irs.gov');
+      expect(result).toContain('  - Navigated to irs.gov/forms');
+      expect(result).toContain('Tried direct URL /submit — returned 404');
+    });
+
+    it('should separate continuation block from original prompt with a divider', () => {
+      const result = buildContinuationPrompt('Original task prompt', 'Some summary');
+
+      // Verify there is a separator between the continuation block and the original prompt
+      const closingTag = result.indexOf('</prior-session-summary>');
+      const originalPrompt = result.indexOf('Original task prompt');
+      const divider = result.indexOf('---');
+
+      expect(closingTag).toBeLessThan(divider);
+      expect(divider).toBeLessThan(originalPrompt);
+    });
   });
 
 });

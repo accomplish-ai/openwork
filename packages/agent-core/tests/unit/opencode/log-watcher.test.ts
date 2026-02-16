@@ -237,6 +237,36 @@ describe('OpenCodeLogWatcher', () => {
       expect(message).toContain('Invalid parameter: model');
     });
 
+    it('should return user-friendly message for ContextOverflow', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        errorName: 'ContextOverflow',
+        statusCode: 400,
+        message: 'Context overflow: 211840 tokens exceeded 200000 token limit.',
+        raw: 'raw line',
+        currentTokens: 211840,
+        maxTokens: 200000,
+      };
+
+      const message = OpenCodeLogWatcher.getErrorMessage(error);
+      expect(message).toContain('211840');
+      expect(message).toContain('200000');
+    });
+
+    it('should return fallback message for ContextOverflow without message', () => {
+      const error: OpenCodeLogError = {
+        timestamp: new Date().toISOString(),
+        service: 'opencode',
+        errorName: 'ContextOverflow',
+        statusCode: 400,
+        raw: 'raw line',
+      };
+
+      const message = OpenCodeLogWatcher.getErrorMessage(error);
+      expect(message).toContain('Context window exceeded');
+    });
+
     it('should return generic message for unknown error', () => {
       const error: OpenCodeLogError = {
         timestamp: new Date().toISOString(),
@@ -312,6 +342,54 @@ describe('OpenCodeLogWatcher', () => {
       expect(errors.length).toBeGreaterThanOrEqual(1);
       // Should match ContextOverflow, NOT ValidationError
       expect(errors[0]!.errorName).toBe('ContextOverflow');
+    });
+
+    it('should deduplicate identical context-overflow errors within the same session', async () => {
+      // The log-watcher uses seenErrors to skip duplicate errors.
+      // Verify a second identical overflow line does NOT produce a second event.
+      const logFile = path.join(logDir, 'test.log');
+      fs.writeFileSync(logFile, '');
+
+      watcher = new OpenCodeLogWatcher(logDir);
+      const errors: OpenCodeLogError[] = [];
+      watcher.on('error', (error) => errors.push(error));
+      await watcher.start();
+
+      const errorLine =
+        'ERROR service=opencode sessionID=ses_abc prompt is too long: 211840 tokens > 200000 maximum statusCode=400';
+
+      // Write the same error line twice
+      fs.appendFileSync(logFile, errorLine + '\n');
+      fs.appendFileSync(logFile, errorLine + '\n');
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Only one event should have been emitted despite two identical log lines
+      const overflows = errors.filter((e) => e.errorName === 'ContextOverflow');
+      expect(overflows).toHaveLength(1);
+    });
+
+    it('should parse different token counts from varied overflow messages', async () => {
+      // Test with a different model context window (e.g., 128K for non-Anthropic)
+      const logFile = path.join(logDir, 'test.log');
+      fs.writeFileSync(logFile, '');
+
+      watcher = new OpenCodeLogWatcher(logDir);
+      const errors: OpenCodeLogError[] = [];
+      watcher.on('error', (error) => errors.push(error));
+      await watcher.start();
+
+      const errorLog =
+        'ERROR service=opencode prompt is too long: 135000 tokens > 128000 maximum statusCode=400';
+      fs.appendFileSync(logFile, errorLog + '\n');
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0]!.currentTokens).toBe(135000);
+      expect(errors[0]!.maxTokens).toBe(128000);
+      expect(errors[0]!.message).toContain('135000');
+      expect(errors[0]!.message).toContain('128000');
     });
   });
 
