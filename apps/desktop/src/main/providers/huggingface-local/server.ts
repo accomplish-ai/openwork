@@ -230,7 +230,6 @@ async function handleStreamingCompletion(
             top_p: topP,
             do_sample: temperature > 0,
             callback_function: (output: any) => {
-                // Decode the latest token
                 const lastToken = output.slice(null, [-1, null]);
                 const tokenText = state.tokenizer!.decode(lastToken[0], { skip_special_tokens: true });
 
@@ -253,7 +252,6 @@ async function handleStreamingCompletion(
             },
         });
 
-        // Send final stop chunk
         const stopChunk = {
             id: completionId,
             object: 'chat.completion.chunk',
