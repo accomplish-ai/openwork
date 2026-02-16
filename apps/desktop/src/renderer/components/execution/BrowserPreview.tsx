@@ -24,6 +24,16 @@ const STATUS_LABELS: Record<BrowserPreviewStatus, string> = {
   error: 'Error',
 };
 
+const STATUS_BADGE_CLASSES: Record<BrowserPreviewStatus, string> = {
+  idle: 'bg-muted text-muted-foreground',
+  starting: 'bg-muted text-muted-foreground',
+  streaming: 'bg-green-500/10 text-green-600',
+  loading: 'bg-muted text-muted-foreground',
+  ready: 'bg-muted text-muted-foreground',
+  stopped: 'bg-muted text-muted-foreground',
+  error: 'bg-destructive/10 text-destructive',
+};
+
 export function BrowserPreview({
   frame,
   url,
@@ -46,11 +56,7 @@ export function BrowserPreview({
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
-              status === 'error'
-                ? 'bg-destructive/10 text-destructive'
-                : status === 'streaming'
-                  ? 'bg-green-500/10 text-green-600'
-                  : 'bg-muted text-muted-foreground'
+              STATUS_BADGE_CLASSES[status]
             )}
           >
             {STATUS_LABELS[status]}
@@ -60,6 +66,7 @@ export function BrowserPreview({
             onClick={onPopOut}
             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title="Pop out in browser"
+            aria-label="Pop out in browser"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </button>
@@ -68,6 +75,7 @@ export function BrowserPreview({
             onClick={onToggleCollapsed}
             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={collapsed ? 'Expand preview' : 'Collapse preview'}
+            aria-label={collapsed ? 'Expand preview' : 'Collapse preview'}
           >
             {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
           </button>
