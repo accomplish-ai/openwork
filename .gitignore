@@ -77,3 +77,4 @@ apps/desktop/resources/nodejs/
 
 # MCP tools npm lockfiles (generated at runtime by postinstall.cjs, not committed)
 packages/agent-core/mcp-tools/*/package-lock.json
+packages/agent-core/mcp-tools/package-lock.json
