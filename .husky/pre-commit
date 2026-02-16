@@ -1,1 +1,0 @@
-pnpm typecheck && pnpm lint:eslint && pnpm format:check

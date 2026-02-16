@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "module": "ESNext"
-  },
-  "include": ["eslint.config.js", "vitest.shared.ts"]
-}

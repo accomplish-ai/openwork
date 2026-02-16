@@ -1,59 +1,78 @@
 {
-  "name": "accomplish",
-  "version": "0.1.0",
-  "private": true,
-  "description": "The open source AI coworker that lives on your desktop",
-  "author": "Accomplish Inc",
+  "name": "@accomplish_ai/agent-core",
+  "version": "0.4.0",
+  "description": "Core logic for Accomplish - OpenCode adapter, storage, providers, MCP tools, and skills",
+  "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/accomplish-ai/accomplish.git"
+    "url": "https://github.com/accomplish-ai/accomplish.git",
+    "directory": "packages/agent-core"
   },
-  "scripts": {
-    "predev": "node scripts/check-deps.cjs",
-    "dev": "node scripts/dev.cjs",
-    "predev:clean": "node scripts/check-deps.cjs",
-    "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
-    "dev:kill": "node -e \"const{execSync}=require('child_process');try{execSync('lsof -ti:5173|xargs kill -9',{stdio:'ignore'})}catch{};console.log('Port 5173 cleared')\"",
-    "dev:workers:lite": "node scripts/dev-workers.cjs lite",
-    "dev:workers:enterprise": "node scripts/dev-workers.cjs enterprise",
-    "dev:remote": "node scripts/dev-remote.cjs",
-    "postinstall": "node scripts/save-lockfile-hash.cjs",
-    "build": "pnpm -r run build",
-    "build:desktop": "pnpm -F @accomplish/desktop build",
-    "build:web": "pnpm -F @accomplish/web build",
-    "build:web:lite": "pnpm -F @accomplish/web run build:lite",
-    "build:web:enterprise": "pnpm -F @accomplish/web run build:enterprise",
-    "lint": "pnpm -r --parallel run typecheck && eslint .",
-    "typecheck": "pnpm -r --parallel run typecheck",
-    "clean": "pnpm -r clean && rm -rf node_modules",
-    "release": "pnpm build",
-    "lint:eslint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "prepare": "husky"
+  "homepage": "https://github.com/accomplish-ai/accomplish/tree/main/packages/agent-core#readme",
+  "bugs": {
+    "url": "https://github.com/accomplish-ai/accomplish/issues"
   },
-  "engines": {
-    "node": ">=22.0.0",
-    "pnpm": ">=9.0.0"
+  "keywords": [
+    "automation",
+    "agent",
+    "opencode",
+    "task-manager",
+    "mcp",
+    "ai",
+    "electron"
+  ],
+  "publishConfig": {
+    "name": "@accomplish_ai/agent-core",
+    "access": "public"
   },
-  "packageManager": "pnpm@9.15.0",
-  "pnpm": {
-    "overrides": {
-      "@accomplish_ai/agent-core": "0.3.3"
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./common": {
+      "types": "./dist/common.d.ts",
+      "import": "./dist/common.js",
+      "default": "./dist/common.js"
     }
   },
+  "files": [
+    "dist",
+    "mcp-tools/*/dist",
+    "mcp-tools/*/package.json",
+    "mcp-tools/*/*.cjs",
+    "mcp-tools/*/*.md",
+    "mcp-tools/package.json"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock": "^3.971.0",
+    "@aws-sdk/credential-providers": "^3.971.0",
+    "@azure/identity": "^4.13.0",
+    "better-sqlite3": "^12.6.2",
+    "gray-matter": "^4.0.3",
+    "node-pty": "^1.1.0",
+    "zod": "^3.24.1"
+  },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "globals": "^17.3.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "prettier": "^3.8.1",
-    "typescript-eslint": "^8.55.0",
-    "wait-on": "^9.0.3"
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.6",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }
