@@ -205,6 +205,56 @@ const accomplishAPI = {
     models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
   } | null): Promise<void> => ipcRenderer.invoke('lmstudio:set-config', config),
 
+  // Hugging Face Local configuration
+  searchHuggingFaceModels: (query: string): Promise<Array<{
+    modelId: string;
+    displayName: string;
+    likes: number;
+    downloads: number;
+    lastModified: string;
+    tags: string[];
+    suggestedQuantizations: Array<'q4' | 'q8' | 'fp16' | 'fp32'>;
+  }>> => ipcRenderer.invoke('huggingface-local:search-models', query),
+
+  listHuggingFaceModels: (): Promise<Array<{
+    id: string;
+    modelId: string;
+    displayName: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    downloadedAt: string;
+    sizeBytes?: number;
+    status: 'ready' | 'downloading' | 'error';
+    error?: string;
+  }>> => ipcRenderer.invoke('huggingface-local:list-models'),
+
+  downloadHuggingFaceModel: (config: {
+    modelId: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+  }): Promise<{
+    id: string;
+    modelId: string;
+    displayName: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    downloadedAt: string;
+    sizeBytes?: number;
+    status: 'ready' | 'downloading' | 'error';
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface-local:download-model', config),
+
+  getHuggingFaceHardwareInfo: (): Promise<{
+    webGpuLikelyAvailable: boolean;
+    totalMemoryBytes: number;
+    freeMemoryBytes: number;
+    cpuModel: string;
+    cpuCount: number;
+  }> => ipcRenderer.invoke('huggingface-local:get-hardware'),
+
+  getHuggingFaceCacheDir: (): Promise<string> =>
+    ipcRenderer.invoke('huggingface-local:get-cache-dir'),
+
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>
     ipcRenderer.invoke('bedrock:validate', credentials),
@@ -307,6 +357,31 @@ const accomplishAPI = {
     const listener = (_: unknown, data: { providerId: string; message: string }) => callback(data);
     ipcRenderer.on('auth:error', listener);
     return () => ipcRenderer.removeListener('auth:error', listener);
+  },
+  onHuggingFaceDownloadProgress: (callback: (data: {
+    modelId: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    phase: 'starting' | 'downloading' | 'loading' | 'ready' | 'error';
+    progress: number;
+    loadedBytes?: number;
+    totalBytes?: number;
+    file?: string;
+    message?: string;
+  }) => void) => {
+    const listener = (_: unknown, data: {
+      modelId: string;
+      quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+      devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+      phase: 'starting' | 'downloading' | 'loading' | 'ready' | 'error';
+      progress: number;
+      loadedBytes?: number;
+      totalBytes?: number;
+      file?: string;
+      message?: string;
+    }) => callback(data);
+    ipcRenderer.on('huggingface-local:download-progress', listener);
+    return () => ipcRenderer.removeListener('huggingface-local:download-progress', listener);
   },
 
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>

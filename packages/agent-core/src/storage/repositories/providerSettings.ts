@@ -161,6 +161,8 @@ export function getActiveProviderModel(): {
     result.baseUrl = provider.credentials.serverUrl;
   } else if (provider.credentials.type === 'litellm') {
     result.baseUrl = provider.credentials.serverUrl;
+  } else if (provider.credentials.type === 'huggingface-local') {
+    result.baseUrl = provider.credentials.serverUrl;
   }
 
   return result;

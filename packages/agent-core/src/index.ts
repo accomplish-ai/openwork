@@ -284,6 +284,10 @@ export type {
   LiteLLMModel,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceDevicePreference,
+  HuggingFaceQuantization,
+  HuggingFaceLocalModelInfo,
+  HuggingFaceConfig,
 } from './common/types/provider.js';
 export {
   DEFAULT_PROVIDERS,
@@ -308,6 +312,7 @@ export type {
   ZaiRegion,
   ZaiCredentials,
   LMStudioCredentials,
+  HuggingFaceLocalCredentials,
   AzureFoundryCredentials,
   OAuthCredentials,
   ProviderCredentials,

@@ -82,6 +82,8 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
   ToolSupportStatus,
+  HuggingFaceDevicePreference,
+  HuggingFaceQuantization,
 } from '@accomplish_ai/agent-core';
 import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
@@ -99,9 +101,19 @@ import {
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
-import { registerVertexHandlers } from '../providers';
+import {
+  registerVertexHandlers,
+  searchHuggingFaceHubModels,
+  downloadHuggingFaceModel,
+  listHuggingFaceInstalledModels,
+  getHuggingFaceHardwareInfo,
+  getHuggingFaceCacheDir,
+  onHuggingFaceDownloadProgress,
+  stopHuggingFaceLocalServer,
+} from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
+let unsubscribeHfProgress: (() => void) | null = null;
 
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   if (!window || window.isDestroyed()) {
@@ -143,6 +155,19 @@ export function registerIPCHandlers(): void {
   const taskManager = getTaskManager();
 
   let permissionApiInitialized = false;
+
+  if (unsubscribeHfProgress) {
+    unsubscribeHfProgress();
+    unsubscribeHfProgress = null;
+  }
+
+  unsubscribeHfProgress = onHuggingFaceDownloadProgress((progressEvent) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('huggingface-local:download-progress', progressEvent);
+      }
+    }
+  });
 
   handle('task:start', async (event: IpcMainInvokeEvent, config: TaskConfig) => {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
@@ -804,6 +829,63 @@ export function registerIPCHandlers(): void {
     storage.setLMStudioConfig(config);
   });
 
+  handle('huggingface-local:search-models', async (_event: IpcMainInvokeEvent, query: string) => {
+    if (typeof query !== 'string') {
+      throw new Error('Invalid query');
+    }
+
+    const trimmed = query.trim();
+    if (trimmed.length > 200) {
+      throw new Error('Search query is too long');
+    }
+
+    return searchHuggingFaceHubModels(trimmed);
+  });
+
+  handle('huggingface-local:list-models', async (_event: IpcMainInvokeEvent) => {
+    return listHuggingFaceInstalledModels();
+  });
+
+  handle(
+    'huggingface-local:download-model',
+    async (
+      _event: IpcMainInvokeEvent,
+      config: {
+        modelId: string;
+        quantization: HuggingFaceQuantization;
+        devicePreference: HuggingFaceDevicePreference;
+      }
+    ) => {
+      if (!config || typeof config.modelId !== 'string' || !config.modelId.trim()) {
+        throw new Error('Invalid modelId');
+      }
+
+      const quantization = config.quantization;
+      if (!['q4', 'q8', 'fp16', 'fp32'].includes(quantization)) {
+        throw new Error('Invalid quantization');
+      }
+
+      const devicePreference = config.devicePreference;
+      if (!['auto', 'webgpu', 'wasm', 'cpu'].includes(devicePreference)) {
+        throw new Error('Invalid device preference');
+      }
+
+      return downloadHuggingFaceModel({
+        modelId: config.modelId.trim(),
+        quantization,
+        devicePreference,
+      });
+    }
+  );
+
+  handle('huggingface-local:get-hardware', async (_event: IpcMainInvokeEvent) => {
+    return getHuggingFaceHardwareInfo();
+  });
+
+  handle('huggingface-local:get-cache-dir', async (_event: IpcMainInvokeEvent) => {
+    return getHuggingFaceCacheDir();
+  });
+
   handle('provider:fetch-models', async (_event: IpcMainInvokeEvent, providerId: string, options?: { baseUrl?: string; zaiRegion?: string }) => {
     const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
     if (!providerConfig?.modelsEndpoint) {
@@ -1005,6 +1087,9 @@ export function registerIPCHandlers(): void {
     storage.removeConnectedProvider(providerId);
     if (providerId === 'vertex') {
       cleanupVertexServiceAccountKey();
+    }
+    if (providerId === 'huggingface-local') {
+      await stopHuggingFaceLocalServer();
     }
   });
 

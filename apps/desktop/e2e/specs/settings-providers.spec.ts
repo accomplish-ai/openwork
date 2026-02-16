@@ -197,7 +197,7 @@ test.describe('Settings - All Providers', () => {
       const allProviders = [
         'openai', 'anthropic', 'google', 'bedrock',
         'moonshot', 'azure-foundry', 'deepseek', 'zai',
-        'ollama', 'lmstudio', 'xai', 'openrouter',
+        'ollama', 'lmstudio', 'huggingface-local', 'xai', 'openrouter',
         'litellm', 'minimax',
       ];
 

@@ -27,6 +27,7 @@ import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } fr
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { stopHuggingFaceLocalServer } from './providers';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -278,6 +279,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  void stopHuggingFaceLocalServer().catch((error) => {
+    console.warn('[Main] Failed to stop Hugging Face local server:', error);
+  });
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();

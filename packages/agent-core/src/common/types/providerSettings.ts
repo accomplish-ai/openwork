@@ -13,7 +13,8 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'huggingface-local';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -38,10 +39,18 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   vertex: { id: 'vertex', name: 'Vertex AI', category: 'gcp', label: 'Service', logoKey: 'vertex' },
   'azure-foundry': { id: 'azure-foundry', name: 'Azure AI Foundry', category: 'azure', label: 'Service', logoKey: 'azure', helpUrl: 'https://ai.azure.com' },
   ollama: { id: 'ollama', name: 'Ollama', category: 'local', label: 'Local Models', logoKey: 'olama' },
+  lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  'huggingface-local': {
+    id: 'huggingface-local',
+    name: 'Hugging Face Local',
+    category: 'local',
+    label: 'Local Models',
+    logoKey: 'huggingface',
+    helpUrl: 'https://huggingface.co/models?library=transformers.js',
+  },
   openrouter: { id: 'openrouter', name: 'OpenRouter', category: 'proxy', label: 'Service', logoKey: 'open-router', helpUrl: 'https://openrouter.ai/keys' },
   litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
   minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
-  lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -90,6 +99,19 @@ export interface LMStudioCredentials {
   serverUrl: string;
 }
 
+export type HuggingFaceDevicePreference = 'auto' | 'webgpu' | 'wasm' | 'cpu';
+
+export type HuggingFaceQuantization = 'q4' | 'q8' | 'fp16' | 'fp32';
+
+export interface HuggingFaceLocalCredentials {
+  type: 'huggingface-local';
+  modelId: string;
+  quantization: HuggingFaceQuantization;
+  devicePreference: HuggingFaceDevicePreference;
+  serverUrl: string;
+  cacheDir?: string;
+}
+
 export interface AzureFoundryCredentials {
   type: 'azure-foundry';
   authMethod: 'api-key' | 'entra-id';
@@ -121,6 +143,7 @@ export type ProviderCredentials =
   | ZaiCredentials
   | AzureFoundryCredentials
   | LMStudioCredentials
+  | HuggingFaceLocalCredentials
   | OAuthCredentials;
 
 export type ToolSupportStatus = 'supported' | 'unsupported' | 'unknown';
@@ -131,7 +154,14 @@ export interface ConnectedProvider {
   selectedModelId: string | null;
   credentials: ProviderCredentials;
   lastConnectedAt: string;
-  availableModels?: Array<{ id: string; name: string; toolSupport?: ToolSupportStatus }>;
+  availableModels?: Array<{
+    id: string;
+    name: string;
+    toolSupport?: ToolSupportStatus;
+    sizeBytes?: number;
+    quantization?: HuggingFaceQuantization;
+    devicePreference?: HuggingFaceDevicePreference;
+  }>;
 }
 
 export interface ProviderSettings {
@@ -170,6 +200,7 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   zai: 'zai/glm-4.7-flashx',
   minimax: 'minimax/MiniMax-M2',
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
+  'huggingface-local': 'huggingface-local/onnx-community/Phi-3.5-mini-instruct-onnx',
 };
 
 export function getDefaultModelForProvider(providerId: ProviderId): string | null {
@@ -196,4 +227,5 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  'huggingface-local': 'huggingface-local',
 };
