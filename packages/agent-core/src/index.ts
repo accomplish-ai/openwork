@@ -1,6 +1,5 @@
 // =============================================================================
-console.log("[agent-core] u2d sync test");
-// @accomplish/core - Public API (v0.4.0)
+// @accomplish/core - Public API
 // =============================================================================
 // This file explicitly exports the public API for the @accomplish/core package.
 // All exports are explicit named exports to ensure API stability and clarity.
@@ -26,7 +25,6 @@ export {
 // -----------------------------------------------------------------------------
 // API Interfaces (NEW - Public contracts)
 // -----------------------------------------------------------------------------
-// These interfaces define the public API contracts returned by factory functions.
 
 // Preferred API names (aliased for clarity)
 export type {
