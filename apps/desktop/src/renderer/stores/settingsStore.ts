@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
+import type { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 
 interface SettingsState {
   cloudBrowsers: {
@@ -32,6 +32,10 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'accomplish-settings-storage',
       partialize: (state) => ({ cloudBrowsers: state.cloudBrowsers }),
+      version: 1,
+      migrate: (persistedState, version) => {
+        return persistedState as SettingsState;
+      },
     }
   )
 );
