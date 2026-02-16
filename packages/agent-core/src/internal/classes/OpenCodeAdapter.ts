@@ -398,7 +398,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   }
 
   private handleMessage(message: OpenCodeMessage): void {
-    if (this.hasCompleted) {
+    if (this.hasCompleted && message.type !== 'text') {
       return;
     }
 
