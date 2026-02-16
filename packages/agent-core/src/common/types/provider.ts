@@ -320,7 +320,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     name: 'Nebius AI',
     requiresApiKey: true,
     apiKeyEnvVar: 'NEBIUS_API_KEY',
-    baseUrl: 'https://api.studio.nebius.com/v1/',
+    baseUrl: 'https://api.tokenfactory.nebius.com/v1/',
     defaultModelId: 'nebius/meta-llama/Meta-Llama-3.1-70B-Instruct',
     modelsEndpoint: {
       url: 'https://api.tokenfactory.nebius.com/v1/models',
