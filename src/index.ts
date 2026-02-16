@@ -1,5 +1,5 @@
 // =============================================================================
-// @accomplish/core - Public API
+// @accomplish/core - Public API (v0.4.0)
 // =============================================================================
 // This file explicitly exports the public API for the @accomplish/core package.
 // All exports are explicit named exports to ensure API stability and clarity.
