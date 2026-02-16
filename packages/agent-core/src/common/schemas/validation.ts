@@ -5,6 +5,7 @@ import {
 } from '../types/task.js';
 
 const taskFileAttachmentSchema = z.object({
+  id: z.string().min(1, 'Attachment ID is required'),
   path: z.string().min(1, 'Attachment path is required'),
   name: z.string().min(1, 'Attachment name is required'),
   type: z.enum(['image', 'text', 'document', 'other']),
@@ -13,6 +14,7 @@ const taskFileAttachmentSchema = z.object({
     .int()
     .nonnegative('Attachment size must be non-negative')
     .max(TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES, `Attachment exceeds max size of ${TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES} bytes`),
+  preview: z.string().optional(),
 });
 
 export const taskConfigSchema = z.object({

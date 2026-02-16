@@ -279,6 +279,7 @@ describe('validation.ts', () => {
               name: 'report.md',
               type: 'text',
               size: 1024,
+              id: 'attachment-1',
             },
           ],
         };

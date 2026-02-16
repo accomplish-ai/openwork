@@ -30,6 +30,7 @@ import {
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
   TASK_ATTACHMENT_MAX_FILES,
+  TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES,
 } from '@accomplish_ai/agent-core';
 import {
   storeApiKey,
@@ -159,12 +160,14 @@ const TEXT_EXTENSIONS = new Set([
   '.log',
 ]);
 
+const DOCUMENT_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.ppt', '.pptx']);
+
 function classifyAttachmentType(filePath: string): TaskFileAttachment['type'] {
   const ext = path.extname(filePath).toLowerCase();
   if (IMAGE_EXTENSIONS.has(ext)) {
     return 'image';
   }
-  if (ext === '.pdf' || ext === '.doc' || ext === '.docx' || ext === '.ppt' || ext === '.pptx') {
+  if (DOCUMENT_EXTENSIONS.has(ext)) {
     return 'document';
   }
   if (TEXT_EXTENSIONS.has(ext)) {
@@ -306,6 +309,10 @@ export function registerIPCHandlers(): void {
       try {
         const stats = fs.statSync(filePath);
         if (!stats.isFile()) {
+          continue;
+        }
+        if (stats.size > TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES) {
+          // Skip oversized files - UI should inform user
           continue;
         }
         attachments.push({

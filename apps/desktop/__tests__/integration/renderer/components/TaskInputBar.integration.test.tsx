@@ -590,6 +590,7 @@ describe('TaskInputBar Integration', () => {
       const onAttachmentsChange = vi.fn();
       mockAccomplish.pickTaskFiles.mockResolvedValueOnce([
         {
+          id: 'mock-attachment-id',
           path: '/tmp/readme.md',
           name: 'readme.md',
           type: 'text',
@@ -675,6 +676,7 @@ describe('TaskInputBar Integration', () => {
           onAttachmentsChange={onAttachmentsChange}
           attachments={[
             {
+              id: 'test-attachment-id',
               path: '/tmp/report.pdf',
               name: 'report.pdf',
               type: 'document',
