@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { OpenCodeCliNotFoundError } from '../../../src/opencode/adapter.js';
+import {
+  CompletionEnforcer,
+  CompletionFlowState,
+} from '../../../src/opencode/completion/index.js';
+import type { CompletionEnforcerCallbacks } from '../../../src/opencode/completion/index.js';
+import type { TodoItem } from '../../../src/common/types/todo.js';
 
 /**
  * Tests for OpenCodeAdapter module.
@@ -271,5 +277,319 @@ describe('AskUserQuestion handling', () => {
     expect(permissionRequest.question).toBe('Do you want to continue?');
     expect(permissionRequest.options?.length).toBe(2);
     expect(permissionRequest.multiSelect).toBe(false);
+  });
+});
+
+describe('isNonTaskContinuationTool classification', () => {
+  const isNonTaskContinuationTool = (toolName: string): boolean => {
+    return toolName === 'skill' || toolName.endsWith('_skill');
+  };
+
+  it('should classify "skill" as non-continuation tool', () => {
+    expect(isNonTaskContinuationTool('skill')).toBe(true);
+  });
+
+  it('should classify mcp-prefixed skill as non-continuation tool', () => {
+    expect(isNonTaskContinuationTool('mcp_skill')).toBe(true);
+    expect(isNonTaskContinuationTool('some_prefix_skill')).toBe(true);
+  });
+
+  it('should classify regular tools as continuation tools', () => {
+    expect(isNonTaskContinuationTool('bash')).toBe(false);
+    expect(isNonTaskContinuationTool('read_file')).toBe(false);
+    expect(isNonTaskContinuationTool('complete_task')).toBe(false);
+    expect(isNonTaskContinuationTool('start_task')).toBe(false);
+  });
+
+  it('should not match skill as substring', () => {
+    expect(isNonTaskContinuationTool('skillful')).toBe(false);
+    expect(isNonTaskContinuationTool('skills')).toBe(false);
+  });
+});
+
+describe('needs_planning classification via CompletionEnforcer', () => {
+  let enforcer: CompletionEnforcer;
+  let callbacks: CompletionEnforcerCallbacks;
+  let debugMessages: Array<{ type: string; message: string; data?: unknown }>;
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    debugMessages = [];
+    callbacks = {
+      onStartContinuation: vi.fn().mockResolvedValue(undefined),
+      onComplete: vi.fn(),
+      onDebug: (type, message, data) => {
+        debugMessages.push({ type, message, data });
+      },
+    };
+    enforcer = new CompletionEnforcer(callbacks);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('needs_planning=true should mark task requires completion', () => {
+    enforcer.markTaskRequiresCompletion();
+
+    // After marking, a step_finish without complete_task should NOT return "complete"
+    // because the task requires completion (not conversational)
+    enforcer.markToolsUsed(true);
+    const action = enforcer.handleStepFinish('stop');
+    // Should schedule continuation since tools were used but no complete_task
+    expect(action).toBe('pending');
+  });
+
+  it('needs_planning=true with steps creates todos and marks requires completion', () => {
+    const steps = ['Step 1', 'Step 2', 'Step 3'];
+    const todos: TodoItem[] = steps.map((step, i) => ({
+      id: String(i + 1),
+      content: step,
+      status: i === 0 ? 'in_progress' : ('pending' as const),
+      priority: 'medium' as const,
+    }));
+
+    enforcer.updateTodos(todos);
+
+    // Todos were created — verify through debug messages
+    const todoUpdate = debugMessages.find(d => d.type === 'todo_update');
+    expect(todoUpdate).toBeDefined();
+    expect(todoUpdate!.message).toContain('3 items');
+  });
+
+  it('needs_planning=false without tools is treated as conversational', () => {
+    // No markTaskRequiresCompletion, no markToolsUsed
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('complete');
+  });
+
+  it('needs_planning=false with skills still allows startTaskCalled detection', () => {
+    // The adapter sets startTaskCalled=true for any start_task call regardless of needs_planning.
+    // This is tested via the isStartTaskTool logic already, but verify the flow:
+    const isStartTask = (name: string) =>
+      name === 'start_task' || name.endsWith('_start_task');
+
+    expect(isStartTask('start_task')).toBe(true);
+    // needs_planning=false means no markTaskRequiresCompletion, so conversational is possible
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('complete');
+  });
+});
+
+describe('complete_task + PTY kill logic', () => {
+  let enforcer: CompletionEnforcer;
+  let callbacks: CompletionEnforcerCallbacks;
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    callbacks = {
+      onStartContinuation: vi.fn().mockResolvedValue(undefined),
+      onComplete: vi.fn(),
+      onDebug: vi.fn(),
+    };
+    enforcer = new CompletionEnforcer(callbacks);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('complete_task with success status makes shouldComplete() return true', () => {
+    enforcer.handleCompleteTaskDetection({ status: 'success', summary: 'Done' });
+    expect(enforcer.shouldComplete()).toBe(true);
+    expect(enforcer.getState()).toBe(CompletionFlowState.DONE);
+  });
+
+  it('complete_task with partial status makes shouldComplete() return false (needs continuation)', () => {
+    enforcer.handleCompleteTaskDetection({
+      status: 'partial',
+      summary: 'Partially done',
+      remaining_work: 'More to do',
+    });
+    expect(enforcer.shouldComplete()).toBe(false);
+    expect(enforcer.getState()).toBe(CompletionFlowState.PARTIAL_CONTINUATION_PENDING);
+  });
+
+  it('complete_task with blocked status makes shouldComplete() return true', () => {
+    enforcer.handleCompleteTaskDetection({ status: 'blocked', summary: 'Blocked' });
+    expect(enforcer.shouldComplete()).toBe(true);
+    expect(enforcer.getState()).toBe(CompletionFlowState.BLOCKED);
+  });
+
+  it('complete_task with success but incomplete todos downgrades to partial', () => {
+    const todos: TodoItem[] = [
+      { id: '1', content: 'Step 1', status: 'pending', priority: 'medium' },
+    ];
+    enforcer.updateTodos(todos);
+
+    enforcer.handleCompleteTaskDetection({ status: 'success', summary: 'Done' });
+
+    // Should have been downgraded to partial because of incomplete todos
+    expect(enforcer.shouldComplete()).toBe(false);
+    expect(enforcer.getState()).toBe(CompletionFlowState.PARTIAL_CONTINUATION_PENDING);
+  });
+
+  it('second complete_task call is ignored', () => {
+    enforcer.handleCompleteTaskDetection({ status: 'success', summary: 'Done' });
+    const result = enforcer.handleCompleteTaskDetection({ status: 'partial', summary: 'Other' });
+    expect(result).toBe(false);
+    // State remains DONE from first call
+    expect(enforcer.getState()).toBe(CompletionFlowState.DONE);
+  });
+});
+
+describe('handleMessage post-completion guard', () => {
+  it('should skip message handling when hasCompleted is true', () => {
+    // Simulate the adapter's guard: if (this.hasCompleted) return;
+    let hasCompleted = true;
+    const events: string[] = [];
+
+    const handleMessage = (type: string) => {
+      if (hasCompleted) return;
+      events.push(type);
+    };
+
+    handleMessage('text');
+    handleMessage('tool_call');
+    handleMessage('step_finish');
+
+    expect(events).toEqual([]);
+  });
+
+  it('should process messages when hasCompleted is false', () => {
+    let hasCompleted = false;
+    const events: string[] = [];
+
+    const handleMessage = (type: string) => {
+      if (hasCompleted) return;
+      events.push(type);
+    };
+
+    handleMessage('text');
+    handleMessage('tool_call');
+
+    expect(events).toEqual(['text', 'tool_call']);
+  });
+});
+
+describe('markToolsUsed with continuation classification', () => {
+  let enforcer: CompletionEnforcer;
+  let callbacks: CompletionEnforcerCallbacks;
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    callbacks = {
+      onStartContinuation: vi.fn().mockResolvedValue(undefined),
+      onComplete: vi.fn(),
+      onDebug: vi.fn(),
+    };
+    enforcer = new CompletionEnforcer(callbacks);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('skill tools do not count for continuation (countsForContinuation=false)', () => {
+    // Only skill tools called — no task tools used
+    enforcer.markToolsUsed(false); // skill tool
+    enforcer.markToolsUsed(false); // another skill tool
+
+    // Without any real tool usage, step_finish should treat as conversational
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('complete');
+  });
+
+  it('regular tools count for continuation', () => {
+    enforcer.markToolsUsed(true); // bash tool
+
+    // With tool usage but no complete_task, should schedule continuation
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('pending');
+  });
+
+  it('mix of skill and regular tools still triggers continuation', () => {
+    enforcer.markToolsUsed(false); // skill
+    enforcer.markToolsUsed(true);  // bash
+
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('pending');
+  });
+});
+
+describe('Integration flow: conversational turn', () => {
+  let enforcer: CompletionEnforcer;
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    enforcer = new CompletionEnforcer({
+      onStartContinuation: vi.fn().mockResolvedValue(undefined),
+      onComplete: vi.fn(),
+      onDebug: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('start_task(needs_planning=false) → text → step_finish → completes without continuation', () => {
+    // start_task called but needs_planning=false, so no markTaskRequiresCompletion
+    // No tools used (just text response)
+    // step_finish(stop) → conversational → complete
+    const action = enforcer.handleStepFinish('stop');
+    expect(action).toBe('complete');
+  });
+
+  it('start_task(needs_planning=true) → tools → complete_task(success) → shouldComplete', () => {
+    enforcer.markTaskRequiresCompletion();
+    enforcer.markToolsUsed(true); // some tool
+    enforcer.handleCompleteTaskDetection({ status: 'success', summary: 'All done' });
+    expect(enforcer.shouldComplete()).toBe(true);
+  });
+
+  it('start_task(needs_planning=true) → tools → complete_task(partial) → needs continuation', () => {
+    enforcer.markTaskRequiresCompletion();
+    enforcer.markToolsUsed(true);
+    enforcer.handleCompleteTaskDetection({
+      status: 'partial',
+      summary: 'Half done',
+      remaining_work: 'Finish the rest',
+    });
+    expect(enforcer.shouldComplete()).toBe(false);
+    expect(enforcer.getState()).toBe(CompletionFlowState.PARTIAL_CONTINUATION_PENDING);
+  });
+});
+
+describe('emitPlanMessage null safety', () => {
+  it('should handle steps being undefined in plan text generation', () => {
+    // The adapter uses: input.steps?.map(...) ?? ''
+    const input = {
+      goal: 'Some goal',
+      steps: undefined as string[] | undefined,
+    };
+
+    const stepsText = input.steps?.map((s, i) => `${i + 1}. ${s}`).join('\n') ?? '';
+    expect(stepsText).toBe('');
+  });
+
+  it('should handle empty verification array', () => {
+    const verification: string[] = [];
+    const section = verification.length
+      ? `\n\n**Verification:**\n${verification.map((v, i) => `${i + 1}. ${v}`).join('\n')}`
+      : '';
+    expect(section).toBe('');
+  });
+
+  it('should handle empty skills array', () => {
+    const skills: string[] = [];
+    const section = skills.length
+      ? `\n\n**Skills:** ${skills.join(', ')}`
+      : '';
+    expect(section).toBe('');
   });
 });

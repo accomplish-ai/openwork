@@ -626,4 +626,125 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('browser automation assistant');
     });
   });
+
+  describe('needs_planning decision framework', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should contain needs_planning: true for multi-step tasks', () => {
+      expect(prompt).toContain('needs_planning: true');
+      expect(prompt).toContain(
+        'will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands)',
+      );
+    });
+
+    it('should contain needs_planning: false for conversational messages', () => {
+      expect(prompt).toContain('needs_planning: false');
+      expect(prompt).toContain(
+        'you can answer from knowledge alone using only start_task',
+      );
+    });
+
+    it('should contain explicit instruction not to call complete_task for conversational responses', () => {
+      expect(prompt).toContain(
+        'Do NOT call complete_task for conversational responses',
+      );
+    });
+
+    it('should require complete_task when needs_planning was true', () => {
+      expect(prompt).toContain(
+        'You MUST call the `complete_task` tool when `needs_planning` was true',
+      );
+    });
+
+    it('should contain JSON example with needs_planning true showing goal/steps/verification', () => {
+      expect(prompt).toContain('"needs_planning": true');
+      expect(prompt).toContain('"goal":');
+      expect(prompt).toContain('"steps":');
+      expect(prompt).toContain('"verification":');
+    });
+
+    it('should contain JSON example with needs_planning false showing only original_request and skills', () => {
+      // The false example has original_request, needs_planning, and skills but no goal/steps/verification
+      expect(prompt).toContain('"original_request": "Hello! How are you?"');
+      expect(prompt).toContain('"needs_planning": false');
+      expect(prompt).toContain('"skills": []');
+    });
+
+    it('should mention greetings/questions/knowledge as needs_planning=false examples', () => {
+      expect(prompt).toContain('greetings');
+      expect(prompt).toContain('knowledge questions');
+      expect(prompt).toContain('conversational messages');
+    });
+
+    it('should mention file operations/browser/bash as needs_planning=true indicators', () => {
+      expect(prompt).toContain('file operations');
+      expect(prompt).toContain('browser actions');
+      expect(prompt).toContain('bash commands');
+    });
+
+    it('should still contain start_task as mandatory first tool', () => {
+      expect(prompt).toContain(
+        'You MUST call start_task before any other tool',
+      );
+      expect(prompt).toContain('CALL start_task FIRST - THIS IS MANDATORY');
+    });
+
+    it('should still contain todowrite instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('Mark completed steps as "completed"');
+      expect(prompt).toContain('Mark the current step as "in_progress"');
+      expect(prompt).toContain(
+        'All todos must be "completed" or "cancelled" before calling complete_task',
+      );
+    });
+
+    it('should contain "What is the capital of France?" as a needs_planning=false example', () => {
+      expect(prompt).toContain('"original_request": "What is the capital of France?"');
+    });
+
+    it('should contain restaurant search as a needs_planning=true example', () => {
+      expect(prompt).toContain('"original_request": "Find the top 3 Italian restaurants downtown"');
+      expect(prompt).toContain('"needs_planning": true');
+    });
+  });
+
+  describe('needs_planning regression checks', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should still contain complete_task instructions', () => {
+      expect(prompt).toContain('complete_task');
+      expect(prompt).toContain('status: "success"');
+      expect(prompt).toContain('status: "blocked"');
+      expect(prompt).toContain('status: "partial"');
+    });
+
+    it('should still contain verification behavior', () => {
+      expect(prompt).toContain('You verified EVERY part of the user\'s request is done');
+      expect(prompt).toContain('original_request_summary');
+    });
+
+    it('should still reference skills array', () => {
+      expect(prompt).toContain('"skills": []');
+      expect(prompt).toContain('skills');
+    });
+  });
 });

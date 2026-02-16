@@ -16,7 +16,7 @@ export class CompletionEnforcer {
   private currentTodos: TodoItem[] = [];
   private taskToolsWereUsed: boolean = false;
   private taskToolsWereUsedEver: boolean = false;
-  private structuredTaskStarted: boolean = false;
+  private taskRequiresCompletion: boolean = false;
 
   constructor(callbacks: CompletionEnforcerCallbacks, maxContinuationAttempts?: number) {
     this.callbacks = callbacks;
@@ -26,7 +26,7 @@ export class CompletionEnforcer {
   updateTodos(todos: TodoItem[]): void {
     this.currentTodos = todos;
     if (todos.length > 0) {
-      this.structuredTaskStarted = true;
+      this.taskRequiresCompletion = true;
     }
     this.callbacks.onDebug(
       'todo_update',
@@ -43,8 +43,8 @@ export class CompletionEnforcer {
     this.taskToolsWereUsedEver = true;
   }
 
-  markStructuredTaskStarted(): void {
-    this.structuredTaskStarted = true;
+  markTaskRequiresCompletion(): void {
+    this.taskRequiresCompletion = true;
   }
 
   handleCompleteTaskDetection(toolInput: unknown): boolean {
@@ -183,7 +183,7 @@ export class CompletionEnforcer {
     this.currentTodos = [];
     this.taskToolsWereUsed = false;
     this.taskToolsWereUsedEver = false;
-    this.structuredTaskStarted = false;
+    this.taskRequiresCompletion = false;
   }
 
   private hasIncompleteTodos(): boolean {
@@ -210,6 +210,6 @@ export class CompletionEnforcer {
   private isConversationalTurn(): boolean {
     return !this.taskToolsWereUsed &&
            !this.taskToolsWereUsedEver &&
-           !this.structuredTaskStarted;
+           !this.taskRequiresCompletion;
   }
 }
