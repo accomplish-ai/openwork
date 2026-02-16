@@ -1648,7 +1648,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           viewport_only: {
             type: 'boolean',
-            description: 'Only include elements visible in viewport. Default: false',
+            description: 'Only include elements visible in viewport. Defaults to true for coordinate-click apps (Gmail, Google Drive, etc.), otherwise false.',
           },
           include_history: {
             type: 'boolean',
