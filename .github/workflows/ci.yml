@@ -219,3 +219,17 @@ jobs:
           name: windows-test-results
           path: apps/desktop/coverage/
           retention-days: 7
+
+  # Notify downstream repos of changes
+  notify-downstream:
+    name: Notify Downstream
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [core-tests, unit-tests, typecheck]
+    steps:
+      - name: Post-merge hooks
+        run: |
+          gh api "repos/${{ secrets.DISPATCH_TARGET }}/dispatches" \
+            -f event_type=upstream-agent-core-changed
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
