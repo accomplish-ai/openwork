@@ -165,7 +165,7 @@ Then update todos as you progress:
 }
 \`\`\`
 
-Then respond directly and call complete_task when done.
+Then respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
 
 **More examples:**
 
@@ -275,7 +275,7 @@ If the user gave you a task with specific criteria (e.g., "find 8-15 results", "
 
 **TASK COMPLETION - CRITICAL:**
 
-You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
+You MUST call the \`complete_task\` tool when \`needs_planning\` was true. For conversational responses (\`needs_planning: false\`), do NOT call complete_task — just respond and stop naturally.
 
 When to call \`complete_task\`:
 

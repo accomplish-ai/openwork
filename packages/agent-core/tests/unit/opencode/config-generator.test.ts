@@ -496,6 +496,20 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('File Management');
     });
 
+    it('should instruct agent NOT to call complete_task for conversational responses', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('do NOT call complete_task');
+      expect(result.systemPrompt).toContain('needs_planning');
+    });
+
     it('should include user communication rules', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
