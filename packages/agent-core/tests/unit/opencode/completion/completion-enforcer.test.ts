@@ -187,6 +187,30 @@ describe('CompletionEnforcer', () => {
       );
     });
 
+    it('should return "complete" when only helper tools were used', () => {
+      enforcer.markToolsUsed(false);
+
+      const result = enforcer.handleStepFinish('stop');
+
+      expect(result).toBe('complete');
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'skip_continuation',
+        'No tools used and no complete_task called — treating as conversational response'
+      );
+    });
+
+    it('should return "pending" for structured tasks even when no tools were used in this turn', () => {
+      enforcer.markTaskRequiresCompletion();
+
+      const result = enforcer.handleStepFinish('stop');
+
+      expect(result).toBe('pending');
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'continuation',
+        'Scheduled continuation prompt (attempt 1)'
+      );
+    });
+
     it('should return "complete" after complete_task with success', () => {
       enforcer.handleCompleteTaskDetection({
         status: 'success',
@@ -279,6 +303,20 @@ describe('CompletionEnforcer', () => {
       expect(prompt).toContain('You called complete_task with status="partial"');
       expect(prompt).toContain('## REQUIRED: Create a Continuation Plan');
       expect(prompt).not.toContain('rejected');
+    });
+
+    it('should keep continuing after a text-only continuation turn when tools were used earlier', async () => {
+      enforcer.markToolsUsed();
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+
+      await enforcer.handleProcessExit(0);
+
+      const result = enforcer.handleStepFinish('stop');
+      expect(result).toBe('pending');
+      expect(onDebugMock).toHaveBeenCalledWith(
+        'continuation',
+        'Scheduled continuation prompt (attempt 2)'
+      );
     });
 
     it('should call onComplete when no pending actions', async () => {
@@ -388,6 +426,101 @@ describe('CompletionEnforcer', () => {
 
       expect(enforcer.getState()).toBe(CompletionFlowState.IDLE);
       expect(enforcer.getContinuationAttempts()).toBe(0);
+    });
+  });
+
+  describe('isConversationalTurn permutations', () => {
+    it('should be conversational when no tools, no taskRequiresCompletion, no taskToolsWereUsedEver', () => {
+      // Fresh enforcer, nothing called
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+
+    it('should be conversational when only helper tools used (countsForContinuation=false)', () => {
+      enforcer.markToolsUsed(false);
+      enforcer.markToolsUsed(false);
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+
+    it('should NOT be conversational when markTaskRequiresCompletion called but no tools this turn', () => {
+      enforcer.markTaskRequiresCompletion();
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+    });
+
+    it('should NOT be conversational when markToolsUsed(true) called', () => {
+      enforcer.markToolsUsed(true);
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+    });
+
+    it('should NOT be conversational after tools used in previous turn (taskToolsWereUsedEver is sticky)', async () => {
+      // First turn: use tools, trigger continuation
+      enforcer.markToolsUsed(true);
+      enforcer.handleStepFinish('stop');
+      // handleProcessExit resets taskToolsWereUsed but NOT taskToolsWereUsedEver
+      await enforcer.handleProcessExit(0);
+
+      // Second turn: text-only, but taskToolsWereUsedEver is still true
+      const result = enforcer.handleStepFinish('stop');
+      expect(result).toBe('pending'); // NOT conversational
+    });
+
+    it('should NOT be conversational when helper tools and real tools are mixed', () => {
+      enforcer.markToolsUsed(false); // helper
+      enforcer.markToolsUsed(true);  // real
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+    });
+  });
+
+  describe('reset behavior', () => {
+    it('should clear all flags so enforcer returns to conversational after reset', () => {
+      enforcer.markToolsUsed(true);
+      enforcer.markTaskRequiresCompletion();
+      enforcer.updateTodos([{ id: '1', content: 'Task', status: 'pending', priority: 'high' }]);
+
+      enforcer.reset();
+
+      // Should be conversational again
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+
+    it('should clear taskToolsWereUsedEver after reset', async () => {
+      enforcer.markToolsUsed(true);
+      enforcer.handleStepFinish('stop');
+      await enforcer.handleProcessExit(0);
+      // taskToolsWereUsedEver is true here
+
+      enforcer.reset();
+
+      // After reset, fresh text-only turn should be conversational
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+  });
+
+  describe('updateTodos interaction with conversational detection', () => {
+    it('should set taskRequiresCompletion when todos are non-empty', () => {
+      enforcer.updateTodos([{ id: '1', content: 'Do something', status: 'pending', priority: 'high' }]);
+      // No tools used, but taskRequiresCompletion is set → not conversational
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
+    });
+
+    it('should NOT set taskRequiresCompletion when todos are empty', () => {
+      enforcer.updateTodos([]);
+      // Empty list doesn't set taskRequiresCompletion → still conversational
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+  });
+
+  describe('markToolsUsed edge cases', () => {
+    it('should remain conversational after multiple markToolsUsed(false) calls', () => {
+      enforcer.markToolsUsed(false);
+      enforcer.markToolsUsed(false);
+      enforcer.markToolsUsed(false);
+      expect(enforcer.handleStepFinish('stop')).toBe('complete');
+    });
+
+    it('should NOT be conversational after markToolsUsed(true) then markToolsUsed(false) (true is sticky)', () => {
+      enforcer.markToolsUsed(true);
+      enforcer.markToolsUsed(false);
+      expect(enforcer.handleStepFinish('stop')).toBe('pending');
     });
   });
 
