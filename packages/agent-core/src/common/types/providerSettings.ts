@@ -63,7 +63,7 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   bedrock: { id: 'bedrock', name: 'AWS Bedrock', category: 'aws', label: 'Service', logoKey: 'aws-bedrock' },
   vertex: { id: 'vertex', name: 'Vertex AI', category: 'gcp', label: 'Service', logoKey: 'vertex' },
   'azure-foundry': { id: 'azure-foundry', name: 'Azure AI Foundry', category: 'azure', label: 'Service', logoKey: 'azure', helpUrl: 'https://ai.azure.com' },
-  ollama: { id: 'ollama', name: 'Ollama', category: 'local', label: 'Local Models', logoKey: 'olama' },
+    ollama: { id: 'ollama', name: 'Ollama', category: 'local', label: 'Local Models', logoKey: 'ollama' },
   openrouter: { id: 'openrouter', name: 'OpenRouter', category: 'proxy', label: 'Service', logoKey: 'open-router', helpUrl: 'https://openrouter.ai/keys' },
   litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
   minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
@@ -274,7 +274,9 @@ export interface ProviderSettings {
  * @returns `true` if the provider's connectionStatus is 'connected' and `selectedModelId` is not null, `false` otherwise.
  */
 export function isProviderReady(provider: ConnectedProvider | undefined): boolean {
-  if (!provider) return false;
+  if (!provider) {
+    return false;
+  }
   return provider.connectionStatus === 'connected' && provider.selectedModelId !== null;
 }
 
@@ -285,7 +287,9 @@ export function isProviderReady(provider: ConnectedProvider | undefined): boolea
  * @returns `true` if at least one connected provider is ready, `false` otherwise.
  */
 export function hasAnyReadyProvider(settings: ProviderSettings | null | undefined): boolean {
-  if (!settings?.connectedProviders) return false;
+  if (!settings?.connectedProviders) {
+    return false;
+  }
   return Object.values(settings.connectedProviders).some(isProviderReady);
 }
 
@@ -295,7 +299,9 @@ export function hasAnyReadyProvider(settings: ProviderSettings | null | undefine
  * @returns The active `ConnectedProvider`, or `null` if no active provider is set or the provider is not found.
  */
 export function getActiveProvider(settings: ProviderSettings | null | undefined): ConnectedProvider | null {
-  if (!settings?.activeProviderId) return null;
+  if (!settings?.activeProviderId) {
+    return null;
+  }
   return settings.connectedProviders?.[settings.activeProviderId] ?? null;
 }
 
