@@ -98,6 +98,10 @@ function TaskHistoryItem({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // Only handle keys when the event target is the container itself, not nested buttons
+    if (event.currentTarget !== event.target) {
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleOpen();
@@ -123,11 +127,13 @@ function TaskHistoryItem({
         </p>
       </div>
       <div className="flex items-center gap-1">
-        <StarButton
-          isFavorite={task.isFavorite || false}
-          onToggle={onToggleFavorite}
-          size="sm"
-        />
+        {task.status === 'completed' && (
+          <StarButton
+            isFavorite={task.isFavorite || false}
+            onToggle={onToggleFavorite}
+            size="sm"
+          />
+        )}
         <button
           type="button"
           onClick={(e) => {

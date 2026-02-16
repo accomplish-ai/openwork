@@ -182,9 +182,10 @@ export function saveTask(task: Task): void {
       }
     }
 
+    // Preserve favorites and keep only the most recent non-favorite tasks up to MAX_HISTORY_ITEMS
     db.prepare(
-      `DELETE FROM tasks WHERE id NOT IN (
-        SELECT id FROM tasks ORDER BY created_at DESC LIMIT ?
+      `DELETE FROM tasks WHERE is_favorite = 0 AND id NOT IN (
+        SELECT id FROM tasks WHERE is_favorite = 0 ORDER BY created_at DESC LIMIT ?
       )`
     ).run(MAX_HISTORY_ITEMS);
   })();
