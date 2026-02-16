@@ -2,7 +2,6 @@ export {
   OpenCodeAdapter,
   createAdapter,
   OpenCodeCliNotFoundError,
-  buildContinuationPrompt,
 } from './adapter.js';
 export type {
   AdapterOptions,

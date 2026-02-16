@@ -285,15 +285,6 @@ describe('context overflow recovery', () => {
     });
   });
 
-  describe('MAX_RECOVERY_RETRIES constant', () => {
-    it('should limit retries to prevent infinite loops', () => {
-      // The adapter caps recovery at 1 retry to avoid infinite recursion.
-      // This is verified by the adapter implementation — if a second overflow
-      // occurs on the retry, it surfaces the error to the user instead of retrying again.
-      // Tested here as a documentation/contract test.
-      expect(true).toBe(true);
-    });
-  });
 });
 
 describe('serializeError', () => {
