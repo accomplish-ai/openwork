@@ -163,8 +163,8 @@ importers:
         specifier: ^10.4.20
         version: 10.4.24(postcss@8.5.6)
       electron:
-        specifier: ^35.2.1
-        version: 35.7.5
+        specifier: ^37.3.0
+        version: 37.10.3
       electron-builder:
         specifier: ^25.1.8
         version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
@@ -237,6 +237,10 @@ importers:
         version: 2.1.9(@types/node@22.19.11)(happy-dom@20.6.1)(jsdom@28.1.0)
 
   packages/agent-core/mcp-tools/ask-user-question:
+    dependencies:
+      '@accomplish/desktop':
+        specifier: file:../../../../apps/desktop
+        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
@@ -330,6 +334,9 @@ importers:
 
   packages/agent-core/mcp-tools/start-task:
     dependencies:
+      '@accomplish/desktop':
+        specifier: file:../../../../apps/desktop
+        version: file:apps/desktop(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(use-sync-external-store@1.6.0(react@19.2.4))
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
@@ -3337,8 +3344,8 @@ packages:
   electron-to-chromium@1.5.286:
     resolution: {integrity: sha512-9tfDXhJ4RKFNerfjdCcZfufu49vg620741MNs26a9+bhLThdB+plgMeou98CAaHu/WATj2iHOOHTp1hWtABj2A==}
 
-  electron@35.7.5:
-    resolution: {integrity: sha512-dnL+JvLraKZl7iusXTVTGYs10TKfzUi30uEDTqsmTm0guN9V2tbOjTzyIZbh9n3ygUjgEYyo+igAwMRXIi3IPw==}
+  electron@37.10.3:
+    resolution: {integrity: sha512-3IjCGSjQmH50IbW2PFveaTzK+KwcFX9PEhE7KXb9v5IT8cLAiryAN7qezm/XzODhDRlLu0xKG1j8xWBtZ/bx/g==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -9695,7 +9702,7 @@ snapshots:
 
   electron-to-chromium@1.5.286: {}
 
-  electron@35.7.5:
+  electron@37.10.3:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.19.11
