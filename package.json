@@ -31,7 +31,6 @@
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "overrides": {
-      "onnxruntime-web": "1.21.0",
       "ajv": "^8.18.0",
       "fast-xml-parser": "^5.3.6",
       "@modelcontextprotocol/sdk": "^1.26.0",
