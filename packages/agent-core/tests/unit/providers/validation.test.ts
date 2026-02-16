@@ -257,7 +257,7 @@ describe('API Key Validation', () => {
 
         expect(result.valid).toBe(true);
         expect(fetch).toHaveBeenCalledWith(
-          'https://api.studio.nebius.ai/v1/models',
+          'https://api.tokenfactory.nebius.com/v1/models',
           expect.objectContaining({
             method: 'GET',
             headers: expect.objectContaining({

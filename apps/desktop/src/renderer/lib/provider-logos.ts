@@ -41,7 +41,7 @@ export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   groq: groqLogo,
 };
 
-export const DARK_INVERT_PROVIDERS = new Set<ProviderId>(['openai', 'xai', 'ollama', 'openrouter', 'groq', 'together']);
+export const DARK_INVERT_PROVIDERS = new Set<ProviderId>(['openai', 'xai', 'ollama', 'openrouter', 'groq', 'nebius']);
 
 export function getProviderLogo(providerId: ProviderId): string | undefined {
   return PROVIDER_LOGOS[providerId];

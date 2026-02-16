@@ -320,10 +320,10 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     name: 'Nebius AI',
     requiresApiKey: true,
     apiKeyEnvVar: 'NEBIUS_API_KEY',
-    baseUrl: 'https://api.studio.nebius.ai/v1',
+    baseUrl: 'https://api.tokenfactory.nebius.com/v1',
     defaultModelId: 'nebius/deepseek-ai/DeepSeek-V3.2',
     modelsEndpoint: {
-      url: 'https://api.studio.nebius.ai/v1/models',
+      url: 'https://api.tokenfactory.nebius.com/v1/models',
       authStyle: 'bearer',
       responseFormat: 'openai',
       modelIdPrefix: 'nebius/',
