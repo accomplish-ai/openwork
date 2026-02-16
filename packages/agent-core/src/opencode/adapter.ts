@@ -2,7 +2,7 @@ import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+
 import { StreamParser } from './stream-parser.js';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './log-watcher.js';
 import { CompletionEnforcer, CompletionEnforcerCallbacks } from './completion/index.js';
@@ -11,6 +11,8 @@ import type { OpenCodeMessage } from '../common/types/opencode.js';
 import type { PermissionRequest } from '../common/types/permission.js';
 import type { TodoItem } from '../common/types/todo.js';
 import { serializeError } from '../utils/error.js';
+
+const LOG_TRUNCATION_LIMIT = 500;
 
 export class OpenCodeCliNotFoundError extends Error {
   constructor() {
@@ -237,7 +239,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           .replace(/\x1B\][^\x07]*\x07/g, '')
           .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
         if (cleanData.trim()) {
-          const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+          const truncated = cleanData.substring(0, LOG_TRUNCATION_LIMIT) + (cleanData.length > LOG_TRUNCATION_LIMIT ? '...' : '');
           console.log('[OpenCode CLI stdout]:', truncated);
           this.emit('debug', { type: 'stdout', message: cleanData });
 
@@ -398,6 +400,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   }
 
   private handleMessage(message: OpenCodeMessage): void {
+
     console.log('[OpenCode Adapter] Handling message type:', message.type);
 
     switch (message.type) {
@@ -533,18 +536,21 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (this.isStartTaskTool(toolName)) {
       this.startTaskCalled = true;
       const startInput = toolInput as StartTaskInput;
-      if (startInput?.goal && startInput?.steps) {
-        this.emitPlanMessage(startInput, sessionID || this.currentSessionId || '');
-        const todos: TodoItem[] = startInput.steps.map((step, i) => ({
-          id: String(i + 1),
-          content: step,
-          status: i === 0 ? 'in_progress' : 'pending',
-          priority: 'medium',
-        }));
-        if (todos.length > 0) {
-          this.emit('todo:update', todos);
-          this.completionEnforcer.updateTodos(todos);
-          console.log('[OpenCode Adapter] Created todos from start_task steps');
+      if (startInput?.needs_planning) {
+        this.completionEnforcer.markTaskRequiresCompletion();
+        if (startInput.goal && startInput.steps) {
+          this.emitPlanMessage(startInput, sessionID || this.currentSessionId || '');
+          const todos: TodoItem[] = startInput.steps.map((step, i) => ({
+            id: String(i + 1),
+            content: step,
+            status: i === 0 ? 'in_progress' : 'pending',
+            priority: 'medium',
+          }));
+          if (todos.length > 0) {
+            this.emit('todo:update', todos);
+            this.completionEnforcer.updateTodos(todos);
+            console.log('[OpenCode Adapter] Created todos from start_task steps');
+          }
         }
       }
     }
@@ -565,10 +571,27 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       }
     }
 
-    this.completionEnforcer.markToolsUsed();
+    this.completionEnforcer.markToolsUsed(!this.isNonTaskContinuationTool(toolName));
 
     if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
       this.completionEnforcer.handleCompleteTaskDetection(toolInput);
+      const completeInput = toolInput as { summary?: string };
+      if (completeInput?.summary) {
+        this.emit('message', {
+          type: 'text',
+          part: {
+            type: 'text',
+            text: completeInput.summary,
+            sessionID: sessionID || this.currentSessionId || '',
+          },
+        } as OpenCodeMessage);
+        this.messages.push({
+          id: this.generateMessageId(),
+          type: 'assistant',
+          content: completeInput.summary,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {
@@ -691,7 +714,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         .replace(/\x1B\][^\x07]*\x07/g, '')
         .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
       if (cleanData.trim()) {
-        const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+        const truncated = cleanData.substring(0, LOG_TRUNCATION_LIMIT) + (cleanData.length > LOG_TRUNCATION_LIMIT ? '...' : '');
         console.log('[OpenCode CLI stdout]:', truncated);
         this.emit('debug', { type: 'stdout', message: cleanData });
 
@@ -730,6 +753,25 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     return false;
   }
 
+  private static readonly NON_TASK_TOOLS = new Set([
+    'discard',
+    'todowrite',
+    'complete_task',
+    'AskUserQuestion',
+    'report_checkpoint',
+    'report_thought',
+    'request_file_permission',
+  ]);
+
+  private isNonTaskContinuationTool(toolName: string): boolean {
+    if (toolName === 'skill' || toolName.endsWith('_skill')) { return true; }
+    if (this.isStartTaskTool(toolName)) { return true; }
+    for (const tool of OpenCodeAdapter.NON_TASK_TOOLS) {
+      if (toolName === tool || toolName.endsWith(`_${tool}`)) { return true; }
+    }
+    return false;
+  }
+
   private emitPlanMessage(input: StartTaskInput, sessionId: string): void {
     const verificationSection = input.verification?.length
       ? `\n\n**Verification:**\n${input.verification.map((v, i) => `${i + 1}. ${v}`).join('\n')}`
@@ -737,7 +779,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const skillsSection = input.skills?.length
       ? `\n\n**Skills:** ${input.skills.join(', ')}`
       : '';
-    const planText = `**Plan:**\n\n**Goal:** ${input.goal}\n\n**Steps:**\n${input.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}${verificationSection}${skillsSection}`;
+    const planText = `**Plan:**\n\n**Goal:** ${input.goal}\n\n**Steps:**\n${input.steps?.map((s, i) => `${i + 1}. ${s}`).join('\n') ?? ''}${verificationSection}${skillsSection}`;
 
     const syntheticMessage: OpenCodeMessage = {
       type: 'text',
@@ -792,9 +834,10 @@ interface AskUserQuestionInput {
 
 interface StartTaskInput {
   original_request: string;
-  goal: string;
-  steps: string[];
-  verification: string[];
+  needs_planning: boolean;
+  goal?: string;
+  steps?: string[];
+  verification?: string[];
   skills: string[];
 }
 

@@ -14,7 +14,9 @@ export class CompletionEnforcer {
   private state: CompletionState;
   private callbacks: CompletionEnforcerCallbacks;
   private currentTodos: TodoItem[] = [];
-  private toolsWereUsed: boolean = false;
+  private taskToolsWereUsed: boolean = false;
+  private taskToolsWereUsedEver: boolean = false;
+  private taskRequiresCompletion: boolean = false;
 
   constructor(callbacks: CompletionEnforcerCallbacks, maxContinuationAttempts?: number) {
     this.callbacks = callbacks;
@@ -23,6 +25,9 @@ export class CompletionEnforcer {
 
   updateTodos(todos: TodoItem[]): void {
     this.currentTodos = todos;
+    if (todos.length > 0) {
+      this.taskRequiresCompletion = true;
+    }
     this.callbacks.onDebug(
       'todo_update',
       `Todo list updated: ${todos.length} items`,
@@ -30,8 +35,16 @@ export class CompletionEnforcer {
     );
   }
 
-  markToolsUsed(): void {
-    this.toolsWereUsed = true;
+  markToolsUsed(countsForContinuation: boolean = true): void {
+    if (!countsForContinuation) {
+      return;
+    }
+    this.taskToolsWereUsed = true;
+    this.taskToolsWereUsedEver = true;
+  }
+
+  markTaskRequiresCompletion(): void {
+    this.taskRequiresCompletion = true;
   }
 
   handleCompleteTaskDetection(toolInput: unknown): boolean {
@@ -89,7 +102,7 @@ export class CompletionEnforcer {
     }
 
     if (!this.state.isCompleteTaskCalled()) {
-      if (!this.toolsWereUsed) {
+      if (this.isConversationalTurn()) {
         this.callbacks.onDebug(
           'skip_continuation',
           'No tools used and no complete_task called — treating as conversational response'
@@ -136,7 +149,7 @@ export class CompletionEnforcer {
         { remainingWork: args?.remaining_work, summary: args?.summary, continuationPrompt: prompt }
       );
 
-      this.toolsWereUsed = false;
+      this.taskToolsWereUsed = false;
       await this.callbacks.onStartContinuation(prompt);
       return;
     }
@@ -151,7 +164,7 @@ export class CompletionEnforcer {
         `Starting continuation task (attempt ${this.state.getContinuationAttempts()})`
       );
 
-      this.toolsWereUsed = false;
+      this.taskToolsWereUsed = false;
       await this.callbacks.onStartContinuation(prompt);
       return;
     }
@@ -168,7 +181,9 @@ export class CompletionEnforcer {
   reset(): void {
     this.state.reset();
     this.currentTodos = [];
-    this.toolsWereUsed = false;
+    this.taskToolsWereUsed = false;
+    this.taskToolsWereUsedEver = false;
+    this.taskRequiresCompletion = false;
   }
 
   private hasIncompleteTodos(): boolean {
@@ -190,5 +205,11 @@ export class CompletionEnforcer {
 
   getContinuationAttempts(): number {
     return this.state.getContinuationAttempts();
+  }
+
+  private isConversationalTurn(): boolean {
+    return !this.taskToolsWereUsed &&
+           !this.taskToolsWereUsedEver &&
+           !this.taskRequiresCompletion;
   }
 }
