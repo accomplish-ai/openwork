@@ -78,6 +78,11 @@ vi.mock('electron', () => {
       isPackaged: false,
       getPath: vi.fn(() => '/tmp/test-app'),
     },
+    nativeTheme: {
+      on: vi.fn(),
+      themeSource: 'system',
+      shouldUseDarkColors: false,
+    },
   };
 });
 
@@ -1617,7 +1622,7 @@ describe('IPC Handlers Integration', () => {
       const taskId = 'task_notfound';
       mockTaskManager.hasActiveTask.mockReturnValue(false);
       // File permission request that is not in pending
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
       // Act
       await invokeHandler('permission:respond', {
