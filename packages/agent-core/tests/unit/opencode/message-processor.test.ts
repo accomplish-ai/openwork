@@ -47,11 +47,10 @@ describe('sanitizeAssistantTextForDisplay', () => {
     expect(sanitizeAssistantTextForDisplay(text)).toBe('Good line\n\nAnother good line');
   });
 
-  it('strips text after lone opening <thought> tag (streaming edge)', () => {
+  it('strips everything from lone opening <thought> tag to end (streaming edge)', () => {
     const text = 'Visible text\n<thought>partial thinking with no close';
     const result = sanitizeAssistantTextForDisplay(text);
-    expect(result).not.toContain('<thought>');
-    expect(result).toContain('Visible text');
+    expect(result).toBe('Visible text');
   });
 });
 
@@ -100,6 +99,39 @@ describe('toTaskMessage', () => {
       },
     };
     expect(toTaskMessage(message)).toBeNull();
+  });
+
+  it('returns null for hidden tool names in tool_use path', () => {
+    const message: OpenCodeMessage = {
+      type: 'tool_use',
+      part: {
+        id: '4',
+        sessionID: 's1',
+        messageID: 'm4',
+        type: 'tool_use',
+        tool: 'extract',
+        state: { status: 'completed', output: 'some output' },
+      },
+    } as OpenCodeMessage;
+    expect(toTaskMessage(message)).toBeNull();
+  });
+
+  it('stores raw tool ID in toolName, not display label', () => {
+    const message: OpenCodeMessage = {
+      type: 'tool_call',
+      part: {
+        id: '5',
+        sessionID: 's1',
+        messageID: 'm5',
+        type: 'tool_call',
+        tool: 'browser_click',
+        input: '{}',
+      },
+    };
+    const result = toTaskMessage(message);
+    expect(result).not.toBeNull();
+    expect(result!.toolName).toBe('browser_click');
+    expect(result!.content).toBe('Using tool: Clicking element');
   });
 });
 

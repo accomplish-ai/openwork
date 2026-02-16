@@ -85,6 +85,7 @@ const TOOL_DISPLAY_NAMES: Record<string, string | null> = {
 const INSTRUCTION_BLOCK_RE = /<instruction\b[^>]*>[\s\S]*?<\/instruction>/gi;
 const NUDGE_BLOCK_RE = /<nudge>[\s\S]*?<\/nudge>/gi;
 const THOUGHT_BLOCK_RE = /<thought>[\s\S]*?<\/thought>/gi;
+const UNCLOSED_INTERNAL_TAG_RE = /<(?:thought|nudge|instruction\b)[^>]*>[\s\S]*$/gi;
 const ORPHAN_TAGS_RE = /<\/?(?:nudge|thought)>|<instruction\b[^>]*>|<\/instruction>/gi;
 const INTERNAL_LINES_RE = /^.*(?:context_management_protocol|policy_level=critical|<prunable-tools>|thoughtSignature).*$/gm;
 const EXCESSIVE_NEWLINES_RE = /\n{3,}/g;
@@ -94,6 +95,7 @@ export function sanitizeAssistantTextForDisplay(text: string): string | null {
   result = result.replace(INSTRUCTION_BLOCK_RE, '');
   result = result.replace(NUDGE_BLOCK_RE, '');
   result = result.replace(THOUGHT_BLOCK_RE, '');
+  result = result.replace(UNCLOSED_INTERNAL_TAG_RE, '');
   result = result.replace(ORPHAN_TAGS_RE, '');
   result = result.replace(INTERNAL_LINES_RE, '');
   result = result.replace(EXCESSIVE_NEWLINES_RE, '\n\n');
@@ -173,7 +175,7 @@ export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
       id: createMessageId(),
       type: 'tool',
       content: `Using tool: ${displayName}`,
-      toolName: displayName,
+      toolName: message.part.tool,
       toolInput: message.part.input,
       timestamp: new Date().toISOString(),
     };
@@ -182,6 +184,10 @@ export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
   if (message.type === 'tool_use') {
     const toolUseMsg = message as OpenCodeToolUseMessage;
     const toolName = toolUseMsg.part.tool || 'unknown';
+    const displayName = getToolDisplayName(toolName);
+    if (displayName === null) {
+      return null;
+    }
     const toolInput = toolUseMsg.part.state?.input;
     const toolOutput = toolUseMsg.part.state?.output || '';
     const status = toolUseMsg.part.state?.status;
