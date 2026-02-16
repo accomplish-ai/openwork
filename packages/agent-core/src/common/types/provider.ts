@@ -5,7 +5,24 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex';
+export type ProviderType =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'xai'
+  | 'ollama'
+  | 'deepseek'
+  | 'moonshot'
+  | 'zai'
+  | 'azure-foundry'
+  | 'custom'
+  | 'bedrock'
+  | 'litellm'
+  | 'minimax'
+  | 'lmstudio'
+  | 'vertex'
+  | 'huggingface-local';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -160,6 +177,30 @@ export interface LMStudioConfig {
   models?: LMStudioModel[];
 }
 
+export type HuggingFaceDevicePreference = 'auto' | 'webgpu' | 'wasm' | 'cpu';
+
+export type HuggingFaceQuantization = 'q4' | 'q8' | 'fp16' | 'fp32';
+
+export interface HuggingFaceLocalModelInfo {
+  id: string;
+  displayName: string;
+  modelId: string;
+  quantization: HuggingFaceQuantization;
+  devicePreference: HuggingFaceDevicePreference;
+  sizeBytes?: number;
+  downloadedAt?: string;
+  toolSupport?: 'supported' | 'unsupported' | 'unknown';
+}
+
+export interface HuggingFaceConfig {
+  modelId: string;
+  quantization: HuggingFaceQuantization;
+  devicePreference: HuggingFaceDevicePreference;
+  enabled: boolean;
+  lastValidated?: number;
+  models?: HuggingFaceLocalModelInfo[];
+}
+
 export const DEFAULT_PROVIDERS: ProviderConfig[] = [
   {
     id: 'anthropic',
@@ -301,6 +342,44 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
         fullId: 'minimax/MiniMax-M2.1',
         contextWindow: 204800,
         supportsVision: false,
+      },
+    ],
+  },
+  {
+    id: 'huggingface-local',
+    name: 'Hugging Face Local',
+    requiresApiKey: false,
+    defaultModelId: 'huggingface-local/onnx-community/Phi-3.5-mini-instruct-onnx',
+    models: [
+      {
+        id: 'onnx-community/Llama-3.2-1B-Instruct',
+        displayName: 'Llama 3.2 1B Instruct',
+        provider: 'huggingface-local',
+        fullId: 'huggingface-local/onnx-community/Llama-3.2-1B-Instruct',
+      },
+      {
+        id: 'onnx-community/Llama-3.2-3B-Instruct',
+        displayName: 'Llama 3.2 3B Instruct',
+        provider: 'huggingface-local',
+        fullId: 'huggingface-local/onnx-community/Llama-3.2-3B-Instruct',
+      },
+      {
+        id: 'onnx-community/Phi-3.5-mini-instruct-onnx',
+        displayName: 'Phi-3.5 Mini Instruct',
+        provider: 'huggingface-local',
+        fullId: 'huggingface-local/onnx-community/Phi-3.5-mini-instruct-onnx',
+      },
+      {
+        id: 'onnx-community/gemma-2-2b-it',
+        displayName: 'Gemma 2 2B Instruct',
+        provider: 'huggingface-local',
+        fullId: 'huggingface-local/onnx-community/gemma-2-2b-it',
+      },
+      {
+        id: 'onnx-community/Qwen2.5-1.5B-Instruct',
+        displayName: 'Qwen2.5 1.5B Instruct',
+        provider: 'huggingface-local',
+        fullId: 'huggingface-local/onnx-community/Qwen2.5-1.5B-Instruct',
       },
     ],
   },

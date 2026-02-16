@@ -173,6 +173,7 @@ export async function validateApiKey(
       case 'azure-foundry':
       case 'litellm':
       case 'lmstudio':
+      case 'huggingface-local':
       case 'custom':
       default:
         return { valid: true };

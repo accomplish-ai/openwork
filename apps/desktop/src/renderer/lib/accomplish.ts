@@ -156,6 +156,51 @@ interface AccomplishAPI {
     models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
   } | null): Promise<void>;
 
+  // Hugging Face Local configuration
+  searchHuggingFaceModels(query: string): Promise<Array<{
+    modelId: string;
+    displayName: string;
+    likes: number;
+    downloads: number;
+    lastModified: string;
+    tags: string[];
+    suggestedQuantizations: Array<'q4' | 'q8' | 'fp16' | 'fp32'>;
+  }>>;
+  listHuggingFaceModels(): Promise<Array<{
+    id: string;
+    modelId: string;
+    displayName: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    downloadedAt: string;
+    sizeBytes?: number;
+    status: 'ready' | 'downloading' | 'error';
+    error?: string;
+  }>>;
+  downloadHuggingFaceModel(config: {
+    modelId: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+  }): Promise<{
+    id: string;
+    modelId: string;
+    displayName: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    downloadedAt: string;
+    sizeBytes?: number;
+    status: 'ready' | 'downloading' | 'error';
+    error?: string;
+  }>;
+  getHuggingFaceHardwareInfo(): Promise<{
+    webGpuLikelyAvailable: boolean;
+    totalMemoryBytes: number;
+    freeMemoryBytes: number;
+    cpuModel: string;
+    cpuCount: number;
+  }>;
+  getHuggingFaceCacheDir(): Promise<string>;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
@@ -197,6 +242,17 @@ interface AccomplishAPI {
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
+  onHuggingFaceDownloadProgress?(callback: (data: {
+    modelId: string;
+    quantization: 'q4' | 'q8' | 'fp16' | 'fp32';
+    devicePreference: 'auto' | 'webgpu' | 'wasm' | 'cpu';
+    phase: 'starting' | 'downloading' | 'loading' | 'ready' | 'error';
+    progress: number;
+    loadedBytes?: number;
+    totalBytes?: number;
+    file?: string;
+    message?: string;
+  }) => void): () => void;
 
   // Speech-to-Text
   speechIsConfigured(): Promise<boolean>;

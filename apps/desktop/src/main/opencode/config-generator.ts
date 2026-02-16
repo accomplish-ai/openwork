@@ -14,8 +14,39 @@ import { getStorage } from '../store/storage';
 import { getNodePath } from '../utils/bundled-node';
 import { skillsManager } from '../skills';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '@accomplish_ai/agent-core';
+import { ensureHuggingFaceLocalServer } from '../providers';
 
 export { ACCOMPLISH_AGENT_NAME };
+
+const HF_PROVIDER_PREFIX = 'huggingface-local/';
+const HF_QUANTIZATIONS = ['q4', 'q8', 'fp16', 'fp32'] as const;
+const HF_DEVICE_PREFERENCES = ['auto', 'webgpu', 'wasm', 'cpu'] as const;
+
+function parseHuggingFaceSelectedModelId(selectedModelId: string): {
+  modelId: string;
+  quantization?: (typeof HF_QUANTIZATIONS)[number];
+  devicePreference?: (typeof HF_DEVICE_PREFERENCES)[number];
+} {
+  const raw = selectedModelId.startsWith(HF_PROVIDER_PREFIX)
+    ? selectedModelId.slice(HF_PROVIDER_PREFIX.length)
+    : selectedModelId;
+
+  const [modelIdRaw, quantizationRaw, deviceRaw] = raw.split('::');
+  const modelId = modelIdRaw || '';
+
+  const quantization = HF_QUANTIZATIONS.includes(quantizationRaw as (typeof HF_QUANTIZATIONS)[number])
+    ? (quantizationRaw as (typeof HF_QUANTIZATIONS)[number])
+    : undefined;
+  const devicePreference = HF_DEVICE_PREFERENCES.includes(deviceRaw as (typeof HF_DEVICE_PREFERENCES)[number])
+    ? (deviceRaw as (typeof HF_DEVICE_PREFERENCES)[number])
+    : undefined;
+
+  return {
+    modelId,
+    quantization,
+    devicePreference,
+  };
+}
 
 /**
  * Returns the path to MCP tools directory.
@@ -55,12 +86,95 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
 
   console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
   console.log('[OpenCode Config] User data path:', userDataPath);
+  const storage = getStorage();
 
   // Use the extracted buildProviderConfigs from core package
-  const { providerConfigs, enabledProviders, modelOverride } = await buildProviderConfigs({
+  const providerConfigResult = await buildProviderConfigs({
     getApiKey,
     azureFoundryToken,
   });
+  const providerConfigs = Array.isArray(providerConfigResult.providerConfigs)
+    ? [...providerConfigResult.providerConfigs]
+    : [];
+  const enabledProviders = Array.isArray(providerConfigResult.enabledProviders)
+    ? [...providerConfigResult.enabledProviders]
+    : [];
+  let modelOverride = providerConfigResult.modelOverride;
+  const activeModel = typeof storage.getActiveProviderModel === 'function'
+    ? storage.getActiveProviderModel()
+    : null;
+  const selectedModel = typeof storage.getSelectedModel === 'function'
+    ? storage.getSelectedModel()
+    : null;
+
+  const hfProvider = typeof storage.getConnectedProvider === 'function'
+    ? storage.getConnectedProvider('huggingface-local')
+    : null;
+  if (
+    hfProvider?.connectionStatus === 'connected' &&
+    hfProvider.credentials.type === 'huggingface-local' &&
+    hfProvider.selectedModelId
+  ) {
+    const selectedModelId = hfProvider.selectedModelId;
+    const parsedSelectedModel = parseHuggingFaceSelectedModelId(selectedModelId);
+    const modelId = parsedSelectedModel.modelId;
+    if (!modelId) {
+      throw new Error('Hugging Face Local selected model is invalid');
+    }
+    const selectedModelMeta =
+      hfProvider.availableModels?.find((model) => model.id === selectedModelId) ??
+      hfProvider.availableModels?.find(
+        (model) => model.id === `${HF_PROVIDER_PREFIX}${modelId}`
+      );
+    const quantization =
+      parsedSelectedModel.quantization ??
+      selectedModelMeta?.quantization ??
+      hfProvider.credentials.quantization;
+    const devicePreference =
+      parsedSelectedModel.devicePreference ??
+      selectedModelMeta?.devicePreference ??
+      hfProvider.credentials.devicePreference;
+
+    const shouldEnsureServer =
+      activeModel?.provider === 'huggingface-local' ||
+      selectedModel?.provider === 'huggingface-local';
+
+    let baseURL = 'http://127.0.0.1:9231';
+    if (shouldEnsureServer) {
+      const serverInfo = await ensureHuggingFaceLocalServer({
+        modelId,
+        quantization,
+        devicePreference,
+      });
+      baseURL = serverInfo.baseURL;
+    }
+
+    providerConfigs.push({
+      id: 'huggingface-local',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Hugging Face Local',
+      options: {
+        baseURL: `${baseURL}/v1`,
+        apiKey: 'accomplish-local',
+      },
+      models: {
+        [modelId]: { name: modelId, tools: false },
+      },
+    });
+
+    if (!enabledProviders.includes('huggingface-local')) {
+      enabledProviders.push('huggingface-local');
+    }
+
+    if (activeModel?.provider === 'huggingface-local' && activeModel.model) {
+      const parsedActiveModel = parseHuggingFaceSelectedModelId(activeModel.model);
+      const canonicalModel = `${HF_PROVIDER_PREFIX}${parsedActiveModel.modelId}`;
+      modelOverride = {
+        model: canonicalModel,
+        smallModel: canonicalModel,
+      };
+    }
+  }
 
   // Inject store:false for OpenAI to prevent 403 errors
   // with project-scoped keys (sk-proj-...) that lack /v1/chat/completions storage permission
@@ -68,6 +182,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   if (openAiApiKey) {
     const existingOpenAi = providerConfigs.find(p => p.id === 'openai');
     if (existingOpenAi) {
+      existingOpenAi.options = existingOpenAi.options || {};
       existingOpenAi.options.store = false;
     } else {
       providerConfigs.push({
@@ -80,7 +195,6 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   const enabledSkills = await skillsManager.getEnabled();
 
   // Fetch enabled connectors with valid tokens
-  const storage = getStorage();
   const enabledConnectors = storage.getEnabledConnectors();
   const connectors: Array<{ id: string; name: string; url: string; accessToken: string }> = [];
 

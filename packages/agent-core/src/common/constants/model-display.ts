@@ -63,6 +63,7 @@ export const PROVIDER_PREFIXES = [
   'zai-coding-plan/',
   'minimax/',
   'lmstudio/',
+  'huggingface-local/',
   'azure-foundry/',
   'vertex/',
 ];
@@ -87,6 +88,10 @@ export function getModelDisplayName(modelId: string): string {
   // Handle openrouter format: openrouter/provider/model
   if (cleanId.includes('/')) {
     cleanId = cleanId.split('/').pop() || cleanId;
+  }
+
+  if (cleanId.includes('::')) {
+    cleanId = cleanId.split('::')[0];
   }
 
   // Strip date suffixes (e.g., "-20250514", "-20241022")

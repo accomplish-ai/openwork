@@ -1,4 +1,3 @@
-export { registerVertexHandlers } from './vertex';
 export {
   searchHuggingFaceHubModels,
   downloadHuggingFaceModel,
@@ -8,4 +7,12 @@ export {
   getHuggingFaceHardwareInfo,
   getHuggingFaceCacheDir,
   onHuggingFaceDownloadProgress,
-} from './huggingface-local';
+} from './runtime';
+
+export type {
+  HuggingFaceLocalRuntimeConfig,
+  HuggingFaceHubModel,
+  HuggingFaceInstalledModel,
+  HuggingFaceDownloadProgressEvent,
+  HuggingFaceHardwareInfo,
+} from './runtime';

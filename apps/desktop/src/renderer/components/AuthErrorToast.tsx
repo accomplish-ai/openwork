@@ -19,6 +19,7 @@ const PROVIDER_NAMES: Record<string, string> = {
   moonshot: 'Moonshot AI',
   ollama: 'Ollama',
   litellm: 'LiteLLM',
+  'huggingface-local': 'Hugging Face Local',
 };
 
 export function AuthErrorToast({ error, onReLogin, onDismiss }: AuthErrorToastProps) {
