@@ -2,7 +2,7 @@ import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { StreamParser } from './StreamParser.js';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './OpenCodeLogWatcher.js';
 import { CompletionEnforcer, CompletionEnforcerCallbacks } from '../../opencode/completion/index.js';
@@ -21,6 +21,10 @@ export class OpenCodeCliNotFoundError extends Error {
   }
 }
 
+import type { SandboxPaths } from '../../opencode/sandbox-types.js';
+
+export type { SandboxPaths };
+
 export interface AdapterOptions {
   platform: NodeJS.Platform;
   isPackaged: boolean;
@@ -30,6 +34,8 @@ export interface AdapterOptions {
   buildCliArgs: (config: TaskConfig) => Promise<string[]>;
   onBeforeStart?: () => Promise<void>;
   getModelDisplayName?: (modelId: string) => string;
+  getSandboxMode?: () => boolean;
+  getSandboxPaths?: () => SandboxPaths;
 }
 
 export interface OpenCodeAdapterEvents {
@@ -205,32 +211,30 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.emit('debug', { type: 'info', message: argsMsg, data: { args: allArgs } });
     this.emit('debug', { type: 'info', message: cwdMsg });
 
-    {
-      const fullCommand = this.buildShellCommand(command, allArgs);
+    const useSandbox =
+      this.options.getSandboxMode?.() &&
+      this.options.getSandboxPaths &&
+      (this.options.platform === 'darwin' || this.options.platform === 'linux');
 
-      const shellCmdMsg = `Full shell command: ${fullCommand}`;
-      console.log('[OpenCode CLI]', shellCmdMsg);
-      this.emit('debug', { type: 'info', message: shellCmdMsg });
+    if (useSandbox) {
+      const proc = await this.spawnDocker(safeCwd, allArgs, env);
+      if (proc) {
+        this.ptyProcess = proc;
+      } else {
+        console.warn('[OpenCode CLI] Docker unavailable, falling back to direct execution');
+        this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
+      }
+    } else {
+      this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
+    }
 
-      const shellCmd = this.getPlatformShell();
-      const shellArgs = this.getShellArgs(fullCommand);
-      const shellMsg = `Using shell: ${shellCmd} ${shellArgs.join(' ')}`;
-      console.log('[OpenCode CLI]', shellMsg);
-      this.emit('debug', { type: 'info', message: shellMsg });
+    const pidMsg = `PTY Process PID: ${this.ptyProcess?.pid ?? 'N/A'}`;
+    console.log('[OpenCode CLI]', pidMsg);
+    this.emit('debug', { type: 'info', message: pidMsg });
 
-      this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
-        name: 'xterm-256color',
-        cols: 32000,
-        rows: 30,
-        cwd: safeCwd,
-        env: env as { [key: string]: string },
-      });
-      const pidMsg = `PTY Process PID: ${this.ptyProcess.pid}`;
-      console.log('[OpenCode CLI]', pidMsg);
-      this.emit('debug', { type: 'info', message: pidMsg });
+    this.emit('progress', { stage: 'loading', message: 'Loading agent...' });
 
-      this.emit('progress', { stage: 'loading', message: 'Loading agent...' });
-
+    if (this.ptyProcess) {
       this.ptyProcess.onData((data: string) => {
         const cleanData = data
           .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
@@ -672,36 +676,45 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const allArgs = [...baseArgs, ...cliArgs];
     const safeCwd = config.workingDirectory || this.options.tempPath;
 
-    const fullCommand = this.buildShellCommand(command, allArgs);
+    const useSandbox =
+      this.options.getSandboxMode?.() &&
+      this.options.getSandboxPaths &&
+      (this.options.platform === 'darwin' || this.options.platform === 'linux');
 
-    const shellCmd = this.getPlatformShell();
-    const shellArgs = this.getShellArgs(fullCommand);
-
-    this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
-      name: 'xterm-256color',
-      cols: 32000,
-      rows: 30,
-      cwd: safeCwd,
-      env: env as { [key: string]: string },
-    });
-
-    this.ptyProcess.onData((data: string) => {
-      const cleanData = data
-        .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
-        .replace(/\x1B\][^\x07]*\x07/g, '')
-        .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
-      if (cleanData.trim()) {
-        const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
-        console.log('[OpenCode CLI stdout]:', truncated);
-        this.emit('debug', { type: 'stdout', message: cleanData });
-
-        this.streamParser.feed(cleanData);
+    if (useSandbox) {
+      const proc = await this.spawnDocker(safeCwd, allArgs, env);
+      if (proc) {
+        this.ptyProcess = proc;
+      } else {
+        console.warn('[OpenCode CLI] Docker unavailable, falling back to direct execution');
+        this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
       }
-    });
+    } else {
+      this.ptyProcess = this.spawnNormal(safeCwd, command, allArgs, env);
+    }
 
-    this.ptyProcess.onExit(({ exitCode }) => {
-      this.handleProcessExit(exitCode);
-    });
+    if (this.ptyProcess) {
+      this.ptyProcess.onData((data: string) => {
+        const cleanData = data
+          .replace(/\x1B\[[0-9;?]*[a-zA-Z]/g, '')
+          .replace(/\x1B\][^\x07]*\x07/g, '')
+          .replace(/\x1B\][^\x1B]*\x1B\\/g, '');
+        if (cleanData.trim()) {
+          const truncated = cleanData.substring(0, 500) + (cleanData.length > 500 ? '...' : '');
+          console.log('[OpenCode CLI stdout]:', truncated);
+          this.emit('debug', { type: 'stdout', message: cleanData });
+
+          this.streamParser.feed(cleanData);
+        }
+      });
+
+      this.ptyProcess.onExit(({ exitCode, signal }) => {
+        const exitMsg = `PTY Process exited with code: ${exitCode}, signal: ${signal}`;
+        console.log('[OpenCode CLI]', exitMsg);
+        this.emit('debug', { type: 'exit', message: exitMsg, data: { exitCode, signal } });
+        this.handleProcessExit(exitCode);
+      });
+    }
   }
 
   private generateTaskId(): string {
@@ -754,6 +767,126 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     this.emit('message', syntheticMessage);
     console.log('[OpenCode Adapter] Emitted synthetic plan message');
+  }
+
+  private spawnNormal(
+    cwd: string,
+    command: string,
+    allArgs: string[],
+    env: NodeJS.ProcessEnv
+  ): pty.IPty {
+    const fullCommand = this.buildShellCommand(command, allArgs);
+    const shellCmd = this.getPlatformShell();
+    const shellArgs = this.getShellArgs(fullCommand);
+    return pty.spawn(shellCmd, shellArgs, {
+      name: 'xterm-256color',
+      cols: 32000,
+      rows: 30,
+      cwd,
+      env: env as { [key: string]: string },
+    });
+  }
+
+  private async spawnDocker(
+    cwd: string,
+    cliArgs: string[],
+    env: NodeJS.ProcessEnv
+  ): Promise<pty.IPty | null> {
+    const paths = this.options.getSandboxPaths!();
+    if (!fs.existsSync(paths.configDir) || !fs.existsSync(paths.openDataHome)) {
+      console.warn('[OpenCode CLI] Sandbox paths not found, falling back to direct execution');
+      return null;
+    }
+
+    try {
+      execSync('docker info', { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 });
+    } catch {
+      return null;
+    }
+
+    const configPath = path.join(paths.configDir, 'opencode.json');
+    if (!fs.existsSync(configPath)) {
+      console.warn('[OpenCode CLI] OpenCode config not found for sandbox');
+      return null;
+    }
+
+    const absCwd = path.resolve(cwd);
+    const absConfigDir = path.resolve(paths.configDir);
+    const absDataHome = path.resolve(paths.openDataHome);
+
+    const dockerArgs = [
+      'run',
+      '--rm',
+      '-i',
+      '-v',
+      `${absCwd}:/workspace`,
+      '-w',
+      '/workspace',
+      '-v',
+      `${absConfigDir}:/opencode-config:ro`,
+      '-v',
+      `${absDataHome}:/xdg-data:ro`,
+      '-e',
+      'OPENCODE_CONFIG=/opencode-config/opencode.json',
+      '-e',
+      'OPENCODE_CONFIG_DIR=/opencode-config',
+      '-e',
+      'XDG_DATA_HOME=/xdg-data',
+    ];
+
+    const envKeys = [
+      'ANTHROPIC_API_KEY',
+      'OPENAI_API_KEY',
+      'GOOGLE_GENERATIVE_AI_API_KEY',
+      'XAI_API_KEY',
+      'DEEPSEEK_API_KEY',
+      'OPENROUTER_API_KEY',
+      'OPENAI_BASE_URL',
+      'ACCOMPLISH_TASK_ID',
+    ];
+    for (const key of envKeys) {
+      const val = env[key];
+      if (val) {
+        dockerArgs.push('-e', `${key}=${val}`);
+      }
+    }
+
+    dockerArgs.push('node:20-alpine', 'npx', 'opencode-ai', ...cliArgs);
+
+    const child = spawn('docker', dockerArgs, {
+      cwd: absCwd,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    const proc = {
+      pid: child.pid ?? 0,
+      _onData: null as ((data: string) => void) | null,
+      _onExit: null as ((e: { exitCode: number; signal?: number }) => void) | null,
+      onData(cb: (data: string) => void) {
+        this._onData = cb;
+      },
+      onExit(cb: (e: { exitCode: number; signal?: number }) => void) {
+        this._onExit = cb;
+      },
+      write(data: string) {
+        child.stdin?.write(data);
+      },
+      kill() {
+        child.kill('SIGTERM');
+      },
+    };
+
+    child.stdout?.on('data', (data: Buffer) => {
+      proc._onData?.(data.toString());
+    });
+    child.stderr?.on('data', (data: Buffer) => {
+      proc._onData?.(data.toString());
+    });
+    child.on('exit', (code, signal) => {
+      proc._onExit?.({ exitCode: code ?? 1, signal: signal ? 1 : 0 });
+    });
+
+    return proc as unknown as pty.IPty;
   }
 
   private getPlatformShell(): string {

@@ -60,6 +60,10 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:theme'),
   setTheme: (theme: string): Promise<void> =>
     ipcRenderer.invoke('settings:set-theme', theme),
+  getSandboxMode: (): Promise<boolean> =>
+    ipcRenderer.invoke('settings:sandbox-mode'),
+  setSandboxMode: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('settings:set-sandbox-mode', enabled),
   onThemeChange: (callback: (data: { theme: string; resolved: string }) => void) => {
     const listener = (_: unknown, data: { theme: string; resolved: string }) => callback(data);
     ipcRenderer.on('settings:theme-changed', listener);

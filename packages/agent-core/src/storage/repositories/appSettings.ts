@@ -20,6 +20,7 @@ interface AppSettingsRow {
   lmstudio_config: string | null;
   openai_base_url: string | null;
   theme: string;
+  sandbox_mode: number;
 }
 
 export interface AppSettings {
@@ -32,6 +33,7 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  sandboxMode: boolean;
 }
 
 function getRow(): AppSettingsRow {
@@ -173,6 +175,16 @@ export function setTheme(theme: ThemePreference): void {
   db.prepare('UPDATE app_settings SET theme = ? WHERE id = 1').run(theme);
 }
 
+export function getSandboxMode(): boolean {
+  const row = getRow();
+  return row.sandbox_mode === 1;
+}
+
+export function setSandboxMode(enabled: boolean): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET sandbox_mode = ? WHERE id = 1').run(enabled ? 1 : 0);
+}
+
 export function getAppSettings(): AppSettings {
   const row = getRow();
   return {
@@ -185,6 +197,7 @@ export function getAppSettings(): AppSettings {
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
     openaiBaseUrl: row.openai_base_url || '',
     theme: VALID_THEMES.includes(row.theme as ThemePreference) ? (row.theme as ThemePreference) : 'system',
+    sandboxMode: row.sandbox_mode === 1,
   };
 }
 
@@ -200,7 +213,8 @@ export function clearAppSettings(): void {
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
       openai_base_url = '',
-      theme = 'system'
+      theme = 'system',
+      sandbox_mode = 0
     WHERE id = 1`
   ).run();
 }

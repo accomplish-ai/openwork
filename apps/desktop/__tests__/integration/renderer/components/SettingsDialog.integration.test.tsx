@@ -64,6 +64,8 @@ const mockAccomplish = {
   fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
   getTheme: vi.fn().mockResolvedValue('system'),
   setTheme: vi.fn().mockResolvedValue(undefined),
+  getSandboxMode: vi.fn().mockResolvedValue(false),
+  setSandboxMode: vi.fn().mockResolvedValue(undefined),
   onThemeChange: vi.fn().mockReturnValue(() => {}),
 };
 
