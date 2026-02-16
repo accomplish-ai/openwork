@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  AwsAgentCoreConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -236,6 +237,12 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+  /**
+   * Tests the connection to the AWS AgentCore cloud browser service.
+   * @param config - The AWS configuration to test.
+   * @returns Promise<boolean> - True if connection successful, false otherwise.
+   */
+  testCloudBrowserConnection(config: AwsAgentCoreConfig): Promise<boolean>;
 }
 
 interface AccomplishShell {
@@ -253,8 +260,10 @@ declare global {
 }
 
 /**
- * Get the accomplish API
- * Throws if not running in Electron
+ * Retrieve the Accomplish API exposed on `window` and augment it with helpers that serialize Bedrock and Vertex credential objects and expose cloud-browser testing.
+ *
+ * @returns The `AccomplishAPI` object from `window` with added/overridden helpers for validating, saving, and fetching Bedrock/Vertex credentials and `testCloudBrowserConnection`.
+ * @throws Error if the global Accomplish API is not available (e.g., not running in Electron).
  */
 export function getAccomplish() {
   if (!window.accomplish) {
@@ -294,6 +303,8 @@ export function getAccomplish() {
     detectVertexProject: () => window.accomplish!.detectVertexProject(),
 
     listVertexProjects: () => window.accomplish!.listVertexProjects(),
+    
+    testCloudBrowserConnection: (config: AwsAgentCoreConfig) => window.accomplish!.testCloudBrowserConnection(config),
   };
 }
 

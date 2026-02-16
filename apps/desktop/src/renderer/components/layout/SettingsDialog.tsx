@@ -18,6 +18,7 @@ import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPan
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
 import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 import { ConnectorsPanel } from '@/components/settings/connectors';
+import { CloudBrowsersSettings } from '@/components/settings/cloud-browsers/CloudBrowsersSettings';
 import { applyTheme } from '@/lib/theme';
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
@@ -28,12 +29,21 @@ interface SettingsDialogProps {
   onOpenChange: (open: boolean) => void;
   onApiKeySaved?: () => void;
   initialProvider?: ProviderId;
-  /**
-   * Initial tab to show when dialog opens ('providers' or 'voice')
-   */
-  initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about';
+  initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers';
 }
 
+/**
+ * Render the settings dialog for configuring providers, connectors, cloud browsers, skills, voice input, appearance, and about information.
+ *
+ * This client component presents a multi-tab settings UI that manages provider connections, model selection, theme, debug mode, log export, and other app settings. It coordinates selection and activation of providers, validates readiness before closing, and persists theme/debug preferences via the Accomplish API.
+ *
+ * @param open - Whether the dialog is visible
+ * @param onOpenChange - Called when the dialog open state should change; receives the new open boolean
+ * @param onApiKeySaved - Optional callback invoked after an API key or model selection is saved and a provider becomes ready
+ * @param initialProvider - Optional provider id to auto-select when the dialog opens
+ * @param initialTab - Optional tab to show when the dialog opens (defaults to `'providers'`)
+ * @returns The rendered settings dialog React element
+ */
 export default function SettingsDialog({
   open,
   onOpenChange,
@@ -45,7 +55,7 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about' | 'cloud-browsers'>(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
@@ -323,6 +333,16 @@ export default function SettingsDialog({
                 Connectors
               </button>
               <button
+                onClick={() => setActiveTab('cloud-browsers')}
+                className={`pb-3 px-1 font-medium text-sm transition-colors ${
+                  activeTab === 'cloud-browsers'
+                    ? 'text-foreground border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Cloud Browsers
+              </button>
+              <button
                 onClick={() => setActiveTab('skills')}
                 className={`pb-3 px-1 font-medium text-sm transition-colors ${
                   activeTab === 'skills'
@@ -538,6 +558,12 @@ export default function SettingsDialog({
           {activeTab === 'voice' && (
             <div className="space-y-6">
               <SpeechSettingsForm onSave={() => {}} onChange={() => {}} />
+            </div>
+          )}
+
+          {activeTab === 'cloud-browsers' && (
+            <div className="space-y-6">
+              <CloudBrowsersSettings />
             </div>
           )}
 
