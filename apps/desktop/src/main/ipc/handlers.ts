@@ -140,6 +140,11 @@ function isE2ESkipAuthEnabled(): boolean {
   );
 }
 
+/**
+ * Helper to wrap IPC handlers with error handling and normalization.
+ * @param channel - The IPC channel name.
+ * @param handler - The handler function.
+ */
 const handle = <Args extends unknown[], ReturnType = unknown>(channel: string, handler: (event: IpcMainInvokeEvent, ...args: Args) => ReturnType) => {
   ipcMain.handle(channel, async (event, ...args) => {
     try {

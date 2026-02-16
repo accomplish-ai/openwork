@@ -316,6 +316,11 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
 };
 
+/**
+ * Get the default model ID for a specific provider.
+ * @param providerId - The provider identifier.
+ * @returns The default model ID string, or null if no default is defined.
+ */
 export function getDefaultModelForProvider(providerId: ProviderId): string | null {
   return DEFAULT_MODELS[providerId] ?? null;
 }
