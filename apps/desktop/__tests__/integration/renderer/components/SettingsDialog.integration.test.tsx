@@ -61,6 +61,7 @@ const mockAccomplish = {
   setProviderDebugMode: vi.fn().mockResolvedValue(undefined),
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
+  fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
   getTheme: vi.fn().mockResolvedValue('system'),
   setTheme: vi.fn().mockResolvedValue(undefined),
   onThemeChange: vi.fn().mockReturnValue(() => {}),

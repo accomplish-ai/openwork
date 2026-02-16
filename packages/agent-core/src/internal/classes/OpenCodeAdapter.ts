@@ -10,6 +10,7 @@ import type { TaskConfig, Task, TaskMessage, TaskResult } from '../../common/typ
 import type { OpenCodeMessage } from '../../common/types/opencode.js';
 import type { PermissionRequest } from '../../common/types/permission.js';
 import type { TodoItem } from '../../common/types/todo.js';
+import { serializeError } from '../../utils/error.js';
 
 export class OpenCodeCliNotFoundError extends Error {
   constructor() {
@@ -516,7 +517,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         this.emit('complete', {
           status: 'error',
           sessionId: this.currentSessionId || undefined,
-          error: message.error,
+          error: serializeError(message.error),
         });
         break;
 
