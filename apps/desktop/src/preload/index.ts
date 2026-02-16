@@ -367,6 +367,29 @@ const accomplishAPI = {
     ipcRenderer.on('auth:mcp-callback', listener);
     return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
   },
+  
+  // Browser preview
+  onBrowserFrame: (callback: (frame: { data: string; timestamp?: number }) => void) => {
+    const listener = (_: unknown, frame: { data: string; timestamp?: number }) => callback(frame);
+    ipcRenderer.on('browser:frame', listener);
+    return () => { ipcRenderer.removeListener('browser:frame', listener); };
+  },
+  onBrowserNavigate: (callback: (event: { url: string }) => void) => {
+    const listener = (_: unknown, event: { url: string }) => callback(event);
+    ipcRenderer.on('browser:navigate', listener);
+    return () => { ipcRenderer.removeListener('browser:navigate', listener); };
+  },
+  onBrowserStatus: (callback: (event: { loading: boolean }) => void) => {
+    const listener = (_: unknown, event: { loading: boolean }) => callback(event);
+    ipcRenderer.on('browser:status', listener);
+    return () => { ipcRenderer.removeListener('browser:status', listener); };
+  },
+  startScreencast: (pageName?: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('browser:screencast:start', pageName),
+  stopScreencast: (): Promise<{ stopped: boolean }> =>
+    ipcRenderer.invoke('browser:screencast:stop'),
+  getScreencastStatus: (): Promise<{ active: boolean }> =>
+    ipcRenderer.invoke('browser:screencast:status'),
 };
 
 // Expose the API to the renderer
