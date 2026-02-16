@@ -769,7 +769,19 @@ const SNAPSHOT_SCRIPT = `
 
   const kAriaDisabledRoles = ["application","button","composite","gridcell","group","input","link","menuitem","scrollbar","separator","tab","checkbox","columnheader","combobox","grid","listbox","menu","menubar","menuitemcheckbox","menuitemradio","option","radio","radiogroup","row","rowheader","searchbox","select","slider","spinbutton","switch","tablist","textbox","toolbar","tree","treegrid","treeitem"];
   function getAriaDisabled(element) {
-    return isNativelyDisabled(element) || hasExplicitAriaDisabled(element);
+    return isNativelyDisabled(element) || hasExplicitAriaDisabled(element) || isVisuallyDisabled(element);
+  }
+  function isVisuallyDisabled(element) {
+    const style = getElementComputedStyle(element);
+    if (!style) return false;
+    if (style.pointerEvents === "none") return true;
+    const opacity = parseFloat(style.opacity);
+    if (!isNaN(opacity) && opacity < 0.5) return true;
+    const role = getAriaRole(element);
+    if (role === "button" || role === "link" || role === "menuitem" || role === "tab") {
+      if (style.cursor === "default" || style.cursor === "not-allowed") return true;
+    }
+    return false;
   }
   function hasExplicitAriaDisabled(element, isAncestor) {
     if (!element) return false;
@@ -1193,6 +1205,7 @@ const SNAPSHOT_SCRIPT = `
       if (ariaNode.ref) {
         key += " [ref=" + ariaNode.ref + "]";
         if (renderCursorPointer && hasPointerCursor(ariaNode)) key += " [cursor=pointer]";
+        if (!isInViewport(ariaNode.box)) key += " [offscreen]";
       }
       if (snapshotOptions.includeBoundingBoxes !== false && ariaNode.box?.rect) {
         const r = ariaNode.box.rect;
