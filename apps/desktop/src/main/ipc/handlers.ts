@@ -100,6 +100,11 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import {
+  startScreencastRelay,
+  stopScreencastRelay,
+  isScreencastActive,
+} from '../services/browser-screencast';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -1260,6 +1265,24 @@ export function registerIPCHandlers(): void {
   handle('connectors:disconnect', async (_event, connectorId: string) => {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+
+  // -------------------------------------------------------------------------
+  // Browser Screencast
+  // -------------------------------------------------------------------------
+
+  handle('browser:screencast:start', async (event: IpcMainInvokeEvent, pageName?: string) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    return startScreencastRelay(window, pageName || 'main');
+  });
+
+  handle('browser:screencast:stop', async () => {
+    stopScreencastRelay();
+    return { stopped: true };
+  });
+
+  handle('browser:screencast:status', async () => {
+    return { active: isScreencastActive() };
   });
 }
 
