@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+/** Application header with logo, navigation links, and drag region for the Electron window. */
 export default function Header() {
   const location = useLocation();
   const pathname = location.pathname;
@@ -38,6 +39,7 @@ export default function Header() {
   );
 }
 
+/** Navigation link that highlights when the current route matches. */
 function NavLink({
   to,
   active,

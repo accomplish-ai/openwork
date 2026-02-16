@@ -10,6 +10,10 @@ interface ConversationListItemProps {
   task: Task;
 }
 
+/**
+ * Renders a sidebar conversation list item with status icon, task summary, and delete button.
+ * Highlights the active task and navigates to the execution view on click.
+ */
 export default function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();

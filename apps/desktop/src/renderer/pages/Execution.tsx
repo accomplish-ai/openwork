@@ -38,7 +38,7 @@ interface DebugLogEntry {
   data?: unknown;
 }
 
-// Spinning Accomplish icon component
+/** Spinning Accomplish logo used as a loading indicator. */
 const SpinningIcon = ({ className }: { className?: string }) => (
   <img
     src={loadingSymbol}
@@ -107,10 +107,10 @@ const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }
 };
 
 // Extract base tool name from MCP-prefixed tool names
-// MCP tools are prefixed as "servername_toolname", e.g.:
-//   "dev-browser-mcp_browser_navigate" -> "browser_navigate"
-//   "file-permission_request_file_permission" -> "request_file_permission"
-//   "complete-task_complete_task" -> "complete_task"
+/**
+ * Strips MCP server-name prefix from a tool name to find its base identifier.
+ * E.g. "dev-browser-mcp_browser_navigate" -> "browser_navigate".
+ */
 function getBaseToolName(toolName: string): string {
   // Try progressively stripping prefixes at each underscore position
   // to find a match in our map. This handles server names with hyphens
@@ -127,7 +127,7 @@ function getBaseToolName(toolName: string): string {
   return toolName;
 }
 
-// Get tool display info (label and icon) from tool name
+/** Returns the human-readable label and icon for a given tool name. */
 function getToolDisplayInfo(toolName: string): { label: string; icon: typeof FileText } | undefined {
   // First try direct lookup
   if (TOOL_PROGRESS_MAP[toolName]) {
@@ -139,7 +139,7 @@ function getToolDisplayInfo(toolName: string): { label: string; icon: typeof Fil
 }
 
 
-// Debounce utility
+/** Debounce utility that delays invoking {@link fn} until {@link ms} ms after the last call. */
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timeoutId: ReturnType<typeof setTimeout>;
   return ((...args: unknown[]) => {
@@ -148,7 +148,7 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
   }) as T;
 }
 
-// Helper for file operation badge colors
+/** Returns Tailwind classes for the file-operation badge based on the operation type. */
 function getOperationBadgeClasses(operation?: string): string {
   switch (operation) {
     case 'delete': return 'bg-red-500/10 text-red-600 dark:text-red-400';
@@ -161,12 +161,12 @@ function getOperationBadgeClasses(operation?: string): string {
   }
 }
 
-// Helper to check if this is a delete operation
+/** Checks whether the given permission request represents a file deletion. */
 function isDeleteOperation(request: { type: string; fileOperation?: string }): boolean {
   return request.type === 'file' && request.fileOperation === 'delete';
 }
 
-// Get file paths to display (handles both single and multiple)
+/** Normalises a permission request into an array of display-ready file paths. */
 function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] }): string[] {
   if (request.filePaths && request.filePaths.length > 0) {
     return request.filePaths;
@@ -177,6 +177,10 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
   return [];
 }
 
+/**
+ * Main task execution page that displays messages, tool calls, permission requests,
+ * a debug log panel, and the follow-up input bar for a running or completed task.
+ */
 export default function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
