@@ -97,10 +97,10 @@ export function HuggingFaceProviderForm({
     const firstModel = installedModels[0];
 
     const provider: ConnectedProvider = {
-      providerId: "huggingface" as ProviderId,
+      providerId: "huggingface-local" as ProviderId,
       connectionStatus: "connected",
       selectedModelId: firstModel.id,
-      credentials: { type: "oauth", oauthProvider: "chatgpt" },
+      credentials: { type: "api_key", keyPrefix: "local" },
       lastConnectedAt: new Date().toISOString(),
     };
     await onConnect(provider);
@@ -114,16 +114,30 @@ export function HuggingFaceProviderForm({
     await onModelChange(modelId);
   };
 
+  const getPreferredQuantization = ():
+    | "q4"
+    | "q8"
+    | "fp16"
+    | "fp32" => {
+    if (typeof window === "undefined") {
+      return "q4";
+    }
+    const stored = window.localStorage.getItem("huggingface.quantization");
+    if (stored === "q4" || stored === "q8" || stored === "fp16" || stored === "fp32") {
+      return stored;
+    }
+    return "q4";
+  };
+
   const handleInstallModel = async (modelId: string) => {
     setIsLoading(true);
     setDownloadProgress((prev) => ({ ...prev, [modelId]: 0 }));
 
     try {
-      // THIS WAS MISSING - Need to pass full config!
       const result = await accomplish.huggingface?.loadModel({
         modelId: modelId,
-        quantization: "q4", // Default quantization
-        device: "cpu", // Use CPU
+        quantization: getPreferredQuantization(),
+        device: "auto", // Let the adapter decide
         temperature: 0.7,
         maxTokens: 512,
         topP: 0.9,
@@ -156,7 +170,7 @@ export function HuggingFaceProviderForm({
     if (!confirm("Are you sure you want to remove this model?")) return;
 
     try {
-      await (accomplish as any).huggingface?.removeModel(modelId);
+      await accomplish.huggingface?.removeModel(modelId);
       await loadModels();
 
       // If we removed the selected model, disconnect

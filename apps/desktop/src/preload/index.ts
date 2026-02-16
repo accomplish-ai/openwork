@@ -5,7 +5,6 @@ import type {
   TodoItem,
   McpConnector,
 } from "@accomplish_ai/agent-core";
-import { registerHuggingFaceHandlers } from '../main/ipc/huggingface';
 import type {
   HuggingFaceConfig,
   HuggingFaceModel,

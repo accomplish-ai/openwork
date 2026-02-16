@@ -11,7 +11,7 @@ import {
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { registerHuggingFaceHandlers } from './ipc/huggingface';
+import { registerHuggingFaceHandlers } from "./ipc/huggingface";
 
 const APP_DATA_NAME = "Accomplish";
 app.setPath("userData", path.join(app.getPath("appData"), APP_DATA_NAME));
@@ -313,7 +313,17 @@ if (!gotTheLock) {
     }
 
     console.log("[Main] Registering IPC handlers...");
-    registerHuggingFaceHandlers(); 
+    
+    try {
+      // Ensure storage is initialized and valid before registering HuggingFace handlers
+      getStorage();
+      registerHuggingFaceHandlers();
+    } catch (err) {
+      console.error(
+        "[Main] Skipping HuggingFace IPC handler registration; storage not initialized or invalid:",
+        err,
+      );
+    }
     registerIPCHandlers();
     console.log("[Main] IPC handlers registered");
 
