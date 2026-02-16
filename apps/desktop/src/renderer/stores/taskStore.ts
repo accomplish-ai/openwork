@@ -77,6 +77,10 @@ interface TaskState {
   clearHistory: () => Promise<void>;
   reset: () => void;
   setTodos: (taskId: string, todos: TodoItem[]) => void;
+  
+  // Favorites management
+  toggleFavorite: (taskId: string) => Promise<void>;
+  getFavoriteTasks: () => Promise<Task[]>;
   clearTodos: () => void;
   setAuthError: (error: { providerId: string; message: string }) => void;
   clearAuthError: () => void;
@@ -516,6 +520,28 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   clearAuthError: () => {
     set({ authError: null });
+  },
+
+  // Favorites management
+  toggleFavorite: async (taskId: string) => {
+    try {
+      const accomplish = getAccomplish();
+      const isFavorite = await accomplish.toggleTaskFavorite(taskId);
+      
+      set((state) => ({
+        tasks: state.tasks.map((task) =>
+          task.id === taskId ? { ...task, isFavorite } : task
+        ),
+      }));
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      // Optionally show error notification to user
+    }
+  },
+
+  getFavoriteTasks: async () => {
+    const accomplish = getAccomplish();
+    return accomplish.getFavoriteTasks();
   },
 
   openLauncher: () => set({ isLauncherOpen: true, launcherInitialPrompt: null }),

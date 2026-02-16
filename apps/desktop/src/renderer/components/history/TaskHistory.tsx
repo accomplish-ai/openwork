@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
+import { StarButton } from '../ui/StarButton';
 
 interface TaskHistoryProps {
   limit?: number;
@@ -9,7 +10,7 @@ interface TaskHistoryProps {
 }
 
 export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
-  const { tasks, loadTasks, deleteTask, clearHistory } = useTaskStore();
+  const { tasks, loadTasks, deleteTask, clearHistory, toggleFavorite } = useTaskStore();
 
   useEffect(() => {
     loadTasks();
@@ -51,6 +52,7 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
             key={task.id}
             task={task}
             onDelete={() => deleteTask(task.id)}
+            onToggleFavorite={() => toggleFavorite(task.id)}
           />
         ))}
       </div>
@@ -70,9 +72,11 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
 function TaskHistoryItem({
   task,
   onDelete,
+  onToggleFavorite,
 }: {
   task: Task;
   onDelete: () => void;
+  onToggleFavorite: () => void;
 }) {
   const statusConfig: Record<string, { color: string; label: string }> = {
     completed: { color: 'bg-success', label: 'Completed' },
@@ -100,20 +104,27 @@ function TaskHistoryItem({
           {config.label} · {timeAgo} · {task.messages.length} messages
         </p>
       </div>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (confirm('Delete this task?')) {
-            onDelete();
-          }
-        }}
-        className="p-2 text-text-muted hover:text-danger transition-colors"
-      >
+      <div className="flex items-center gap-1">
+        <StarButton
+          isFavorite={task.isFavorite || false}
+          onToggle={onToggleFavorite}
+          size="sm"
+        />
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm('Delete this task?')) {
+              onDelete();
+            }
+          }}
+          className="p-2 text-text-muted hover:text-danger transition-colors"
+        >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
+    </div>
     </Link>
   );
 }
