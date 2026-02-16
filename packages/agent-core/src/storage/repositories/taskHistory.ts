@@ -12,6 +12,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 interface TaskRow {
@@ -23,6 +24,7 @@ interface TaskRow {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  is_favorite: number | null;
 }
 
 interface MessageRow {
@@ -105,6 +107,7 @@ function rowToTask(row: TaskRow): StoredTask {
     createdAt: row.created_at,
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
+    isFavorite: row.is_favorite === 1,
     messages: getMessagesForTask(row.id),
   };
 }
@@ -133,8 +136,8 @@ export function saveTask(task: Task): void {
   db.transaction(() => {
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        (id, prompt, summary, status, session_id, created_at, started_at, completed_at, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       task.id,
       task.prompt,
@@ -143,7 +146,8 @@ export function saveTask(task: Task): void {
       task.sessionId || null,
       task.createdAt,
       task.startedAt || null,
-      task.completedAt || null
+      task.completedAt || null,
+      task.isFavorite ? 1 : 0
     );
 
     db.prepare('DELETE FROM task_messages WHERE task_id = ?').run(task.id);
@@ -304,4 +308,33 @@ export function saveTodosForTask(taskId: string, todos: TodoItem[]): void {
 export function clearTodosForTask(taskId: string): void {
   const db = getDatabase();
   db.prepare('DELETE FROM task_todos WHERE task_id = ?').run(taskId);
+}
+
+// Favorites management functions
+export function getFavoriteTasks(): StoredTask[] {
+  const db = getDatabase();
+  const rows = db
+    .prepare('SELECT * FROM tasks WHERE is_favorite = 1 ORDER BY created_at DESC')
+    .all() as TaskRow[];
+
+  return rows.map(rowToTask);
+}
+
+export function updateTaskFavorite(taskId: string, isFavorite: boolean): void {
+  const db = getDatabase();
+  db.prepare('UPDATE tasks SET is_favorite = ? WHERE id = ?').run(isFavorite ? 1 : 0, taskId);
+}
+
+export function toggleTaskFavorite(taskId: string): boolean {
+  const db = getDatabase();
+  const task = db.prepare('SELECT is_favorite FROM tasks WHERE id = ?').get(taskId) as { is_favorite: number } | undefined;
+  
+  if (!task) {
+    throw new Error('Task not found');
+  }
+  
+  const newFavoriteStatus = task.is_favorite === 0 ? 1 : 0;
+  db.prepare('UPDATE tasks SET is_favorite = ? WHERE id = ?').run(newFavoriteStatus, taskId);
+  
+  return newFavoriteStatus === 1;
 }

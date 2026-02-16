@@ -140,6 +140,22 @@ export {
 // Errors
 export { FutureSchemaError } from './storage/migrations/errors.js';
 
+// Task history and favorites
+export {
+  getTasks,
+  getTask,
+  saveTask,
+  deleteTask,
+  clearHistory,
+  updateTaskStatus,
+  updateTaskSummary,
+  addTaskMessage,
+  updateTaskSessionId,
+  getFavoriteTasks,
+  updateTaskFavorite,
+  toggleTaskFavorite,
+} from './storage/repositories/taskHistory.js';
+
 // -----------------------------------------------------------------------------
 // Providers Module (from ./providers/)
 // -----------------------------------------------------------------------------
