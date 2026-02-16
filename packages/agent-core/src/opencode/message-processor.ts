@@ -85,8 +85,11 @@ const TOOL_DISPLAY_NAMES: Record<string, string | null> = {
 const INSTRUCTION_BLOCK_RE = /<instruction\b[^>]*>[\s\S]*?<\/instruction>/gi;
 const NUDGE_BLOCK_RE = /<nudge>[\s\S]*?<\/nudge>/gi;
 const THOUGHT_BLOCK_RE = /<thought>[\s\S]*?<\/thought>/gi;
-const UNCLOSED_INTERNAL_TAG_RE = /<(?:thought|nudge|instruction\b)[^>]*>[\s\S]*$/gi;
-const ORPHAN_TAGS_RE = /<\/?(?:nudge|thought)>|<instruction\b[^>]*>|<\/instruction>/gi;
+const SCRATCHPAD_BLOCK_RE = /<scratchpad>[\s\S]*?<\/scratchpad>/gi;
+const THINKING_BLOCK_RE = /<thinking>[\s\S]*?<\/thinking>/gi;
+const REFLECTION_BLOCK_RE = /<reflection>[\s\S]*?<\/reflection>/gi;
+const UNCLOSED_INTERNAL_TAG_RE = /<(?:thought|nudge|instruction|scratchpad|thinking|reflection)(?:\b[^>]*)?>[\s\S]*$/gi;
+const ORPHAN_TAGS_RE = /<\/?(?:nudge|thought|scratchpad|thinking|reflection)>|<instruction\b[^>]*>|<\/instruction>/gi;
 const INTERNAL_LINES_RE = /^.*(?:context_management_protocol|policy_level=critical|<prunable-tools>|thoughtSignature).*$/gm;
 const EXCESSIVE_NEWLINES_RE = /\n{3,}/g;
 
@@ -95,6 +98,9 @@ export function sanitizeAssistantTextForDisplay(text: string): string | null {
   result = result.replace(INSTRUCTION_BLOCK_RE, '');
   result = result.replace(NUDGE_BLOCK_RE, '');
   result = result.replace(THOUGHT_BLOCK_RE, '');
+  result = result.replace(SCRATCHPAD_BLOCK_RE, '');
+  result = result.replace(THINKING_BLOCK_RE, '');
+  result = result.replace(REFLECTION_BLOCK_RE, '');
   result = result.replace(UNCLOSED_INTERNAL_TAG_RE, '');
   result = result.replace(ORPHAN_TAGS_RE, '');
   result = result.replace(INTERNAL_LINES_RE, '');
@@ -104,7 +110,7 @@ export function sanitizeAssistantTextForDisplay(text: string): string | null {
 }
 
 export function getToolDisplayName(toolName: string): string | null {
-  if (toolName in TOOL_DISPLAY_NAMES) {
+  if (Object.prototype.hasOwnProperty.call(TOOL_DISPLAY_NAMES, toolName)) {
     return TOOL_DISPLAY_NAMES[toolName];
   }
   return toolName;

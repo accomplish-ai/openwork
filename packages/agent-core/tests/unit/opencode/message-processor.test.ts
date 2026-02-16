@@ -28,6 +28,18 @@ describe('sanitizeAssistantTextForDisplay', () => {
     expect(sanitizeAssistantTextForDisplay('<thought>thinking...</thought>')).toBeNull();
   });
 
+  it('returns null for pure scratchpad block', () => {
+    expect(sanitizeAssistantTextForDisplay('<scratchpad>notes here</scratchpad>')).toBeNull();
+  });
+
+  it('returns null for pure thinking block', () => {
+    expect(sanitizeAssistantTextForDisplay('<thinking>deep thought</thinking>')).toBeNull();
+  });
+
+  it('returns null for pure reflection block', () => {
+    expect(sanitizeAssistantTextForDisplay('<reflection>self-review</reflection>')).toBeNull();
+  });
+
   it('keeps user-facing text and strips thought block from mixed message', () => {
     const text = 'Here is your answer.\n<thought>internal reasoning</thought>';
     expect(sanitizeAssistantTextForDisplay(text)).toBe('Here is your answer.');
@@ -35,6 +47,10 @@ describe('sanitizeAssistantTextForDisplay', () => {
 
   it('preserves non-internal XML like <div>', () => {
     expect(sanitizeAssistantTextForDisplay('<div>hello</div>')).toBe('<div>hello</div>');
+  });
+
+  it('does not match tags that merely start with internal tag names', () => {
+    expect(sanitizeAssistantTextForDisplay('<thoughtful>hello</thoughtful>')).toBe('<thoughtful>hello</thoughtful>');
   });
 
   it('strips orphan closing tags', () => {
