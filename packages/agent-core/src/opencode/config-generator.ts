@@ -101,6 +101,7 @@ interface OpenCodeConfigFile {
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, Omit<ProviderConfig, 'id'>>;
   plugin?: string[];
+  experimental?: Record<string, unknown>;
 }
 
 function getPlatformEnvironmentInstructions(platform: NodeJS.Platform): string {
@@ -409,7 +410,7 @@ Use empty array [] if no skills apply to your task.
       environment: {
         QUESTION_API_PORT: String(questionApiPort),
       },
-      timeout: 30000,
+      timeout: 600000, // 10 minutes — user needs time to read and respond
     },
     'complete-task': {
       type: 'local',
@@ -568,6 +569,9 @@ Example bad narration (too terse):
       },
     },
     mcp: mcpServers,
+    experimental: {
+      mcp_timeout: 600000, // 10 minutes — allow long-running MCP tools like AskUserQuestion
+    },
   };
 
   const configDir = path.join(userDataPath, 'opencode');
