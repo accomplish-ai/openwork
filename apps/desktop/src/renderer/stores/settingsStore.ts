@@ -4,18 +4,18 @@ import type { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 
 interface SettingsState {
   cloudBrowsers: {
-    selectedProvider: 'aws' | 'browserbase';
-    awsConfig: AwsAgentCoreConfig;
+    selectedProvider: 'aws-agent-core' | 'browserbase';
+    awsConfig: Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>;
   };
-  setCloudBrowserProvider: (provider: 'aws' | 'browserbase') => void;
-  setAwsConfig: (config: AwsAgentCoreConfig) => void;
+  setCloudBrowserProvider: (provider: 'aws-agent-core' | 'browserbase') => void;
+  setAwsConfig: (config: Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       cloudBrowsers: {
-        selectedProvider: 'aws',
+        selectedProvider: 'aws-agent-core',
         awsConfig: {
           region: 'us-east-1',
         },

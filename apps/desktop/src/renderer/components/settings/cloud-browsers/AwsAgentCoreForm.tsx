@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
  * Props for the AwsAgentCoreForm component.
  */
 interface AwsAgentCoreFormProps {
-  config?: AwsAgentCoreConfig;
-  onChange: (config: AwsAgentCoreConfig) => void;
+  config?: Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>;
+  onChange: (config: Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>) => void;
   onTestConnection: (config: AwsAgentCoreConfig) => Promise<boolean>;
 }
 
@@ -24,8 +24,11 @@ interface AwsAgentCoreFormProps {
 export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgentCoreFormProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  // Local state for secrets to prevent persistence
+  const [accessKeyId, setAccessKeyId] = useState('');
+  const [secretAccessKey, setSecretAccessKey] = useState('');
 
-  const handleChange = (field: keyof AwsAgentCoreConfig, value: string) => {
+  const handleChange = (field: keyof Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>, value: string) => {
     onChange({
       ...config,
       region: config?.region || '',
@@ -35,13 +38,19 @@ export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgen
   };
 
   const handleTest = async () => {
-    if (!config) {
+    if (!config?.region) {
       return;
     }
     setTesting(true);
     setTestResult(null);
     try {
-      const success = await onTestConnection(config);
+      // Merge persisted config with local secrets for testing
+      const testConfig: AwsAgentCoreConfig = {
+        ...config,
+        accessKeyId: accessKeyId || undefined,
+        secretAccessKey: secretAccessKey || undefined,
+      };
+      const success = await onTestConnection(testConfig);
       setTestResult(success ? 'success' : 'error');
     } catch (e) {
       setTestResult('error');
@@ -79,18 +88,27 @@ export function AwsAgentCoreForm({ config, onChange, onTestConnection }: AwsAgen
         <Label>Access Key ID (Optional)</Label>
         <Input
           type="password"
-          value={config?.accessKeyId || ''}
-          onChange={(e) => handleChange('accessKeyId', e.target.value)}
+            value={accessKeyId}
+            onChange={(e) => {
+            setAccessKeyId(e.target.value);
+            setTestResult(null);
+            }}
           placeholder="AKIA..."
         />
+        <p className="text-xs text-muted-foreground">
+            Keys are used for testing connection only and are not saved.
+        </p>
       </div>
 
       <div className="grid gap-2">
         <Label>Secret Access Key (Optional)</Label>
         <Input
           type="password"
-          value={config?.secretAccessKey || ''}
-          onChange={(e) => handleChange('secretAccessKey', e.target.value)}
+            value={secretAccessKey}
+            onChange={(e) => {
+            setSecretAccessKey(e.target.value);
+            setTestResult(null);
+            }}
           placeholder="wJalr..."
         />
       </div>

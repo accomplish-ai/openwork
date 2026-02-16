@@ -28,9 +28,9 @@ export function CloudBrowsersSettings() {
 
         <div className="flex gap-4 mb-6 border-b border-border pb-4">
            <button
-            onClick={() => setCloudBrowserProvider('aws')}
+            onClick={() => setCloudBrowserProvider('aws-agent-core')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              selectedProvider === 'aws'
+              selectedProvider === 'aws-agent-core'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
@@ -49,7 +49,7 @@ export function CloudBrowsersSettings() {
           </button>
         </div>
 
-        {selectedProvider === 'aws' && (
+        {selectedProvider === 'aws-agent-core' && (
           <div className="space-y-4">
              <div className="bg-muted/50 p-4 rounded-md mb-4">
               <h3 className="font-medium text-sm mb-2">AWS AgentCore Configuration</h3>
