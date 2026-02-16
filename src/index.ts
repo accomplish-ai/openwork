@@ -25,7 +25,6 @@ export {
 // -----------------------------------------------------------------------------
 // API Interfaces (NEW - Public contracts)
 // -----------------------------------------------------------------------------
-// These interfaces define the public API contracts returned by factory functions.
 
 // Preferred API names (aliased for clarity)
 export type {
