@@ -11,12 +11,17 @@
   },
   "scripts": {
     "predev": "node scripts/check-deps.cjs",
-    "dev": "pnpm -F @accomplish/desktop dev",
+    "dev": "node scripts/dev.cjs",
     "predev:clean": "node scripts/check-deps.cjs",
-    "dev:clean": "pnpm -F @accomplish/desktop dev:clean",
+    "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
+    "dev:web": "pnpm -F @accomplish/web dev",
+    "build:web": "pnpm -F @accomplish/web build",
+    "test:web": "pnpm -F @accomplish/web test",
+    "test:web:unit": "pnpm -F @accomplish/web test:unit",
+    "test:web:integration": "pnpm -F @accomplish/web test:integration",
     "lint": "pnpm -r --parallel run typecheck && eslint .",
     "typecheck": "pnpm -r --parallel run typecheck",
     "lint:eslint": "eslint .",
@@ -42,6 +47,11 @@
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "fast-xml-parser": ">=5.3.4"
+    }
+  },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.39.2",
@@ -56,6 +66,7 @@
     "prettier": "^3.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "typescript-eslint": "^8.55.0"
+    "typescript-eslint": "^8.55.0",
+    "wait-on": "^9.0.4"
   }
 }

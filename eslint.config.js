@@ -33,7 +33,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/desktop/src/renderer/**/*.{ts,tsx}'],
+    files: ['apps/web/src/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
       react,
