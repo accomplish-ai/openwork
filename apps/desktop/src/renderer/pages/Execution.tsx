@@ -29,6 +29,7 @@ import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
 import { PlusMenu } from '../components/landing/PlusMenu';
+import { BugReportActions } from '../components/BugReportActions';
 
 // Debug log entry type
 interface DebugLogEntry {
@@ -567,6 +568,17 @@ export default function ExecutionPage() {
     setSettingsInitialTab('providers');
     setShowSettingsDialog(true);
   }, []);
+
+  const handleRepeatTask = useCallback(async () => {
+    if (!currentTask?.prompt) {
+      return;
+    }
+    const { startTask } = useTaskStore.getState();
+    const task = await startTask({ prompt: currentTask.prompt });
+    if (task) {
+      navigate(`/execution/${task.id}`);
+    }
+  }, [currentTask?.prompt, navigate]);
 
   useEffect(() => {
     if (!pendingSpeechFollowUpRef.current) {
@@ -1428,9 +1440,21 @@ export default function ExecutionPage() {
           <p className="text-sm text-muted-foreground mb-3">
             Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
           </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={() => navigate('/')}>
+              Start New Task
+            </Button>
+            {debugModeEnabled && (
+              <BugReportActions
+                taskId={currentTask.id}
+                taskPrompt={currentTask.prompt}
+                taskStatus={currentTask.status}
+                messages={currentTask.messages}
+                debugLogs={debugLogs}
+                onRepeatTask={handleRepeatTask}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -1462,6 +1486,14 @@ export default function ExecutionPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <BugReportActions
+                taskId={currentTask.id}
+                taskPrompt={currentTask.prompt}
+                taskStatus={currentTask.status}
+                messages={currentTask.messages}
+                debugLogs={debugLogs}
+                compact
+              />
               {debugLogs.length > 0 && (
                 <>
                   <Button
