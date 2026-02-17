@@ -186,6 +186,10 @@ interface AccomplishAPI {
   // Todo operations
   getTodosForTask(taskId: string): Promise<TodoItem[]>;
 
+  // Favorites
+  toggleTaskFavorite(taskId: string): Promise<boolean>;
+  getFavoriteTasks(): Promise<Task[]>;
+
   // Event subscriptions
   onTaskUpdate(callback: (event: TaskUpdateEvent) => void): () => void;
   onTaskUpdateBatch?(callback: (event: { taskId: string; messages: TaskMessage[] }) => void): () => void;

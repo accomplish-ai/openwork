@@ -259,6 +259,15 @@ export function registerIPCHandlers(): void {
     return storage.getTodosForTask(taskId);
   });
 
+  handle('task:toggle-favorite', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    const sanitizedId = sanitizeString(taskId, 'taskId', 128);
+    return storage.toggleTaskFavorite(sanitizedId);
+  });
+
+  handle('task:get-favorites', async (_event: IpcMainInvokeEvent) => {
+    return storage.getFavoriteTasks();
+  });
+
   handle('permission:respond', async (_event: IpcMainInvokeEvent, response: PermissionResponse) => {
     const parsedResponse = validate(permissionResponseSchema, response);
     const { taskId, decision, requestId } = parsedResponse;

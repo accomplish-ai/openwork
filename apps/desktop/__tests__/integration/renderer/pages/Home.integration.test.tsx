@@ -71,12 +71,16 @@ vi.mock('@/lib/accomplish', () => ({
   getAccomplish: () => mockAccomplish,
 }));
 
+const mockLoadFavoriteTasks = vi.fn();
+
 // Mock store state holder
 let mockStoreState = {
   startTask: mockStartTask,
   isLoading: false,
   addTaskUpdate: mockAddTaskUpdate,
   setPermissionRequest: mockSetPermissionRequest,
+  favoriteTasks: [] as unknown[],
+  loadFavoriteTasks: mockLoadFavoriteTasks,
 };
 
 // Mock the task store
@@ -141,6 +145,8 @@ describe('Home Page Integration', () => {
       isLoading: false,
       addTaskUpdate: mockAddTaskUpdate,
       setPermissionRequest: mockSetPermissionRequest,
+      favoriteTasks: [],
+      loadFavoriteTasks: mockLoadFavoriteTasks,
     };
     // Default to having API key (legacy)
     mockHasAnyApiKey.mockResolvedValue(true);

@@ -158,6 +158,8 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     saveTodosForTask: vi.fn(),
     getTodosForTask: vi.fn(() => []),
     clearTodosForTask: vi.fn(),
+    toggleTaskFavorite: vi.fn(() => true),
+    getFavoriteTasks: vi.fn(() => []),
 
     // App settings
     getDebugMode: vi.fn(() => mockDebugMode),
@@ -444,6 +446,8 @@ describe('IPC Handlers Integration', () => {
       expect(handlers.has('task:list')).toBe(true);
       expect(handlers.has('task:delete')).toBe(true);
       expect(handlers.has('task:clear-history')).toBe(true);
+      expect(handlers.has('task:toggle-favorite')).toBe(true);
+      expect(handlers.has('task:get-favorites')).toBe(true);
 
       // Permission handler
       expect(handlers.has('permission:respond')).toBe(true);
@@ -875,6 +879,35 @@ describe('IPC Handlers Integration', () => {
       // Assert
       const { clearHistory } = await import('@accomplish_ai/agent-core');
       expect(clearHistory).toHaveBeenCalled();
+    });
+
+    it('task:toggle-favorite should toggle and return new state', async () => {
+      // Arrange
+      mockTasks.push({
+        id: 'task_fav',
+        prompt: 'Favorite task',
+        status: 'completed',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      // Act
+      const result = await invokeHandler('task:toggle-favorite', 'task_fav');
+
+      // Assert
+      const { toggleTaskFavorite } = await import('@accomplish_ai/agent-core');
+      expect(toggleTaskFavorite).toHaveBeenCalledWith('task_fav');
+      expect(result).toBe(true);
+    });
+
+    it('task:get-favorites should return favorite tasks', async () => {
+      // Act
+      const result = await invokeHandler('task:get-favorites');
+
+      // Assert
+      const { getFavoriteTasks } = await import('@accomplish_ai/agent-core');
+      expect(getFavoriteTasks).toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
   });
 

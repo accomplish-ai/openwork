@@ -9,7 +9,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
@@ -80,14 +80,22 @@ const USE_CASE_EXAMPLES = [
   },
 ];
 
+const MAX_VISIBLE_FAVORITES = 3;
+
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
+  const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, favoriteTasks, loadFavoriteTasks, toggleTaskFavorite } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
+
+  // Load favorites on mount
+  useEffect(() => {
+    loadFavoriteTasks();
+  }, [loadFavoriteTasks]);
 
   // Subscribe to task events
   useEffect(() => {
@@ -106,7 +114,7 @@ export default function HomePage() {
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
   const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (!prompt.trim() || isLoading) { return; }
 
     const taskId = `task_${Date.now()}`;
     const task = await startTask({ prompt: prompt.trim(), taskId });
@@ -116,7 +124,7 @@ export default function HomePage() {
   }, [prompt, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (!prompt.trim() || isLoading) { return; }
 
     // Check if any provider is ready before sending (skip in E2E mode)
     const isE2EMode = await accomplish.isE2EMode();
@@ -161,6 +169,10 @@ export default function HomePage() {
   const handleExampleClick = (examplePrompt: string) => {
     setPrompt(examplePrompt);
   };
+
+  const visibleFavorites = showAllFavorites
+    ? favoriteTasks
+    : favoriteTasks.slice(0, MAX_VISIBLE_FAVORITES);
 
   return (
     <>
@@ -211,6 +223,50 @@ export default function HomePage() {
                 hideModelWhenNoModel={true}
               />
             </CardContent>
+
+            {/* Favorites Section - above example prompts */}
+            {favoriteTasks.length > 0 && (
+              <div className="border-t border-border px-6 py-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Favorites</span>
+                </div>
+                <div className="space-y-1.5">
+                  {visibleFavorites.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-1 group"
+                    >
+                      <button
+                        onClick={() => handleExampleClick(task.prompt)}
+                        className="flex-1 text-left px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted/50 transition-colors truncate"
+                        title={task.summary || task.prompt}
+                      >
+                        {task.summary || task.prompt}
+                      </button>
+                      <button
+                        onClick={() => toggleTaskFavorite(task.id)}
+                        className="p-1.5 rounded-md text-yellow-500 opacity-0 group-hover:opacity-100 hover:text-yellow-600 transition-all shrink-0"
+                        aria-label="Remove from favorites"
+                        title="Remove from favorites"
+                      >
+                        <Star className="h-3.5 w-3.5 fill-current" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {favoriteTasks.length > MAX_VISIBLE_FAVORITES && (
+                  <button
+                    onClick={() => setShowAllFavorites(!showAllFavorites)}
+                    className="mt-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showAllFavorites
+                      ? 'Show less'
+                      : `Show all ${favoriteTasks.length} favorites`}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Examples Toggle */}
             <div className="border-t border-border">

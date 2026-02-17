@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
@@ -232,6 +232,7 @@ export default function ExecutionPage() {
     clearStartupStage,
     todos,
     todosTaskId,
+    toggleTaskFavorite,
   } = useTaskStore();
 
   const speechInput = useSpeechInput({
@@ -1308,6 +1309,25 @@ export default function ExecutionPage() {
       {canFollowUp && (
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
           <div className="max-w-4xl mx-auto space-y-2">
+            {currentTask.status === 'completed' && (
+              <div className="flex justify-end mb-1">
+                <button
+                  onClick={() => toggleTaskFavorite(currentTask.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors',
+                    currentTask.isFavorite
+                      ? 'text-yellow-500 hover:text-yellow-600'
+                      : 'text-muted-foreground hover:text-yellow-500'
+                  )}
+                  data-testid="favorite-toggle"
+                  aria-pressed={!!currentTask.isFavorite}
+                  aria-label={currentTask.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <Star className={cn('h-3.5 w-3.5', currentTask.isFavorite && 'fill-current')} />
+                  {currentTask.isFavorite ? 'Favorited' : 'Favorite'}
+                </button>
+              </div>
+            )}
             {speechInput.error && (
               <Alert
                 variant="destructive"
@@ -1427,9 +1447,25 @@ export default function ExecutionPage() {
           <p className="text-sm text-muted-foreground mb-3">
             Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
           </p>
-          <Button onClick={() => navigate('/')}>
-            Start New Task
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            {currentTask.status === 'completed' && (
+              <Button
+                variant="outline"
+                onClick={() => toggleTaskFavorite(currentTask.id)}
+                data-testid="favorite-toggle"
+                aria-pressed={!!currentTask.isFavorite}
+                className={cn(
+                  currentTask.isFavorite && 'text-yellow-500 border-yellow-500/50'
+                )}
+              >
+                <Star className={cn('h-4 w-4 mr-2', currentTask.isFavorite && 'fill-current')} />
+                {currentTask.isFavorite ? 'Favorited' : 'Favorite'}
+              </Button>
+            )}
+            <Button onClick={() => navigate('/')}>
+              Start New Task
+            </Button>
+          </div>
         </div>
       )}
 

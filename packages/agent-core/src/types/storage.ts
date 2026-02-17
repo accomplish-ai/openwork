@@ -43,6 +43,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -90,6 +91,10 @@ export interface TaskStorageAPI {
   saveTodosForTask(taskId: string, todos: TodoItem[]): void;
   /** Remove all todo items for a specific task */
   clearTodosForTask(taskId: string): void;
+  /** Toggle the favorite status of a task, returns the new favorite state */
+  toggleTaskFavorite(taskId: string): boolean;
+  /** Get all favorited tasks */
+  getFavoriteTasks(): StoredTask[];
 }
 
 /** API for reading and writing application settings */

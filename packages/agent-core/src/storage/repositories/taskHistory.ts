@@ -12,6 +12,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 interface TaskRow {
@@ -23,6 +24,7 @@ interface TaskRow {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  is_favorite: number;
 }
 
 interface MessageRow {
@@ -106,6 +108,7 @@ function rowToTask(row: TaskRow): StoredTask {
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
     messages: getMessagesForTask(row.id),
+    isFavorite: row.is_favorite === 1,
   };
 }
 
@@ -131,10 +134,13 @@ export function saveTask(task: Task): void {
   const db = getDatabase();
 
   db.transaction(() => {
+    const existing = db.prepare('SELECT is_favorite FROM tasks WHERE id = ?').get(task.id) as { is_favorite: number } | undefined;
+    const isFavorite = existing?.is_favorite ?? 0;
+
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        (id, prompt, summary, status, session_id, created_at, started_at, completed_at, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       task.id,
       task.prompt,
@@ -143,7 +149,8 @@ export function saveTask(task: Task): void {
       task.sessionId || null,
       task.createdAt,
       task.startedAt || null,
-      task.completedAt || null
+      task.completedAt || null,
+      isFavorite
     );
 
     db.prepare('DELETE FROM task_messages WHERE task_id = ?').run(task.id);
@@ -179,8 +186,8 @@ export function saveTask(task: Task): void {
     }
 
     db.prepare(
-      `DELETE FROM tasks WHERE id NOT IN (
-        SELECT id FROM tasks ORDER BY created_at DESC LIMIT ?
+      `DELETE FROM tasks WHERE is_favorite = 0 AND id NOT IN (
+        SELECT id FROM tasks WHERE is_favorite = 0 ORDER BY created_at DESC LIMIT ?
       )`
     ).run(MAX_HISTORY_ITEMS);
   })();
@@ -304,4 +311,25 @@ export function saveTodosForTask(taskId: string, todos: TodoItem[]): void {
 export function clearTodosForTask(taskId: string): void {
   const db = getDatabase();
   db.prepare('DELETE FROM task_todos WHERE task_id = ?').run(taskId);
+}
+
+export function toggleTaskFavorite(taskId: string): boolean {
+  const db = getDatabase();
+  return db.transaction(() => {
+    const row = db.prepare('SELECT is_favorite FROM tasks WHERE id = ?').get(taskId) as { is_favorite: number } | undefined;
+    if (!row) {
+      throw new Error(`Task not found: ${taskId}`);
+    }
+    const newValue = row.is_favorite === 1 ? 0 : 1;
+    db.prepare('UPDATE tasks SET is_favorite = ? WHERE id = ?').run(newValue, taskId);
+    return newValue === 1;
+  })();
+}
+
+export function getFavoriteTasks(): StoredTask[] {
+  const db = getDatabase();
+  const rows = db
+    .prepare('SELECT * FROM tasks WHERE is_favorite = 1 ORDER BY created_at DESC')
+    .all() as TaskRow[];
+  return rows.map(rowToTask);
 }
