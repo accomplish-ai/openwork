@@ -309,7 +309,7 @@ function resolveMcpCommand(
   sourceRelPath: string,
   distRelPath: string,
   isPackaged: boolean,
-  nodePath?: string
+  nodePath?: string,
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
   const sourcePath = path.join(mcpDir, sourceRelPath);
@@ -344,8 +344,10 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
   } = options;
 
   const environmentInstructions = getPlatformEnvironmentInstructions(platform);
-  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
-    .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, environmentInstructions);
+  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE.replace(
+    /\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g,
+    environmentInstructions,
+  );
 
   if (skills.length > 0) {
     const skillsSection = `
@@ -360,8 +362,12 @@ After calling start_task, you MUST read the SKILL.md file for each skill you lis
 
 **Available Skills:**
 
-${skills.map(s => `- **${s.name}** (${s.command}): ${s.description}
-  File: ${s.filePath}`).join('\n\n')}
+${skills
+  .map(
+    (s) => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`,
+  )
+  .join('\n\n')}
 
 Use empty array [] if no skills apply to your task.
 
@@ -387,7 +393,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
@@ -404,7 +410,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
@@ -421,7 +427,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
@@ -435,7 +441,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
@@ -464,8 +470,13 @@ Use empty array [] if no skills apply to your task.
     mcpServers['dev-browser-mcp'] = {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand, mcpToolsPath, 'dev-browser-mcp',
-        'src/index.ts', 'dist/index.mjs', isPackaged, nodePath
+        tsxCommand,
+        mcpToolsPath,
+        'dev-browser-mcp',
+        'src/index.ts',
+        'dist/index.mjs',
+        isPackaged,
+        nodePath,
       ),
       enabled: true,
       ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
@@ -505,11 +516,16 @@ Use empty array [] if no skills apply to your task.
   const hasBrowser = browserConfig.mode !== 'none';
   systemPrompt = systemPrompt
     .replace('{{AGENT_ROLE}}', hasBrowser ? 'browser automation' : 'task automation')
-    .replace('{{BROWSER_CAPABILITY}}', hasBrowser
-      ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
-      : '')
-    .replace('{{BROWSER_BEHAVIOR}}', hasBrowser
-      ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
+    .replace(
+      '{{BROWSER_CAPABILITY}}',
+      hasBrowser
+        ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
+        : '',
+    )
+    .replace(
+      '{{BROWSER_BEHAVIOR}}',
+      hasBrowser
+        ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
 - For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
 - **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
 
@@ -530,7 +546,8 @@ Example bad narration (too terse):
 - After each action, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
 `
-      : '');
+        : '',
+    );
 
   const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
@@ -543,8 +560,16 @@ Example bad narration (too terse):
     enabledProviders = [...new Set([...customEnabledProviders, ...Object.keys(providerConfig)])];
   } else {
     const baseProviders = [
-      'anthropic', 'openai', 'openrouter', 'google', 'xai',
-      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+      'anthropic',
+      'openai',
+      'openrouter',
+      'google',
+      'xai',
+      'deepseek',
+      'moonshot',
+      'zai-coding-plan',
+      'amazon-bedrock',
+      'minimax',
     ];
     enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
   }

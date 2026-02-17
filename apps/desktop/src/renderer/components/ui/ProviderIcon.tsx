@@ -17,20 +17,20 @@ interface ProviderIconProps {
  */
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'bg-[#D4A574]', // Warm coral/tan
-  openai: 'bg-[#10A37F]',    // Green
-  google: 'bg-[#4285F4]',    // Blue
-  xai: 'bg-[#1DA1F2]',       // Twitter blue
-  deepseek: 'bg-[#6366F1]',  // Indigo
-  moonshot: 'bg-[#8B5CF6]',  // Purple
-  ollama: 'bg-[#F97316]',    // Orange
+  openai: 'bg-[#10A37F]', // Green
+  google: 'bg-[#4285F4]', // Blue
+  xai: 'bg-[#1DA1F2]', // Twitter blue
+  deepseek: 'bg-[#6366F1]', // Indigo
+  moonshot: 'bg-[#8B5CF6]', // Purple
+  ollama: 'bg-[#F97316]', // Orange
   openrouter: 'bg-[#EC4899]', // Pink
-  litellm: 'bg-[#06B6D4]',   // Cyan
-  bedrock: 'bg-[#FF9900]',   // AWS Orange
-  zai: 'bg-[#22C55E]',       // Green
-  minimax: 'bg-[#EF4444]',   // Red
-  lmstudio: 'bg-[#3B82F6]',  // Blue
+  litellm: 'bg-[#06B6D4]', // Cyan
+  bedrock: 'bg-[#FF9900]', // AWS Orange
+  zai: 'bg-[#22C55E]', // Green
+  minimax: 'bg-[#EF4444]', // Red
+  lmstudio: 'bg-[#3B82F6]', // Blue
   'azure-foundry': 'bg-[#0078D4]', // Azure blue
-  custom: 'bg-[#6B7280]',    // Gray
+  custom: 'bg-[#6B7280]', // Gray
 };
 
 /**
@@ -38,7 +38,7 @@ const PROVIDER_COLORS: Record<string, string> = {
  */
 const PROVIDER_INITIALS: Record<string, string> = {
   anthropic: 'A',
-  openai: 'G',   // GPT
+  openai: 'G', // GPT
   google: 'G',
   xai: 'X',
   deepseek: 'D',
@@ -61,7 +61,9 @@ const SIZE_CLASSES = {
 };
 
 export function ProviderIcon({ provider, size = 'md', className }: ProviderIconProps) {
-  const colorClass = provider ? PROVIDER_COLORS[provider] || PROVIDER_COLORS.custom : PROVIDER_COLORS.custom;
+  const colorClass = provider
+    ? PROVIDER_COLORS[provider] || PROVIDER_COLORS.custom
+    : PROVIDER_COLORS.custom;
   const initial = provider ? PROVIDER_INITIALS[provider] || provider.charAt(0).toUpperCase() : '?';
   const sizeClass = SIZE_CLASSES[size];
 
@@ -71,7 +73,7 @@ export function ProviderIcon({ provider, size = 'md', className }: ProviderIconP
         'flex items-center justify-center rounded font-semibold text-white flex-shrink-0',
         colorClass,
         sizeClass,
-        className
+        className,
       )}
     >
       {initial}

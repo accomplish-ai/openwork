@@ -15,9 +15,15 @@ describe('SkillsManager', () => {
   let testDir: string;
   let bundledSkillsPath: string;
   let userSkillsPath: string;
-  let SkillsManager: typeof import('../../../src/internal/classes/SkillsManager.js').SkillsManager | null = null;
-  let manager: InstanceType<typeof import('../../../src/internal/classes/SkillsManager.js').SkillsManager> | null = null;
-  let initializeDatabase: typeof import('../../../src/storage/database.js').initializeDatabase | null = null;
+  let SkillsManager:
+    | typeof import('../../../src/internal/classes/SkillsManager.js').SkillsManager
+    | null = null;
+  let manager: InstanceType<
+    typeof import('../../../src/internal/classes/SkillsManager.js').SkillsManager
+  > | null = null;
+  let initializeDatabase:
+    | typeof import('../../../src/storage/database.js').initializeDatabase
+    | null = null;
   let closeDatabase: typeof import('../../../src/storage/database.js').closeDatabase | null = null;
   let getDatabase: typeof import('../../../src/storage/database.js').getDatabase | null = null;
   let moduleAvailable = false;
@@ -33,7 +39,7 @@ describe('SkillsManager', () => {
       const skillsModule = await import('../../../src/internal/classes/SkillsManager.js');
       SkillsManager = skillsModule.SkillsManager;
       moduleAvailable = true;
-    } catch (err) {
+    } catch (_err) {
       console.warn('Skipping skills-manager tests: better-sqlite3 native module not available');
       console.warn('To fix: pnpm rebuild better-sqlite3');
     }
@@ -43,7 +49,10 @@ describe('SkillsManager', () => {
     if (!moduleAvailable) return;
 
     // Create a unique temporary directory for each test
-    testDir = path.join(os.tmpdir(), `skills-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    testDir = path.join(
+      os.tmpdir(),
+      `skills-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
     bundledSkillsPath = path.join(testDir, 'bundled-skills');
     userSkillsPath = path.join(testDir, 'user-skills');
 
@@ -76,7 +85,11 @@ describe('SkillsManager', () => {
     vi.restoreAllMocks();
   });
 
-  function createSkillFile(basePath: string, name: string, frontmatter: Record<string, unknown> = {}) {
+  function createSkillFile(
+    basePath: string,
+    name: string,
+    frontmatter: Record<string, unknown> = {},
+  ) {
     const skillDir = path.join(basePath, name);
     fs.mkdirSync(skillDir, { recursive: true });
 
@@ -203,7 +216,7 @@ name: Minimal Skill
 ---
 
 Content here.
-`
+`,
       );
 
       await manager.initialize();

@@ -195,7 +195,8 @@ export class SettingsPage {
   }
 
   async waitForConnection(timeout = 30000) {
-    await this.page.locator('[data-testid="connection-status"][data-status="connected"]')
+    await this.page
+      .locator('[data-testid="connection-status"][data-status="connected"]')
       .waitFor({ state: 'visible', timeout });
   }
 
@@ -207,7 +208,7 @@ export class SettingsPage {
    * Select a model by ID. Handles both native <select> and custom SearchableSelect.
    */
   async selectModel(modelId: string) {
-    const tagName = await this.modelSelector.evaluate(el => el.tagName.toLowerCase());
+    const tagName = await this.modelSelector.evaluate((el) => el.tagName.toLowerCase());
 
     if (tagName === 'select') {
       // Native <select> element
@@ -226,7 +227,7 @@ export class SettingsPage {
    * Useful when you don't know which models are available.
    */
   async selectFirstModel() {
-    const tagName = await this.modelSelector.evaluate(el => el.tagName.toLowerCase());
+    const tagName = await this.modelSelector.evaluate((el) => el.tagName.toLowerCase());
 
     if (tagName === 'select') {
       // Native select — pick the first non-empty option
@@ -276,7 +277,11 @@ export class SettingsPage {
     await this.bedrockApiKeyInput.fill(apiKey);
   }
 
-  async enterBedrockAccessKeyCredentials(accessKeyId: string, secretKey: string, sessionToken?: string) {
+  async enterBedrockAccessKeyCredentials(
+    accessKeyId: string,
+    secretKey: string,
+    sessionToken?: string,
+  ) {
     await this.bedrockAccessKeyIdInput.fill(accessKeyId);
     await this.bedrockSecretKeyInput.fill(secretKey);
     if (sessionToken) {

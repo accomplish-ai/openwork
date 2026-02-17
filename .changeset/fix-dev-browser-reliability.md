@@ -1,5 +1,5 @@
 ---
-"@accomplish_ai/agent-core": patch
+'@accomplish_ai/agent-core': patch
 ---
 
 fix(dev-browser-mcp): browser automation reliability for Gmail and Google Drive

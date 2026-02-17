@@ -2,7 +2,10 @@ import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ConnectedProvider, VertexProviderCredentials } from '@accomplish_ai/agent-core/common';
+import type {
+  ConnectedProvider,
+  VertexProviderCredentials,
+} from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
   ConnectButton,
@@ -49,18 +52,19 @@ export function VertexProviderForm({
     try {
       const accomplish = getAccomplish();
 
-      const credentials = authTab === 'serviceAccount'
-        ? {
-            authType: 'serviceAccount' as const,
-            serviceAccountJson,
-            projectId: projectId.trim(),
-            location,
-          }
-        : {
-            authType: 'adc' as const,
-            projectId: projectId.trim(),
-            location,
-          };
+      const credentials =
+        authTab === 'serviceAccount'
+          ? {
+              authType: 'serviceAccount' as const,
+              serviceAccountJson,
+              projectId: projectId.trim(),
+              location,
+            }
+          : {
+              authType: 'adc' as const,
+              projectId: projectId.trim(),
+              location,
+            };
 
       const validation = await accomplish.validateVertexCredentials(credentials);
 
@@ -81,7 +85,7 @@ export function VertexProviderForm({
 
       // Try to find a reasonable default model
       const preferredDefault = 'vertex/google/gemini-2.5-pro';
-      const hasPreferred = fetchedModels.some(m => m.id === preferredDefault);
+      const hasPreferred = fetchedModels.some((m) => m.id === preferredDefault);
 
       const provider: ConnectedProvider = {
         providerId: 'vertex',
@@ -101,8 +105,7 @@ export function VertexProviderForm({
                   return {};
                 }
               })()
-            : {}
-          ),
+            : {}),
         } as VertexProviderCredentials,
         lastConnectedAt: new Date().toISOString(),
         availableModels: fetchedModels,
@@ -135,7 +138,7 @@ export function VertexProviderForm({
 
     // Check for duplicates
     const currentModels = connectedProvider?.availableModels || availableModels;
-    if (currentModels.some(m => m.id === fullId)) {
+    if (currentModels.some((m) => m.id === fullId)) {
       setCustomModelError('Model already in list');
       return;
     }
@@ -157,37 +160,42 @@ export function VertexProviderForm({
     setCustomModelError(null);
   }, [customModelInput, connectedProvider, availableModels, onConnect, onModelChange]);
 
-  const handleRemoveCustomModel = useCallback((modelId: string) => {
-    const currentModels = connectedProvider?.availableModels || availableModels;
+  const handleRemoveCustomModel = useCallback(
+    (modelId: string) => {
+      const currentModels = connectedProvider?.availableModels || availableModels;
 
-    // Don't allow removing curated models (they have known publishers)
-    const curatedPrefixes = ['vertex/google/', 'vertex/anthropic/', 'vertex/mistralai/'];
-    if (curatedPrefixes.some(p => modelId.startsWith(p))) {
-      return;
-    }
+      // Don't allow removing curated models (they have known publishers)
+      const curatedPrefixes = ['vertex/google/', 'vertex/anthropic/', 'vertex/mistralai/'];
+      if (curatedPrefixes.some((p) => modelId.startsWith(p))) {
+        return;
+      }
 
-    const updatedModels = currentModels.filter(m => m.id !== modelId);
+      const updatedModels = currentModels.filter((m) => m.id !== modelId);
 
-    if (connectedProvider) {
-      const newSelectedId = connectedProvider.selectedModelId === modelId
-        ? null
-        : connectedProvider.selectedModelId;
-      onConnect({
-        ...connectedProvider,
-        availableModels: updatedModels,
-        selectedModelId: newSelectedId,
-      });
-    }
-  }, [connectedProvider, availableModels, onConnect]);
+      if (connectedProvider) {
+        const newSelectedId =
+          connectedProvider.selectedModelId === modelId ? null : connectedProvider.selectedModelId;
+        onConnect({
+          ...connectedProvider,
+          availableModels: updatedModels,
+          selectedModelId: newSelectedId,
+        });
+      }
+    },
+    [connectedProvider, availableModels, onConnect],
+  );
 
   const models = connectedProvider?.availableModels || availableModels;
 
   // Identify custom (non-curated) models for the remove buttons
   const curatedPrefixes = ['vertex/google/', 'vertex/anthropic/', 'vertex/mistralai/'];
-  const customModels = models.filter(m => !curatedPrefixes.some(p => m.id.startsWith(p)));
+  const customModels = models.filter((m) => !curatedPrefixes.some((p) => m.id.startsWith(p)));
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
       <ProviderFormHeader logoSrc={PROVIDER_LOGOS['vertex']} providerName="Vertex AI" />
 
       <div className="space-y-3">
@@ -262,11 +270,14 @@ export function VertexProviderForm({
               {/* Display saved credentials info */}
               <div className="space-y-3">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">Auth Method</label>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    Auth Method
+                  </label>
                   <input
                     type="text"
                     value={
-                      (connectedProvider?.credentials as VertexProviderCredentials)?.authMethod === 'serviceAccount'
+                      (connectedProvider?.credentials as VertexProviderCredentials)?.authMethod ===
+                      'serviceAccount'
                         ? 'Service Account'
                         : 'Application Default Credentials'
                     }
@@ -274,12 +285,18 @@ export function VertexProviderForm({
                     className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                   />
                 </div>
-                {(connectedProvider?.credentials as VertexProviderCredentials)?.serviceAccountEmail && (
+                {(connectedProvider?.credentials as VertexProviderCredentials)
+                  ?.serviceAccountEmail && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Service Account</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Service Account
+                    </label>
                     <input
                       type="text"
-                      value={(connectedProvider?.credentials as VertexProviderCredentials)?.serviceAccountEmail || ''}
+                      value={
+                        (connectedProvider?.credentials as VertexProviderCredentials)
+                          ?.serviceAccountEmail || ''
+                      }
                       disabled
                       className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                     />
@@ -289,7 +306,9 @@ export function VertexProviderForm({
                   <label className="mb-2 block text-sm font-medium text-foreground">Project</label>
                   <input
                     type="text"
-                    value={(connectedProvider?.credentials as VertexProviderCredentials)?.projectId || ''}
+                    value={
+                      (connectedProvider?.credentials as VertexProviderCredentials)?.projectId || ''
+                    }
                     disabled
                     className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                   />
@@ -298,7 +317,9 @@ export function VertexProviderForm({
                   <label className="mb-2 block text-sm font-medium text-foreground">Location</label>
                   <input
                     type="text"
-                    value={(connectedProvider?.credentials as VertexProviderCredentials)?.location || ''}
+                    value={
+                      (connectedProvider?.credentials as VertexProviderCredentials)?.location || ''
+                    }
                     disabled
                     className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                   />
@@ -317,7 +338,9 @@ export function VertexProviderForm({
 
               {/* Custom model input */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">Add Custom Model</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Add Custom Model
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -354,7 +377,9 @@ export function VertexProviderForm({
               {/* Custom models list with remove buttons */}
               {customModels.length > 0 && (
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">Custom Models</label>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    Custom Models
+                  </label>
                   <div className="space-y-1">
                     {customModels.map((model) => (
                       <div
@@ -367,7 +392,16 @@ export function VertexProviderForm({
                           className="ml-2 text-muted-foreground transition-colors hover:text-destructive"
                           title="Remove model"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                           </svg>

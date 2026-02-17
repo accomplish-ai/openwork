@@ -87,15 +87,18 @@ export function ConnectorsPanel() {
     }
   }, [url, addConnector, deriveNameFromUrl]);
 
-  const handleConnect = useCallback(async (connectorId: string) => {
-    setOauthError(null);
-    try {
-      await startOAuth(connectorId);
-    } catch (err) {
-      console.error('Failed to start OAuth:', err);
-      setOauthError(err instanceof Error ? err.message : 'Failed to start OAuth flow');
-    }
-  }, [startOAuth]);
+  const handleConnect = useCallback(
+    async (connectorId: string) => {
+      setOauthError(null);
+      try {
+        await startOAuth(connectorId);
+      } catch (err) {
+        console.error('Failed to start OAuth:', err);
+        setOauthError(err instanceof Error ? err.message : 'Failed to start OAuth flow');
+      }
+    },
+    [startOAuth],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -103,7 +106,7 @@ export function ConnectorsPanel() {
         handleAdd();
       }
     },
-    [handleAdd, adding]
+    [handleAdd, adding],
   );
 
   if (loading) {
@@ -118,8 +121,8 @@ export function ConnectorsPanel() {
     <div className="flex flex-col gap-4">
       {/* Description */}
       <p className="text-sm text-muted-foreground">
-        Connect remote MCP servers using OAuth. Only servers that support the
-        OAuth 2.0 authorization flow are currently supported.
+        Connect remote MCP servers using OAuth. Only servers that support the OAuth 2.0
+        authorization flow are currently supported.
       </p>
 
       {/* Add form */}
@@ -144,7 +147,13 @@ export function ConnectorsPanel() {
           {adding ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M12 5v14M5 12h14" />
             </svg>
           )}

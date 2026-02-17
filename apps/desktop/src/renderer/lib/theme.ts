@@ -41,9 +41,9 @@ function setupSystemListener(): void {
 }
 
 export function applyTheme(preference: string): void {
-  const validated = (['system', 'light', 'dark'].includes(preference)
-    ? preference
-    : 'system') as ThemePreference;
+  const validated = (
+    ['system', 'light', 'dark'].includes(preference) ? preference : 'system'
+  ) as ThemePreference;
 
   localStorage.setItem(THEME_KEY, validated);
 

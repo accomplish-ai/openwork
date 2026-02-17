@@ -21,9 +21,6 @@
       "@accomplish_ai/agent-core/*": ["../../packages/agent-core/src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "../../packages/agent-core/src/**/*"
-  ],
+  "include": ["src/**/*", "../../packages/agent-core/src/**/*"],
   "exclude": ["node_modules", "dist", "dist-electron", "release"]
 }

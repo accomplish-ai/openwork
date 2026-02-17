@@ -43,7 +43,6 @@
 ### Patch Changes
 
 - 3ae6718: feat(dev-browser-mcp): improve browser interaction reliability with coordinate fallbacks
-
   - Add canvas app detection (Google Docs, Figma, etc.) with automatic coordinate-based interactions
   - Add coordinate fallback for click, type, and hover when DOM interactions fail
   - Add ARIA tree pruning to remove useless wrapper nodes and reduce snapshot noise
@@ -75,7 +74,6 @@
 ### Patch Changes
 
 - 32795a5: Clean up public API surface and improve encapsulation
-
   - Replace wildcard barrel exports with explicit named exports
   - Internalize message batching and proxy lifecycle into TaskManager
   - Remove raw database repository functions from public API (use createStorage factory)
@@ -91,7 +89,6 @@
 ### Minor Changes
 
 - 4405211: Enable npm publishing for @accomplish_ai/agent-core package
-
   - Package now published to npm as @accomplish_ai/agent-core
   - Added changesets for version management
   - Added automated release workflows

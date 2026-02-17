@@ -60,9 +60,9 @@ export const ProviderCard = memo(function ProviderCard({
           >
             <img
               src={connectedKeyIcon}
-              alt={providerReady ? "Ready" : "Connected"}
+              alt={providerReady ? 'Ready' : 'Connected'}
               className="h-5 w-5"
-              title={providerReady ? undefined : "Select a model to complete setup"}
+              title={providerReady ? undefined : 'Select a model to complete setup'}
             />
           </motion.div>
         )}
@@ -72,17 +72,16 @@ export const ProviderCard = memo(function ProviderCard({
         <img
           src={logoSrc}
           alt={`${meta.name} logo`}
-          className={cn('h-8 w-8 object-contain', DARK_INVERT_PROVIDERS.has(providerId) && 'dark:invert')}
+          className={cn(
+            'h-8 w-8 object-contain',
+            DARK_INVERT_PROVIDERS.has(providerId) && 'dark:invert',
+          )}
         />
       </div>
 
-      <span className="text-sm font-medium text-foreground">
-        {meta.name}
-      </span>
+      <span className="text-sm font-medium text-foreground">{meta.name}</span>
 
-      <span className="text-xs text-muted-foreground">
-        {meta.label}
-      </span>
+      <span className="text-xs text-muted-foreground">{meta.label}</span>
     </button>
   );
 });

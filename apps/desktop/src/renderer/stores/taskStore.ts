@@ -60,7 +60,13 @@ interface TaskState {
   closeLauncher: () => void;
   startTask: (config: TaskConfig) => Promise<Task | null>;
   setSetupProgress: (taskId: string | null, message: string | null) => void;
-  setStartupStage: (taskId: string | null, stage: string | null, message?: string, modelName?: string, isFirstTask?: boolean) => void;
+  setStartupStage: (
+    taskId: string | null,
+    stage: string | null,
+    message?: string,
+    modelName?: string,
+    isFirstTask?: boolean,
+  ) => void;
   clearStartupStage: (taskId: string) => void;
   sendFollowUp: (message: string) => Promise<void>;
   cancelTask: () => Promise<void>;
@@ -115,16 +121,23 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ setupProgress: message, setupProgressTaskId: taskId, setupDownloadStep: step });
   },
 
-  setStartupStage: (taskId: string | null, stage: string | null, message?: string, modelName?: string, isFirstTask?: boolean) => {
+  setStartupStage: (
+    taskId: string | null,
+    stage: string | null,
+    message?: string,
+    modelName?: string,
+    isFirstTask?: boolean,
+  ) => {
     if (!taskId || !stage) {
       set({ startupStage: null, startupStageTaskId: null });
       return;
     }
 
     const currentState = get();
-    const startTime = currentState.startupStageTaskId === taskId && currentState.startupStage
-      ? currentState.startupStage.startTime
-      : Date.now();
+    const startTime =
+      currentState.startupStageTaskId === taskId && currentState.startupStage
+        ? currentState.startupStage.startTime
+        : Date.now();
 
     set({
       startupStage: {
@@ -235,7 +248,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           }
         : null,
       tasks: state.tasks.map((t) =>
-        t.id === taskId ? { ...t, status: 'running' as TaskStatus } : t
+        t.id === taskId ? { ...t, status: 'running' as TaskStatus } : t,
       ),
     }));
 
@@ -248,29 +261,26 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const task = await accomplish.resumeSession(sessionId, message, currentTask.id);
 
       set((state) => ({
-        currentTask: state.currentTask
-          ? { ...state.currentTask, status: task.status }
-          : null,
+        currentTask: state.currentTask ? { ...state.currentTask, status: task.status } : null,
         isLoading: task.status === 'queued',
-        tasks: state.tasks.map((t) =>
-          t.id === taskId ? { ...t, status: task.status } : t
-        ),
+        tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, status: task.status } : t)),
       }));
     } catch (err) {
       set((state) => ({
         error: err instanceof Error ? err.message : 'Failed to send message',
         isLoading: false,
-        currentTask: state.currentTask
-          ? { ...state.currentTask, status: 'failed' }
-          : null,
+        currentTask: state.currentTask ? { ...state.currentTask, status: 'failed' } : null,
         tasks: state.tasks.map((t) =>
-          t.id === taskId ? { ...t, status: 'failed' as TaskStatus } : t
+          t.id === taskId ? { ...t, status: 'failed' as TaskStatus } : t,
         ),
       }));
       void accomplish.logEvent({
         level: 'error',
         message: 'UI follow-up failed',
-        context: { taskId: currentTask.id, error: err instanceof Error ? err.message : String(err) },
+        context: {
+          taskId: currentTask.id,
+          error: err instanceof Error ? err.message : String(err),
+        },
       });
     }
   },
@@ -286,11 +296,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       });
       await accomplish.cancelTask(currentTask.id);
       set((state) => ({
-        currentTask: state.currentTask
-          ? { ...state.currentTask, status: 'cancelled' }
-          : null,
+        currentTask: state.currentTask ? { ...state.currentTask, status: 'cancelled' } : null,
         tasks: state.tasks.map((t) =>
-          t.id === currentTask.id ? { ...t, status: 'cancelled' as TaskStatus } : t
+          t.id === currentTask.id ? { ...t, status: 'cancelled' as TaskStatus } : t,
         ),
       }));
     }
@@ -380,13 +388,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       if (newStatus) {
         const finalStatus = newStatus;
         updatedTasks = state.tasks.map((t) =>
-          t.id === event.taskId ? { ...t, status: finalStatus } : t
+          t.id === event.taskId ? { ...t, status: finalStatus } : t,
         );
       }
 
       // Only clear todos if task is fully completed (not interrupted - user can still continue)
       let shouldClearTodos = false;
-      if ((event.type === 'complete' || event.type === 'error') && state.todosTaskId === event.taskId) {
+      if (
+        (event.type === 'complete' || event.type === 'error') &&
+        state.todosTaskId === event.taskId
+      ) {
         const isInterrupted = event.type === 'complete' && event.result?.status === 'interrupted';
         shouldClearTodos = !isInterrupted;
       }
@@ -424,9 +435,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   updateTaskStatus: (taskId: string, status: TaskStatus) => {
     set((state) => {
       const updatedTasks = state.tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, status, updatedAt: new Date().toISOString() }
-          : task
+        task.id === taskId ? { ...task, status, updatedAt: new Date().toISOString() } : task,
       );
 
       const updatedCurrentTask =
@@ -444,13 +453,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   setTaskSummary: (taskId: string, summary: string) => {
     set((state) => {
       const updatedTasks = state.tasks.map((task) =>
-        task.id === taskId ? { ...task, summary } : task
+        task.id === taskId ? { ...task, summary } : task,
       );
 
       const updatedCurrentTask =
-        state.currentTask?.id === taskId
-          ? { ...state.currentTask, summary }
-          : state.currentTask;
+        state.currentTask?.id === taskId ? { ...state.currentTask, summary } : state.currentTask;
 
       return {
         tasks: updatedTasks,
@@ -537,7 +544,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   openLauncher: () => set({ isLauncherOpen: true, launcherInitialPrompt: null }),
-  openLauncherWithPrompt: (prompt: string) => set({ isLauncherOpen: true, launcherInitialPrompt: prompt }),
+  openLauncherWithPrompt: (prompt: string) =>
+    set({ isLauncherOpen: true, launcherInitialPrompt: prompt }),
   closeLauncher: () => set({ isLauncherOpen: false, launcherInitialPrompt: null }),
 }));
 
@@ -547,7 +555,13 @@ if (typeof window !== 'undefined' && window.accomplish) {
     const state = useTaskStore.getState();
 
     if (STARTUP_STAGES.includes(event.stage)) {
-      state.setStartupStage(event.taskId, event.stage, event.message, event.modelName, event.isFirstTask);
+      state.setStartupStage(
+        event.taskId,
+        event.stage,
+        event.message,
+        event.modelName,
+        event.isFirstTask,
+      );
       return;
     }
 
@@ -585,7 +599,7 @@ if (typeof window !== 'undefined' && window.accomplish) {
     }
   });
 
-  window.accomplish.onTaskSummary?.(( data: { taskId: string; summary: string }) => {
+  window.accomplish.onTaskSummary?.((data: { taskId: string; summary: string }) => {
     useTaskStore.getState().setTaskSummary(data.taskId, data.summary);
   });
 

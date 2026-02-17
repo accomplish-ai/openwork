@@ -20,7 +20,9 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
   if (displayedTasks.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-text-muted">No tasks yet. Start by describing what you want to accomplish.</p>
+        <p className="text-text-muted">
+          No tasks yet. Start by describing what you want to accomplish.
+        </p>
       </div>
     );
   }
@@ -47,11 +49,7 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
 
       <div className="space-y-2">
         {displayedTasks.map((task) => (
-          <TaskHistoryItem
-            key={task.id}
-            task={task}
-            onDelete={() => deleteTask(task.id)}
-          />
+          <TaskHistoryItem key={task.id} task={task} onDelete={() => deleteTask(task.id)} />
         ))}
       </div>
 
@@ -67,13 +65,7 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
   );
 }
 
-function TaskHistoryItem({
-  task,
-  onDelete,
-}: {
-  task: Task;
-  onDelete: () => void;
-}) {
+function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void }) {
   const statusConfig: Record<string, { color: string; label: string }> = {
     completed: { color: 'bg-success', label: 'Completed' },
     running: { color: 'bg-primary', label: 'Running' },
@@ -111,7 +103,12 @@ function TaskHistoryItem({
         className="p-2 text-text-muted hover:text-danger transition-colors"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
         </svg>
       </button>
     </Link>

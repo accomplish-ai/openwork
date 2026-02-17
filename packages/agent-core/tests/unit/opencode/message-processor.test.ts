@@ -10,7 +10,7 @@ import type { OpenCodeMessage } from '../../../src/common/types/opencode.js';
 describe('sanitizeAssistantTextForDisplay', () => {
   it('preserves plain assistant text unchanged', () => {
     expect(sanitizeAssistantTextForDisplay('Hello, I can help you with that.')).toBe(
-      'Hello, I can help you with that.'
+      'Hello, I can help you with that.',
     );
   });
 
@@ -50,7 +50,9 @@ describe('sanitizeAssistantTextForDisplay', () => {
   });
 
   it('does not match tags that merely start with internal tag names', () => {
-    expect(sanitizeAssistantTextForDisplay('<thoughtful>hello</thoughtful>')).toBe('<thoughtful>hello</thoughtful>');
+    expect(sanitizeAssistantTextForDisplay('<thoughtful>hello</thoughtful>')).toBe(
+      '<thoughtful>hello</thoughtful>',
+    );
   });
 
   it('strips orphan closing tags', () => {

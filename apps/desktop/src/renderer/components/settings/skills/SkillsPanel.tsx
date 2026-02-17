@@ -31,12 +31,15 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
   const visibleSkills = useMemo(() => skills.filter((s) => !s.isHidden), [skills]);
 
   // Calculate counts for each filter
-  const filterCounts = useMemo(() => ({
-    all: visibleSkills.length,
-    active: visibleSkills.filter((s) => s.isEnabled).length,
-    inactive: visibleSkills.filter((s) => !s.isEnabled).length,
-    official: visibleSkills.filter((s) => s.source === 'official').length,
-  }), [visibleSkills]);
+  const filterCounts = useMemo(
+    () => ({
+      all: visibleSkills.length,
+      active: visibleSkills.filter((s) => s.isEnabled).length,
+      inactive: visibleSkills.filter((s) => !s.isEnabled).length,
+      official: visibleSkills.filter((s) => s.source === 'official').length,
+    }),
+    [visibleSkills],
+  );
 
   // Filter and search skills (hide hidden skills)
   const filteredSkills = useMemo(() => {
@@ -58,7 +61,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
         (s) =>
           s.name.toLowerCase().includes(query) ||
           s.description.toLowerCase().includes(query) ||
-          s.command.toLowerCase().includes(query)
+          s.command.toLowerCase().includes(query),
       );
     }
 
@@ -94,36 +97,40 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
   }, [refreshTrigger]);
 
   // Handlers
-  const handleToggle = useCallback(async (id: string) => {
-    const skill = skills.find((s) => s.id === id);
-    if (!skill || !window.accomplish) return;
+  const handleToggle = useCallback(
+    async (id: string) => {
+      const skill = skills.find((s) => s.id === id);
+      if (!skill || !window.accomplish) return;
 
-    try {
-      await window.accomplish.setSkillEnabled(id, !skill.isEnabled);
-      setSkills((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, isEnabled: !s.isEnabled } : s))
-      );
-    } catch (err) {
-      console.error('Failed to toggle skill:', err);
-    }
-  }, [skills]);
+      try {
+        await window.accomplish.setSkillEnabled(id, !skill.isEnabled);
+        setSkills((prev) => prev.map((s) => (s.id === id ? { ...s, isEnabled: !s.isEnabled } : s)));
+      } catch (err) {
+        console.error('Failed to toggle skill:', err);
+      }
+    },
+    [skills],
+  );
 
-  const handleDelete = useCallback(async (id: string) => {
-    const skill = skills.find((s) => s.id === id);
-    if (!skill || !window.accomplish) return;
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const skill = skills.find((s) => s.id === id);
+      if (!skill || !window.accomplish) return;
 
-    if (skill.source === 'official') {
-      console.warn('Cannot delete official skills');
-      return;
-    }
+      if (skill.source === 'official') {
+        console.warn('Cannot delete official skills');
+        return;
+      }
 
-    try {
-      await window.accomplish.deleteSkill(id);
-      setSkills((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
-      console.error('Failed to delete skill:', err);
-    }
-  }, [skills]);
+      try {
+        await window.accomplish.deleteSkill(id);
+        setSkills((prev) => prev.filter((s) => s.id !== id));
+      } catch (err) {
+        console.error('Failed to delete skill:', err);
+      }
+    },
+    [skills],
+  );
 
   const handleEdit = useCallback(async (filePath: string) => {
     if (!window.accomplish) return;
@@ -166,7 +173,14 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
     }
   }, [isResyncing]);
 
-  const filterLabel = filter === 'all' ? 'All' : filter === 'active' ? 'Active' : filter === 'inactive' ? 'Inactive' : 'By Accomplish';
+  const filterLabel =
+    filter === 'all'
+      ? 'All'
+      : filter === 'active'
+        ? 'Active'
+        : filter === 'inactive'
+          ? 'Inactive'
+          : 'By Accomplish';
 
   if (loading) {
     return (
@@ -214,10 +228,16 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
             <DropdownMenuItem onClick={() => setFilter('active')} className="flex justify-between">
               Active <span className="text-muted-foreground">{filterCounts.active}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('inactive')} className="flex justify-between">
+            <DropdownMenuItem
+              onClick={() => setFilter('inactive')}
+              className="flex justify-between"
+            >
               Inactive <span className="text-muted-foreground">{filterCounts.inactive}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('official')} className="flex justify-between">
+            <DropdownMenuItem
+              onClick={() => setFilter('official')}
+              className="flex justify-between"
+            >
               By Accomplish <span className="text-muted-foreground">{filterCounts.official}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -254,9 +274,8 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
         >
           <motion.div
             animate={isResyncing ? { rotate: 720 } : { rotate: 0 }}
-            transition={isResyncing
-              ? { duration: 1, repeat: Infinity, ease: 'linear' }
-              : { duration: 0 }
+            transition={
+              isResyncing ? { duration: 1, repeat: Infinity, ease: 'linear' } : { duration: 0 }
             }
           >
             <svg

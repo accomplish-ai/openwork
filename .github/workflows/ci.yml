@@ -4,17 +4,17 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/desktop/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/ci.yml"
+      - 'apps/desktop/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - "apps/desktop/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/ci.yml"
+      - 'apps/desktop/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -36,8 +36,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -66,8 +66,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -100,8 +100,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -135,8 +135,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -163,7 +163,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           # Note: No cache here - E2E tests run in Docker so pnpm store isn't on host
 
       - name: Run E2E tests in Docker
@@ -194,8 +194,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

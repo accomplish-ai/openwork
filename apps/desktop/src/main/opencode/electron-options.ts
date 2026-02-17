@@ -2,7 +2,7 @@ import { app } from 'electron';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import type { TaskAdapterOptions, TaskManagerOptions, TaskCallbacks } from '@accomplish_ai/agent-core';
+import type { TaskManagerOptions, TaskCallbacks } from '@accomplish_ai/agent-core';
 import type { TaskConfig } from '@accomplish_ai/agent-core';
 import { DEV_BROWSER_PORT } from '@accomplish_ai/agent-core';
 import {
@@ -17,10 +17,18 @@ import {
   type EnvironmentConfig,
 } from '@accomplish_ai/agent-core';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
-import type { AzureFoundryCredentials, BedrockCredentials, VertexCredentials } from '@accomplish_ai/agent-core';
+import type {
+  AzureFoundryCredentials,
+  BedrockCredentials,
+  VertexCredentials,
+} from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
 import { getAllApiKeys, getBedrockCredentials, getApiKey } from '../store/secureStorage';
-import { generateOpenCodeConfig, getMcpToolsPath, syncApiKeysToOpenCodeAuth } from './config-generator';
+import {
+  generateOpenCodeConfig,
+  getMcpToolsPath,
+  syncApiKeysToOpenCodeAuth,
+} from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
@@ -73,7 +81,7 @@ export function getBundledOpenCodeVersion(): string | null {
         'app.asar.unpacked',
         'node_modules',
         packageName,
-        'package.json'
+        'package.json',
       );
 
       if (fs.existsSync(packageJsonPath)) {
@@ -81,6 +89,7 @@ export function getBundledOpenCodeVersion(): string | null {
         return pkg.version;
       }
     } catch {
+      // intentionally empty
     }
   }
 
@@ -89,7 +98,7 @@ export function getBundledOpenCodeVersion(): string | null {
     const output = execSync(fullCommand, {
       encoding: 'utf-8',
       timeout: 5000,
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
 
     const versionMatch = output.match(/(\d+\.\d+\.\d+)/);
@@ -195,10 +204,12 @@ export async function buildCliArgs(config: TaskConfig, _taskId: string): Promise
   return coreBuildCliArgs({
     prompt: config.prompt,
     sessionId: config.sessionId,
-    selectedModel: selectedModel ? {
-      provider: selectedModel.provider,
-      model: selectedModel.model,
-    } : null,
+    selectedModel: selectedModel
+      ? {
+          provider: selectedModel.provider,
+          model: selectedModel.model,
+        }
+      : null,
   });
 }
 
@@ -219,10 +230,13 @@ export async function onBeforeStart(): Promise<void> {
   const selectedModel = activeModel || storage.getSelectedModel();
   const azureFoundryConfig = storage.getAzureFoundryConfig();
   const azureFoundryProvider = storage.getConnectedProvider('azure-foundry');
-  const azureFoundryCredentials = azureFoundryProvider?.credentials as AzureFoundryCredentials | undefined;
+  const azureFoundryCredentials = azureFoundryProvider?.credentials as
+    | AzureFoundryCredentials
+    | undefined;
 
   const isAzureFoundryEntraId =
-    (selectedModel?.provider === 'azure-foundry' && azureFoundryCredentials?.authMethod === 'entra-id') ||
+    (selectedModel?.provider === 'azure-foundry' &&
+      azureFoundryCredentials?.authMethod === 'entra-id') ||
     (selectedModel?.provider === 'azure-foundry' && azureFoundryConfig?.authType === 'entra-id');
 
   if (isAzureFoundryEntraId) {
@@ -247,7 +261,7 @@ function getBrowserServerConfig(): BrowserServerConfig {
 
 export async function onBeforeTaskStart(
   callbacks: TaskCallbacks,
-  isFirstTask: boolean
+  isFirstTask: boolean,
 ): Promise<void> {
   if (isFirstTask) {
     callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });

@@ -1,5 +1,14 @@
 import { config } from 'dotenv';
-import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog, nativeTheme, Menu } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  nativeImage,
+  dialog,
+  nativeTheme,
+  Menu,
+} from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -12,18 +21,18 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
-import {
-  FutureSchemaError,
-} from '@accomplish_ai/agent-core';
-import {
-  initThoughtStreamApi,
-  startThoughtStreamServer,
-} from './thought-stream-api';
+import { FutureSchemaError } from '@accomplish_ai/agent-core';
+import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
-import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
+import {
+  initializeStorage,
+  closeStorage,
+  getStorage,
+  resetStorageSingleton,
+} from './store/storage';
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
@@ -116,7 +125,7 @@ function createWindow() {
       (suggestion) => ({
         label: suggestion,
         click: () => mainWindow?.webContents.replaceMisspelling(suggestion),
-      })
+      }),
     );
 
     if (menuItems.length > 0) {
@@ -164,14 +173,18 @@ process.on('uncaughtException', (error) => {
       name: error.name,
       stack: error.stack,
     });
-  } catch {}
+  } catch {
+    // ignore - log collector may not be initialized
+  }
 });
 
 process.on('unhandledRejection', (reason) => {
   try {
     const collector = getLogCollector();
     collector.log('ERROR', 'main', 'Unhandled promise rejection', { reason });
-  } catch {}
+  } catch {
+    // ignore - log collector may not be initialized
+  }
 });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -248,7 +261,9 @@ if (!gotTheLock) {
         if (!credType || credType === 'api_key') {
           const key = getApiKey(providerId);
           if (!key) {
-            console.warn(`[Main] Provider ${providerId} has api_key auth but key not found in secure storage`);
+            console.warn(
+              `[Main] Provider ${providerId} has api_key auth but key not found in secure storage`,
+            );
             storage.removeConnectedProvider(providerId);
             console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
@@ -312,9 +327,7 @@ app.on('before-quit', () => {
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {
-  app.setAsDefaultProtocolClient('accomplish', process.execPath, [
-    path.resolve(process.argv[1]),
-  ]);
+  app.setAsDefaultProtocolClient('accomplish', process.execPath, [path.resolve(process.argv[1])]);
 } else {
   app.setAsDefaultProtocolClient('accomplish');
 }
@@ -358,6 +371,8 @@ ipcMain.handle('app:platform', () => {
 });
 
 ipcMain.handle('app:is-e2e-mode', () => {
-  return (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
-    process.env.E2E_MOCK_TASK_EVENTS === '1';
+  return (
+    (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
+    process.env.E2E_MOCK_TASK_EVENTS === '1'
+  );
 });

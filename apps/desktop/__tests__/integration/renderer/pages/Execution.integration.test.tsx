@@ -32,7 +32,7 @@ function createMockTask(
   id: string,
   prompt: string = 'Test task',
   status: TaskStatus = 'running',
-  messages: TaskMessage[] = []
+  messages: TaskMessage[] = [],
 ): Task {
   return {
     id,
@@ -47,7 +47,7 @@ function createMockTask(
 function createMockMessage(
   id: string,
   type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
-  content: string = 'Test message'
+  content: string = 'Test message',
 ): TaskMessage {
   return {
     id,
@@ -166,20 +166,35 @@ vi.mock('framer-motion', () => ({
 // Mock Radix Tooltip to render content directly (portals don't work in jsdom)
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) => (
-    <span data-slot="tooltip-trigger" {...props}>{children}</span>
+  TooltipTrigger: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+    [key: string]: unknown;
+  }) => (
+    <span data-slot="tooltip-trigger" {...props}>
+      {children}
+    </span>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
-    <span role="tooltip" data-slot="tooltip-content">{children}</span>
+    <span role="tooltip" data-slot="tooltip-content">
+      {children}
+    </span>
   ),
   TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 // Mock StreamingText component
 vi.mock('@/components/ui/streaming-text', () => ({
-  StreamingText: ({ text, children }: { text: string; children: (text: string) => React.ReactNode }) => (
-    <>{children(text)}</>
-  ),
+  StreamingText: ({
+    text,
+    children,
+  }: {
+    text: string;
+    children: (text: string) => React.ReactNode;
+  }) => <>{children(text)}</>,
 }));
 
 // Mock Accomplish icon
@@ -196,7 +211,7 @@ function renderWithRouter(taskId: string = 'task-123') {
         <Route path="/execution/:id" element={<ExecutionPage />} />
         <Route path="/" element={<div>Home Page</div>} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -237,7 +252,6 @@ describe('Execution Page Integration', () => {
     });
 
     it('should display loading spinner when no task loaded yet', () => {
-
       renderWithRouter('task-123');
 
       const spinner = document.querySelector('.animate-spin-ccw');
@@ -306,7 +320,7 @@ describe('Execution Page Integration', () => {
       renderWithRouter('task-123');
 
       const buttons = screen.getAllByRole('button');
-      const backButton = buttons.find(btn => btn.querySelector('svg'));
+      const backButton = buttons.find((btn) => btn.querySelector('svg'));
       expect(backButton).toBeInTheDocument();
     });
 
@@ -321,9 +335,7 @@ describe('Execution Page Integration', () => {
 
   describe('message display', () => {
     it('should display user messages', () => {
-      const messages = [
-        createMockMessage('msg-1', 'user', 'Check my inbox'),
-      ];
+      const messages = [createMockMessage('msg-1', 'user', 'Check my inbox')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       renderWithRouter('task-123');
@@ -332,9 +344,7 @@ describe('Execution Page Integration', () => {
     });
 
     it('should display assistant messages', () => {
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I will check your inbox now.'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I will check your inbox now.')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       renderWithRouter('task-123');
@@ -379,7 +389,9 @@ describe('Execution Page Integration', () => {
 
       renderWithRouter('task-123');
 
-      expect(screen.getByText(/^(Doing|Executing|Running|Handling it|Accomplishing)\.\.\.$/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/^(Doing|Executing|Running|Handling it|Accomplishing)\.\.\.$/),
+      ).toBeInTheDocument();
     });
 
     it('should display message timestamps', () => {
@@ -647,9 +659,7 @@ describe('Execution Page Integration', () => {
     });
 
     it('should show inline waiting indicator for queued task with messages', () => {
-      const messages = [
-        createMockMessage('msg-1', 'user', 'Previous message'),
-      ];
+      const messages = [createMockMessage('msg-1', 'user', 'Previous message')];
       mockStoreState.currentTask = createMockTask('task-123', 'Queued', 'queued', messages);
 
       renderWithRouter('task-123');
@@ -939,9 +949,7 @@ describe('Execution Page Integration', () => {
     });
 
     it('should show Continue button for interrupted task with session and messages', () => {
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I was working on something')];
       const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
@@ -953,7 +961,11 @@ describe('Execution Page Integration', () => {
 
     it('should show Done Continue button for completed task with session when waiting for user', () => {
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'Please log in to your account. Let me know when you are done.'),
+        createMockMessage(
+          'msg-1',
+          'assistant',
+          'Please log in to your account. Let me know when you are done.',
+        ),
       ];
       const task = createMockTask('task-123', 'Done', 'completed', messages);
       task.sessionId = 'session-abc';
@@ -965,9 +977,7 @@ describe('Execution Page Integration', () => {
     });
 
     it('should call sendFollowUp with continue when Continue button is clicked', async () => {
-      const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
-      ];
+      const messages = [createMockMessage('msg-1', 'assistant', 'I was working on something')];
       const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
@@ -985,9 +995,7 @@ describe('Execution Page Integration', () => {
 
   describe('system messages', () => {
     it('should display system messages with System label', () => {
-      const messages = [
-        createMockMessage('msg-1', 'system', 'System initialization complete'),
-      ];
+      const messages = [createMockMessage('msg-1', 'system', 'System initialization complete')];
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
 
       renderWithRouter('task-123');
@@ -1245,7 +1253,7 @@ describe('Execution Page Integration', () => {
       renderWithRouter('task-123');
 
       const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find(t => t.textContent === 'Enter a message');
+      const sendTooltip = tooltips.find((t) => t.textContent === 'Enter a message');
       expect(sendTooltip).toBeDefined();
     });
 
@@ -1261,7 +1269,7 @@ describe('Execution Page Integration', () => {
       fireEvent.change(input, { target: { value: oversizedValue } });
 
       const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find(t => t.textContent === 'Message is too long');
+      const sendTooltip = tooltips.find((t) => t.textContent === 'Message is too long');
       expect(sendTooltip).toBeDefined();
     });
 
@@ -1276,7 +1284,7 @@ describe('Execution Page Integration', () => {
       fireEvent.change(input, { target: { value: 'Normal follow-up' } });
 
       const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find(t => t.textContent === 'Send');
+      const sendTooltip = tooltips.find((t) => t.textContent === 'Send');
       expect(sendTooltip).toBeDefined();
     });
   });

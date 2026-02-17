@@ -20,7 +20,7 @@ function createMockTask(
   id: string,
   prompt: string = 'Test task',
   status: TaskStatus = 'completed',
-  createdAt?: string
+  createdAt?: string,
 ): Task {
   return {
     id,
@@ -112,7 +112,8 @@ describe('TaskLauncherItem', () => {
 
     it('should render task with truncated long prompt', () => {
       // Arrange
-      const longPrompt = 'This is a very long task prompt that should be truncated when displayed in the UI to prevent overflow';
+      const longPrompt =
+        'This is a very long task prompt that should be truncated when displayed in the UI to prevent overflow';
       const task = createMockTask('task-1', longPrompt);
 
       // Act
@@ -130,7 +131,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Running task', 'running');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - Check for spinning loader icon
       const spinner = container.querySelector('.animate-spin');
@@ -143,7 +146,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Completed task', 'completed');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - CheckCircle2 icon should have green color
       const icon = container.querySelector('.text-green-500');
@@ -155,7 +160,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Failed task', 'failed');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - XCircle icon should have destructive color
       const icon = container.querySelector('.text-destructive');
@@ -167,7 +174,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Cancelled task', 'cancelled');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - AlertCircle icon should have yellow color
       const icon = container.querySelector('.text-yellow-500');
@@ -179,7 +188,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Interrupted task', 'interrupted');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - AlertCircle icon should have yellow color
       const icon = container.querySelector('.text-yellow-500');
@@ -223,7 +234,15 @@ describe('TaskLauncherItem', () => {
       render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
 
       // Assert - Should show weekday name (e.g., "Monday", "Tuesday")
-      const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const weekdays = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ];
       const expectedWeekday = weekdays[twoDaysAgo.getDay()];
       expect(screen.getByText(expectedWeekday)).toBeInTheDocument();
     });
@@ -238,7 +257,10 @@ describe('TaskLauncherItem', () => {
       render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
 
       // Assert - Should show format like "Jan 5"
-      const expectedDate = tenDaysAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const expectedDate = tenDaysAgo.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
       expect(screen.getByText(expectedDate)).toBeInTheDocument();
     });
   });
@@ -249,7 +271,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Selected task');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={true} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={true} onClick={mockOnClick} />,
+      );
 
       // Assert
       const button = container.querySelector('button');
@@ -262,7 +286,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Unselected task');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert
       const button = container.querySelector('button');
@@ -275,7 +301,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Task');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={true} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={true} onClick={mockOnClick} />,
+      );
 
       // Assert - Date text should use primary-foreground opacity
       const dateElement = container.querySelector('.text-primary-foreground\\/70');
@@ -287,7 +315,9 @@ describe('TaskLauncherItem', () => {
       const task = createMockTask('task-1', 'Task');
 
       // Act
-      const { container } = render(<TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />);
+      const { container } = render(
+        <TaskLauncherItem task={task} isSelected={false} onClick={mockOnClick} />,
+      );
 
       // Assert - Date text should use muted foreground
       const dateElement = container.querySelector('.text-muted-foreground');
@@ -357,7 +387,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -372,7 +402,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -387,7 +417,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -404,7 +434,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -420,7 +450,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -438,7 +468,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const closeButton = screen.getByRole('button', { name: /close/i });
@@ -458,7 +488,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -473,7 +503,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -491,7 +521,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -503,10 +533,10 @@ describe('TaskLauncher', () => {
       mockStoreState.isLauncherOpen = true;
 
       // Act
-      const { container } = render(
+      render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Plus icon should be present
@@ -529,7 +559,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -539,15 +569,13 @@ describe('TaskLauncher', () => {
     it('should show "Results" section when searching', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'Check email'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'Check email')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -570,7 +598,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -585,15 +613,13 @@ describe('TaskLauncher', () => {
     it('should be case-insensitive when filtering', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'Check my EMAIL inbox'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'Check my EMAIL inbox')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -606,15 +632,13 @@ describe('TaskLauncher', () => {
     it('should show "No tasks found" when search has no results', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'Check email'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'Check email')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -642,7 +666,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -664,7 +688,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -679,14 +703,14 @@ describe('TaskLauncher', () => {
       const today = new Date();
       mockStoreState.isLauncherOpen = true;
       mockStoreState.tasks = Array.from({ length: 15 }, (_, i) =>
-        createMockTask(`task-${i}`, `Task ${i}`, 'completed', today.toISOString())
+        createMockTask(`task-${i}`, `Task ${i}`, 'completed', today.toISOString()),
       );
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Should show 10 tasks maximum
@@ -703,10 +727,10 @@ describe('TaskLauncher', () => {
       mockStoreState.isLauncherOpen = true;
 
       // Act
-      const { container } = render(
+      render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - "New task" should be selected (has bg-primary)
@@ -717,15 +741,13 @@ describe('TaskLauncher', () => {
     it('should move selection down with ArrowDown', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'First task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'First task')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -739,15 +761,13 @@ describe('TaskLauncher', () => {
     it('should move selection up with ArrowUp', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'First task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'First task')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -767,7 +787,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -781,15 +801,13 @@ describe('TaskLauncher', () => {
     it('should not move selection below last item', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'Only task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'Only task')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -804,15 +822,13 @@ describe('TaskLauncher', () => {
     it('should reset selection when reopened', () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-1', 'Task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-1', 'Task')];
 
       // Act
       const { rerender } = render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -823,14 +839,14 @@ describe('TaskLauncher', () => {
       rerender(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       mockStoreState.isLauncherOpen = true;
       rerender(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Selection should be back at first item
@@ -848,7 +864,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const newTaskButton = screen.getByText('New task').closest('button');
@@ -872,7 +888,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -890,7 +906,7 @@ describe('TaskLauncher', () => {
         expect(mockStartTask).toHaveBeenCalledWith(
           expect.objectContaining({
             prompt: 'Test prompt',
-          })
+          }),
         );
       });
     });
@@ -908,7 +924,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -930,15 +946,13 @@ describe('TaskLauncher', () => {
     it('should navigate to task when task item is clicked', async () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-123', 'Existing task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-123', 'Existing task')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskButton = screen.getByText('Existing task').closest('button');
@@ -955,15 +969,13 @@ describe('TaskLauncher', () => {
     it('should navigate to task when Enter is pressed on selected task', async () => {
       // Arrange
       mockStoreState.isLauncherOpen = true;
-      mockStoreState.tasks = [
-        createMockTask('task-123', 'Keyboard task'),
-      ];
+      mockStoreState.tasks = [createMockTask('task-123', 'Keyboard task')];
 
       // Act
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -986,7 +998,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Search icon should be present
@@ -1003,7 +1015,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -1020,7 +1032,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - When open, the dialog content should be visible
@@ -1039,7 +1051,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Should show New task and no error
@@ -1057,7 +1069,7 @@ describe('TaskLauncher', () => {
       render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -1073,7 +1085,7 @@ describe('TaskLauncher', () => {
         expect(mockStartTask).toHaveBeenCalledWith(
           expect.objectContaining({
             prompt: 'Trimmed prompt',
-          })
+          }),
         );
       });
     });
@@ -1086,7 +1098,7 @@ describe('TaskLauncher', () => {
       const { rerender } = render(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const searchInput = screen.getByPlaceholderText('Search tasks...');
@@ -1097,14 +1109,14 @@ describe('TaskLauncher', () => {
       rerender(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       mockStoreState.isLauncherOpen = true;
       rerender(
         <MemoryRouter>
           <TaskLauncher />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Search should be cleared

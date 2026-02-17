@@ -137,7 +137,7 @@ async function fetchWithRetry(
   url: string,
   options?: RequestInit,
   maxRetries = 3,
-  baseDelayMs = 100
+  baseDelayMs = 100,
 ): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
@@ -146,7 +146,8 @@ async function fetchWithRetry(
       return res;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      const isConnectionError = lastError.message.includes('fetch failed') ||
+      const isConnectionError =
+        lastError.message.includes('fetch failed') ||
         lastError.message.includes('ECONNREFUSED') ||
         lastError.message.includes('socket') ||
         lastError.message.includes('UND_ERR');
@@ -165,7 +166,7 @@ async function connectBuiltin(): Promise<Browser> {
   if (!res.ok) {
     throw new Error(`Server returned ${res.status}: ${await res.text()}`);
   }
-  const info = await res.json() as { wsEndpoint: string; mode?: string };
+  const info = (await res.json()) as { wsEndpoint: string; mode?: string };
   cachedServerMode = info.mode || 'normal';
   const b = await chromium.connectOverCDP(info.wsEndpoint);
 
@@ -199,7 +200,7 @@ async function getPageBuiltin(pageName?: string): Promise<Page> {
     throw new Error(`Failed to get page: ${await res.text()}`);
   }
 
-  const pageInfo = await res.json() as { targetId: string; url?: string };
+  const pageInfo = (await res.json()) as { targetId: string; url?: string };
   const { targetId } = pageInfo;
 
   const b = await ensureConnected();
@@ -226,7 +227,7 @@ async function getPageBuiltin(pageName?: string): Promise<Page> {
 
 async function listPagesBuiltin(): Promise<string[]> {
   const res = await fetchWithRetry(`${config.devBrowserUrl}/pages`);
-  const data = await res.json() as { pages: string[] };
+  const data = (await res.json()) as { pages: string[] };
   const taskPrefix = `${config.taskId}-`;
   return data.pages
     .filter((name: string) => name.startsWith(taskPrefix))
@@ -235,9 +236,12 @@ async function listPagesBuiltin(): Promise<string[]> {
 
 async function closePageBuiltin(pageName: string): Promise<boolean> {
   const fullName = getFullPageName(pageName);
-  const res = await fetchWithRetry(`${config.devBrowserUrl}/pages/${encodeURIComponent(fullName)}`, {
-    method: 'DELETE',
-  });
+  const res = await fetchWithRetry(
+    `${config.devBrowserUrl}/pages/${encodeURIComponent(fullName)}`,
+    {
+      method: 'DELETE',
+    },
+  );
   return res.ok;
 }
 
@@ -258,7 +262,11 @@ async function findPageByTargetId(b: Browser, targetId: string): Promise<Page | 
         }
       } finally {
         if (cdpSession) {
-          try { await cdpSession.detach(); } catch {}
+          try {
+            await cdpSession.detach();
+          } catch {
+            // intentionally empty
+          }
         }
       }
     }
@@ -309,12 +317,12 @@ async function getPageRemote(pageName?: string): Promise<Page> {
 function listPagesRemote(): Promise<string[]> {
   const taskPrefix = `${config.taskId}-`;
   const pages = Array.from(localPageRegistry.keys())
-    .filter(name => name.startsWith(taskPrefix))
-    .filter(name => {
+    .filter((name) => name.startsWith(taskPrefix))
+    .filter((name) => {
       const page = localPageRegistry.get(name);
       return page && !page.isClosed();
     })
-    .map(name => name.substring(taskPrefix.length));
+    .map((name) => name.substring(taskPrefix.length));
   return Promise.resolve(pages);
 }
 

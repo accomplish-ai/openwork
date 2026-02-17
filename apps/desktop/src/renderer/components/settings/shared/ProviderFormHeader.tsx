@@ -8,7 +8,11 @@ interface ProviderFormHeaderProps {
   invertInDark?: boolean;
 }
 
-export function ProviderFormHeader({ logoSrc, providerName, invertInDark }: ProviderFormHeaderProps) {
+export function ProviderFormHeader({
+  logoSrc,
+  providerName,
+  invertInDark,
+}: ProviderFormHeaderProps) {
   return (
     <div className="flex items-center gap-3 mb-5">
       {/* Fixed-size container to prevent layout shift when switching providers */}

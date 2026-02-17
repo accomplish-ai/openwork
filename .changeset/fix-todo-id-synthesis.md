@@ -1,5 +1,5 @@
 ---
-"@accomplish_ai/agent-core": patch
+'@accomplish_ai/agent-core': patch
 ---
 
 fix(agent-core): synthesize missing todo IDs in todowrite handler

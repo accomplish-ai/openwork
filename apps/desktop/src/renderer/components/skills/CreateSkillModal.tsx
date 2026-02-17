@@ -33,11 +33,14 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
   useEffect(() => {
     if (open) {
       const accomplish = getAccomplish();
-      accomplish.getProviderSettings().then((settings) => {
-        setHasProvider(!!settings?.activeProviderId);
-      }).catch(() => {
-        setHasProvider(false);
-      });
+      accomplish
+        .getProviderSettings()
+        .then((settings) => {
+          setHasProvider(!!settings?.activeProviderId);
+        })
+        .catch(() => {
+          setHasProvider(false);
+        });
     }
   }, [open]);
 
@@ -82,7 +85,13 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
         {hasProvider === false && (
           <div className="rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-200">
             <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                className="h-4 w-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <span>Please configure an AI provider in Settings first.</span>
@@ -120,17 +129,14 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={!name.trim() || !description.trim() || isSubmitting || hasProvider === false}
+              disabled={
+                !name.trim() || !description.trim() || isSubmitting || hasProvider === false
+              }
             >
               {isSubmitting ? 'Creating...' : 'Create Skill'}
             </Button>
