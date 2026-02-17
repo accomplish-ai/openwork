@@ -42,6 +42,8 @@
   },
   "dependencies": {
     "@accomplish_ai/agent-core": "workspace:*",
+    "@huggingface/transformers": "^3.4.0",
+    "onnxruntime-node": "1.21.0",
     "@aws-sdk/client-bedrock": "^3.971.0",
     "@aws-sdk/credential-providers": "^3.971.0",
     "@azure/identity": "^4.13.0",
@@ -121,6 +123,10 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
+      "node_modules/@huggingface/transformers/**",
+      "node_modules/@huggingface/jinja/**",
+      "node_modules/onnxruntime-node/**",
+      "!node_modules/onnxruntime-web/**",
       "!node_modules/@accomplish_ai/**",
       "!node_modules/opencode-darwin-*/**",
       "!node_modules/opencode-linux-*/**"
@@ -138,7 +144,8 @@
       "node_modules/node-pty/package.json",
       "node_modules/better-sqlite3/build/**/*.node",
       "node_modules/better-sqlite3/package.json",
-      "dist-electron/main/mcp/*.js"
+      "dist-electron/main/mcp/*.js",
+      "node_modules/onnxruntime-node/bin/**/*.node"
     ],
     "afterPack": "./scripts/after-pack.cjs",
     "extraResources": [

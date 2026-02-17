@@ -205,6 +205,18 @@ const accomplishAPI = {
     models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
   } | null): Promise<void> => ipcRenderer.invoke('lmstudio:set-config', config),
 
+  // HuggingFace configuration
+  testHuggingFaceConnection: (): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; name: string; size?: string; toolSupport: 'supported' | 'unsupported' | 'unknown'; downloaded: boolean }>;
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface:test-connection'),
+
+  downloadHuggingFaceModel: (modelId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface:download-model', modelId),
+
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>
     ipcRenderer.invoke('bedrock:validate', credentials),

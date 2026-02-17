@@ -14,6 +14,7 @@ if (process.platform === 'win32') {
 import { registerIPCHandlers } from './ipc/handlers';
 import {
   FutureSchemaError,
+  stopHuggingFaceServer,
 } from '@accomplish_ai/agent-core';
 import {
   initThoughtStreamApi,
@@ -307,6 +308,7 @@ app.on('before-quit', () => {
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
+  void stopHuggingFaceServer();
   closeStorage();
   shutdownLogCollector();
 });

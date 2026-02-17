@@ -5,7 +5,7 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex' | 'huggingface';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -23,6 +23,7 @@ export type ApiKeyProvider =
   | 'minimax'
   | 'lmstudio'
   | 'vertex'
+  | 'huggingface'
   | 'elevenlabs';
 
 /**
@@ -46,6 +47,7 @@ export const ALLOWED_API_KEY_PROVIDERS: ReadonlySet<string> = new Set<string>([
   'minimax',
   'lmstudio',
   'vertex',
+  'huggingface',
   'elevenlabs',
 ]);
 
@@ -158,6 +160,14 @@ export interface LMStudioConfig {
   enabled: boolean;
   lastValidated?: number;
   models?: LMStudioModel[];
+}
+
+export interface HuggingFaceModel {
+  id: string;
+  name: string;
+  size?: string;
+  toolSupport: 'supported' | 'unsupported' | 'unknown';
+  downloaded: boolean;
 }
 
 export const DEFAULT_PROVIDERS: ProviderConfig[] = [

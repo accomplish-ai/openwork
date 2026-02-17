@@ -399,6 +399,28 @@ export async function buildProviderConfigs(
     }
   }
 
+  // HuggingFace provider
+  const huggingfaceProvider = providerSettings.connectedProviders.huggingface;
+  if (huggingfaceProvider?.connectionStatus === 'connected' && huggingfaceProvider.credentials.type === 'huggingface' && huggingfaceProvider.selectedModelId) {
+    const modelId = huggingfaceProvider.selectedModelId.replace(/^huggingface\//, '');
+    const modelInfo = huggingfaceProvider.availableModels?.find(
+      m => m.id === huggingfaceProvider.selectedModelId || m.id === modelId
+    );
+    const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
+    providerConfigs.push({
+      id: 'huggingface',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'HuggingFace (local)',
+      options: {
+        baseURL: `${huggingfaceProvider.credentials.serverUrl}/v1`,
+      },
+      models: {
+        [modelId]: { name: modelId, tools: supportsTools },
+      },
+    });
+    console.log(`[OpenCode Config Builder] HuggingFace configured: ${modelId} (tools: ${supportsTools})`);
+  }
+
   // Azure Foundry provider
   const azureFoundryProvider = providerSettings.connectedProviders['azure-foundry'];
   if (azureFoundryProvider?.connectionStatus === 'connected' && azureFoundryProvider.credentials.type === 'azure-foundry') {
