@@ -3,13 +3,24 @@
  * Configures testing-library matchers and global test utilities
  */
 
-import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+expect.extend(matchers);
 
 // Mock scrollIntoView for jsdom (not implemented in jsdom)
 // Only apply when running in jsdom environment (Element is defined)
 if (typeof Element !== 'undefined') {
   Element.prototype.scrollIntoView = () => {};
+}
+
+// Mock ResizeObserver for jsdom (not implemented, required by Radix UI tooltips)
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
 }
 
 // Mock better-sqlite3 native module (not available in test environment)

@@ -1,13 +1,12 @@
 import path from 'path';
 import fs from 'fs';
-import type { ProviderId, ZaiCredentials } from '../common/types/providerSettings.js';
+import type {
+  ZaiCredentials,
+  VertexProviderCredentials,
+} from '../common/types/providerSettings.js';
 import type { BedrockCredentials } from '../common/types/auth.js';
 import type { ProviderSettings } from '../common/types/providerSettings.js';
-import {
-  ZAI_ENDPOINTS,
-  DEFAULT_PROVIDERS,
-  PROVIDER_ID_TO_OPENCODE,
-} from '../common/index.js';
+import { ZAI_ENDPOINTS, DEFAULT_PROVIDERS, PROVIDER_ID_TO_OPENCODE } from '../common/index.js';
 import type { ProviderConfig, ProviderModelConfig } from './config-generator.js';
 import { ensureAzureFoundryProxy, ensureMoonshotProxy } from './proxies/index.js';
 import {
@@ -62,7 +61,7 @@ async function buildAzureFoundryProviderConfig(
   deploymentName: string,
   authMethod: 'api-key' | 'entra-id',
   getApiKey: (provider: string) => string | undefined | null,
-  azureFoundryToken?: string
+  azureFoundryToken?: string,
 ): Promise<ProviderConfig | null> {
   const baseUrl = endpoint.replace(/\/$/, '');
   const targetBaseUrl = `${baseUrl}/openai/v1`;
@@ -80,7 +79,7 @@ async function buildAzureFoundryProviderConfig(
   } else if (authMethod === 'entra-id' && azureFoundryToken) {
     azureOptions.apiKey = '';
     azureOptions.headers = {
-      'Authorization': `Bearer ${azureFoundryToken}`,
+      Authorization: `Bearer ${azureFoundryToken}`,
     };
   }
 
@@ -113,7 +112,7 @@ async function buildAzureFoundryProviderConfig(
  * @returns Provider configurations, enabled providers list, and optional model override
  */
 export async function buildProviderConfigs(
-  options: BuildProviderConfigsOptions
+  options: BuildProviderConfigsOptions,
 ): Promise<ProviderConfigResult> {
   const { getApiKey, azureFoundryToken } = options;
   const providerSettings = options.providerSettings ?? getProviderSettings();
@@ -121,11 +120,23 @@ export async function buildProviderConfigs(
   const activeModel = getActiveProviderModel();
   const providerConfigs: ProviderConfig[] = [];
 
-  const baseProviders = ['anthropic', 'openai', 'openrouter', 'google', 'xai', 'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'];
+  const baseProviders = [
+    'anthropic',
+    'openai',
+    'openrouter',
+    'google',
+    'xai',
+    'deepseek',
+    'moonshot',
+    'zai-coding-plan',
+    'amazon-bedrock',
+    'vertex',
+    'minimax',
+  ];
   let enabledProviders = baseProviders;
 
   if (connectedIds.length > 0) {
-    const mappedProviders = connectedIds.map(id => PROVIDER_ID_TO_OPENCODE[id]);
+    const mappedProviders = connectedIds.map((id) => PROVIDER_ID_TO_OPENCODE[id]);
     enabledProviders = [...new Set([...baseProviders, ...mappedProviders])];
     console.log('[OpenCode Config Builder] Using connected providers:', mappedProviders);
   } else {
@@ -137,9 +148,19 @@ export async function buildProviderConfigs(
 
   // Ollama provider
   const ollamaProvider = providerSettings.connectedProviders.ollama;
-  if (ollamaProvider?.connectionStatus === 'connected' && ollamaProvider.credentials.type === 'ollama') {
+  if (
+    ollamaProvider?.connectionStatus === 'connected' &&
+    ollamaProvider.credentials.type === 'ollama'
+  ) {
     if (ollamaProvider.selectedModelId) {
       const modelId = ollamaProvider.selectedModelId.replace(/^ollama\//, '');
+      const ollamaModelInfo = ollamaProvider.availableModels?.find(
+        (m) => m.id === ollamaProvider.selectedModelId || m.id === modelId,
+      );
+      const ollamaSupportsTools =
+        (ollamaModelInfo as { toolSupport?: string })?.toolSupport === 'supported';
+      // Register model with both formats for compatibility
+      // Some code paths use "modelId" while others use "ollama/modelId"
       providerConfigs.push({
         id: 'ollama',
         npm: '@ai-sdk/openai-compatible',
@@ -148,10 +169,13 @@ export async function buildProviderConfigs(
           baseURL: `${ollamaProvider.credentials.serverUrl}/v1`,
         },
         models: {
-          [modelId]: { name: modelId, tools: true },
+          [modelId]: { name: modelId, tools: ollamaSupportsTools },
+          [`ollama/${modelId}`]: { name: modelId, tools: ollamaSupportsTools },
         },
       });
-      console.log('[OpenCode Config Builder] Ollama configured:', modelId);
+      console.log(
+        `[OpenCode Config Builder] Ollama configured: ${modelId} (tools: ${ollamaSupportsTools})`,
+      );
     }
   } else {
     const ollamaConfig = getOllamaConfig();
@@ -159,7 +183,11 @@ export async function buildProviderConfigs(
     if (ollamaConfig?.enabled && ollamaModels && ollamaModels.length > 0) {
       const models: Record<string, ProviderModelConfig> = {};
       for (const model of ollamaModels) {
-        models[model.id] = { name: model.displayName, tools: true };
+        const legacyToolSupport =
+          model.toolSupport === 'supported' || model.toolSupport === undefined;
+        // Register both formats for compatibility
+        models[model.id] = { name: model.displayName, tools: legacyToolSupport };
+        models[`ollama/${model.id}`] = { name: model.displayName, tools: legacyToolSupport };
       }
       providerConfigs.push({
         id: 'ollama',
@@ -174,7 +202,10 @@ export async function buildProviderConfigs(
 
   // OpenRouter provider
   const openrouterProvider = providerSettings.connectedProviders.openrouter;
-  if (openrouterProvider?.connectionStatus === 'connected' && activeModel?.provider === 'openrouter') {
+  if (
+    openrouterProvider?.connectionStatus === 'connected' &&
+    activeModel?.provider === 'openrouter'
+  ) {
     const modelId = activeModel.model.replace('openrouter/', '');
     providerConfigs.push({
       id: 'openrouter',
@@ -231,7 +262,10 @@ export async function buildProviderConfigs(
 
   // Bedrock provider
   const bedrockProvider = providerSettings.connectedProviders.bedrock;
-  if (bedrockProvider?.connectionStatus === 'connected' && bedrockProvider.credentials.type === 'bedrock') {
+  if (
+    bedrockProvider?.connectionStatus === 'connected' &&
+    bedrockProvider.credentials.type === 'bedrock'
+  ) {
     const creds = bedrockProvider.credentials;
     const bedrockOptions: Record<string, string> = {
       region: creds.region || 'us-east-1',
@@ -254,7 +288,12 @@ export async function buildProviderConfigs(
       options: bedrockOptions,
       ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
     });
-    console.log('[OpenCode Config Builder] Bedrock configured:', bedrockOptions, 'models:', Object.keys(bedrockModels));
+    console.log(
+      '[OpenCode Config Builder] Bedrock configured:',
+      bedrockOptions,
+      'models:',
+      Object.keys(bedrockModels),
+    );
   } else {
     const bedrockCredsJson = getApiKey('bedrock');
     if (bedrockCredsJson) {
@@ -279,7 +318,12 @@ export async function buildProviderConfigs(
           options: bedrockOptions,
           ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
         });
-        console.log('[OpenCode Config Builder] Bedrock (legacy) configured:', bedrockOptions, 'models:', Object.keys(bedrockModels));
+        console.log(
+          '[OpenCode Config Builder] Bedrock (legacy) configured:',
+          bedrockOptions,
+          'models:',
+          Object.keys(bedrockModels),
+        );
       } catch (e) {
         console.warn('[OpenCode Config Builder] Failed to parse Bedrock credentials:', e);
       }
@@ -294,9 +338,58 @@ export async function buildProviderConfigs(
     console.log('[OpenCode Config Builder] Bedrock model override:', modelOverride);
   }
 
+  // Vertex AI provider
+  const vertexProvider = providerSettings.connectedProviders.vertex;
+  if (
+    vertexProvider?.connectionStatus === 'connected' &&
+    vertexProvider.credentials.type === 'vertex'
+  ) {
+    const creds = vertexProvider.credentials as VertexProviderCredentials;
+    const vertexOptions: Record<string, string> = {
+      project: creds.projectId,
+      location: creds.location,
+    };
+
+    const vertexModels: Record<string, ProviderModelConfig> = {};
+    if (activeModel?.provider === 'vertex' && activeModel.model) {
+      // Model IDs are stored as "vertex/{publisher}/{model}" (e.g. "vertex/google/gemini-2.5-flash")
+      // but @ai-sdk/google-vertex expects just the model name (e.g. "gemini-2.5-flash")
+      const modelId = activeModel.model.replace(/^vertex\/[^/]+\//, '');
+      vertexModels[modelId] = { name: modelId, tools: true };
+    }
+
+    providerConfigs.push({
+      id: 'vertex',
+      npm: '@ai-sdk/google-vertex',
+      name: 'Google Vertex AI',
+      options: vertexOptions,
+      ...(Object.keys(vertexModels).length > 0 ? { models: vertexModels } : {}),
+    });
+    console.log(
+      '[OpenCode Config Builder] Vertex AI configured:',
+      vertexOptions,
+      'models:',
+      Object.keys(vertexModels),
+    );
+  }
+
+  if (activeModel?.provider === 'vertex' && activeModel.model) {
+    // Strip publisher from "vertex/{publisher}/{model}" → "vertex/{model}"
+    const vertexModelId = activeModel.model.replace(/^vertex\/[^/]+\//, '');
+    modelOverride = {
+      model: `vertex/${vertexModelId}`,
+      smallModel: `vertex/${vertexModelId}`,
+    };
+    console.log('[OpenCode Config Builder] Vertex model override:', modelOverride);
+  }
+
   // LiteLLM provider
   const litellmProvider = providerSettings.connectedProviders.litellm;
-  if (litellmProvider?.connectionStatus === 'connected' && litellmProvider.credentials.type === 'litellm' && litellmProvider.selectedModelId) {
+  if (
+    litellmProvider?.connectionStatus === 'connected' &&
+    litellmProvider.credentials.type === 'litellm' &&
+    litellmProvider.selectedModelId
+  ) {
     const litellmApiKey = getApiKey('litellm');
     providerConfigs.push({
       id: 'litellm',
@@ -315,10 +408,14 @@ export async function buildProviderConfigs(
 
   // LM Studio provider
   const lmstudioProvider = providerSettings.connectedProviders.lmstudio;
-  if (lmstudioProvider?.connectionStatus === 'connected' && lmstudioProvider.credentials.type === 'lmstudio' && lmstudioProvider.selectedModelId) {
+  if (
+    lmstudioProvider?.connectionStatus === 'connected' &&
+    lmstudioProvider.credentials.type === 'lmstudio' &&
+    lmstudioProvider.selectedModelId
+  ) {
     const modelId = lmstudioProvider.selectedModelId.replace(/^lmstudio\//, '');
     const modelInfo = lmstudioProvider.availableModels?.find(
-      m => m.id === lmstudioProvider.selectedModelId || m.id === modelId
+      (m) => m.id === lmstudioProvider.selectedModelId || m.id === modelId,
     );
     const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
     providerConfigs.push({
@@ -332,7 +429,9 @@ export async function buildProviderConfigs(
         [modelId]: { name: modelId, tools: supportsTools },
       },
     });
-    console.log(`[OpenCode Config Builder] LM Studio configured: ${modelId} (tools: ${supportsTools})`);
+    console.log(
+      `[OpenCode Config Builder] LM Studio configured: ${modelId} (tools: ${supportsTools})`,
+    );
   } else {
     const lmstudioConfig = getLMStudioConfig();
     const lmstudioModels = lmstudioConfig?.models;
@@ -354,14 +453,17 @@ export async function buildProviderConfigs(
 
   // Azure Foundry provider
   const azureFoundryProvider = providerSettings.connectedProviders['azure-foundry'];
-  if (azureFoundryProvider?.connectionStatus === 'connected' && azureFoundryProvider.credentials.type === 'azure-foundry') {
+  if (
+    azureFoundryProvider?.connectionStatus === 'connected' &&
+    azureFoundryProvider.credentials.type === 'azure-foundry'
+  ) {
     const creds = azureFoundryProvider.credentials;
     const config = await buildAzureFoundryProviderConfig(
       creds.endpoint,
       creds.deploymentName,
       creds.authMethod,
       getApiKey,
-      azureFoundryToken
+      azureFoundryToken,
     );
     if (config) {
       providerConfigs.push(config);
@@ -381,7 +483,7 @@ export async function buildProviderConfigs(
         azureFoundryConfig.deploymentName || 'default',
         azureFoundryConfig.authType,
         getApiKey,
-        azureFoundryToken
+        azureFoundryToken,
       );
       if (config) {
         providerConfigs.push(config);
@@ -399,15 +501,26 @@ export async function buildProviderConfigs(
   // Z.AI provider
   const zaiKey = getApiKey('zai');
   if (zaiKey) {
-    const zaiCredentials = providerSettings.connectedProviders.zai?.credentials as ZaiCredentials | undefined;
+    const zaiProvider = providerSettings.connectedProviders.zai;
+    const zaiCredentials = zaiProvider?.credentials as ZaiCredentials | undefined;
     const zaiRegion = zaiCredentials?.region || 'international';
     const zaiEndpoint = ZAI_ENDPOINTS[zaiRegion];
 
-    const zaiProviderConfig = DEFAULT_PROVIDERS.find(p => p.id === 'zai');
     const zaiModels: Record<string, ProviderModelConfig> = {};
-    if (zaiProviderConfig) {
-      for (const model of zaiProviderConfig.models) {
-        zaiModels[model.id] = { name: model.displayName, tools: true };
+
+    // Prefer dynamically fetched models from connected provider
+    if (zaiProvider?.availableModels && zaiProvider.availableModels.length > 0) {
+      for (const model of zaiProvider.availableModels) {
+        const modelId = model.id.replace(/^zai\//, '');
+        zaiModels[modelId] = { name: model.name, tools: true };
+      }
+    } else {
+      // Fall back to static models from DEFAULT_PROVIDERS
+      const zaiProviderConfig = DEFAULT_PROVIDERS.find((p) => p.id === 'zai');
+      if (zaiProviderConfig) {
+        for (const model of zaiProviderConfig.models) {
+          zaiModels[model.id] = { name: model.displayName, tools: true };
+        }
       }
     }
 
@@ -428,7 +541,7 @@ export async function buildProviderConfigs(
  * API key mapping from internal provider IDs to OpenCode auth.json format.
  * Only providers that need special key mapping in auth.json are included here.
  */
-const AUTH_KEY_MAPPING: Record<string, string> = {
+const _AUTH_KEY_MAPPING: Record<string, string> = {
   deepseek: 'deepseek',
   zai: 'zai-coding-plan',
   minimax: 'minimax',
@@ -445,7 +558,7 @@ const AUTH_KEY_MAPPING: Record<string, string> = {
  */
 export async function syncApiKeysToOpenCodeAuth(
   authPath: string,
-  apiKeys: Record<string, string | null | undefined>
+  apiKeys: Record<string, string | null | undefined>,
 ): Promise<void> {
   const authDir = path.dirname(authPath);
 
@@ -457,7 +570,7 @@ export async function syncApiKeysToOpenCodeAuth(
   if (fs.existsSync(authPath)) {
     try {
       auth = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
-    } catch (e) {
+    } catch (_e) {
       console.warn('[OpenCode Auth] Failed to parse existing auth.json, creating new one');
       auth = {};
     }

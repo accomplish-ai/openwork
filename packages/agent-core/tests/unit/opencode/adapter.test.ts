@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { OpenCodeCliNotFoundError } from '../../../src/opencode/adapter.js';
+import { OpenCodeCliNotFoundError } from '../../../src/internal/classes/OpenCodeAdapter.js';
+import { serializeError } from '../../../src/utils/error.js';
 
 /**
  * Tests for OpenCodeAdapter module.
@@ -215,8 +216,7 @@ describe('Task lifecycle', () => {
 
 describe('Start task detection', () => {
   it('should recognize start_task tool', () => {
-    const isStartTask = (name: string) =>
-      name === 'start_task' || name.endsWith('_start_task');
+    const isStartTask = (name: string) => name === 'start_task' || name.endsWith('_start_task');
 
     expect(isStartTask('start_task')).toBe(true);
     expect(isStartTask('mcp_start_task')).toBe(true);
@@ -274,6 +274,7 @@ describe('Plan message formatting', () => {
 
 describe('ANSI escape code filtering', () => {
   it('should recognize CSI sequences', () => {
+    // eslint-disable-next-line no-control-regex
     const csiPattern = /\x1B\[[0-9;?]*[a-zA-Z]/g;
     const dataWithCsi = '\x1B[31mRed text\x1B[0m';
 
@@ -282,6 +283,7 @@ describe('ANSI escape code filtering', () => {
   });
 
   it('should recognize OSC sequences with BEL terminator', () => {
+    // eslint-disable-next-line no-control-regex
     const oscPattern = /\x1B\][^\x07]*\x07/g;
     const dataWithOsc = '\x1B]0;Window Title\x07';
 
@@ -290,6 +292,7 @@ describe('ANSI escape code filtering', () => {
   });
 
   it('should recognize OSC sequences with ST terminator', () => {
+    // eslint-disable-next-line no-control-regex
     const oscPattern = /\x1B\][^\x1B]*\x1B\\/g;
     const dataWithOsc = '\x1B]0;Title\x1B\\';
 
@@ -300,15 +303,17 @@ describe('ANSI escape code filtering', () => {
 describe('AskUserQuestion handling', () => {
   it('should create permission request from question input', () => {
     const input = {
-      questions: [{
-        question: 'Do you want to continue?',
-        header: 'Confirmation',
-        options: [
-          { label: 'Yes', description: 'Continue the task' },
-          { label: 'No', description: 'Stop the task' },
-        ],
-        multiSelect: false,
-      }],
+      questions: [
+        {
+          question: 'Do you want to continue?',
+          header: 'Confirmation',
+          options: [
+            { label: 'Yes', description: 'Continue the task' },
+            { label: 'No', description: 'Stop the task' },
+          ],
+          multiSelect: false,
+        },
+      ],
     };
 
     const question = input.questions[0];
@@ -317,7 +322,7 @@ describe('AskUserQuestion handling', () => {
       taskId: 'task_456',
       type: 'question' as const,
       question: question.question,
-      options: question.options.map(o => ({
+      options: question.options.map((o) => ({
         label: o.label,
         description: o.description,
       })),
@@ -329,5 +334,34 @@ describe('AskUserQuestion handling', () => {
     expect(permissionRequest.question).toBe('Do you want to continue?');
     expect(permissionRequest.options?.length).toBe(2);
     expect(permissionRequest.multiSelect).toBe(false);
+  });
+});
+
+describe('serializeError', () => {
+  it('should pass through string errors unchanged', () => {
+    expect(serializeError('API rate limit exceeded')).toBe('API rate limit exceeded');
+  });
+
+  it('should serialize an object error to JSON', () => {
+    const objectError = { name: 'APIError', data: { message: 'Bad request', statusCode: 400 } };
+    const result = serializeError(objectError);
+    expect(typeof result).toBe('string');
+    expect(result).toContain('APIError');
+    expect(result).toContain('400');
+  });
+
+  it('should handle error with nested data', () => {
+    const nested = { message: 'timeout', details: { retryAfter: 30 } };
+    const result = serializeError(nested);
+    expect(typeof result).toBe('string');
+    expect(result).toContain('timeout');
+  });
+
+  it('should handle numeric error codes', () => {
+    expect(serializeError(500)).toBe('500');
+  });
+
+  it('should handle null error', () => {
+    expect(serializeError(null)).toBe('null');
   });
 });

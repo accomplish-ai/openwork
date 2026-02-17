@@ -11,6 +11,7 @@ import {
   OpenRouterProviderForm,
   LiteLLMProviderForm,
   LMStudioProviderForm,
+  VertexProviderForm,
 } from './providers';
 import { ZaiProviderForm } from './providers/ZaiProviderForm';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -66,6 +67,17 @@ export function ProviderSettingsPanel({
       case 'aws':
         return (
           <BedrockProviderForm
+            connectedProvider={connectedProvider}
+            onConnect={onConnect}
+            onDisconnect={onDisconnect}
+            onModelChange={onModelChange}
+            showModelError={showModelError}
+          />
+        );
+
+      case 'gcp':
+        return (
+          <VertexProviderForm
             connectedProvider={connectedProvider}
             onConnect={onConnect}
             onDisconnect={onDisconnect}

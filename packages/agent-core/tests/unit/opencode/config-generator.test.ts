@@ -8,6 +8,7 @@ import {
   ACCOMPLISH_AGENT_NAME,
   ConfigGeneratorOptions,
   ProviderConfig,
+  BrowserConfig,
 } from '../../../src/opencode/config-generator.js';
 
 describe('ConfigGenerator', () => {
@@ -18,7 +19,7 @@ describe('ConfigGenerator', () => {
   beforeEach(() => {
     testDir = path.join(
       os.tmpdir(),
-      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mcpToolsPath = path.join(testDir, 'mcp-tools');
     userDataPath = path.join(testDir, 'user-data');
@@ -437,7 +438,7 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('Accomplish');
     });
 
-    it('should include task planning behavior', () => {
+    it('should include task planning behavior with needs_planning', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
         mcpToolsPath,
@@ -448,8 +449,22 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       expect(result.systemPrompt).toContain('start_task');
-      expect(result.systemPrompt).toContain('todowrite');
+      expect(result.systemPrompt).toContain('needs_planning');
       expect(result.systemPrompt).toContain('complete_task');
+    });
+
+    it('should include needs_planning true and false instructions', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('needs_planning: true');
+      expect(result.systemPrompt).toContain('needs_planning: false');
     });
 
     it('should include filesystem rules', () => {
@@ -481,6 +496,20 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('File Management');
     });
 
+    it('should instruct agent NOT to call complete_task for conversational responses', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('do NOT call complete_task');
+      expect(result.systemPrompt).toContain('needs_planning');
+    });
+
     it('should include user communication rules', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
@@ -493,6 +522,229 @@ describe('ConfigGenerator', () => {
 
       expect(result.systemPrompt).toContain('AskUserQuestion');
       expect(result.systemPrompt).toContain('user CANNOT see your text output');
+    });
+  });
+
+  describe('browser config option', () => {
+    const baseOptions: ConfigGeneratorOptions = {
+      platform: 'darwin',
+      mcpToolsPath: '',
+      isPackaged: false,
+      userDataPath: '',
+    };
+
+    function makeOptions(overrides: Partial<ConfigGeneratorOptions> = {}): ConfigGeneratorOptions {
+      return {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        ...overrides,
+      };
+    }
+
+    it('should register dev-browser-mcp by default (builtin mode)', () => {
+      const result = generateConfig(makeOptions());
+
+      expect(result.mcpServers['dev-browser-mcp']).toBeDefined();
+      expect(result.mcpServers['dev-browser-mcp'].enabled).toBe(true);
+    });
+
+    it('should register dev-browser-mcp when browser mode is builtin', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'builtin' } }));
+
+      expect(result.mcpServers['dev-browser-mcp']).toBeDefined();
+      expect(result.mcpServers['dev-browser-mcp'].enabled).toBe(true);
+    });
+
+    it('should omit dev-browser-mcp when browser mode is none', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'none' } }));
+
+      expect(result.mcpServers['dev-browser-mcp']).toBeUndefined();
+      expect(result.config.mcp?.['dev-browser-mcp']).toBeUndefined();
+    });
+
+    it('should pass CDP_ENDPOINT env to dev-browser-mcp in remote mode', () => {
+      const browser: BrowserConfig = {
+        mode: 'remote',
+        cdpEndpoint: 'http://remote:9222',
+      };
+      const result = generateConfig(makeOptions({ browser }));
+
+      const mcpConfig = result.mcpServers['dev-browser-mcp'];
+      expect(mcpConfig).toBeDefined();
+      expect(mcpConfig.environment?.CDP_ENDPOINT).toBe('http://remote:9222');
+    });
+
+    it('should pass CDP_SECRET env when cdpHeaders includes X-CDP-Secret', () => {
+      const browser: BrowserConfig = {
+        mode: 'remote',
+        cdpEndpoint: 'http://remote:9222',
+        cdpHeaders: { 'X-CDP-Secret': 'test-secret' },
+      };
+      const result = generateConfig(makeOptions({ browser }));
+
+      const mcpConfig = result.mcpServers['dev-browser-mcp'];
+      expect(mcpConfig).toBeDefined();
+      expect(mcpConfig.environment?.CDP_SECRET).toBe('test-secret');
+    });
+
+    it('should not include environment on dev-browser-mcp in builtin mode', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'builtin' } }));
+
+      const mcpConfig = result.mcpServers['dev-browser-mcp'];
+      expect(mcpConfig).toBeDefined();
+      expect(mcpConfig.environment).toBeUndefined();
+    });
+
+    it('should strip all browser references from prompt when mode is none', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'none' } }));
+
+      expect(result.systemPrompt).toContain('task automation assistant');
+      expect(result.systemPrompt).not.toContain('browser automation assistant');
+      expect(result.systemPrompt).not.toContain('browser_sequence');
+      expect(result.systemPrompt).not.toContain('browser_batch_actions');
+      expect(result.systemPrompt).not.toContain('browser_script');
+      expect(result.systemPrompt).not.toContain('browser_* MCP tools');
+      expect(result.systemPrompt).not.toContain('BROWSER ACTION VERBOSITY');
+      expect(result.systemPrompt).not.toContain('Browser Automation');
+    });
+
+    it('should keep browser identity in prompt for builtin mode', () => {
+      const result = generateConfig(makeOptions({ browser: { mode: 'builtin' } }));
+
+      expect(result.systemPrompt).toContain('browser automation assistant');
+      expect(result.systemPrompt).not.toContain('task automation assistant');
+    });
+
+    it('should keep browser identity in prompt for remote mode', () => {
+      const browser: BrowserConfig = {
+        mode: 'remote',
+        cdpEndpoint: 'ws://remote:9222',
+      };
+      const result = generateConfig(makeOptions({ browser }));
+
+      expect(result.systemPrompt).toContain('browser automation assistant');
+    });
+  });
+
+  describe('needs_planning decision framework', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should contain needs_planning: true for multi-step tasks', () => {
+      expect(prompt).toContain('needs_planning: true');
+      expect(prompt).toContain(
+        'will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands)',
+      );
+    });
+
+    it('should contain needs_planning: false for conversational messages', () => {
+      expect(prompt).toContain('needs_planning: false');
+      expect(prompt).toContain('you can answer from knowledge alone using only start_task');
+    });
+
+    it('should contain explicit instruction not to call complete_task for conversational responses', () => {
+      expect(prompt).toContain('Do NOT call complete_task for conversational responses');
+    });
+
+    it('should require complete_task when needs_planning was true', () => {
+      expect(prompt).toContain(
+        'You MUST call the `complete_task` tool when `needs_planning` was true',
+      );
+    });
+
+    it('should instruct providing goal/steps/verification when needs_planning is true', () => {
+      expect(prompt).toContain('needs_planning is TRUE');
+      expect(prompt).toContain('goal, steps, verification');
+    });
+
+    it('should instruct skipping goal/steps/verification when needs_planning is false', () => {
+      expect(prompt).toContain('needs_planning is FALSE');
+      expect(prompt).toContain('skip goal, steps, verification');
+    });
+
+    it('should mention greetings/questions/knowledge as needs_planning=false examples', () => {
+      expect(prompt).toContain('greetings');
+      expect(prompt).toContain('knowledge questions');
+      expect(prompt).toContain('conversational messages');
+    });
+
+    it('should mention file operations/browser/bash as needs_planning=true indicators', () => {
+      expect(prompt).toContain('file operations');
+      expect(prompt).toContain('browser actions');
+      expect(prompt).toContain('bash commands');
+    });
+
+    it('should still contain start_task as mandatory first tool', () => {
+      expect(prompt).toContain('You MUST call start_task before any other tool');
+      expect(prompt).toContain('CALL start_task FIRST - THIS IS MANDATORY');
+    });
+
+    it('should still contain todowrite instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('Mark completed steps as "completed"');
+      expect(prompt).toContain('Mark the current step as "in_progress"');
+      expect(prompt).toContain(
+        'All todos must be "completed" or "cancelled" before calling complete_task',
+      );
+    });
+
+    it('should contain todo update instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('UPDATE TODOS AS YOU PROGRESS');
+      expect(prompt).toContain('COMPLETE ALL TODOS BEFORE FINISHING');
+    });
+  });
+
+  describe('needs_planning regression checks', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should still contain complete_task instructions', () => {
+      expect(prompt).toContain('complete_task');
+      expect(prompt).toContain('status: "success"');
+      expect(prompt).toContain('status: "blocked"');
+      expect(prompt).toContain('status: "partial"');
+    });
+
+    it('should still contain verification behavior', () => {
+      expect(prompt).toContain("You verified EVERY part of the user's request is done");
+      expect(prompt).toContain('original_request_summary');
+    });
+
+    it('should include skills section when skills are configured', () => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        skills: [
+          {
+            name: 'test-skill',
+            command: '/test',
+            description: 'A test skill',
+            filePath: '/tmp/skill',
+          },
+        ],
+      });
+      expect(result.systemPrompt).toContain('available-skills');
+      expect(result.systemPrompt).toContain('test-skill');
     });
   });
 });

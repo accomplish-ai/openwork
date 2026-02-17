@@ -17,12 +17,25 @@
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r --parallel run typecheck && eslint .",
+    "typecheck": "pnpm -r --parallel run typecheck",
+    "lint:eslint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "clean": "pnpm -r clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,html}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=20.0.0",
@@ -31,8 +44,18 @@
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "next": "^15.1.3",
+    "prettier": "^3.8.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "typescript-eslint": "^8.55.0"
   }
 }

@@ -10,8 +10,8 @@ interface TodoSidebarProps {
 export function TodoSidebar({ todos }: TodoSidebarProps) {
   if (todos.length === 0) return null;
 
-  const completed = todos.filter(t => t.status === 'completed').length;
-  const cancelled = todos.filter(t => t.status === 'cancelled').length;
+  const completed = todos.filter((t) => t.status === 'completed').length;
+  const cancelled = todos.filter((t) => t.status === 'cancelled').length;
   const total = todos.length;
   const progress = ((completed + cancelled) / total) * 100;
 
@@ -60,14 +60,14 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
         'flex items-start gap-2 px-2 py-1.5 rounded-md border-l-2 border-l-border',
         todo.status === 'completed' && 'border-l-primary',
         todo.status === 'in_progress' && 'border-l-primary',
-        todo.status === 'cancelled' && 'opacity-50'
+        todo.status === 'cancelled' && 'opacity-50',
       )}
     >
       <StatusIcon status={todo.status} />
       <span
         className={cn(
           'text-xs text-foreground leading-snug',
-          todo.status === 'cancelled' && 'line-through text-muted-foreground'
+          todo.status === 'cancelled' && 'line-through text-muted-foreground',
         )}
       >
         {todo.content}

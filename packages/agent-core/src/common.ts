@@ -37,6 +37,7 @@ export {
 export type {
   ProviderType,
   ApiKeyProvider,
+  ModelsEndpointConfig,
   ProviderConfig,
   ModelConfig,
   SelectedModel,
@@ -62,6 +63,7 @@ export type {
   ConnectionStatus,
   ApiKeyCredentials,
   BedrockProviderCredentials,
+  VertexProviderCredentials,
   OllamaCredentials,
   OpenRouterCredentials,
   LiteLLMCredentials,
@@ -92,6 +94,9 @@ export type {
   BedrockAccessKeyCredentials,
   BedrockProfileCredentials,
   BedrockApiKeyCredentials,
+  VertexCredentials,
+  VertexServiceAccountCredentials,
+  VertexAdcCredentials,
 } from './common/types/auth.js';
 
 // OpenCode message types
@@ -109,6 +114,15 @@ export type {
 
 // Skills types
 export type { SkillSource, Skill, SkillFrontmatter } from './common/types/skills.js';
+
+// Connector types
+export type {
+  ConnectorStatus,
+  OAuthTokens,
+  OAuthMetadata,
+  OAuthClientRegistration,
+  McpConnector,
+} from './common/types/connector.js';
 
 // Other types
 export type { TodoItem } from './common/types/todo.js';
@@ -134,6 +148,9 @@ export {
   PROVIDER_PREFIXES,
   getModelDisplayName,
 } from './common/constants/model-display.js';
+
+// === SANITIZATION ===
+export { PROMPT_DEFAULT_MAX_LENGTH } from './utils/sanitize.js';
 
 // === BROWSER-SAFE UTILS ===
 export {

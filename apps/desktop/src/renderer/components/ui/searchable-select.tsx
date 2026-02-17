@@ -68,6 +68,7 @@ function SelectOption({
       type="button"
       onClick={onSelect}
       data-testid={testId ? `${testId}-option-${item.id}` : undefined}
+      data-model-id={item.id}
       className={`w-full px-3 py-2 text-sm text-left hover:bg-muted ${
         isSelected ? 'bg-muted font-medium' : ''
       }`}
@@ -144,17 +145,39 @@ function SelectDropdown({
 
 function SelectError({ message, testId }: { message: string; testId?: string }) {
   return (
-    <p className="mt-2 text-sm text-destructive" data-testid={testId ? `${testId}-error` : undefined}>
+    <p
+      className="mt-2 text-sm text-destructive"
+      data-testid={testId ? `${testId}-error` : undefined}
+    >
       {message}
     </p>
   );
 }
 
-function SelectLoading({ label }: { label: string }) {
+function SelectLoading({ label, loadingMessage }: { label: string; loadingMessage?: string }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>
-      <div className="h-10 animate-pulse rounded-md bg-muted" />
+      <div className="flex items-center gap-2.5 rounded-md border border-input bg-background px-3 py-2.5">
+        <svg className="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <span className="text-sm text-muted-foreground">
+          {loadingMessage || `Loading ${label.toLowerCase()}...`}
+        </span>
+      </div>
     </div>
   );
 }
@@ -168,6 +191,7 @@ interface SearchableSelectProps {
   searchPlaceholder?: string;
   emptyMessage?: string;
   loading?: boolean;
+  loadingMessage?: string;
   error?: boolean;
   errorMessage?: string;
   testId?: string;
@@ -182,6 +206,7 @@ export function SearchableSelect({
   searchPlaceholder = 'Search...',
   emptyMessage = 'No items found',
   loading,
+  loadingMessage,
   error,
   errorMessage,
   testId,
@@ -197,7 +222,7 @@ export function SearchableSelect({
     ? items.filter(
         (item) =>
           item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.id.toLowerCase().includes(search.toLowerCase())
+          item.id.toLowerCase().includes(search.toLowerCase()),
       )
     : items;
 
@@ -222,7 +247,7 @@ export function SearchableSelect({
   }, [isOpen, showSearch]);
 
   if (loading) {
-    return <SelectLoading label={label} />;
+    return <SelectLoading label={label} loadingMessage={loadingMessage} />;
   }
 
   const handleSelect = (id: string) => {

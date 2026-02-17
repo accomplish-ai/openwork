@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
-import type { Task, TaskMessage, TaskStatus } from '@accomplish_ai/agent-core';
+import type { Task, TaskMessage } from '@accomplish_ai/agent-core';
 import { createMessageId } from '@accomplish_ai/agent-core';
-import { updateTaskStatus } from '@accomplish_ai/agent-core';
+import { getStorage } from '../store/storage';
 
 export type MockScenario =
   | 'success'
@@ -48,7 +48,7 @@ export function detectScenarioFromPrompt(prompt: string): MockScenario {
 
   for (const scenario of priorityOrder) {
     const keywords = SCENARIO_KEYWORDS[scenario];
-    if (keywords.some(keyword => promptLower.includes(keyword.toLowerCase()))) {
+    if (keywords.some((keyword) => promptLower.includes(keyword.toLowerCase()))) {
       return scenario;
     }
   }
@@ -57,12 +57,12 @@ export function detectScenarioFromPrompt(prompt: string): MockScenario {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function executeMockTaskFlow(
   window: BrowserWindow,
-  config: MockTaskConfig
+  config: MockTaskConfig,
 ): Promise<void> {
   const { taskId, prompt, scenario, delayMs = 100 } = config;
 
@@ -71,6 +71,7 @@ export async function executeMockTaskFlow(
     return;
   }
 
+  const storage = getStorage();
   const sendEvent = (channel: string, data: unknown) => {
     if (!window.isDestroyed()) {
       window.webContents.send(channel, data);
@@ -92,22 +93,23 @@ export async function executeMockTaskFlow(
   });
   await sleep(delayMs);
 
-  await executeScenario(sendEvent, taskId, scenario, delayMs);
+  await executeScenario(sendEvent, storage, taskId, scenario, delayMs);
 }
 
 async function executeScenario(
   sendEvent: (channel: string, data: unknown) => void,
+  storage: ReturnType<typeof getStorage>,
   taskId: string,
   scenario: MockScenario,
-  delayMs: number
+  delayMs: number,
 ): Promise<void> {
   switch (scenario) {
     case 'success':
-      await executeSuccessScenario(sendEvent, taskId, delayMs);
+      await executeSuccessScenario(sendEvent, storage, taskId, delayMs);
       break;
 
     case 'with-tool':
-      await executeToolScenario(sendEvent, taskId, delayMs);
+      await executeToolScenario(sendEvent, storage, taskId, delayMs);
       break;
 
     case 'permission-required':
@@ -119,19 +121,20 @@ async function executeScenario(
       break;
 
     case 'error':
-      executeErrorScenario(sendEvent, taskId);
+      executeErrorScenario(sendEvent, storage, taskId);
       break;
 
     case 'interrupted':
-      await executeInterruptedScenario(sendEvent, taskId, delayMs);
+      await executeInterruptedScenario(sendEvent, storage, taskId, delayMs);
       break;
   }
 }
 
 async function executeSuccessScenario(
   sendEvent: (channel: string, data: unknown) => void,
+  storage: ReturnType<typeof getStorage>,
   taskId: string,
-  delayMs: number
+  delayMs: number,
 ): Promise<void> {
   sendEvent('task:update', {
     taskId,
@@ -145,7 +148,7 @@ async function executeSuccessScenario(
   });
   await sleep(delayMs);
 
-  updateTaskStatus(taskId, 'completed', new Date().toISOString());
+  storage.updateTaskStatus(taskId, 'completed', new Date().toISOString());
 
   sendEvent('task:update', {
     taskId,
@@ -156,8 +159,9 @@ async function executeSuccessScenario(
 
 async function executeToolScenario(
   sendEvent: (channel: string, data: unknown) => void,
+  storage: ReturnType<typeof getStorage>,
   taskId: string,
-  delayMs: number
+  delayMs: number,
 ): Promise<void> {
   sendEvent('task:update:batch', {
     taskId,
@@ -192,7 +196,7 @@ async function executeToolScenario(
   });
   await sleep(delayMs);
 
-  updateTaskStatus(taskId, 'completed', new Date().toISOString());
+  storage.updateTaskStatus(taskId, 'completed', new Date().toISOString());
 
   sendEvent('task:update', {
     taskId,
@@ -203,7 +207,7 @@ async function executeToolScenario(
 
 function executePermissionScenario(
   sendEvent: (channel: string, data: unknown) => void,
-  taskId: string
+  taskId: string,
 ): void {
   sendEvent('permission:request', {
     id: `perm_${Date.now()}`,
@@ -219,7 +223,7 @@ function executePermissionScenario(
 
 function executeQuestionScenario(
   sendEvent: (channel: string, data: unknown) => void,
-  taskId: string
+  taskId: string,
 ): void {
   sendEvent('permission:request', {
     id: `perm_${Date.now()}`,
@@ -239,9 +243,10 @@ function executeQuestionScenario(
 
 function executeErrorScenario(
   sendEvent: (channel: string, data: unknown) => void,
-  taskId: string
+  storage: ReturnType<typeof getStorage>,
+  taskId: string,
 ): void {
-  updateTaskStatus(taskId, 'failed', new Date().toISOString());
+  storage.updateTaskStatus(taskId, 'failed', new Date().toISOString());
 
   sendEvent('task:update', {
     taskId,
@@ -252,8 +257,9 @@ function executeErrorScenario(
 
 async function executeInterruptedScenario(
   sendEvent: (channel: string, data: unknown) => void,
+  storage: ReturnType<typeof getStorage>,
   taskId: string,
-  delayMs: number
+  delayMs: number,
 ): Promise<void> {
   sendEvent('task:update', {
     taskId,
@@ -267,7 +273,7 @@ async function executeInterruptedScenario(
   });
   await sleep(delayMs);
 
-  updateTaskStatus(taskId, 'interrupted', new Date().toISOString());
+  storage.updateTaskStatus(taskId, 'interrupted', new Date().toISOString());
 
   sendEvent('task:update', {
     taskId,

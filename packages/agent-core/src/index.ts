@@ -1,5 +1,6 @@
 // =============================================================================
-// @accomplish/core - Public API
+console.log('[agent-core] u2d sync test');
+// @accomplish/core - Public API (v0.4.0)
 // =============================================================================
 // This file explicitly exports the public API for the @accomplish/core package.
 // All exports are explicit named exports to ensure API stability and clarity.
@@ -40,6 +41,7 @@ export type {
   StorageOptions,
   StoredTask,
   AppSettings,
+  ThemePreference,
   TaskStorageAPI,
   AppSettingsAPI,
   ProviderSettingsAPI,
@@ -97,117 +99,44 @@ export type {
 // -----------------------------------------------------------------------------
 
 // Error classes (still exported - these are safe)
-export { OpenCodeCliNotFoundError } from './opencode/adapter.js';
+export { OpenCodeCliNotFoundError } from './internal/classes/OpenCodeAdapter.js';
 
 // Adapter types - AdapterOptions/OpenCodeAdapterEvents are internal (use TaskAdapterOptions)
 // createLogWatcher/OpenCodeLogError are internal (used by OpenCodeAdapter internally)
 
-// CLI resolver functions
+// Low-level OpenCode utilities for advanced integrations
 export { resolveCliPath, isCliAvailable } from './opencode/cli-resolver.js';
 
-// Config generator functions and constants
 export {
   generateConfig,
   buildCliArgs,
   ACCOMPLISH_AGENT_NAME,
 } from './opencode/config-generator.js';
 
-// Environment functions
+export type { BrowserConfig } from './opencode/config-generator.js';
+
 export { buildOpenCodeEnvironment } from './opencode/environment.js';
 
 export type { EnvironmentConfig } from './opencode/environment.js';
 
-// Config builder functions
 export { buildProviderConfigs, syncApiKeysToOpenCodeAuth } from './opencode/config-builder.js';
 
-// Auth functions
 export { getOpenCodeAuthPath, getOpenAiOauthStatus } from './opencode/auth.js';
 
-// Message processor functions
-export {
-  toTaskMessage,
-  queueMessage,
-  flushAndCleanupBatcher,
-} from './opencode/message-processor.js';
+export { sanitizeAssistantTextForDisplay } from './opencode/message-processor.js';
 
+// Message processing is now internal to TaskManager (use onBatchedMessages callback)
 // CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)
+// Proxy lifecycle is now internal to TaskManager.dispose()
 
-// Proxies
-export {
-  stopAzureFoundryProxy,
-  stopMoonshotProxy,
-  getAzureEntraToken,
-} from './opencode/proxies/index.js';
+export { getAzureEntraToken } from './opencode/proxies/index.js';
 
 // -----------------------------------------------------------------------------
 // Storage Module (from ./storage/)
 // -----------------------------------------------------------------------------
 
-// Database functions
-export {
-  getDatabase,
-  initializeDatabase,
-  closeDatabase,
-  resetDatabase,
-  databaseExists,
-  isDatabaseInitialized,
-} from './storage/database.js';
-
 // Errors
 export { FutureSchemaError } from './storage/migrations/errors.js';
-
-// Task history repository functions
-export {
-  getTasks,
-  getTask,
-  saveTask,
-  updateTaskStatus,
-  addTaskMessage,
-  updateTaskSessionId,
-  updateTaskSummary,
-  deleteTask,
-  clearHistory,
-  getTodosForTask,
-  saveTodosForTask,
-  clearTodosForTask,
-  flushPendingTasks,
-} from './storage/repositories/taskHistory.js';
-
-// App settings repository functions
-export {
-  getDebugMode,
-  setDebugMode,
-  getAppSettings,
-  getOnboardingComplete,
-  setOnboardingComplete,
-  getSelectedModel,
-  setSelectedModel,
-  getOpenAiBaseUrl,
-  setOpenAiBaseUrl,
-  getOllamaConfig,
-  setOllamaConfig,
-  getAzureFoundryConfig,
-  setAzureFoundryConfig,
-  getLiteLLMConfig,
-  setLiteLLMConfig,
-  getLMStudioConfig,
-  setLMStudioConfig,
-} from './storage/repositories/appSettings.js';
-
-// Provider settings repository functions
-export {
-  getProviderSettings,
-  clearProviderSettings,
-  setActiveProvider,
-  getConnectedProvider,
-  setConnectedProvider,
-  removeConnectedProvider,
-  updateProviderModel,
-  setProviderDebugMode,
-  getProviderDebugMode,
-  hasReadyProvider,
-  getActiveProviderModel,
-} from './storage/repositories/providerSettings.js';
 
 // -----------------------------------------------------------------------------
 // Providers Module (from ./providers/)
@@ -216,15 +145,11 @@ export {
 // Validation functions
 export { validateApiKey } from './providers/validation.js';
 
-export {
-  validateBedrockCredentials,
-  fetchBedrockModels,
-} from './providers/bedrock.js';
+export { validateBedrockCredentials, fetchBedrockModels } from './providers/bedrock.js';
 
-export {
-  validateAzureFoundry,
-  testAzureFoundryConnection,
-} from './providers/azure-foundry.js';
+export { validateVertexCredentials, fetchVertexModels, VertexClient } from './providers/vertex.js';
+
+export { validateAzureFoundry, testAzureFoundryConnection } from './providers/azure-foundry.js';
 
 export { fetchOpenRouterModels } from './providers/openrouter.js';
 
@@ -240,11 +165,14 @@ export {
   validateLMStudioConfig,
 } from './providers/lmstudio.js';
 
+export { fetchProviderModels } from './providers/fetch-models.js';
+export type { FetchProviderModelsResult } from './providers/fetch-models.js';
+
 // -----------------------------------------------------------------------------
 // Utils Module (from ./utils/)
 // -----------------------------------------------------------------------------
 
-// Bundled Node functions
+// Bundled Node.js binary path resolution
 export {
   getBundledNodePaths,
   isBundledNodeAvailable,
@@ -256,11 +184,11 @@ export {
 
 export type { BundledNodePathsExtended } from './utils/bundled-node.js';
 
-// System path functions
+// System PATH resolution
 export { getExtendedNodePath, findCommandInPath } from './utils/system-path.js';
 
 // Sanitization functions
-export { sanitizeString } from './utils/sanitize.js';
+export { sanitizeString, PROMPT_DEFAULT_MAX_LENGTH } from './utils/sanitize.js';
 
 // URL validation functions
 export { validateHttpUrl } from './utils/url.js';
@@ -276,7 +204,6 @@ export type { SafeParseResult } from './utils/json.js';
 // Redaction functions
 export { redact } from './utils/redact.js';
 
-// Task status mapping
 export { mapResultToStatus } from './utils/task-status.js';
 
 // Logging - use createLogWriter factory from ./factories/log-writer.js instead
@@ -285,6 +212,7 @@ export { mapResultToStatus } from './utils/task-status.js';
 // Browser Module (from ./browser/)
 // -----------------------------------------------------------------------------
 
+// Browser server for dev-browser MCP tool
 export { ensureDevBrowserServer } from './browser/server.js';
 
 export type { BrowserServerConfig } from './browser/server.js';
@@ -338,6 +266,7 @@ export {
 export type {
   ProviderType,
   ApiKeyProvider,
+  ModelsEndpointConfig,
   ProviderConfig,
   ModelConfig,
   SelectedModel,
@@ -363,6 +292,7 @@ export type {
   ConnectionStatus,
   ApiKeyCredentials,
   BedrockProviderCredentials,
+  VertexProviderCredentials,
   OllamaCredentials,
   OpenRouterCredentials,
   LiteLLMCredentials,
@@ -393,6 +323,9 @@ export type {
   BedrockAccessKeyCredentials,
   BedrockProfileCredentials,
   BedrockApiKeyCredentials,
+  VertexCredentials,
+  VertexServiceAccountCredentials,
+  VertexAdcCredentials,
 } from './common/types/auth.js';
 
 // OpenCode message types
@@ -410,6 +343,26 @@ export type {
 
 // Skills types
 export type { SkillSource, Skill, SkillFrontmatter } from './common/types/skills.js';
+
+// Connector types
+export type {
+  ConnectorStatus,
+  OAuthTokens,
+  OAuthMetadata,
+  OAuthClientRegistration,
+  McpConnector,
+} from './common/types/connector.js';
+
+// MCP OAuth
+export {
+  discoverOAuthMetadata,
+  registerOAuthClient,
+  generatePkceChallenge,
+  buildAuthorizationUrl,
+  exchangeCodeForTokens,
+  refreshAccessToken,
+  isTokenExpired,
+} from './connectors/mcp-oauth.js';
 
 // Other types
 export type { TodoItem } from './common/types/todo.js';
@@ -446,6 +399,7 @@ export {
   isQuestionRequest,
 } from './common/utils/id.js';
 
+// Shell and network utilities for PTY spawning
 export { stripAnsi, quoteForShell, getPlatformShell, getShellArgs } from './utils/shell.js';
 export { isPortInUse, waitForPortRelease } from './utils/network.js';
 export { isWaitingForUser } from './common/utils/waiting-detection.js';

@@ -33,11 +33,7 @@ export {
   type LiteLLMConnectionResult,
   type FetchLiteLLMModelsOptions,
 } from './litellm.js';
-export {
-  testOllamaConnection,
-  type OllamaModel,
-  type OllamaConnectionResult,
-} from './ollama.js';
+export { testOllamaConnection, type OllamaModel, type OllamaConnectionResult } from './ollama.js';
 export {
   validateAzureFoundry,
   testAzureFoundryConnection,
@@ -55,3 +51,8 @@ export {
   type LMStudioConnectionOptions,
   type LMStudioFetchModelsOptions,
 } from './lmstudio.js';
+export {
+  fetchProviderModels,
+  type FetchProviderModelsResult,
+  type FetchProviderModelsOptions,
+} from './fetch-models.js';

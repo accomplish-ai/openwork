@@ -3,10 +3,8 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssTypography from '@tailwindcss/typography';
 
 const config: Config = {
-  content: [
-    './index.html',
-    './src/renderer/**/*.{js,ts,jsx,tsx}',
-  ],
+  darkMode: 'class',
+  content: ['./index.html', './src/renderer/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -50,7 +48,7 @@ const config: Config = {
         'background-card': 'hsl(var(--card))',
         'background-subtle': 'hsl(var(--muted))',
         'background-muted': 'hsl(var(--muted))',
-        'text': 'hsl(var(--foreground))',
+        text: 'hsl(var(--foreground))',
         'text-secondary': 'hsl(var(--foreground))',
         'text-muted': 'hsl(var(--muted-foreground))',
         'text-subtle': 'hsl(var(--muted-foreground))',
@@ -63,11 +61,19 @@ const config: Config = {
         },
         warning: {
           DEFAULT: '#EE7909',
-          subtle: '#fef4e6',
+          subtle: 'hsl(var(--warning-subtle))',
         },
         success: {
           DEFAULT: '#019E55',
-          subtle: '#e6f7ef',
+          subtle: 'hsl(var(--success-subtle))',
+        },
+        provider: {
+          bg: 'hsl(var(--provider-bg))',
+          'bg-active': 'hsl(var(--provider-bg-active))',
+          'bg-hover': 'hsl(var(--provider-bg-hover))',
+          'border-active': 'hsl(var(--provider-border-active))',
+          accent: 'hsl(var(--provider-accent))',
+          'accent-text': 'hsl(var(--provider-accent-text))',
         },
       },
       boxShadow: {
@@ -110,13 +116,13 @@ const config: Config = {
         ],
       },
       transitionTimingFunction: {
-        'accomplish': 'cubic-bezier(0.64, 0, 0.78, 0)',
+        accomplish: 'cubic-bezier(0.64, 0, 0.78, 0)',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'shimmer': 'shimmer 2s infinite',
+        shimmer: 'shimmer 2s infinite',
         'spin-ccw': 'spinCcw 1s linear infinite',
       },
       keyframes: {

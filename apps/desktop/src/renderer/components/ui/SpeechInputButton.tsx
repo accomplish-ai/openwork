@@ -100,44 +100,38 @@ export function SpeechInputButton({
   className,
   tooltipText,
 }: SpeechInputButtonProps) {
-  const sizeClasses = useMemo(
-    () => {
-      switch (size) {
-        case 'sm':
-          return 'h-7 w-7 text-xs';
-        case 'lg':
-          return 'h-11 w-11 text-base';
-        case 'md':
-        default:
-          return 'h-9 w-9 text-sm';
-      }
-    },
-    [size]
-  );
+  const sizeClasses = useMemo(() => {
+    switch (size) {
+      case 'sm':
+        return 'h-7 w-7 text-xs';
+      case 'lg':
+        return 'h-11 w-11 text-base';
+      case 'md':
+      default:
+        return 'h-9 w-9 text-sm';
+    }
+  }, [size]);
 
-  const buttonClasses = useMemo(
-    () => {
-      if (isRecording) {
-        // Recording state: red button with animation
-        return 'bg-transparent text-red-600 hover:text-red-700';
-      }
-      if (isTranscribing) {
-        // Transcribing state: blue button
-        return 'bg-transparent text-blue-600 hover:text-blue-700 cursor-wait';
-      }
-      if (error) {
-        // Error state: red/orange button
-        return 'bg-transparent text-orange-600 hover:text-orange-700';
-      }
-      if (!isConfigured) {
-        // Not configured: show muted style but still clickable (will open settings)
-        return 'bg-transparent text-muted-foreground hover:text-foreground';
-      }
-      // Normal state: primary color
-      return 'bg-transparent text-foreground hover:text-primary';
-    },
-    [isRecording, isTranscribing, error, isConfigured]
-  );
+  const buttonClasses = useMemo(() => {
+    if (isRecording) {
+      // Recording state: red button with animation
+      return 'bg-transparent text-red-600 hover:text-red-700';
+    }
+    if (isTranscribing) {
+      // Transcribing state: blue button
+      return 'bg-transparent text-blue-600 hover:text-blue-700 cursor-wait';
+    }
+    if (error) {
+      // Error state: red/orange button
+      return 'bg-transparent text-orange-600 hover:text-orange-700';
+    }
+    if (!isConfigured) {
+      // Not configured: show muted style but still clickable (will open settings)
+      return 'bg-transparent text-muted-foreground hover:text-foreground';
+    }
+    // Normal state: primary color
+    return 'bg-transparent text-foreground hover:text-primary';
+  }, [isRecording, isTranscribing, error, isConfigured]);
 
   const tooltipLabel = useMemo(() => {
     if (tooltipText) return tooltipText;
@@ -162,7 +156,7 @@ export function SpeechInputButton({
         onStartRecording?.();
       }
     },
-    [isConfigured, isRecording, error, onStartRecording, onStopRecording, onRetry, onOpenSettings]
+    [isConfigured, isRecording, error, onStartRecording, onStopRecording, onRetry, onOpenSettings],
   );
 
   return (
@@ -177,7 +171,7 @@ export function SpeechInputButton({
               'disabled:cursor-not-allowed disabled:opacity-50',
               sizeClasses,
               buttonClasses,
-              className
+              className,
             )}
             title={tooltipLabel}
             data-testid="speech-input-button"
@@ -209,16 +203,12 @@ export function SpeechInputButton({
 
       {/* Status indicator */}
       {isTranscribing && (
-        <div className="text-xs text-blue-600 dark:text-blue-400 shrink-0">
-          Processing...
-        </div>
+        <div className="text-xs text-blue-600 dark:text-blue-400 shrink-0">Processing...</div>
       )}
 
       {/* Error retry helper text */}
       {error && !isRecording && !isTranscribing && (
-        <div className="text-xs text-orange-600 dark:text-orange-400 shrink-0">
-          Retry
-        </div>
+        <div className="text-xs text-orange-600 dark:text-orange-400 shrink-0">Retry</div>
       )}
     </div>
   );

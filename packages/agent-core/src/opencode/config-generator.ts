@@ -5,6 +5,17 @@ import type { Skill } from '../common/types/skills.js';
 
 export const ACCOMPLISH_AGENT_NAME = 'accomplish';
 
+export interface BrowserConfig {
+  /** 'builtin' = dev-browser HTTP server (default), 'remote' = connect to CDP endpoint, 'none' = no browser */
+  mode: 'builtin' | 'remote' | 'none';
+  /** For 'remote': the CDP endpoint URL */
+  cdpEndpoint?: string;
+  /** For 'remote': auth headers (e.g. { 'X-CDP-Secret': '...' }) */
+  cdpHeaders?: Record<string, string>;
+  /** For 'builtin': run headless */
+  headless?: boolean;
+}
+
 export interface ConfigGeneratorOptions {
   platform: NodeJS.Platform;
   mcpToolsPath: string;
@@ -26,6 +37,15 @@ export interface ConfigGeneratorOptions {
   model?: string;
   smallModel?: string;
   enabledProviders?: string[];
+  /** Browser configuration. Defaults to { mode: 'builtin' } */
+  browser?: BrowserConfig;
+  /** Connected MCP remote servers with OAuth access tokens */
+  connectors?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    accessToken: string;
+  }>;
 }
 
 export interface ProviderConfig {
@@ -58,6 +78,7 @@ interface McpServerConfig {
   type?: 'local' | 'remote';
   command?: string[];
   url?: string;
+  headers?: Record<string, string>;
   enabled?: boolean;
   environment?: Record<string, string>;
   timeout?: number;
@@ -80,6 +101,7 @@ interface OpenCodeConfigFile {
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, Omit<ProviderConfig, 'id'>>;
   plugin?: string[];
+  experimental?: Record<string, unknown>;
 }
 
 function getPlatformEnvironmentInstructions(platform: NodeJS.Platform): string {
@@ -99,19 +121,24 @@ You are running on ${platform === 'darwin' ? 'macOS' : 'Linux'}.
 }
 
 const ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE = `<identity>
-You are Accomplish, a browser automation assistant.
+You are Accomplish, a {{AGENT_ROLE}} assistant.
 </identity>
 
 {{ENVIRONMENT_INSTRUCTIONS}}
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: PLAN FIRST WITH start_task - THIS IS MANDATORY
+# CRITICAL: CALL start_task FIRST - THIS IS MANDATORY
 ##############################################################################
 
-**STEP 1: CALL start_task (before any other action)**
-
 You MUST call start_task before any other tool. This is enforced - other tools will fail until start_task is called.
+
+**Decide: Does this request need planning?**
+
+Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
+Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → stop. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
+
+**When needs_planning is TRUE** — provide goal, steps, verification:
 
 start_task requires:
 - original_request: Echo the user's request exactly as stated
@@ -127,16 +154,6 @@ As you complete each step, call \`todowrite\` to update progress:
 - Mark the current step as "in_progress"
 - Keep the same step content - do NOT change the text
 
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step (same as before)", "status": "completed", "priority": "high"},
-    {"id": "2", "content": "Second step (same as before)", "status": "in_progress", "priority": "medium"},
-    {"id": "3", "content": "Third step (same as before)", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
 **STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
 
 All todos must be "completed" or "cancelled" before calling complete_task.
@@ -145,13 +162,14 @@ WRONG: Starting work without calling start_task first
 WRONG: Forgetting to update todos as you progress
 CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
+**When needs_planning is FALSE** — skip goal, steps, verification. Respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
+
 ##############################################################################
 </behavior>
 
 <capabilities>
 When users ask about your capabilities, mention:
-- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons
-- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -220,27 +238,7 @@ See the ask-user-question MCP tool for full documentation and examples.
 
 <behavior>
 - Use AskUserQuestion tool for clarifying questions before starting ambiguous tasks
-- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
-- For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
-- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
-
-**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
-- Before each browser action, briefly explain what you're about to do in user terms
-- After navigation: mention the page title and what you see
-- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
-- After typing: confirm what you typed and where
-- When analyzing a snapshot: describe the key elements you found
-- If something unexpected happens, explain what you see and how you'll adapt
-
-Example good narration:
-"I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
-
-Example bad narration (too terse):
-"Done." or "Navigated." or "Clicked."
-
-- After each action, evaluate the result before deciding next steps
-- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
-- Don't announce server checks or startup - proceed directly to the task
+{{BROWSER_BEHAVIOR}}- Don't announce server checks or startup - proceed directly to the task
 - Only use AskUserQuestion when you genuinely need user input or decisions
 
 **DO NOT ASK FOR PERMISSION TO CONTINUE:**
@@ -253,7 +251,7 @@ If the user gave you a task with specific criteria (e.g., "find 8-15 results", "
 
 **TASK COMPLETION - CRITICAL:**
 
-You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
+You MUST call the \`complete_task\` tool when \`needs_planning\` was true. For conversational responses (\`needs_planning: false\`), do NOT call complete_task — just respond and stop naturally.
 
 When to call \`complete_task\`:
 
@@ -311,18 +309,20 @@ function resolveMcpCommand(
   sourceRelPath: string,
   distRelPath: string,
   isPackaged: boolean,
-  nodePath?: string
+  nodePath?: string,
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
+  const sourcePath = path.join(mcpDir, sourceRelPath);
   const distPath = path.join(mcpDir, distRelPath);
 
-  if ((isPackaged || process.env.ACCOMPLISH_BUNDLED_MCP === '1') && fs.existsSync(distPath)) {
+  // Use compiled dist entry when packaged OR when source files don't exist
+  // (e.g. agent-core installed from npm where only dist/ is published)
+  if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
     const nodeExe = nodePath || 'node';
     console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodeExe, distPath];
   }
 
-  const sourcePath = path.join(mcpDir, sourceRelPath);
   console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
   return [...tsxCommand, sourcePath];
 }
@@ -344,8 +344,10 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
   } = options;
 
   const environmentInstructions = getPlatformEnvironmentInstructions(platform);
-  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
-    .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, environmentInstructions);
+  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE.replace(
+    /\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g,
+    environmentInstructions,
+  );
 
   if (skills.length > 0) {
     const skillsSection = `
@@ -360,8 +362,12 @@ After calling start_task, you MUST read the SKILL.md file for each skill you lis
 
 **Available Skills:**
 
-${skills.map(s => `- **${s.name}** (${s.command}): ${s.description}
-  File: ${s.filePath}`).join('\n\n')}
+${skills
+  .map(
+    (s) => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`,
+  )
+  .join('\n\n')}
 
 Use empty array [] if no skills apply to your task.
 
@@ -387,7 +393,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
@@ -404,27 +410,13 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
         QUESTION_API_PORT: String(questionApiPort),
       },
-      timeout: 30000,
-    },
-    'dev-browser-mcp': {
-      type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'dev-browser-mcp',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
-      enabled: true,
-      timeout: 30000,
+      timeout: 600000, // 10 minutes — user needs time to read and respond
     },
     'complete-task': {
       type: 'local',
@@ -435,7 +427,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
@@ -449,12 +441,113 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
     },
   };
+
+  // Conditionally register dev-browser-mcp based on browser config
+  const browserConfig = options.browser ?? { mode: 'builtin' };
+
+  if (browserConfig.mode !== 'none') {
+    const browserEnv: Record<string, string> = {};
+
+    if (browserConfig.mode === 'remote') {
+      if (browserConfig.cdpEndpoint) {
+        browserEnv.CDP_ENDPOINT = browserConfig.cdpEndpoint;
+      }
+      if (browserConfig.cdpHeaders) {
+        for (const [key, value] of Object.entries(browserConfig.cdpHeaders)) {
+          if (key === 'X-CDP-Secret') {
+            browserEnv.CDP_SECRET = value;
+          }
+        }
+      }
+    }
+
+    mcpServers['dev-browser-mcp'] = {
+      type: 'local',
+      command: resolveMcpCommand(
+        tsxCommand,
+        mcpToolsPath,
+        'dev-browser-mcp',
+        'src/index.ts',
+        'dist/index.mjs',
+        isPackaged,
+        nodePath,
+      ),
+      enabled: true,
+      ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
+      timeout: 30000,
+    };
+  }
+
+  // Add connected MCP connectors as remote servers
+  if (options.connectors) {
+    for (const connector of options.connectors) {
+      // Use short sanitized name + ID suffix as key to prevent collisions
+      const sanitized = connector.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 20);
+      const baseName = sanitized || 'mcp-remote';
+      const idSuffix = connector.id.slice(0, 6);
+      let key = `connector-${baseName}-${idSuffix}`;
+      // Guard against unlikely collision with existing keys
+      if (mcpServers[key]) {
+        let i = 1;
+        while (mcpServers[`${key}-${i}`]) i += 1;
+        key = `${key}-${i}`;
+      }
+      mcpServers[key] = {
+        type: 'remote',
+        url: connector.url,
+        headers: { Authorization: `Bearer ${connector.accessToken}` },
+        enabled: true,
+      };
+    }
+  }
+
+  // Fill browser-specific template sections based on mode
+  const hasBrowser = browserConfig.mode !== 'none';
+  systemPrompt = systemPrompt
+    .replace('{{AGENT_ROLE}}', hasBrowser ? 'browser automation' : 'task automation')
+    .replace(
+      '{{BROWSER_CAPABILITY}}',
+      hasBrowser
+        ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
+        : '',
+    )
+    .replace(
+      '{{BROWSER_BEHAVIOR}}',
+      hasBrowser
+        ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
+- For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
+- **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
+
+**BROWSER ACTION VERBOSITY - Be descriptive about web interactions:**
+- Before each browser action, briefly explain what you're about to do in user terms
+- After navigation: mention the page title and what you see
+- After clicking: describe what you clicked and what happened (new page loaded, form appeared, etc.)
+- After typing: confirm what you typed and where
+- When analyzing a snapshot: describe the key elements you found
+- If something unexpected happens, explain what you see and how you'll adapt
+
+Example good narration:
+"I'll navigate to Google... The search page is loaded. I can see the search box. Let me search for 'cute animals'... Typing in the search field and pressing Enter... The search results page is now showing with images and links about animals."
+
+Example bad narration (too terse):
+"Done." or "Navigated." or "Clicked."
+
+- After each action, evaluate the result before deciding next steps
+- Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
+`
+        : '',
+    );
 
   const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
@@ -467,8 +560,16 @@ Use empty array [] if no skills apply to your task.
     enabledProviders = [...new Set([...customEnabledProviders, ...Object.keys(providerConfig)])];
   } else {
     const baseProviders = [
-      'anthropic', 'openai', 'openrouter', 'google', 'xai',
-      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+      'anthropic',
+      'openai',
+      'openrouter',
+      'google',
+      'xai',
+      'deepseek',
+      'moonshot',
+      'zai-coding-plan',
+      'amazon-bedrock',
+      'minimax',
     ];
     enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
   }
@@ -493,6 +594,9 @@ Use empty array [] if no skills apply to your task.
       },
     },
     mcp: mcpServers,
+    experimental: {
+      mcp_timeout: 600000, // 10 minutes — allow long-running MCP tools like AskUserQuestion
+    },
   };
 
   const configDir = path.join(userDataPath, 'opencode');
@@ -556,14 +660,19 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'openrouter') {
       args.push('--model', selectedModel.model);
     } else if (selectedModel.provider === 'ollama') {
-      const modelId = selectedModel.model.replace(/^ollama\//, '');
-      args.push('--model', `ollama/${modelId}`);
+      // Accept both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
+      const normalizedModelId = selectedModel.model.replace(/^ollama\//, '');
+      args.push('--model', `ollama/${normalizedModelId}`);
     } else if (selectedModel.provider === 'litellm') {
       const modelId = selectedModel.model.replace(/^litellm\//, '');
       args.push('--model', `litellm/${modelId}`);
     } else if (selectedModel.provider === 'lmstudio') {
       const modelId = selectedModel.model.replace(/^lmstudio\//, '');
       args.push('--model', `lmstudio/${modelId}`);
+    } else if (selectedModel.provider === 'vertex') {
+      // Model IDs stored as "vertex/{publisher}/{model}" — strip publisher for @ai-sdk/google-vertex
+      const modelId = selectedModel.model.replace(/^vertex\/[^/]+\//, '');
+      args.push('--model', `vertex/${modelId}`);
     } else {
       args.push('--model', selectedModel.model);
     }

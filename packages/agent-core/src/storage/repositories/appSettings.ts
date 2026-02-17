@@ -5,6 +5,7 @@ import type {
   AzureFoundryConfig,
   LMStudioConfig,
 } from '../../common/types/provider.js';
+import type { ThemePreference } from '../../types/storage.js';
 import { getDatabase } from '../database.js';
 import { safeParseJsonWithFallback } from '../../utils/json.js';
 
@@ -18,6 +19,7 @@ interface AppSettingsRow {
   azure_foundry_config: string | null;
   lmstudio_config: string | null;
   openai_base_url: string | null;
+  theme: string;
 }
 
 export interface AppSettings {
@@ -29,6 +31,7 @@ export interface AppSettings {
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
+  theme: ThemePreference;
 }
 
 function getRow(): AppSettingsRow {
@@ -51,9 +54,7 @@ export function getOnboardingComplete(): boolean {
 
 export function setOnboardingComplete(complete: boolean): void {
   const db = getDatabase();
-  db.prepare('UPDATE app_settings SET onboarding_complete = ? WHERE id = 1').run(
-    complete ? 1 : 0
-  );
+  db.prepare('UPDATE app_settings SET onboarding_complete = ? WHERE id = 1').run(complete ? 1 : 0);
 }
 
 export function getSelectedModel(): SelectedModel | null {
@@ -68,9 +69,7 @@ export function getSelectedModel(): SelectedModel | null {
 
 export function setSelectedModel(model: SelectedModel): void {
   const db = getDatabase();
-  db.prepare('UPDATE app_settings SET selected_model = ? WHERE id = 1').run(
-    JSON.stringify(model)
-  );
+  db.prepare('UPDATE app_settings SET selected_model = ? WHERE id = 1').run(JSON.stringify(model));
 }
 
 export function getOllamaConfig(): OllamaConfig | null {
@@ -86,7 +85,7 @@ export function getOllamaConfig(): OllamaConfig | null {
 export function setOllamaConfig(config: OllamaConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET ollama_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -103,7 +102,7 @@ export function getLiteLLMConfig(): LiteLLMConfig | null {
 export function setLiteLLMConfig(config: LiteLLMConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET litellm_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -120,7 +119,7 @@ export function getAzureFoundryConfig(): AzureFoundryConfig | null {
 export function setAzureFoundryConfig(config: AzureFoundryConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET azure_foundry_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -137,7 +136,7 @@ export function getLMStudioConfig(): LMStudioConfig | null {
 export function setLMStudioConfig(config: LMStudioConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET lmstudio_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -151,6 +150,24 @@ export function setOpenAiBaseUrl(baseUrl: string): void {
   db.prepare('UPDATE app_settings SET openai_base_url = ? WHERE id = 1').run(baseUrl || '');
 }
 
+const VALID_THEMES: ThemePreference[] = ['system', 'light', 'dark'];
+
+export function getTheme(): ThemePreference {
+  const row = getRow();
+  const value = row.theme as ThemePreference;
+  if (VALID_THEMES.includes(value)) {
+    return value;
+  }
+  return 'system';
+}
+
+export function setTheme(theme: ThemePreference): void {
+  if (!VALID_THEMES.includes(theme)) {
+    throw new Error(`Invalid theme value: ${theme}`);
+  }
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET theme = ? WHERE id = 1').run(theme);
+}
 
 export function getAppSettings(): AppSettings {
   const row = getRow();
@@ -163,6 +180,9 @@ export function getAppSettings(): AppSettings {
     azureFoundryConfig: safeParseJsonWithFallback<AzureFoundryConfig>(row.azure_foundry_config),
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
     openaiBaseUrl: row.openai_base_url || '',
+    theme: VALID_THEMES.includes(row.theme as ThemePreference)
+      ? (row.theme as ThemePreference)
+      : 'system',
   };
 }
 
@@ -177,7 +197,8 @@ export function clearAppSettings(): void {
       litellm_config = NULL,
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
-      openai_base_url = ''
-    WHERE id = 1`
+      openai_base_url = '',
+      theme = 'system'
+    WHERE id = 1`,
   ).run();
 }

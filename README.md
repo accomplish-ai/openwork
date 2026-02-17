@@ -46,7 +46,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 <tr>
 <td width="50%" valign="top" align="center">
 
-### 🖥️  It runs locally
+### 🖥️ It runs locally
 
 <div align="left">
 
@@ -59,7 +59,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </td>
 <td width="50%" valign="top" align="center">
 
-### 🔑  You bring your own AI
+### 🔑 You bring your own AI
 
 <div align="left">
 
@@ -75,7 +75,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 <tr>
 <td width="50%" valign="top" align="center">
 
-### 📖  It's open source
+### 📖 It's open source
 
 <div align="left">
 
@@ -88,7 +88,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </td>
 <td width="50%" valign="top" align="center">
 
-### ⚡  It acts, not just chats
+### ⚡ It acts, not just chats
 
 <div align="left">
 
@@ -111,13 +111,13 @@ Accomplish is an open source AI desktop agent that automates file management, do
 
 ## What it actually does
 
-| | | |
-|:--|:--|:--|
-| **📁 File Management** | **✍️ Document Writing** | **🔗 Tool Connections** |
-| Sort, rename, and move files based on content or rules you give it | Prompt it to write, summarize, or rewrite documents | Works with Notion, Google Drive, Dropbox, and more (through local APIs) |
-| | | |
-| **⚙️ Custom Skills** | **🛡️ Full Control** | |
-| Define repeatable workflows, save them as skills | You approve every action. You can see logs. You can stop it anytime. | |
+|                                                                    |                                                                      |                                                                         |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| **📁 File Management**                                             | **✍️ Document Writing**                                              | **🔗 Tool Connections**                                                 |
+| Sort, rename, and move files based on content or rules you give it | Prompt it to write, summarize, or rewrite documents                  | Works with Notion, Google Drive, Dropbox, and more (through local APIs) |
+|                                                                    |                                                                      |                                                                         |
+| **⚙️ Custom Skills**                                               | **🛡️ Full Control**                                                  |                                                                         |
+| Define repeatable workflows, save them as skills                   | You approve every action. You can see logs. You can stop it anytime. |                                                                         |
 
 <br />
 
@@ -171,15 +171,14 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 > **Takes 2 minutes to set up.**
 
-| Step | Action | Details |
-|:----:|--------|---------|
-| **1** | **Install the App** | Download the DMG and drag it into Applications |
+| Step  | Action              | Details                                                                                                           |
+| :---: | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **1** | **Install the App** | Download the DMG and drag it into Applications                                                                    |
 | **2** | **Connect Your AI** | Use your own Google, OpenAI, Anthropic (or other) API key — or sign in with ChatGPT (Plus/Pro). No subscriptions. |
-| **3** | **Give It Access** | Choose which folders it can see. You stay in control. |
-| **4** | **Start Working** | Ask it to summarize a doc, clean a folder, or create a report. You approve everything. |
+| **3** | **Give It Access**  | Choose which folders it can see. You stay in control.                                                             |
+| **4** | **Start Working**   | Ask it to summarize a doc, clean a folder, or create a report. You approve everything.                            |
 
 <br />
-
 
 <br />
 
@@ -251,24 +250,24 @@ That's it.
 <details>
 <summary><strong>All Commands</strong></summary>
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Run desktop app in dev mode |
-| `pnpm dev:clean` | Dev mode with clean start |
-| `pnpm build` | Build all workspaces |
-| `pnpm build:desktop` | Build desktop app only |
-| `pnpm lint` | TypeScript checks |
-| `pnpm typecheck` | Type validation |
-| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E tests |
+| Command                                | Description                 |
+| -------------------------------------- | --------------------------- |
+| `pnpm dev`                             | Run desktop app in dev mode |
+| `pnpm dev:clean`                       | Dev mode with clean start   |
+| `pnpm build`                           | Build all workspaces        |
+| `pnpm build:desktop`                   | Build desktop app only      |
+| `pnpm lint`                            | TypeScript checks           |
+| `pnpm typecheck`                       | Type validation             |
+| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E tests        |
 
 </details>
 
 <details>
 <summary><strong>Environment Variables</strong></summary>
 
-| Variable | Description |
-|----------|-------------|
-| `CLEAN_START=1` | Clear all stored data on app start |
+| Variable          | Description                        |
+| ----------------- | ---------------------------------- |
+| `CLEAN_START=1`   | Clear all stored data on app start |
 | `E2E_SKIP_AUTH=1` | Skip onboarding flow (for testing) |
 
 </details>

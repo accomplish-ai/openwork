@@ -20,8 +20,18 @@ export interface TaskProgressEvent {
 
 /** Callbacks for task lifecycle events */
 export interface TaskCallbacks {
-  /** Called when a message is received from the agent */
-  onMessage: (message: OpenCodeMessage) => void;
+  /**
+   * Called when a raw message is received from the agent.
+   * Optional when onBatchedMessages is provided.
+   */
+  onMessage?: (message: OpenCodeMessage) => void;
+  /**
+   * Called with processed and batched messages ready for display.
+   * Messages are converted from raw OpenCodeMessage to TaskMessage internally
+   * and batched at 50ms intervals for efficient rendering.
+   * When provided, message conversion and batching are handled by TaskManager.
+   */
+  onBatchedMessages?: (messages: TaskMessage[]) => void;
   /** Called when task progress changes */
   onProgress: (progress: TaskProgressEvent) => void;
   /** Called when a permission request is needed */
@@ -38,6 +48,27 @@ export interface TaskCallbacks {
   onTodoUpdate?: (todos: TodoItem[]) => void;
   /** Called when an auth error occurs */
   onAuthError?: (error: { providerId: string; message: string }) => void;
+  /** Called when the agent emits reasoning text */
+  onReasoning?: (text: string) => void;
+  /** Called when a tool call completes (success or error) */
+  onToolCallComplete?: (data: {
+    toolName: string;
+    toolInput: unknown;
+    toolOutput: string;
+    sessionId?: string;
+  }) => void;
+  /** Called when a model step finishes */
+  onStepFinish?: (data: {
+    reason: string;
+    model?: string;
+    tokens?: {
+      input: number;
+      output: number;
+      reasoning: number;
+      cache?: { read: number; write: number };
+    };
+    cost?: number;
+  }) => void;
 }
 
 /** Adapter options for the underlying CLI adapter */

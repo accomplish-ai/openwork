@@ -13,38 +13,31 @@ import { migration as v003 } from './v003-lmstudio.js';
 import { migration as v004 } from './v004-openai-base-url.js';
 import { migration as v005 } from './v005-task-todos.js';
 import { migration as v006 } from './v006-skills.js';
+import { migration as v007 } from './v007-connectors.js';
+import { migration as v008 } from './v008-theme.js';
 
-const migrations: Migration[] = [
-  v001,
-  v002,
-  v003,
-  v004,
-  v005,
-  v006,
-];
+const migrations: Migration[] = [v001, v002, v003, v004, v005, v006, v007, v008];
 
 export function registerMigration(migration: Migration): void {
   migrations.push(migration);
   migrations.sort((a, b) => a.version - b.version);
 }
 
-export const CURRENT_VERSION = 6;
+export const CURRENT_VERSION = 8;
 
 export function getStoredVersion(db: Database): number {
   try {
     const tableExists = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_meta'"
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_meta'")
       .get();
 
     if (!tableExists) {
       return 0;
     }
 
-    const row = db
-      .prepare("SELECT value FROM schema_meta WHERE key = 'version'")
-      .get() as { value: string } | undefined;
+    const row = db.prepare("SELECT value FROM schema_meta WHERE key = 'version'").get() as
+      | { value: string }
+      | undefined;
 
     return row ? parseInt(row.value, 10) : 0;
   } catch {
@@ -53,17 +46,15 @@ export function getStoredVersion(db: Database): number {
 }
 
 export function setStoredVersion(db: Database, version: number): void {
-  db.prepare(
-    "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)"
-  ).run(String(version));
+  db.prepare("INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('version', ?)").run(
+    String(version),
+  );
 }
 
 export function runMigrations(db: Database): void {
   const storedVersion = getStoredVersion(db);
 
-  console.log(
-    `[Migrations] Stored version: ${storedVersion}, App version: ${CURRENT_VERSION}`
-  );
+  console.log(`[Migrations] Stored version: ${storedVersion}, App version: ${CURRENT_VERSION}`);
 
   if (storedVersion > CURRENT_VERSION) {
     throw new FutureSchemaError(storedVersion, CURRENT_VERSION);
@@ -87,7 +78,7 @@ export function runMigrations(db: Database): void {
       } catch (err) {
         throw new MigrationError(
           migration.version,
-          err instanceof Error ? err : new Error(String(err))
+          err instanceof Error ? err : new Error(String(err)),
         );
       }
     }

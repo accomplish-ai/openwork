@@ -1,5 +1,6 @@
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // Anthropic
+  'claude-opus-4-6': 'Claude Opus 4.6',
   'claude-opus-4-5': 'Claude Opus 4.5',
   'claude-sonnet-4-5': 'Claude Sonnet 4.5',
   'claude-haiku-4-5': 'Claude Haiku 4.5',
@@ -14,7 +15,7 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'gpt-4o': 'GPT-4o',
   'gpt-4o-mini': 'GPT-4o Mini',
   'gpt-4-turbo': 'GPT-4 Turbo',
-  'o1': 'o1',
+  o1: 'o1',
   'o1-mini': 'o1 Mini',
   'o1-preview': 'o1 Preview',
   'o3-mini': 'o3 Mini',
@@ -63,6 +64,7 @@ export const PROVIDER_PREFIXES = [
   'minimax/',
   'lmstudio/',
   'azure-foundry/',
+  'vertex/',
 ];
 
 /**
@@ -99,7 +101,7 @@ export function getModelDisplayName(modelId: string): string {
   return (
     cleanId
       .split('-')
-      .map(part => {
+      .map((part) => {
         // Keep version numbers as-is
         if (/^\d/.test(part)) return part;
         // Capitalize first letter

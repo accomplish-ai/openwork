@@ -2,14 +2,21 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { resolveCliPath, isCliAvailable, getCliVersion } from '../../../src/opencode/cli-resolver.js';
+import {
+  resolveCliPath,
+  isCliAvailable,
+  getCliVersion,
+} from '../../../src/opencode/cli-resolver.js';
 
 describe('CLI Resolver', () => {
   let testDir: string;
 
   beforeEach(() => {
     // Create a unique temporary directory for each test
-    testDir = path.join(os.tmpdir(), `cli-resolver-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    testDir = path.join(
+      os.tmpdir(),
+      `cli-resolver-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
     fs.mkdirSync(testDir, { recursive: true });
 
     // Suppress console.log during tests
@@ -30,7 +37,14 @@ describe('CLI Resolver', () => {
         // Create fake bundled CLI structure
         const binName = process.platform === 'win32' ? 'opencode.exe' : 'opencode';
         const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
-        const cliDir = path.join(testDir, 'resources', 'app.asar.unpacked', 'node_modules', packageName, 'bin');
+        const cliDir = path.join(
+          testDir,
+          'resources',
+          'app.asar.unpacked',
+          'node_modules',
+          packageName,
+          'bin',
+        );
         fs.mkdirSync(cliDir, { recursive: true });
         fs.writeFileSync(path.join(cliDir, binName), '#!/bin/bash\necho "opencode"');
 
@@ -185,7 +199,7 @@ describe('CLI Resolver', () => {
       // Create package.json
       fs.writeFileSync(
         path.join(packageDir, 'package.json'),
-        JSON.stringify({ name: packageName, version: '1.2.3' })
+        JSON.stringify({ name: packageName, version: '1.2.3' }),
       );
 
       // Create dummy binary

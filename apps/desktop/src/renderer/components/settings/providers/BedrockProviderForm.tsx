@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ConnectedProvider, BedrockProviderCredentials } from '@accomplish_ai/agent-core/common';
+import type {
+  ConnectedProvider,
+  BedrockProviderCredentials,
+} from '@accomplish_ai/agent-core/common';
 import { getDefaultModelForProvider } from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
@@ -94,7 +97,7 @@ export function BedrockProviderForm({
 
       // Auto-select default model if available in fetched list
       const defaultModelId = getDefaultModelForProvider('bedrock');
-      const hasDefaultModel = defaultModelId && fetchedModels.some(m => m.id === defaultModelId);
+      const hasDefaultModel = defaultModelId && fetchedModels.some((m) => m.id === defaultModelId);
 
       const provider: ConnectedProvider = {
         providerId: 'bedrock',
@@ -108,8 +111,7 @@ export function BedrockProviderForm({
             ? { apiKeyPrefix: bedrockApiKey.substring(0, 8) + '...' }
             : authTab === 'accessKey'
               ? { accessKeyIdPrefix: accessKeyId.substring(0, 8) + '...' }
-              : { profileName: profileName.trim() || 'default' }
-          ),
+              : { profileName: profileName.trim() || 'default' }),
         } as BedrockProviderCredentials,
         lastConnectedAt: new Date().toISOString(),
         availableModels: fetchedModels,
@@ -129,7 +131,10 @@ export function BedrockProviderForm({
   const models = connectedProvider?.availableModels || availableModels;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
       <ProviderFormHeader logoSrc={bedrockLogo} providerName="Bedrock" />
 
       <div className="space-y-3">
@@ -151,7 +156,7 @@ export function BedrockProviderForm({
                   data-testid="bedrock-auth-tab-apikey"
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     authTab === 'apiKey'
-                      ? 'bg-[#4A7C59] text-white'
+                      ? 'bg-provider-accent text-white'
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -162,7 +167,7 @@ export function BedrockProviderForm({
                   data-testid="bedrock-auth-tab-accesskey"
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     authTab === 'accessKey'
-                      ? 'bg-[#4A7C59] text-white'
+                      ? 'bg-provider-accent text-white'
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -173,7 +178,7 @@ export function BedrockProviderForm({
                   data-testid="bedrock-auth-tab-profile"
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     authTab === 'profile'
-                      ? 'bg-[#4A7C59] text-white'
+                      ? 'bg-provider-accent text-white'
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -191,7 +196,9 @@ export function BedrockProviderForm({
               ) : authTab === 'accessKey' ? (
                 <>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Access Key ID</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Access Key ID
+                    </label>
                     <input
                       type="text"
                       value={accessKeyId}
@@ -202,7 +209,9 @@ export function BedrockProviderForm({
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Secret Access Key</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Secret Access Key
+                    </label>
                     <input
                       type="password"
                       value={secretKey}
@@ -230,7 +239,9 @@ export function BedrockProviderForm({
               ) : (
                 <>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Profile Name</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Profile Name
+                    </label>
                     <input
                       type="text"
                       value={profileName}
@@ -259,32 +270,49 @@ export function BedrockProviderForm({
             >
               {/* Display saved credentials info */}
               <div className="space-y-3">
-                {(connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod === 'apiKey' ? (
+                {(connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod ===
+                'apiKey' ? (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">API Key</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      API Key
+                    </label>
                     <input
                       type="text"
-                      value={(connectedProvider?.credentials as BedrockProviderCredentials)?.apiKeyPrefix || '********'}
+                      value={
+                        (connectedProvider?.credentials as BedrockProviderCredentials)
+                          ?.apiKeyPrefix || '********'
+                      }
                       disabled
                       className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                     />
                   </div>
-                ) : (connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod === 'accessKey' ? (
+                ) : (connectedProvider?.credentials as BedrockProviderCredentials)?.authMethod ===
+                  'accessKey' ? (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Access Key ID</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Access Key ID
+                    </label>
                     <input
                       type="text"
-                      value={(connectedProvider?.credentials as BedrockProviderCredentials)?.accessKeyIdPrefix || 'AKIA...'}
+                      value={
+                        (connectedProvider?.credentials as BedrockProviderCredentials)
+                          ?.accessKeyIdPrefix || 'AKIA...'
+                      }
                       disabled
                       className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">AWS Profile</label>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      AWS Profile
+                    </label>
                     <input
                       type="text"
-                      value={(connectedProvider?.credentials as BedrockProviderCredentials)?.profileName || 'default'}
+                      value={
+                        (connectedProvider?.credentials as BedrockProviderCredentials)
+                          ?.profileName || 'default'
+                      }
                       disabled
                       className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                     />
@@ -294,7 +322,10 @@ export function BedrockProviderForm({
                   <label className="mb-2 block text-sm font-medium text-foreground">Region</label>
                   <input
                     type="text"
-                    value={(connectedProvider?.credentials as BedrockProviderCredentials)?.region || 'us-east-1'}
+                    value={
+                      (connectedProvider?.credentials as BedrockProviderCredentials)?.region ||
+                      'us-east-1'
+                    }
                     disabled
                     className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
                   />
