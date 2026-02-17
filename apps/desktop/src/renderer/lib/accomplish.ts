@@ -183,6 +183,10 @@ interface AccomplishAPI {
   setProviderDebugMode(enabled: boolean): Promise<void>;
   getProviderDebugMode(): Promise<boolean>;
 
+  // Favorites
+  setTaskFavorite(taskId: string, isFavorite: boolean): Promise<void>;
+  getFavoriteTasks(): Promise<Task[]>;
+
   // Todo operations
   getTodosForTask(taskId: string): Promise<TodoItem[]>;
 
