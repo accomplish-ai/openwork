@@ -367,6 +367,50 @@ const accomplishAPI = {
     ipcRenderer.on('auth:mcp-callback', listener);
     return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
   },
+
+  // ── Messaging Integrations ──────────────────────────────────────────
+  getIntegrationPlatforms: (): Promise<Array<{ id: string; name: string; available: boolean }>> =>
+    ipcRenderer.invoke('integrations:get-platforms'),
+  getIntegrationConfigs: (): Promise<Record<string, unknown>> =>
+    ipcRenderer.invoke('integrations:get-configs'),
+  getIntegrationConfig: (platformId: string): Promise<unknown> =>
+    ipcRenderer.invoke('integrations:get-config', platformId),
+  connectIntegration: (platformId: string): Promise<{ status: string }> =>
+    ipcRenderer.invoke('integrations:connect', platformId),
+  disconnectIntegration: (platformId: string): Promise<{ status: string }> =>
+    ipcRenderer.invoke('integrations:disconnect', platformId),
+  confirmWhatsAppPairing: (phoneNumber?: string): Promise<{ status: string }> =>
+    ipcRenderer.invoke('integrations:whatsapp:confirm-pairing', phoneNumber),
+  setIntegrationEnabled: (platformId: string, enabled: boolean): Promise<{ enabled: boolean }> =>
+    ipcRenderer.invoke('integrations:set-enabled', platformId, enabled),
+  setIntegrationTunnelEnabled: (platformId: string, enabled: boolean): Promise<{ tunnelEnabled: boolean }> =>
+    ipcRenderer.invoke('integrations:set-tunnel-enabled', platformId, enabled),
+  getIntegrationTunnelState: (): Promise<{ active: boolean; url?: string; connectedAt?: string; lastError?: string }> =>
+    ipcRenderer.invoke('integrations:get-tunnel-state'),
+  setupIntegrationTaskBridge: (): Promise<{ bridgeConfigured: boolean }> =>
+    ipcRenderer.invoke('integrations:setup-task-bridge'),
+
+  // Integration events
+  onIntegrationStatusChange: (callback: (data: { platformId: string; status: string; error?: string }) => void) => {
+    const listener = (_: unknown, data: { platformId: string; status: string; error?: string }) => callback(data);
+    ipcRenderer.on('integration:status-change', listener);
+    return () => { ipcRenderer.removeListener('integration:status-change', listener); };
+  },
+  onIntegrationQRCode: (callback: (data: { platformId: string; qrData: { qrString: string; expiresAt: number } }) => void) => {
+    const listener = (_: unknown, data: { platformId: string; qrData: { qrString: string; expiresAt: number } }) => callback(data);
+    ipcRenderer.on('integration:qr-code', listener);
+    return () => { ipcRenderer.removeListener('integration:qr-code', listener); };
+  },
+  onIntegrationMessage: (callback: (data: { id: string; platformId: string; senderId: string; senderName?: string; text: string; timestamp: number }) => void) => {
+    const listener = (_: unknown, data: { id: string; platformId: string; senderId: string; senderName?: string; text: string; timestamp: number }) => callback(data);
+    ipcRenderer.on('integration:message', listener);
+    return () => { ipcRenderer.removeListener('integration:message', listener); };
+  },
+  onIntegrationTunnelState: (callback: (data: { active: boolean; url?: string; connectedAt?: string; lastError?: string }) => void) => {
+    const listener = (_: unknown, data: { active: boolean; url?: string; connectedAt?: string; lastError?: string }) => callback(data);
+    ipcRenderer.on('integration:tunnel-state', listener);
+    return () => { ipcRenderer.removeListener('integration:tunnel-state', listener); };
+  },
 };
 
 // Expose the API to the renderer

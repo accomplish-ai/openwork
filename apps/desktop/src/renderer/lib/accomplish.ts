@@ -26,6 +26,25 @@ import type {
   McpConnector,
 } from '@accomplish_ai/agent-core/common';
 
+/** Integration config returned from the backend */
+export interface IntegrationConfig {
+  platformId: string;
+  enabled: boolean;
+  tunnelEnabled: boolean;
+  connectionStatus: 'disconnected' | 'connecting' | 'awaiting_scan' | 'connected' | 'error';
+  connectedAt?: string;
+  lastError?: string;
+  metadata?: Record<string, string>;
+}
+
+/** Tunnel state info */
+export interface TunnelStateInfo {
+  active: boolean;
+  url?: string;
+  connectedAt?: string;
+  lastError?: string;
+}
+
 // Define the API interface
 interface AccomplishAPI {
   // App info
@@ -236,6 +255,22 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // Messaging Integrations
+  getIntegrationPlatforms(): Promise<Array<{ id: string; name: string; available: boolean }>>;
+  getIntegrationConfigs(): Promise<Record<string, IntegrationConfig>>;
+  getIntegrationConfig(platformId: string): Promise<IntegrationConfig>;
+  connectIntegration(platformId: string): Promise<{ status: string }>;
+  disconnectIntegration(platformId: string): Promise<{ status: string }>;
+  confirmWhatsAppPairing(phoneNumber?: string): Promise<{ status: string }>;
+  setIntegrationEnabled(platformId: string, enabled: boolean): Promise<{ enabled: boolean }>;
+  setIntegrationTunnelEnabled(platformId: string, enabled: boolean): Promise<{ tunnelEnabled: boolean }>;
+  getIntegrationTunnelState(): Promise<TunnelStateInfo>;
+  setupIntegrationTaskBridge(): Promise<{ bridgeConfigured: boolean }>;
+  onIntegrationStatusChange?(callback: (data: { platformId: string; status: string; error?: string }) => void): () => void;
+  onIntegrationQRCode?(callback: (data: { platformId: string; qrData: { qrString: string; expiresAt: number } }) => void): () => void;
+  onIntegrationMessage?(callback: (data: { id: string; platformId: string; senderId: string; senderName?: string; text: string; timestamp: number }) => void): () => void;
+  onIntegrationTunnelState?(callback: (data: TunnelStateInfo) => void): () => void;
 }
 
 interface AccomplishShell {

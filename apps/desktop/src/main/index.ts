@@ -12,6 +12,7 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
+import { registerIntegrationHandlers } from './ipc/integration-handlers';
 import {
   FutureSchemaError,
 } from '@accomplish_ai/agent-core';
@@ -21,6 +22,7 @@ import {
 } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
+import { disposeIntegrationManager } from './services/integrations';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
@@ -279,6 +281,7 @@ if (!gotTheLock) {
     }
 
     registerIPCHandlers();
+    registerIntegrationHandlers();
     console.log('[Main] IPC handlers registered');
 
     createWindow();
@@ -305,6 +308,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   disposeTaskManager(); // Also cleans up proxies internally
+  disposeIntegrationManager();
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
   closeStorage();
