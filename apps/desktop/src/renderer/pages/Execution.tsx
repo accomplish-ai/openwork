@@ -39,7 +39,7 @@ interface DebugLogEntry {
   data?: unknown;
 }
 
-// Spinning Accomplish icon component
+/** Spinning Accomplish logo used as a loading indicator. */
 const SpinningIcon = ({ className }: { className?: string }) => (
   <img
     src={loadingSymbol}
@@ -108,10 +108,10 @@ const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }
 };
 
 // Extract base tool name from MCP-prefixed tool names
-// MCP tools are prefixed as "servername_toolname", e.g.:
-//   "dev-browser-mcp_browser_navigate" -> "browser_navigate"
-//   "file-permission_request_file_permission" -> "request_file_permission"
-//   "complete-task_complete_task" -> "complete_task"
+/**
+ * Strips MCP server-name prefix from a tool name to find its base identifier.
+ * E.g. "dev-browser-mcp_browser_navigate" -> "browser_navigate".
+ */
 function getBaseToolName(toolName: string): string {
   // Try progressively stripping prefixes at each underscore position
   // to find a match in our map. This handles server names with hyphens
@@ -128,7 +128,7 @@ function getBaseToolName(toolName: string): string {
   return toolName;
 }
 
-// Get tool display info (label and icon) from tool name
+/** Returns the human-readable label and icon for a given tool name. */
 function getToolDisplayInfo(toolName: string): { label: string; icon: typeof FileText } | undefined {
   // First try direct lookup
   if (TOOL_PROGRESS_MAP[toolName]) {
@@ -140,7 +140,7 @@ function getToolDisplayInfo(toolName: string): { label: string; icon: typeof Fil
 }
 
 
-// Debounce utility
+/** Debounce utility that delays invoking {@link fn} until {@link ms} ms after the last call. */
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timeoutId: ReturnType<typeof setTimeout>;
   return ((...args: unknown[]) => {
@@ -149,7 +149,7 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
   }) as T;
 }
 
-// Helper for file operation badge colors
+/** Returns Tailwind classes for the file-operation badge based on the operation type. */
 function getOperationBadgeClasses(operation?: string): string {
   switch (operation) {
     case 'delete': return 'bg-red-500/10 text-red-600 dark:text-red-400';
@@ -162,12 +162,12 @@ function getOperationBadgeClasses(operation?: string): string {
   }
 }
 
-// Helper to check if this is a delete operation
+/** Checks whether the given permission request represents a file deletion. */
 function isDeleteOperation(request: { type: string; fileOperation?: string }): boolean {
   return request.type === 'file' && request.fileOperation === 'delete';
 }
 
-// Get file paths to display (handles both single and multiple)
+/** Normalises a permission request into an array of display-ready file paths. */
 function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] }): string[] {
   if (request.filePaths && request.filePaths.length > 0) {
     return request.filePaths;
@@ -178,6 +178,10 @@ function getDisplayFilePaths(request: { filePath?: string; filePaths?: string[] 
   return [];
 }
 
+/**
+ * Main task execution page that displays messages, tool calls, permission requests,
+ * a debug log panel, and the follow-up input bar for a running or completed task.
+ */
 export default function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -1448,13 +1452,13 @@ export default function ExecutionPage() {
                 setDebugPanelOpen(!debugPanelOpen);
               }
             }}
-            className="w-full flex items-center justify-between px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between px-6 py-2.5 bg-muted hover:bg-accent transition-colors cursor-pointer"
           >
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Bug className="h-4 w-4" />
               <span className="font-medium">Debug Logs</span>
               {debugLogs.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-zinc-700 text-zinc-300 text-xs">
+                <span className="px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">
                   {debugSearchQuery.trim() && filteredDebugLogs.length !== debugLogs.length
                     ? `${filteredDebugLogs.length} of ${debugLogs.length}`
                     : debugLogs.length}
@@ -1467,7 +1471,7 @@ export default function ExecutionPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleExportDebugLogs();
@@ -1483,7 +1487,7 @@ export default function ExecutionPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent"
                     onClick={(e) => {
                       e.stopPropagation();
                       setDebugLogs([]);
@@ -1495,9 +1499,9 @@ export default function ExecutionPage() {
                 </>
               )}
               {debugPanelOpen ? (
-                <ChevronDown className="h-4 w-4 text-zinc-500" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <ChevronUp className="h-4 w-4 text-zinc-500" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
           </div>
@@ -1512,12 +1516,12 @@ export default function ExecutionPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="h-[200px] flex flex-col bg-zinc-950">
+                <div className="h-[200px] flex flex-col bg-card">
                   {/* Sticky search input - top right */}
-                  <div className="flex items-center justify-end gap-2 p-2 border-b border-zinc-800 shrink-0">
+                  <div className="flex items-center justify-end gap-2 p-2 border-b border-border shrink-0">
                     {/* Match counter */}
                     {debugSearchQuery.trim() && filteredDebugLogs.length > 0 && (
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-muted-foreground">
                         {debugSearchIndex + 1} of {filteredDebugLogs.length}
                       </span>
                     )}
@@ -1526,14 +1530,14 @@ export default function ExecutionPage() {
                       <div className="flex">
                         <button
                           onClick={goToPrevMatch}
-                          className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-l border border-zinc-700 border-r-0"
+                          className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded-l border border-border border-r-0"
                           title="Previous match (Shift+Enter)"
                         >
                           <ChevronUp className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={goToNextMatch}
-                          className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-r border border-zinc-700"
+                          className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded-r border border-border"
                           title="Next match (Enter)"
                         >
                           <ChevronDown className="h-3.5 w-3.5" />
@@ -1541,7 +1545,7 @@ export default function ExecutionPage() {
                       </div>
                     )}
                     <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-500" />
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                       <input
                         ref={debugSearchInputRef}
                         type="text"
@@ -1558,7 +1562,7 @@ export default function ExecutionPage() {
                           }
                         }}
                         placeholder="Search logs... (⌘F)"
-                        className="h-7 w-52 pl-7 pr-2 text-xs bg-zinc-800 border border-zinc-700 rounded text-zinc-300 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500"
+                        className="h-7 w-52 pl-7 pr-2 text-xs bg-muted border border-border rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
                         data-testid="debug-search-input"
                       />
                     </div>
@@ -1566,14 +1570,14 @@ export default function ExecutionPage() {
                   {/* Scrollable logs area */}
                   <div
                     ref={debugPanelRef}
-                    className="flex-1 overflow-y-auto text-zinc-300 font-mono text-xs p-4"
+                    className="flex-1 overflow-y-auto text-foreground font-mono text-xs p-4"
                   >
                     {debugLogs.length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-zinc-500">
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
                         No debug logs yet. Run a task to see logs.
                       </div>
                     ) : filteredDebugLogs.length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-zinc-500">
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
                         No logs match your search
                       </div>
                     ) : (
@@ -1587,10 +1591,10 @@ export default function ExecutionPage() {
                             }}
                             className={cn(
                               'flex gap-2 px-1 -mx-1 rounded',
-                              debugSearchQuery.trim() && index === debugSearchIndex && 'bg-zinc-800/80 ring-1 ring-zinc-600'
+                              debugSearchQuery.trim() && index === debugSearchIndex && 'bg-accent/80 ring-1 ring-ring'
                             )}
                           >
-                            <span className="text-zinc-500 shrink-0">
+                            <span className="text-muted-foreground shrink-0">
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </span>
                             <span className={cn(
@@ -1598,14 +1602,14 @@ export default function ExecutionPage() {
                               log.type === 'error' ? 'bg-red-500/20 text-red-400' :
                               log.type === 'warn' ? 'bg-yellow-500/20 text-yellow-400' :
                               log.type === 'info' ? 'bg-blue-500/20 text-blue-400' :
-                              'bg-zinc-700 text-zinc-400'
+                              'bg-muted text-muted-foreground'
                             )}>
                               [{highlightText(log.type, debugSearchQuery)}]
                             </span>
-                            <span className="text-zinc-300 break-all">
+                            <span className="text-foreground break-all">
                               {highlightText(log.message, debugSearchQuery)}
                               {log.data !== undefined && (
-                                <span className="text-zinc-500 ml-2">
+                                <span className="text-muted-foreground ml-2">
                                   {highlightText(
                                     typeof log.data === 'string' ? log.data : JSON.stringify(log.data, null, 0),
                                     debugSearchQuery
