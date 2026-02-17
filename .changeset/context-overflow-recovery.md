@@ -1,5 +1,5 @@
 ---
-"@accomplish_ai/agent-core": minor
+"@accomplish_ai/agent-core": patch
 ---
 
 feat(agent-core): handle context window overflow with silent recovery (ENG-150)
