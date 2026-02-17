@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
@@ -9,7 +9,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
@@ -85,9 +85,13 @@ export default function HomePage() {
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, favoriteTasks, loadFavorites } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
+
+  useEffect(() => {
+    void loadFavorites();
+  }, [loadFavorites]);
 
   // Subscribe to task events
   useEffect(() => {
@@ -211,6 +215,30 @@ export default function HomePage() {
                 hideModelWhenNoModel={true}
               />
             </CardContent>
+
+            {favoriteTasks.length > 0 && (
+              <div className="border-t border-border">
+                <div className="px-6 py-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium text-foreground">Favorites</span>
+                  </div>
+                  <div className="space-y-1">
+                    {favoriteTasks.slice(0, 5).map((task) => (
+                      <Link
+                        key={task.id}
+                        to={`/execution/${task.id}`}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted/50 transition-colors group"
+                      >
+                        <span className="truncate text-muted-foreground group-hover:text-foreground transition-colors">
+                          {task.summary || task.prompt}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Examples Toggle */}
             <div className="border-t border-border">

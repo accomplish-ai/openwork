@@ -42,6 +42,7 @@ interface TaskState {
 
   // Task history
   tasks: Task[];
+  favoriteTasks: Task[];
 
   // Permission handling
   permissionRequest: PermissionRequest | null;
@@ -75,6 +76,8 @@ interface TaskState {
   loadTaskById: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   clearHistory: () => Promise<void>;
+  toggleFavorite: (taskId: string) => Promise<void>;
+  loadFavorites: () => Promise<void>;
   reset: () => void;
   setTodos: (taskId: string, todos: TodoItem[]) => void;
   clearTodos: () => void;
@@ -87,6 +90,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   isLoading: false,
   error: null,
   tasks: [],
+  favoriteTasks: [],
   permissionRequest: null,
   setupProgress: null,
   setupProgressTaskId: null,
@@ -475,13 +479,65 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     await accomplish.deleteTask(taskId);
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== taskId),
+      favoriteTasks: state.favoriteTasks.filter((t) => t.id !== taskId),
     }));
   },
 
   clearHistory: async () => {
     const accomplish = getAccomplish();
     await accomplish.clearTaskHistory();
-    set({ tasks: [] });
+    set({ tasks: [], favoriteTasks: [] });
+  },
+
+  toggleFavorite: async (taskId: string) => {
+    const accomplish = getAccomplish();
+    const { tasks, currentTask } = get();
+    const task = tasks.find((t) => t.id === taskId) || currentTask;
+    if (!task) {
+      return;
+    }
+
+    const newValue = !task.isFavorite;
+
+    try {
+      await accomplish.setTaskFavorite(taskId, newValue);
+    } catch (err) {
+      console.error('Failed to update favorite status:', err);
+      return;
+    }
+
+    set((state) => {
+      let updatedFavorites: Task[];
+      if (newValue) {
+        const alreadyFavorited = state.favoriteTasks.some((t) => t.id === taskId);
+        updatedFavorites = alreadyFavorited
+          ? state.favoriteTasks
+          : [...state.favoriteTasks, { ...task, isFavorite: true }];
+      } else {
+        updatedFavorites = state.favoriteTasks.filter((t) => t.id !== taskId);
+      }
+
+      return {
+        tasks: state.tasks.map((t) =>
+          t.id === taskId ? { ...t, isFavorite: newValue } : t
+        ),
+        currentTask:
+          state.currentTask?.id === taskId
+            ? { ...state.currentTask, isFavorite: newValue }
+            : state.currentTask,
+        favoriteTasks: updatedFavorites,
+      };
+    });
+  },
+
+  loadFavorites: async () => {
+    const accomplish = getAccomplish();
+    try {
+      const favorites = await accomplish.getFavoriteTasks();
+      set({ favoriteTasks: favorites });
+    } catch (err) {
+      console.error('Failed to load favorites:', err);
+    }
   },
 
   reset: () => {
@@ -499,6 +555,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       todosTaskId: null,
       authError: null,
       isLauncherOpen: false,
+      favoriteTasks: [],
     });
   },
 

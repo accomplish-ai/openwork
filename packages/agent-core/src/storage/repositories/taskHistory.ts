@@ -12,6 +12,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 interface TaskRow {
@@ -23,6 +24,7 @@ interface TaskRow {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  is_favorite: number;
 }
 
 interface MessageRow {
@@ -106,6 +108,7 @@ function rowToTask(row: TaskRow): StoredTask {
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
     messages: getMessagesForTask(row.id),
+    isFavorite: row.is_favorite === 1,
   };
 }
 
@@ -133,8 +136,8 @@ export function saveTask(task: Task): void {
   db.transaction(() => {
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        (id, prompt, summary, status, session_id, created_at, started_at, completed_at, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       task.id,
       task.prompt,
@@ -143,7 +146,8 @@ export function saveTask(task: Task): void {
       task.sessionId || null,
       task.createdAt,
       task.startedAt || null,
-      task.completedAt || null
+      task.completedAt || null,
+      task.isFavorite ? 1 : 0
     );
 
     db.prepare('DELETE FROM task_messages WHERE task_id = ?').run(task.id);
@@ -259,6 +263,26 @@ export function deleteTask(taskId: string): void {
 export function clearHistory(): void {
   const db = getDatabase();
   db.prepare('DELETE FROM tasks').run();
+}
+
+export function setTaskFavorite(taskId: string, isFavorite: boolean): void {
+  const db = getDatabase();
+  const result = db
+    .prepare('UPDATE tasks SET is_favorite = ? WHERE id = ?')
+    .run(isFavorite ? 1 : 0, taskId);
+
+  if (result.changes === 0) {
+    throw new Error(`Task not found: ${taskId}`);
+  }
+}
+
+export function getFavoriteTasks(): StoredTask[] {
+  const db = getDatabase();
+  const rows = db
+    .prepare('SELECT * FROM tasks WHERE is_favorite = 1 ORDER BY created_at DESC LIMIT ?')
+    .all(MAX_HISTORY_ITEMS) as TaskRow[];
+
+  return rows.map(rowToTask);
 }
 
 export function setMaxHistoryItems(_max: number): void {}
