@@ -5,6 +5,7 @@ import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
 import { Loader2, CheckCircle2, XCircle, Clock, Square, PauseCircle, X } from 'lucide-react';
 import { useTaskStore } from '@/stores/taskStore';
+import { StarButton } from '../ui/StarButton';
 
 interface ConversationListItemProps {
   task: Task;
@@ -15,9 +16,14 @@ export default function ConversationListItem({ task }: ConversationListItemProps
   const location = useLocation();
   const isActive = location.pathname === `/execution/${task.id}`;
   const deleteTask = useTaskStore((state) => state.deleteTask);
+  const toggleFavorite = useTaskStore((state) => state.toggleFavorite);
 
   const handleClick = () => {
     navigate(`/execution/${task.id}`);
+  };
+
+  const handleToggleFavorite = async () => {
+    await toggleFavorite(task.id);
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -75,18 +81,24 @@ export default function ConversationListItem({ task }: ConversationListItemProps
     >
       {getStatusIcon()}
       <span className="block truncate flex-1">{task.summary || task.prompt}</span>
-      <button
-        onClick={handleDelete}
-        className={cn(
-          'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-          'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
-          'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
-          'shrink-0'
-        )}
-        aria-label="Delete task"
-      >
-        <X className="h-3 w-3" />
-      </button>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <StarButton
+          isFavorite={task.isFavorite || false}
+          onToggle={handleToggleFavorite}
+          size="sm"
+        />
+        <button
+          onClick={handleDelete}
+          className={cn(
+            'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
+            'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
+            'shrink-0'
+          )}
+          aria-label="Delete task"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
     </div>
   );
 }

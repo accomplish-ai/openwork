@@ -43,6 +43,10 @@ interface AccomplishAPI {
   listTasks(): Promise<Task[]>;
   deleteTask(taskId: string): Promise<void>;
   clearTaskHistory(): Promise<void>;
+  
+  // Favorites management
+  toggleTaskFavorite(taskId: string): Promise<boolean>;
+  getFavoriteTasks(): Promise<Task[]>;
 
   // Permission responses
   respondToPermission(response: PermissionResponse): Promise<void>;

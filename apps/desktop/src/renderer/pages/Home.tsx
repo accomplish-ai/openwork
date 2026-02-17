@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
 import SettingsDialog from '../components/layout/SettingsDialog';
+import { FavoritesSection } from '../components/favorites/FavoritesSection';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
@@ -211,6 +212,9 @@ export default function HomePage() {
                 hideModelWhenNoModel={true}
               />
             </CardContent>
+
+            {/* Favorites Section */}
+            <FavoritesSection maxVisible={3} />
 
             {/* Examples Toggle */}
             <div className="border-t border-border">

@@ -31,6 +31,7 @@ export interface Task {
   startedAt?: string;
   completedAt?: string;
   result?: TaskResult;
+  isFavorite?: boolean;
 }
 
 export interface TaskAttachment {

@@ -31,6 +31,9 @@ const accomplishAPI = {
   deleteTask: (taskId: string): Promise<void> =>
     ipcRenderer.invoke('task:delete', taskId),
   clearTaskHistory: (): Promise<void> => ipcRenderer.invoke('task:clear-history'),
+  toggleTaskFavorite: (taskId: string): Promise<boolean> =>
+    ipcRenderer.invoke('task:toggle-favorite', taskId),
+  getFavoriteTasks: (): Promise<unknown[]> => ipcRenderer.invoke('task:get-favorites'),
   getTodosForTask: (taskId: string): Promise<TodoItem[]> =>
     ipcRenderer.invoke('task:get-todos', taskId),
 

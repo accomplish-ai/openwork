@@ -25,6 +25,8 @@ import {
   sanitizeString,
   generateTaskSummary,
   validateTaskConfig,
+  getFavoriteTasks,
+  toggleTaskFavorite,
 } from '@accomplish_ai/agent-core';
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
@@ -249,6 +251,14 @@ export function registerIPCHandlers(): void {
 
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
     storage.deleteTask(taskId);
+  });
+
+  handle('task:toggle-favorite', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    return toggleTaskFavorite(taskId);
+  });
+
+  handle('task:get-favorites', async (_event: IpcMainInvokeEvent) => {
+    return getFavoriteTasks();
   });
 
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {

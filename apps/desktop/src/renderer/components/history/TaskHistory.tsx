@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
+import { StarButton } from '../ui/StarButton';
 
 interface TaskHistoryProps {
   limit?: number;
@@ -9,7 +10,8 @@ interface TaskHistoryProps {
 }
 
 export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
-  const { tasks, loadTasks, deleteTask, clearHistory } = useTaskStore();
+  const { tasks, loadTasks, deleteTask, clearHistory, toggleFavorite } = useTaskStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadTasks();
@@ -51,17 +53,19 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
             key={task.id}
             task={task}
             onDelete={() => deleteTask(task.id)}
+            onToggleFavorite={() => toggleFavorite(task.id)}
           />
         ))}
       </div>
 
       {limit && tasks.length > limit && (
-        <Link
-          to="/history"
-          className="block mt-4 text-center text-sm text-text-muted hover:text-text transition-colors"
+        <button
+          type="button"
+          onClick={() => navigate('/history')}
+          className="block mt-4 text-center text-sm text-text-muted hover:text-text transition-colors w-full"
         >
           View all {tasks.length} tasks
-        </Link>
+        </button>
       )}
     </div>
   );
@@ -70,10 +74,13 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
 function TaskHistoryItem({
   task,
   onDelete,
+  onToggleFavorite,
 }: {
   task: Task;
   onDelete: () => void;
+  onToggleFavorite: () => void;
 }) {
+  const navigate = useNavigate();
   const statusConfig: Record<string, { color: string; label: string }> = {
     completed: { color: 'bg-success', label: 'Completed' },
     running: { color: 'bg-primary', label: 'Running' },
@@ -86,10 +93,29 @@ function TaskHistoryItem({
   const config = statusConfig[task.status] || statusConfig.pending;
   const timeAgo = getTimeAgo(task.createdAt);
 
+  const handleOpen = () => {
+    navigate(`/execution/${task.id}`);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // Only handle keys when the event target is the container itself, not nested buttons
+    if (event.currentTarget !== event.target) {
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpen();
+    }
+  };
+
   return (
-    <Link
-      to={`/execution/${task.id}`}
-      className="flex items-center gap-4 p-4 rounded-card border border-border bg-background-card hover:shadow-card-hover transition-all"
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open task ${task.summary || task.prompt}`}
+      className="flex items-center gap-4 p-4 rounded-card border border-border bg-background-card hover:shadow-card-hover transition-all cursor-pointer"
     >
       <div className={`w-2 h-2 rounded-full ${config.color}`} />
       <div className="flex-1 min-w-0">
@@ -100,21 +126,31 @@ function TaskHistoryItem({
           {config.label} · {timeAgo} · {task.messages.length} messages
         </p>
       </div>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (confirm('Delete this task?')) {
-            onDelete();
-          }
-        }}
-        className="p-2 text-text-muted hover:text-danger transition-colors"
-      >
+      <div className="flex items-center gap-1">
+        {task.status === 'completed' && (
+          <StarButton
+            isFavorite={task.isFavorite || false}
+            onToggle={onToggleFavorite}
+            size="sm"
+          />
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm('Delete this task?')) {
+              onDelete();
+            }
+          }}
+          className="p-2 text-text-muted hover:text-danger transition-colors"
+        >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
-    </Link>
+    </div>
+    </div>
   );
 }
 
