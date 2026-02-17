@@ -13,7 +13,11 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'nebius'
+  | 'together'
+  | 'fireworks'
+  | 'groq';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -42,6 +46,10 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
   litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
   minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
   lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  nebius: { id: 'nebius', name: 'Nebius AI', category: 'classic', label: 'Service', logoKey: 'nebius', helpUrl: 'https://studio.nebius.ai/' },
+  together: { id: 'together', name: 'Together AI', category: 'classic', label: 'Service', logoKey: 'together', helpUrl: 'https://api.together.xyz/settings/api-keys' },
+  fireworks: { id: 'fireworks', name: 'Fireworks AI', category: 'classic', label: 'Service', logoKey: 'fireworks', helpUrl: 'https://fireworks.ai/account/api-keys' },
+  groq: { id: 'groq', name: 'Groq', category: 'classic', label: 'Service', logoKey: 'groq', helpUrl: 'https://console.groq.com/keys' },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -170,6 +178,10 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   zai: 'zai/glm-4.7-flashx',
   minimax: 'minimax/MiniMax-M2',
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
+  nebius: 'nebius/deepseek-ai/DeepSeek-V3.2',
+  together: 'together/moonshotai/Kimi-K2.5',
+  fireworks: 'fireworks/accounts/fireworks/models/kimi-k2p5',
+  groq: 'groq/moonshotai/kimi-k2-instruct-0905',
 };
 
 export function getDefaultModelForProvider(providerId: ProviderId): string | null {
@@ -196,4 +208,8 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };

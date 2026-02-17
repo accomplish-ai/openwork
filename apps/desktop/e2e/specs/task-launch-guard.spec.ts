@@ -172,9 +172,10 @@ test.describe('Task Launch Guard', () => {
     // Verify all provider cards are visible
     const providerIds = [
       'openai', 'anthropic', 'google', 'bedrock',
-      'moonshot', 'azure-foundry', 'deepseek', 'zai',
-      'ollama', 'lmstudio', 'xai', 'openrouter',
-      'litellm', 'minimax',
+      'vertex', 'moonshot', 'azure-foundry', 'deepseek',
+      'zai', 'ollama', 'lmstudio', 'xai',
+      'openrouter', 'litellm', 'minimax', 'nebius',
+      'together', 'fireworks', 'groq',
     ];
 
     for (const providerId of providerIds) {

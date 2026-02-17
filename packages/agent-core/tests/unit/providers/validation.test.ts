@@ -246,6 +246,146 @@ describe('API Key Validation', () => {
       });
     });
 
+    describe('Nebius', () => {
+      it('should validate Nebius key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('nebius', 'nebius-test-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.tokenfactory.nebius.com/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer nebius-test-key',
+            }),
+          })
+        );
+      });
+
+      it('should return error for invalid Nebius key', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: 'Invalid API key' } }),
+        } as Response);
+
+        const result = await validateApiKey('nebius', 'invalid-key');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid API key');
+      });
+    });
+
+    describe('Together AI', () => {
+      it('should validate Together AI key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('together', 'together-test-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.together.xyz/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer together-test-key',
+            }),
+          })
+        );
+      });
+
+      it('should return error for invalid Together AI key', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: 'Invalid API key' } }),
+        } as Response);
+
+        const result = await validateApiKey('together', 'invalid-key');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid API key');
+      });
+    });
+
+    describe('Fireworks AI', () => {
+      it('should validate Fireworks AI key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('fireworks', 'fireworks-test-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.fireworks.ai/inference/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer fireworks-test-key',
+            }),
+          })
+        );
+      });
+
+      it('should return error for invalid Fireworks AI key', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: 'Invalid API key' } }),
+        } as Response);
+
+        const result = await validateApiKey('fireworks', 'invalid-key');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid API key');
+      });
+    });
+
+    describe('Groq', () => {
+      it('should validate Groq key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('groq', 'gsk-test-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.groq.com/openai/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer gsk-test-key',
+            }),
+          })
+        );
+      });
+
+      it('should return error for invalid Groq key', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: 'Invalid API key' } }),
+        } as Response);
+
+        const result = await validateApiKey('groq', 'invalid-key');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid API key');
+      });
+    });
+
     describe('Providers without API validation', () => {
       it('should skip validation for Ollama', async () => {
         const result = await validateApiKey('ollama', 'any-key');

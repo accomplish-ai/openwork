@@ -141,6 +141,10 @@ Accomplish는 로컬 머신에서 파일 관리, 문서 작성, 브라우저 작
 - Moonshot AI (Kimi)
 - Z.AI (GLM)
 - MiniMax
+- Nebius AI
+- Together AI
+- Fireworks AI
+- Groq
 - Amazon Bedrock
 - Azure Foundry
 - OpenRouter

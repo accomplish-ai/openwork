@@ -19,6 +19,10 @@ const PROVIDER_NAMES: Record<string, string> = {
   moonshot: 'Moonshot AI',
   ollama: 'Ollama',
   litellm: 'LiteLLM',
+  nebius: 'Nebius AI',
+  together: 'Together AI',
+  fireworks: 'Fireworks AI',
+  groq: 'Groq',
 };
 
 export function AuthErrorToast({ error, onReLogin, onDismiss }: AuthErrorToastProps) {

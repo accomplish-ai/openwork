@@ -1,5 +1,5 @@
 import type { ProviderType } from '../common/types/provider.js';
-import { ZAI_ENDPOINTS } from '../common/types/provider.js';
+import { DEFAULT_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '../common/types/provider.js';
 import type { ZaiRegion } from '../common/types/providerSettings.js';
 
 import { fetchWithTimeout } from '../utils/fetch.js';
@@ -174,8 +174,37 @@ export async function validateApiKey(
       case 'litellm':
       case 'lmstudio':
       case 'custom':
-      default:
         return { valid: true };
+
+      default: {
+        // Data-driven validation: use modelsEndpoint from DEFAULT_PROVIDERS
+        // for any provider in STANDARD_VALIDATION_PROVIDERS without an explicit case
+        if (STANDARD_VALIDATION_PROVIDERS.has(provider)) {
+          const providerConfig = DEFAULT_PROVIDERS.find((c) => c.id === provider);
+          const endpoint = providerConfig?.modelsEndpoint;
+          if (endpoint) {
+            const headers: Record<string, string> = {};
+            let url = endpoint.url;
+
+            if (endpoint.authStyle === 'bearer') {
+              headers['Authorization'] = `Bearer ${apiKey}`;
+            } else if (endpoint.authStyle === 'x-api-key') {
+              headers['x-api-key'] = apiKey;
+            } else if (endpoint.authStyle === 'query-param') {
+              const separator = url.includes('?') ? '&' : '?';
+              url = `${url}${separator}key=${encodeURIComponent(apiKey)}`;
+            }
+
+            if (endpoint.extraHeaders) {
+              Object.assign(headers, endpoint.extraHeaders);
+            }
+
+            response = await fetchWithTimeout(url, { method: 'GET', headers }, timeout);
+            break;
+          }
+        }
+        return { valid: true };
+      }
     }
 
     if (response.ok) {

@@ -33,10 +33,14 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // DeepSeek
   'deepseek-chat': 'DeepSeek Chat',
   'deepseek-reasoner': 'DeepSeek Reasoner',
+  'DeepSeek-V3.2': 'DeepSeek V3.2',
   // Moonshot
   'kimi-k2.5': 'Kimi K2.5',
   'kimi-k2-turbo-preview': 'Kimi K2 Turbo',
   'kimi-latest': 'Kimi Latest',
+  'kimi-k2-instruct-0905': 'Kimi K2 Instruct',
+  'Kimi-K2.5': 'Kimi K2.5',
+  'kimi-k2p5': 'Kimi K2.5',
   // Z.AI
   'glm-4.7-flashx': 'GLM-4.7 FlashX',
   'glm-4.7': 'GLM-4.7',
@@ -65,6 +69,10 @@ export const PROVIDER_PREFIXES = [
   'lmstudio/',
   'azure-foundry/',
   'vertex/',
+  'nebius/',
+  'together/',
+  'fireworks/',
+  'groq/',
 ];
 
 /**

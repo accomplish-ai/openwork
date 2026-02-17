@@ -136,9 +136,7 @@ Renderer (taskStore subscriptions)
 
 ## Supported Providers
 
-15 providers (`ProviderType`): anthropic, openai, google, xai, deepseek, moonshot, zai, bedrock, azure-foundry, ollama, openrouter, litellm, minimax, lmstudio, custom
-
-`ProviderId` (14) excludes `custom`.
+20 providers (`ProviderType`): anthropic, openai, google, xai, deepseek, moonshot, zai, bedrock, vertex, azure-foundry, ollama, openrouter, litellm, minimax, lmstudio, nebius, together, fireworks, groq, custom
 
 ## SQLite Storage
 
