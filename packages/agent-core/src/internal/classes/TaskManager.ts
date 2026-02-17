@@ -1,9 +1,19 @@
 import { OpenCodeAdapter, AdapterOptions, OpenCodeCliNotFoundError } from './OpenCodeAdapter.js';
-import type { TaskConfig, Task, TaskMessage, TaskResult, TaskStatus } from '../../common/types/task.js';
+import type {
+  TaskConfig,
+  Task,
+  TaskMessage,
+  TaskResult,
+  TaskStatus,
+} from '../../common/types/task.js';
 import type { OpenCodeMessage } from '../../common/types/opencode.js';
 import type { PermissionRequest } from '../../common/types/permission.js';
 import type { TodoItem } from '../../common/types/todo.js';
-import { toTaskMessage, flushAndCleanupBatcher, queueMessage } from '../../opencode/message-processor.js';
+import {
+  toTaskMessage,
+  flushAndCleanupBatcher,
+  queueMessage,
+} from '../../opencode/message-processor.js';
 import { stopAzureFoundryProxy } from '../../opencode/proxies/azure-foundry-proxy.js';
 import { stopMoonshotProxy } from '../../opencode/proxies/moonshot-proxy.js';
 
@@ -26,8 +36,23 @@ export interface TaskCallbacks {
   onTodoUpdate?: (todos: TodoItem[]) => void;
   onAuthError?: (error: { providerId: string; message: string }) => void;
   onReasoning?: (text: string) => void;
-  onToolCallComplete?: (data: { toolName: string; toolInput: unknown; toolOutput: string; sessionId?: string }) => void;
-  onStepFinish?: (data: { reason: string; model?: string; tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } }; cost?: number }) => void;
+  onToolCallComplete?: (data: {
+    toolName: string;
+    toolInput: unknown;
+    toolOutput: string;
+    sessionId?: string;
+  }) => void;
+  onStepFinish?: (data: {
+    reason: string;
+    model?: string;
+    tokens?: {
+      input: number;
+      output: number;
+      reasoning: number;
+      cache?: { read: number; write: number };
+    };
+    cost?: number;
+  }) => void;
 }
 
 export interface TaskManagerOptions {
@@ -73,36 +98,30 @@ export class TaskManager {
     return this.isFirstTask;
   }
 
-  async startTask(
-    taskId: string,
-    config: TaskConfig,
-    callbacks: TaskCallbacks
-  ): Promise<Task> {
+  async startTask(taskId: string, config: TaskConfig, callbacks: TaskCallbacks): Promise<Task> {
     const cliInstalled = await this.options.isCliAvailable();
     if (!cliInstalled) {
       throw new OpenCodeCliNotFoundError();
     }
 
-    if (this.activeTasks.has(taskId) || this.taskQueue.some(q => q.taskId === taskId)) {
+    if (this.activeTasks.has(taskId) || this.taskQueue.some((q) => q.taskId === taskId)) {
       throw new Error(`Task ${taskId} is already running or queued`);
     }
 
     if (this.activeTasks.size >= this.maxConcurrentTasks) {
-      console.log(`[TaskManager] At max concurrent tasks (${this.maxConcurrentTasks}). Queueing task ${taskId}`);
+      console.log(
+        `[TaskManager] At max concurrent tasks (${this.maxConcurrentTasks}). Queueing task ${taskId}`,
+      );
       return this.queueTask(taskId, config, callbacks);
     }
 
     return this.executeTask(taskId, config, callbacks);
   }
 
-  private queueTask(
-    taskId: string,
-    config: TaskConfig,
-    callbacks: TaskCallbacks
-  ): Task {
+  private queueTask(taskId: string, config: TaskConfig, callbacks: TaskCallbacks): Task {
     if (this.taskQueue.length >= this.maxConcurrentTasks) {
       throw new Error(
-        `Maximum queued tasks (${this.maxConcurrentTasks}) reached. Please wait for tasks to complete.`
+        `Maximum queued tasks (${this.maxConcurrentTasks}) reached. Please wait for tasks to complete.`,
       );
     }
 
@@ -128,7 +147,7 @@ export class TaskManager {
   private async executeTask(
     taskId: string,
     config: TaskConfig,
-    callbacks: TaskCallbacks
+    callbacks: TaskCallbacks,
   ): Promise<Task> {
     const adapterOptions: AdapterOptions = {
       ...this.options.adapterOptions,
@@ -200,11 +219,26 @@ export class TaskManager {
       callbacks.onReasoning?.(text);
     };
 
-    const onToolCallComplete = (data: { toolName: string; toolInput: unknown; toolOutput: string; sessionId?: string }) => {
+    const onToolCallComplete = (data: {
+      toolName: string;
+      toolInput: unknown;
+      toolOutput: string;
+      sessionId?: string;
+    }) => {
       callbacks.onToolCallComplete?.(data);
     };
 
-    const onStepFinish = (data: { reason: string; model?: string; tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } }; cost?: number }) => {
+    const onStepFinish = (data: {
+      reason: string;
+      model?: string;
+      tokens?: {
+        input: number;
+        output: number;
+        reasoning: number;
+        cache?: { read: number; write: number };
+      };
+      cost?: number;
+    }) => {
       callbacks.onStepFinish?.(data);
     };
 
@@ -267,7 +301,11 @@ export class TaskManager {
           this.isFirstTask = false;
         }
 
-        callbacks.onProgress({ stage: 'environment', message: 'Setting up environment...', isFirstTask });
+        callbacks.onProgress({
+          stage: 'environment',
+          message: 'Setting up environment...',
+          isFirstTask,
+        });
 
         await adapter.startTask({
           ...config,
@@ -288,7 +326,9 @@ export class TaskManager {
   private async processQueue(): Promise<void> {
     while (this.taskQueue.length > 0 && this.activeTasks.size < this.maxConcurrentTasks) {
       const nextTask = this.taskQueue.shift()!;
-      console.log(`[TaskManager] Processing queue. Starting task ${nextTask.taskId}. Active: ${this.activeTasks.size}, Remaining in queue: ${this.taskQueue.length}`);
+      console.log(
+        `[TaskManager] Processing queue. Starting task ${nextTask.taskId}. Active: ${this.activeTasks.size}, Remaining in queue: ${this.taskQueue.length}`,
+      );
 
       nextTask.callbacks.onStatusChange?.('running');
 
@@ -306,7 +346,7 @@ export class TaskManager {
   }
 
   async cancelTask(taskId: string): Promise<void> {
-    const queueIndex = this.taskQueue.findIndex(q => q.taskId === taskId);
+    const queueIndex = this.taskQueue.findIndex((q) => q.taskId === taskId);
     if (queueIndex !== -1) {
       console.log(`[TaskManager] Cancelling queued task ${taskId}`);
       this.taskQueue.splice(queueIndex, 1);
@@ -341,7 +381,7 @@ export class TaskManager {
   }
 
   cancelQueuedTask(taskId: string): boolean {
-    const queueIndex = this.taskQueue.findIndex(q => q.taskId === taskId);
+    const queueIndex = this.taskQueue.findIndex((q) => q.taskId === taskId);
     if (queueIndex === -1) {
       return false;
     }
@@ -383,7 +423,7 @@ export class TaskManager {
   }
 
   isTaskQueued(taskId: string): boolean {
-    return this.taskQueue.some(q => q.taskId === taskId);
+    return this.taskQueue.some((q) => q.taskId === taskId);
   }
 
   getQueueLength(): number {
@@ -413,7 +453,7 @@ export class TaskManager {
     this.taskQueue = [];
 
     for (const [taskId] of this.activeTasks) {
-      this.cancelTask(taskId).catch(err => {
+      this.cancelTask(taskId).catch((err) => {
         console.error(`[TaskManager] Error cancelling task ${taskId}:`, err);
       });
     }
@@ -425,12 +465,16 @@ export class TaskManager {
       console.log(`[TaskManager] Cleaning up task ${taskId}`);
       managedTask.cleanup();
       this.activeTasks.delete(taskId);
-      console.log(`[TaskManager] Task ${taskId} cleaned up. Active tasks: ${this.activeTasks.size}`);
+      console.log(
+        `[TaskManager] Task ${taskId} cleaned up. Active tasks: ${this.activeTasks.size}`,
+      );
     }
   }
 
   dispose(): void {
-    console.log(`[TaskManager] Disposing all tasks (${this.activeTasks.size} active, ${this.taskQueue.length} queued)`);
+    console.log(
+      `[TaskManager] Disposing all tasks (${this.activeTasks.size} active, ${this.taskQueue.length} queued)`,
+    );
 
     this.taskQueue = [];
 

@@ -28,11 +28,7 @@ export class CompletionEnforcer {
     if (todos.length > 0) {
       this.taskRequiresCompletion = true;
     }
-    this.callbacks.onDebug(
-      'todo_update',
-      `Todo list updated: ${todos.length} items`,
-      { todos }
-    );
+    this.callbacks.onDebug('todo_update', `Todo list updated: ${todos.length} items`, { todos });
   }
 
   markToolsUsed(countsForContinuation: boolean = true): void {
@@ -70,7 +66,7 @@ export class CompletionEnforcer {
       this.callbacks.onDebug(
         'incomplete_todos',
         'Agent claimed success but has incomplete todos - downgrading to partial',
-        { incompleteTodos: this.getIncompleteTodosSummary() }
+        { incompleteTodos: this.getIncompleteTodosSummary() },
       );
       completeTaskArgs.status = 'partial';
       completeTaskArgs.remaining_work = this.getIncompleteTodosSummary();
@@ -81,7 +77,7 @@ export class CompletionEnforcer {
     this.callbacks.onDebug(
       'complete_task',
       `complete_task detected with status: ${completeTaskArgs.status}`,
-      { args: completeTaskArgs, state: CompletionFlowState[this.state.getState()] }
+      { args: completeTaskArgs, state: CompletionFlowState[this.state.getState()] },
     );
 
     return true;
@@ -96,7 +92,7 @@ export class CompletionEnforcer {
       this.callbacks.onDebug(
         'partial_continuation',
         'Scheduling continuation for partial completion',
-        { remainingWork: this.state.getCompleteTaskArgs()?.remaining_work }
+        { remainingWork: this.state.getCompleteTaskArgs()?.remaining_work },
       );
       return 'pending';
     }
@@ -105,7 +101,7 @@ export class CompletionEnforcer {
       if (this.isConversationalTurn()) {
         this.callbacks.onDebug(
           'skip_continuation',
-          'No tools used and no complete_task called — treating as conversational response'
+          'No tools used and no complete_task called — treating as conversational response',
         );
         return 'complete';
       }
@@ -113,12 +109,14 @@ export class CompletionEnforcer {
       if (this.state.scheduleContinuation()) {
         this.callbacks.onDebug(
           'continuation',
-          `Scheduled continuation prompt (attempt ${this.state.getContinuationAttempts()})`
+          `Scheduled continuation prompt (attempt ${this.state.getContinuationAttempts()})`,
         );
         return 'pending';
       }
 
-      console.warn(`[CompletionEnforcer] Agent stopped without complete_task. State: ${CompletionFlowState[this.state.getState()]}, attempts: ${this.state.getContinuationAttempts()}/${this.state.getMaxContinuationAttempts()}`);
+      console.warn(
+        `[CompletionEnforcer] Agent stopped without complete_task. State: ${CompletionFlowState[this.state.getState()]}, attempts: ${this.state.getContinuationAttempts()}/${this.state.getMaxContinuationAttempts()}`,
+      );
     }
 
     return 'complete';
@@ -132,7 +130,7 @@ export class CompletionEnforcer {
         args?.remaining_work || 'No remaining work specified',
         args?.original_request_summary || 'Unknown request',
         args?.summary || 'No summary provided',
-        this.hasIncompleteTodos() ? this.getIncompleteTodosSummary() : undefined
+        this.hasIncompleteTodos() ? this.getIncompleteTodosSummary() : undefined,
       );
 
       const canContinue = this.state.startPartialContinuation();
@@ -146,7 +144,7 @@ export class CompletionEnforcer {
       this.callbacks.onDebug(
         'partial_continuation',
         `Starting partial continuation (attempt ${this.state.getContinuationAttempts()})`,
-        { remainingWork: args?.remaining_work, summary: args?.summary, continuationPrompt: prompt }
+        { remainingWork: args?.remaining_work, summary: args?.summary, continuationPrompt: prompt },
       );
 
       this.taskToolsWereUsed = false;
@@ -161,7 +159,7 @@ export class CompletionEnforcer {
 
       this.callbacks.onDebug(
         'continuation',
-        `Starting continuation task (attempt ${this.state.getContinuationAttempts()})`
+        `Starting continuation task (attempt ${this.state.getContinuationAttempts()})`,
       );
 
       this.taskToolsWereUsed = false;
@@ -173,9 +171,11 @@ export class CompletionEnforcer {
   }
 
   shouldComplete(): boolean {
-    return this.state.isDone() ||
-           this.state.getState() === CompletionFlowState.BLOCKED ||
-           this.state.getState() === CompletionFlowState.MAX_RETRIES_REACHED;
+    return (
+      this.state.isDone() ||
+      this.state.getState() === CompletionFlowState.BLOCKED ||
+      this.state.getState() === CompletionFlowState.MAX_RETRIES_REACHED
+    );
   }
 
   reset(): void {
@@ -187,16 +187,14 @@ export class CompletionEnforcer {
   }
 
   private hasIncompleteTodos(): boolean {
-    return this.currentTodos.some(
-      t => t.status === 'pending' || t.status === 'in_progress'
-    );
+    return this.currentTodos.some((t) => t.status === 'pending' || t.status === 'in_progress');
   }
 
   private getIncompleteTodosSummary(): string {
     const incomplete = this.currentTodos.filter(
-      t => t.status === 'pending' || t.status === 'in_progress'
+      (t) => t.status === 'pending' || t.status === 'in_progress',
     );
-    return incomplete.map(t => `- ${t.content}`).join('\n');
+    return incomplete.map((t) => `- ${t.content}`).join('\n');
   }
 
   getState(): CompletionFlowState {
@@ -208,8 +206,6 @@ export class CompletionEnforcer {
   }
 
   private isConversationalTurn(): boolean {
-    return !this.taskToolsWereUsed &&
-           !this.taskToolsWereUsedEver &&
-           !this.taskRequiresCompletion;
+    return !this.taskToolsWereUsed && !this.taskToolsWereUsedEver && !this.taskRequiresCompletion;
   }
 }
