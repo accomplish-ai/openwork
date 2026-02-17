@@ -164,8 +164,8 @@ export interface ProviderSettingsAPI {
     model: string;
     baseUrl?: string;
   } | null;
-  /** Check if any provider is configured and ready */
-  hasReadyProvider(): boolean;
+  /** Check if any provider is configured and ready, optionally verifying secrets */
+  hasReadyProvider(getApiKey?: (provider: string) => string | null): boolean;
   /** Get IDs of all connected providers */
   getConnectedProviderIds(): ProviderId[];
 }

@@ -1815,7 +1815,7 @@ const MessageBubble = memo(
       return null;
     }
 
-    const showCopyButton = !isTool && !!message.content?.trim();
+    const showCopyButton = !isTool && !(isAssistant && showContinueButton);
 
     const proseClasses = cn(
       'text-sm prose prose-sm max-w-none',

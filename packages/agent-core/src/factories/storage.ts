@@ -136,7 +136,7 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     getProviderDebugMode: () => getProviderDebugMode(),
     clearProviderSettings: () => clearProviderSettings(),
     getActiveProviderModel: () => getActiveProviderModel(),
-    hasReadyProvider: () => hasReadyProvider(),
+    hasReadyProvider: (getApiKey) => hasReadyProvider(getApiKey),
     getConnectedProviderIds: () => getConnectedProviderIds(),
 
     // Connectors

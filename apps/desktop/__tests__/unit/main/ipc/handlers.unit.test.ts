@@ -1279,6 +1279,36 @@ describe('IPC Handlers Integration', () => {
       await expect(invokeHandler('session:resume', '   ', 'prompt')).rejects.toThrow();
     });
 
+    it('session:resume should throw when provider API key is missing from secure storage', async () => {
+      // Arrange - hasReadyProvider returns false (simulating missing API key)
+      const agentCore = await import('@accomplish_ai/agent-core');
+      (agentCore.hasReadyProvider as Mock).mockReturnValue(false);
+
+      // Act & Assert
+      await expect(invokeHandler('session:resume', 'session_123', 'Continue task')).rejects.toThrow(
+        /No provider is ready/,
+      );
+    });
+
+    it('session:resume should pass getApiKey to hasReadyProvider', async () => {
+      // Arrange
+      const agentCore = await import('@accomplish_ai/agent-core');
+      (agentCore.hasReadyProvider as Mock).mockReturnValue(true);
+      mockTaskManager.startTask.mockResolvedValue({
+        id: 'task_resumed',
+        prompt: 'Continue',
+        status: 'running',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      // Act
+      await invokeHandler('session:resume', 'session_123', 'Continue');
+
+      // Assert
+      expect(agentCore.hasReadyProvider).toHaveBeenCalledWith(expect.any(Function));
+    });
+
     it('session:resume should validate prompt', async () => {
       // Arrange & Act & Assert
       await expect(invokeHandler('session:resume', 'session_123', '')).rejects.toThrow();
@@ -1705,6 +1735,44 @@ describe('IPC Handlers Integration', () => {
 
       // Assert
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('API Key Preflight Check', () => {
+    beforeEach(() => {
+      registerIPCHandlers();
+    });
+
+    it('task:start should throw when provider API key is missing from secure storage', async () => {
+      // Arrange - hasReadyProvider returns false (simulating missing API key)
+      const agentCore = await import('@accomplish_ai/agent-core');
+      (agentCore.hasReadyProvider as Mock).mockReturnValue(false);
+
+      const config = { prompt: 'Test task prompt' };
+
+      // Act & Assert
+      await expect(invokeHandler('task:start', config)).rejects.toThrow(
+        'No provider is ready. Please connect a provider with a valid API key and select a model in Settings.',
+      );
+    });
+
+    it('task:start should pass getApiKey to hasReadyProvider', async () => {
+      // Arrange
+      const agentCore = await import('@accomplish_ai/agent-core');
+      (agentCore.hasReadyProvider as Mock).mockReturnValue(true);
+      mockTaskManager.startTask.mockResolvedValue({
+        id: 'task_123',
+        prompt: 'Test',
+        status: 'running',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      // Act
+      await invokeHandler('task:start', { prompt: 'Test' });
+
+      // Assert - hasReadyProvider should be called with getApiKey function
+      expect(agentCore.hasReadyProvider).toHaveBeenCalledWith(expect.any(Function));
     });
   });
 

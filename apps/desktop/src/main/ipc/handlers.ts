@@ -147,9 +147,9 @@ export function registerIPCHandlers(): void {
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
 
-    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider(getApiKey)) {
       throw new Error(
-        'No provider is ready. Please connect a provider and select a model in Settings.',
+        'No provider is ready. Please connect a provider with a valid API key and select a model in Settings.',
       );
     }
 
@@ -315,9 +315,9 @@ export function registerIPCHandlers(): void {
         ? sanitizeString(existingTaskId, 'taskId', 128)
         : undefined;
 
-      if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
+      if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider(getApiKey)) {
         throw new Error(
-          'No provider is ready. Please connect a provider and select a model in Settings.',
+          'No provider is ready. Please connect a provider with a valid API key and select a model in Settings.',
         );
       }
 

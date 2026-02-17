@@ -166,16 +166,61 @@ export function getActiveProviderModel(): {
   return result;
 }
 
-export function hasReadyProvider(): boolean {
+function providerRequiresSecret(provider: ConnectedProvider): boolean {
+  switch (provider.credentials.type) {
+    case 'ollama':
+    case 'lmstudio':
+    case 'oauth':
+      return false;
+    case 'litellm':
+      return provider.credentials.hasApiKey;
+    case 'azure-foundry':
+      return provider.credentials.authMethod === 'api-key';
+    case 'vertex':
+      return provider.credentials.authMethod === 'serviceAccount';
+    default:
+      return true;
+  }
+}
+
+/**
+ * Checks if any provider is configured and ready for use.
+ * When `getApiKey` is provided, providers that require secrets but have no key
+ * are automatically disconnected from the database.
+ * Without `getApiKey`, assumes secrets exist (legacy behavior).
+ */
+export function hasReadyProvider(
+  getApiKey?: (provider: string) => string | null,
+): boolean {
   const db = getDatabase();
-  const row = db
+  const rows = db
     .prepare(
-      `SELECT COUNT(*) as count FROM providers
+      `SELECT * FROM providers
        WHERE connection_status = 'connected' AND selected_model_id IS NOT NULL`
     )
-    .get() as { count: number };
+    .all() as ProviderRow[];
 
-  return row.count > 0;
+  for (const row of rows) {
+    const provider = rowToProvider(row);
+    if (!providerRequiresSecret(provider)) {
+      return true;
+    }
+    if (getApiKey) {
+      const key = getApiKey(provider.providerId);
+      if (key) {
+        return true;
+      }
+      // Auto-disconnect provider with missing secret
+      db.prepare(
+        `UPDATE providers SET connection_status = 'disconnected' WHERE provider_id = ?`
+      ).run(provider.providerId);
+    } else {
+      // No getApiKey callback — assume secret exists (legacy behavior)
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function getConnectedProviderIds(): ProviderId[] {
