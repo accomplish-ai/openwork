@@ -352,9 +352,6 @@ vi.mock('@accomplish_ai/agent-core', async () => {
             this.emit('tool-result', toolUseOutput);
           }
 
-          if (toolUseName === 'AskUserQuestion') {
-            this.handleAskUserQuestion(toolUseInput as AskUserQuestionInputMock);
-          }
           break;
 
         case 'tool_result':
@@ -417,29 +414,6 @@ vi.mock('@accomplish_ai/agent-core', async () => {
         message: `Using ${toolName}`,
       });
 
-      if (toolName === 'AskUserQuestion') {
-        this.handleAskUserQuestion(toolInput as AskUserQuestionInputMock);
-      }
-    }
-
-    private handleAskUserQuestion(input: AskUserQuestionInputMock): void {
-      const question = input.questions?.[0];
-      if (!question) return;
-
-      const permissionRequest = {
-        id: this.generateRequestId(),
-        taskId: this.currentTaskId || '',
-        type: 'question',
-        question: question.question,
-        options: question.options?.map((o) => ({
-          label: o.label,
-          description: o.description,
-        })),
-        multiSelect: question.multiSelect,
-        createdAt: new Date().toISOString(),
-      };
-
-      this.emit('permission-request', permissionRequest);
     }
 
     private handleProcessExit(code: number | null): void {
@@ -649,15 +623,6 @@ vi.mock('@accomplish_ai/agent-core', async () => {
       reason?: string;
     };
     error?: string;
-  }
-
-  interface AskUserQuestionInputMock {
-    questions?: Array<{
-      question: string;
-      header?: string;
-      options?: Array<{ label: string; description?: string }>;
-      multiSelect?: boolean;
-    }>;
   }
 
   interface TodoItemMock {
@@ -1173,7 +1138,7 @@ describe('OpenCode Adapter Module', () => {
         expect(completeEvents[0].error).toBe('Something went wrong');
       });
 
-      it('should emit permission-request event for AskUserQuestion tool', async () => {
+      it('should not emit permission-request for AskUserQuestion (handled via MCP HTTP path)', async () => {
         // Arrange
         const adapter = createTestAdapter('test-task');
         const permissionRequests: unknown[] = [];
@@ -1206,11 +1171,9 @@ describe('OpenCode Adapter Module', () => {
         // Act
         mockPtyInstance.simulateData(JSON.stringify(toolCallMessage) + '\n');
 
-        // Assert
-        expect(permissionRequests.length).toBe(1);
-        const req = permissionRequests[0] as { question: string; options: Array<{ label: string }> };
-        expect(req.question).toBe('Do you want to proceed?');
-        expect(req.options).toHaveLength(2);
+        // Assert - adapter should NOT emit permission-request for AskUserQuestion
+        // The MCP HTTP question API server handles this via permission-api.ts
+        expect(permissionRequests.length).toBe(0);
       });
 
       it('should emit todo:update for non-empty todos', async () => {

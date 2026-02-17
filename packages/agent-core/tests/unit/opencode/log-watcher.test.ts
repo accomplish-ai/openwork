@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { OpenCodeLogWatcher, OpenCodeLogError, createLogWatcher } from '../../../src/opencode/log-watcher.js';
+import { OpenCodeLogWatcher, OpenCodeLogError, createLogWatcher } from '../../../src/internal/classes/OpenCodeLogWatcher.js';
 
 describe('OpenCodeLogWatcher', () => {
   let testDir: string;

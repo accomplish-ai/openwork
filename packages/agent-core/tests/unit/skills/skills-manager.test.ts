@@ -8,7 +8,7 @@ import * as os from 'os';
  * If the native module is not available (Node.js version mismatch),
  * these tests will be skipped.
  *
- * To fix native module issues, run: pnpm rebuild better-sqlite3
+ * To fix native module issues, run pnpm rebuild better-sqlite3
  */
 
 describe('SkillsManager', () => {

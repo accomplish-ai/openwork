@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog, nativeTheme } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog, nativeTheme, Menu } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -103,7 +103,33 @@ function createWindow() {
       preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
+      spellcheck: true,
     },
+  });
+
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    if (!params.misspelledWord) {
+      return;
+    }
+
+    const menuItems: Electron.MenuItemConstructorOptions[] = params.dictionarySuggestions.map(
+      (suggestion) => ({
+        label: suggestion,
+        click: () => mainWindow?.webContents.replaceMisspelling(suggestion),
+      })
+    );
+
+    if (menuItems.length > 0) {
+      menuItems.push({ type: 'separator' });
+    }
+
+    menuItems.push({
+      label: 'Add to Dictionary',
+      click: () =>
+        mainWindow?.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+    });
+
+    Menu.buildFromTemplate(menuItems).popup();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

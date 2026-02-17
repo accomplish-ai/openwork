@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { OpenCodeCliNotFoundError, buildContinuationPrompt } from '../../../src/opencode/adapter.js';
+import { OpenCodeCliNotFoundError, buildContinuationPrompt } from '../../../src/internal/classes/OpenCodeAdapter.js';
 import { serializeError } from '../../../src/utils/error.js';
 
 /**

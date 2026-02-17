@@ -76,7 +76,7 @@ function createFakeLogWatcher() {
   return emitter;
 }
 
-vi.mock('../../../src/opencode/log-watcher.js', () => ({
+vi.mock('../../../src/internal/classes/OpenCodeLogWatcher.js', () => ({
   createLogWatcher: () => createFakeLogWatcher(),
   OpenCodeLogWatcher: {
     getErrorMessage: (error: { message?: string; errorName: string }) => {
@@ -94,9 +94,9 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 // --- Import the adapter AFTER mocks are registered ---
 // Dynamic import isn't needed because vi.mock is hoisted by vitest.
-import { OpenCodeAdapter, buildContinuationPrompt } from '../../../src/opencode/adapter.js';
-import type { OpenCodeLogError } from '../../../src/opencode/log-watcher.js';
-import type { AdapterOptions } from '../../../src/opencode/adapter.js';
+import { OpenCodeAdapter, buildContinuationPrompt } from '../../../src/internal/classes/OpenCodeAdapter.js';
+import type { OpenCodeLogError } from '../../../src/internal/classes/OpenCodeLogWatcher.js';
+import type { AdapterOptions } from '../../../src/internal/classes/OpenCodeAdapter.js';
 import type { TaskResult } from '../../../src/common/types/task.js';
 
 // --- Helper: default adapter options ---

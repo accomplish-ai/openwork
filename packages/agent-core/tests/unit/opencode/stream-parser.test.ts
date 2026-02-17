@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StreamParser } from '../../../src/opencode/stream-parser.js';
+import { StreamParser } from '../../../src/internal/classes/StreamParser.js';
 import type { OpenCodeMessage } from '../../../src/shared';
 
 describe('StreamParser', () => {
