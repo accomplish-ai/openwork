@@ -80,7 +80,9 @@ vi.mock('@accomplish_ai/agent-core', () => ({
 
   toggleTaskFavorite: vi.fn((taskId: string) => {
     const task = mockTaskStore.get(taskId);
-    if (!task) return false;
+    if (!task) {
+      return false;
+    }
     task.favorite = !task.favorite;
     return Boolean(task.favorite);
   }),

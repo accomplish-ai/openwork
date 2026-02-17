@@ -346,7 +346,9 @@ export default function ExecutionPage() {
   }, [filteredDebugLogs.length, debugSearchIndex]);
 
   const handleToggleFavorite = useCallback(() => {
-    if (!currentTask) return;
+    if (!currentTask) {
+      return;
+    }
     void toggleTaskFavorite(currentTask.id);
   }, [currentTask, toggleTaskFavorite]);
 
