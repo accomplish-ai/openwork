@@ -226,7 +226,7 @@ export default function HomePage() {
 
             {/* Favorites Section - above example prompts */}
             {favoriteTasks.length > 0 && (
-              <div className="border-t border-border px-6 py-3">
+              <div data-testid="favorites-section" className="border-t border-border px-6 py-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Favorites</span>
@@ -238,6 +238,7 @@ export default function HomePage() {
                       className="flex items-center gap-1 group"
                     >
                       <button
+                        data-testid="favorite-item"
                         onClick={() => handleExampleClick(task.prompt)}
                         className="flex-1 text-left px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted/50 transition-colors truncate"
                         title={task.summary || task.prompt}
@@ -245,6 +246,7 @@ export default function HomePage() {
                         {task.summary || task.prompt}
                       </button>
                       <button
+                        data-testid="favorite-remove"
                         onClick={() => toggleTaskFavorite(task.id)}
                         className="p-1.5 rounded-md text-yellow-500 opacity-0 group-hover:opacity-100 hover:text-yellow-600 transition-all shrink-0"
                         aria-label="Remove from favorites"
@@ -257,6 +259,7 @@ export default function HomePage() {
                 </div>
                 {favoriteTasks.length > MAX_VISIBLE_FAVORITES && (
                   <button
+                    data-testid="favorites-show-all"
                     onClick={() => setShowAllFavorites(!showAllFavorites)}
                     className="mt-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >

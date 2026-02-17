@@ -1462,7 +1462,7 @@ export default function ExecutionPage() {
                 {currentTask.isFavorite ? 'Favorited' : 'Favorite'}
               </Button>
             )}
-            <Button onClick={() => navigate('/')}>
+            <Button data-testid="start-new-task" onClick={() => navigate('/')}>
               Start New Task
             </Button>
           </div>
