@@ -34,7 +34,7 @@ function createMockTask(
   prompt: string = 'Test task',
   status: TaskStatus = 'completed',
   createdAt?: string,
-  messageCount: number = 0
+  messageCount: number = 0,
 ): Task {
   return {
     id,
@@ -73,7 +73,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -85,11 +85,13 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
-      expect(screen.getByText(/start by describing what you want to accomplish/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/start by describing what you want to accomplish/i),
+      ).toBeInTheDocument();
     });
 
     it('should not render task list in empty state', () => {
@@ -97,7 +99,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -110,7 +112,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -130,7 +132,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -146,7 +148,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -161,7 +163,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={false} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -176,7 +178,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Status label appears in the meta text
@@ -186,13 +188,15 @@ describe('TaskHistory Integration', () => {
 
     it('should render message count for each task', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Task with messages', 'completed', undefined, 5)];
+      mockStoreState.tasks = [
+        createMockTask('task-1', 'Task with messages', 'completed', undefined, 5),
+      ];
 
       // Act
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -204,7 +208,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -221,7 +225,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -237,7 +241,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -253,7 +257,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -269,7 +273,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -285,7 +289,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -301,7 +305,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Status label appears in the meta text
@@ -321,7 +325,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -341,7 +345,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -361,7 +365,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -378,7 +382,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskCard = screen.getByText('Deletable task').closest('a');
@@ -400,7 +404,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskCard = screen.getByText('Deletable task').closest('a');
@@ -422,7 +426,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskCard = screen.getByText('Deletable task').closest('a');
@@ -444,7 +448,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const taskCard = screen.getByText('Deletable task').closest('a');
@@ -467,7 +471,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -482,7 +486,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory limit={5} showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -498,7 +502,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       fireEvent.click(screen.getByText(/clear all/i));
@@ -516,7 +520,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       fireEvent.click(screen.getByText(/clear all/i));
@@ -534,7 +538,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory showTitle={true} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       fireEvent.click(screen.getByText(/clear all/i));
@@ -559,7 +563,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory limit={3} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -583,7 +587,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory limit={2} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -602,7 +606,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory limit={2} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -621,7 +625,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory limit={5} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -642,7 +646,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -664,7 +668,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -680,7 +684,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -696,7 +700,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -712,7 +716,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -729,7 +733,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -745,7 +749,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -755,13 +759,15 @@ describe('TaskHistory Integration', () => {
 
     it('should truncate long task prompts', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'This is a very long task prompt that should be truncated')];
+      mockStoreState.tasks = [
+        createMockTask('task-1', 'This is a very long task prompt that should be truncated'),
+      ];
 
       // Act
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -780,7 +786,7 @@ describe('TaskHistory Integration', () => {
       render(
         <MemoryRouter>
           <TaskHistory />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert

@@ -9,10 +9,21 @@ interface ConnectorCardProps {
   onDelete: (id: string) => void;
 }
 
-const statusConfig: Record<ConnectorStatus, { label: string; dotClass: string; textClass: string }> = {
+const statusConfig: Record<
+  ConnectorStatus,
+  { label: string; dotClass: string; textClass: string }
+> = {
   connected: { label: 'Connected', dotClass: 'bg-green-500', textClass: 'text-green-600' },
-  disconnected: { label: 'Disconnected', dotClass: 'bg-muted-foreground', textClass: 'text-muted-foreground' },
-  connecting: { label: 'Connecting...', dotClass: 'bg-yellow-500 animate-pulse', textClass: 'text-yellow-600' },
+  disconnected: {
+    label: 'Disconnected',
+    dotClass: 'bg-muted-foreground',
+    textClass: 'text-muted-foreground',
+  },
+  connecting: {
+    label: 'Connecting...',
+    dotClass: 'bg-yellow-500 animate-pulse',
+    textClass: 'text-yellow-600',
+  },
   error: { label: 'Error', dotClass: 'bg-destructive', textClass: 'text-destructive' },
 };
 
@@ -48,9 +59,7 @@ export const ConnectorCard = memo(function ConnectorCard({
         {/* Left: Name, URL, Status */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-medium text-foreground">
-              {connector.name}
-            </h3>
+            <h3 className="truncate text-sm font-medium text-foreground">{connector.name}</h3>
             {/* Status badge */}
             <span className={`flex items-center gap-1 text-[11px] ${status.textClass}`}>
               <span className={`inline-block h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
@@ -96,7 +105,13 @@ export const ConnectorCard = memo(function ConnectorCard({
             }`}
             title={confirmDelete ? 'Click again to confirm' : 'Delete'}
           >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
             </svg>
           </button>

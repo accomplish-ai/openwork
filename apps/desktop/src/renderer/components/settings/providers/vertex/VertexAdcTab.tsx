@@ -24,17 +24,14 @@ export function VertexAdcTab({
     let cancelled = false;
     const accomplish = getAccomplish();
 
-    Promise.all([
-      accomplish.listVertexProjects(),
-      accomplish.detectVertexProject(),
-    ])
+    Promise.all([accomplish.listVertexProjects(), accomplish.detectVertexProject()])
       .then(([listResult, detectResult]) => {
         if (cancelled) return;
 
         if (!listResult.success || listResult.projects.length === 0) {
           setError(
             listResult.error ||
-              'No projects found. Make sure gcloud is installed and ADC is configured.'
+              'No projects found. Make sure gcloud is installed and ADC is configured.',
           );
           return;
         }
@@ -43,7 +40,7 @@ export function VertexAdcTab({
           listResult.projects.map((p) => ({
             id: p.projectId,
             name: p.name !== p.projectId ? `${p.projectId} (${p.name})` : p.projectId,
-          }))
+          })),
         );
 
         // Auto-select: prefer detected default project, fall back to first
@@ -69,12 +66,16 @@ export function VertexAdcTab({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="space-y-3">
       <div className="rounded-md bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
-        Uses credentials from <code className="text-xs bg-muted rounded px-1 py-0.5">gcloud auth application-default login</code>
+        Uses credentials from{' '}
+        <code className="text-xs bg-muted rounded px-1 py-0.5">
+          gcloud auth application-default login
+        </code>
       </div>
 
       {/* Project Selector */}

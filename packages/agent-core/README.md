@@ -37,13 +37,17 @@ const taskManager = createTaskManager({
 });
 
 // Start a task
-await taskManager.startTask('task-1', { prompt: 'Hello' }, {
-  onMessage: (msg) => console.log(msg),
-  onProgress: (p) => console.log(p.stage),
-  onPermissionRequest: (req) => console.log(req),
-  onComplete: (result) => console.log('Done:', result),
-  onError: (err) => console.error(err),
-});
+await taskManager.startTask(
+  'task-1',
+  { prompt: 'Hello' },
+  {
+    onMessage: (msg) => console.log(msg),
+    onProgress: (p) => console.log(p.stage),
+    onPermissionRequest: (req) => console.log(req),
+    onComplete: (result) => console.log('Done:', result),
+    onError: (err) => console.error(err),
+  },
+);
 ```
 
 ## API
@@ -121,7 +125,7 @@ generateConfig({
   browser: {
     mode: 'remote',
     cdpEndpoint: 'http://localhost:9222',
-    cdpHeaders: { 'X-CDP-Secret': 'token' },  // optional auth
+    cdpHeaders: { 'X-CDP-Secret': 'token' }, // optional auth
   },
 });
 
@@ -129,11 +133,11 @@ generateConfig({
 generateConfig({ browser: { mode: 'none' } });
 ```
 
-| Mode | Description |
-|------|-------------|
-| `builtin` | Default. Connects via the dev-browser HTTP server (used by the desktop app). |
-| `remote` | Connects directly to a CDP endpoint (headless Chromium, remote browser, etc.). |
-| `none` | Disables browser tools. Strips browser identity from the agent's system prompt. |
+| Mode      | Description                                                                     |
+| --------- | ------------------------------------------------------------------------------- |
+| `builtin` | Default. Connects via the dev-browser HTTP server (used by the desktop app).    |
+| `remote`  | Connects directly to a CDP endpoint (headless Chromium, remote browser, etc.).  |
+| `none`    | Disables browser tools. Strips browser identity from the agent's system prompt. |
 
 ## Sub-path Exports
 

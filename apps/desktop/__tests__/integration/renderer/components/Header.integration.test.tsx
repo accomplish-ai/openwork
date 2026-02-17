@@ -17,7 +17,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -30,7 +30,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -44,7 +44,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -58,7 +58,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -71,7 +71,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -85,7 +85,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -99,7 +99,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -113,7 +113,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -129,7 +129,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -142,7 +142,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/history']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -155,7 +155,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/settings']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -168,7 +168,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/history']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -181,7 +181,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -201,7 +201,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -214,7 +214,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -227,7 +227,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -240,7 +240,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -256,7 +256,7 @@ describe('Header Integration', () => {
       render(
         <MemoryRouter initialEntries={['/execution/task-123']}>
           <Header />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - None of the standard routes should be active

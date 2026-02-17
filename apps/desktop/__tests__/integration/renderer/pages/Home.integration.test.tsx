@@ -23,7 +23,7 @@ const mockLogEvent = vi.fn();
 function createMockTask(
   id: string,
   prompt: string = 'Test task',
-  status: TaskStatus = 'running'
+  status: TaskStatus = 'running',
 ): Task {
   return {
     id,
@@ -93,8 +93,18 @@ vi.mock('framer-motion', () => ({
     div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
       <div {...props}>{children}</div>
     ),
-    button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: unknown }) => (
-      <button onClick={onClick} {...props}>{children}</button>
+    button: ({
+      children,
+      onClick,
+      ...props
+    }: {
+      children: React.ReactNode;
+      onClick?: () => void;
+      [key: string]: unknown;
+    }) => (
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
     ),
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -102,20 +112,21 @@ vi.mock('framer-motion', () => ({
 
 // Mock SettingsDialog
 vi.mock('@/components/layout/SettingsDialog', () => ({
-  default: ({ open, onOpenChange, onApiKeySaved }: {
+  default: ({
+    open,
+    onOpenChange,
+    onApiKeySaved,
+  }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onApiKeySaved?: () => void;
-  }) => (
+  }) =>
     open ? (
       <div data-testid="settings-dialog" role="dialog">
         <button onClick={() => onOpenChange(false)}>Close</button>
-        {onApiKeySaved && (
-          <button onClick={onApiKeySaved}>Save API Key</button>
-        )}
+        {onApiKeySaved && <button onClick={onApiKeySaved}>Save API Key</button>}
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Import after mocks
@@ -165,11 +176,13 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
-      expect(screen.getByRole('heading', { name: /what will you accomplish today/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /what will you accomplish today/i }),
+      ).toBeInTheDocument();
     });
 
     it('should render the task input bar', () => {
@@ -177,7 +190,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -190,7 +203,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -203,7 +216,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -215,7 +228,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Check for some example use cases (expanded by default)
@@ -230,7 +243,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -245,7 +258,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -261,7 +274,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -288,7 +301,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -313,7 +326,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -334,7 +347,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -353,7 +366,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act
@@ -383,7 +396,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act - Submit to open settings
@@ -418,7 +431,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -434,7 +447,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert
@@ -449,7 +462,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // The textarea is disabled, so we can't really type, but test submit
@@ -469,7 +482,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act - Click on Calendar Prep Notes example (expanded by default)
@@ -493,7 +506,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - Examples should be visible initially (expanded by default)
@@ -524,7 +537,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Assert - examples are expanded by default
@@ -541,7 +554,7 @@ describe('Home Page Integration', () => {
       ];
 
       await waitFor(() => {
-        expectedExamples.forEach(example => {
+        expectedExamples.forEach((example) => {
           expect(screen.getByText(example)).toBeInTheDocument();
         });
       });
@@ -560,7 +573,7 @@ describe('Home Page Integration', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <HomePage />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Act - Open settings via submit

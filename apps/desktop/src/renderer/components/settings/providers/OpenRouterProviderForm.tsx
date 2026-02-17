@@ -71,10 +71,11 @@ export function OpenRouterProviderForm({
         return;
       }
 
-      const models = result.models?.map(m => ({
-        id: `openrouter/${m.id}`,
-        name: m.name,
-      })) || [];
+      const models =
+        result.models?.map((m) => ({
+          id: `openrouter/${m.id}`,
+          name: m.name,
+        })) || [];
       setAvailableModels(models);
 
       // Store longer key prefix for display
@@ -85,9 +86,10 @@ export function OpenRouterProviderForm({
         selectedModelId: null,
         credentials: {
           type: 'openrouter',
-          keyPrefix: trimmedKey.length > 40
-            ? trimmedKey.substring(0, 40) + '...'
-            : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
+          keyPrefix:
+            trimmedKey.length > 40
+              ? trimmedKey.substring(0, 40) + '...'
+              : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
         } as OpenRouterCredentials,
         lastConnectedAt: new Date().toISOString(),
         availableModels: models,
@@ -105,7 +107,10 @@ export function OpenRouterProviderForm({
   const models = connectedProvider?.availableModels || availableModels;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
       <ProviderFormHeader logoSrc={openrouterLogo} providerName="OpenRouter" invertInDark />
 
       <div className="space-y-3">
@@ -153,13 +158,22 @@ export function OpenRouterProviderForm({
                   disabled={!apiKey}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
 
               <FormError error={error} />
-              <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
+              <ConnectButton
+                onClick={handleConnect}
+                connecting={connecting}
+                disabled={!apiKey.trim()}
+              />
             </motion.div>
           ) : (
             <motion.div

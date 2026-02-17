@@ -44,9 +44,7 @@ export function AuthErrorToast({ error, onReLogin, onDismiss }: AuthErrorToastPr
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-medium text-foreground">
-                    {providerName} Session Expired
-                  </h4>
+                  <h4 className="font-medium text-foreground">{providerName} Session Expired</h4>
                   <button
                     onClick={onDismiss}
                     className="flex-shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -56,15 +54,9 @@ export function AuthErrorToast({ error, onReLogin, onDismiss }: AuthErrorToastPr
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {error.message}
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
                 <div className="mt-3">
-                  <Button
-                    size="sm"
-                    onClick={onReLogin}
-                    data-testid="auth-error-toast-relogin"
-                  >
+                  <Button size="sm" onClick={onReLogin} data-testid="auth-error-toast-relogin">
                     Re-login to {providerName}
                   </Button>
                 </div>

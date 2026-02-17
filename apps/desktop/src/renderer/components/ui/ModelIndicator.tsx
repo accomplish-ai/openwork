@@ -41,12 +41,15 @@ export function ModelIndicator({
   const [open, setOpen] = useState(false);
 
   // Refetch settings when dropdown opens to ensure we have latest data
-  const handleOpenChange = useCallback((isOpen: boolean) => {
-    if (isOpen) {
-      refetch();
-    }
-    setOpen(isOpen);
-  }, [refetch]);
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (isOpen) {
+        refetch();
+      }
+      setOpen(isOpen);
+    },
+    [refetch],
+  );
 
   // Also refetch on mount and periodically to catch settings changes
   useEffect(() => {
@@ -57,16 +60,12 @@ export function ModelIndicator({
 
   // Get active provider and model info
   const activeProviderId = settings?.activeProviderId;
-  const activeProvider = activeProviderId
-    ? settings?.connectedProviders[activeProviderId]
-    : null;
+  const activeProvider = activeProviderId ? settings?.connectedProviders[activeProviderId] : null;
   const selectedModelId = activeProvider?.selectedModelId;
 
   // Determine display values
   const hasModel = Boolean(activeProviderId && selectedModelId);
-  const modelDisplayName = selectedModelId
-    ? getModelDisplayName(selectedModelId)
-    : null;
+  const modelDisplayName = selectedModelId ? getModelDisplayName(selectedModelId) : null;
 
   // Determine state
   const isWarning = !hasModel && !loading;
@@ -78,12 +77,7 @@ export function ModelIndicator({
 
   if (loading) {
     return (
-      <div
-        className={cn(
-          'flex items-center gap-1 px-1 animate-pulse',
-          className
-        )}
-      >
+      <div className={cn('flex items-center gap-1 px-1 animate-pulse', className)}>
         <div className="w-20 h-4 rounded bg-muted-foreground/10" />
       </div>
     );
@@ -98,15 +92,10 @@ export function ModelIndicator({
   if (isRunning) {
     return (
       <div
-        className={cn(
-          'flex items-center gap-1 px-2 py-1',
-          className
-        )}
+        className={cn('flex items-center gap-1 px-2 py-1', className)}
         data-testid="model-indicator-trigger"
       >
-        <span className="text-[13px] font-medium text-foreground/60">
-          {modelDisplayName}
-        </span>
+        <span className="text-[13px] font-medium text-foreground/60">{modelDisplayName}</span>
       </div>
     );
   }
@@ -119,20 +108,18 @@ export function ModelIndicator({
             'flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-150',
             'hover:bg-black/[0.04] dark:hover:bg-white/[0.08] focus:outline-none',
             isWarning && 'text-warning',
-            className
+            className,
           )}
           data-testid="model-indicator-trigger"
         >
           {/* Warning icon when no model */}
-          {isWarning && (
-            <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
-          )}
+          {isWarning && <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
 
           {/* Model name */}
           <span
             className={cn(
               'text-[13px] font-medium',
-              isWarning ? 'text-warning' : 'text-foreground/80'
+              isWarning ? 'text-warning' : 'text-foreground/80',
             )}
           >
             {isWarning ? 'Select model' : modelDisplayName}
@@ -143,17 +130,13 @@ export function ModelIndicator({
             className={cn(
               'w-3 h-3 flex-shrink-0 transition-transform duration-150',
               isWarning ? 'text-warning/60' : 'text-muted-foreground/60',
-              open && 'rotate-180'
+              open && 'rotate-180',
             )}
           />
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        align="end"
-        sideOffset={8}
-        className="w-48 shadow-lg"
-      >
+      <DropdownMenuContent align="end" sideOffset={8} className="w-48 shadow-lg">
         {/* Current model display */}
         {hasModel && (
           <>
@@ -161,9 +144,7 @@ export function ModelIndicator({
               <div className="text-[11px] text-muted-foreground/60 uppercase tracking-wide mb-1">
                 Current
               </div>
-              <div className="text-sm font-medium text-foreground">
-                {modelDisplayName}
-              </div>
+              <div className="text-sm font-medium text-foreground">{modelDisplayName}</div>
             </div>
             <DropdownMenuSeparator />
           </>
@@ -176,9 +157,7 @@ export function ModelIndicator({
           className="gap-2 px-3 py-2 cursor-pointer"
         >
           <Settings className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm">
-            {isWarning ? 'Configure model' : 'Change model'}
-          </span>
+          <span className="text-sm">{isWarning ? 'Configure model' : 'Change model'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

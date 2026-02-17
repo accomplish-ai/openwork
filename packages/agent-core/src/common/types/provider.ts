@@ -5,7 +5,23 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex';
+export type ProviderType =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'xai'
+  | 'ollama'
+  | 'deepseek'
+  | 'moonshot'
+  | 'zai'
+  | 'azure-foundry'
+  | 'custom'
+  | 'bedrock'
+  | 'litellm'
+  | 'minimax'
+  | 'lmstudio'
+  | 'vertex';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -166,13 +182,14 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     name: 'Anthropic',
     requiresApiKey: true,
     apiKeyEnvVar: 'ANTHROPIC_API_KEY',
-    defaultModelId: 'anthropic/claude-opus-4-6',
+    defaultModelId: 'anthropic/claude-opus-4-5',
     modelsEndpoint: {
       url: 'https://api.anthropic.com/v1/models',
       authStyle: 'x-api-key',
       extraHeaders: { 'anthropic-version': '2023-06-01' },
       responseFormat: 'anthropic',
       modelIdPrefix: 'anthropic/',
+      modelFilter: /^claude-(?!opus-4-6)/,
     },
     models: [],
   },
@@ -307,5 +324,5 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
 
 export const DEFAULT_MODEL: SelectedModel = {
   provider: 'anthropic',
-  model: 'anthropic/claude-opus-4-6',
+  model: 'anthropic/claude-opus-4-5',
 };

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import TaskInputBar from '@/components/landing/TaskInputBar';
@@ -53,11 +53,22 @@ vi.mock('@/lib/accomplish', () => ({
 // Mock Radix Tooltip to render content directly (portals don't work in jsdom)
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) => (
-    <span data-slot="tooltip-trigger" {...props}>{children}</span>
+  TooltipTrigger: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+    [key: string]: unknown;
+  }) => (
+    <span data-slot="tooltip-trigger" {...props}>
+      {children}
+    </span>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
-    <span role="tooltip" data-slot="tooltip-content">{children}</span>
+    <span role="tooltip" data-slot="tooltip-content">
+      {children}
+    </span>
   ),
   TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -72,13 +83,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const textarea = screen.getByRole('textbox');
       expect(textarea).toBeInTheDocument();
@@ -89,13 +94,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const textarea = screen.getByPlaceholderText('Assign a task or ask anything');
       expect(textarea).toBeInTheDocument();
@@ -112,7 +111,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           placeholder={customPlaceholder}
-        />
+        />,
       );
 
       const textarea = screen.getByPlaceholderText(customPlaceholder);
@@ -124,13 +123,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
       const taskValue = 'Review my inbox for urgent messages';
 
-      renderWithRouter(
-        <TaskInputBar
-          value={taskValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value={taskValue} onChange={onChange} onSubmit={onSubmit} />);
 
       const textarea = screen.getByRole('textbox');
       expect(textarea).toHaveValue(taskValue);
@@ -140,13 +133,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
       expect(submitButton).toBeInTheDocument();
@@ -158,13 +145,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const textarea = screen.getByRole('textbox');
       fireEvent.change(textarea, { target: { value: 'New task input' } });
@@ -178,12 +159,8 @@ describe('TaskInputBar Integration', () => {
 
       const { rerender } = render(
         <MemoryRouter>
-          <TaskInputBar
-            value=""
-            onChange={onChange}
-            onSubmit={onSubmit}
-          />
-        </MemoryRouter>
+          <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />
+        </MemoryRouter>,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -192,12 +169,8 @@ describe('TaskInputBar Integration', () => {
       // Rerender with updated value
       rerender(
         <MemoryRouter>
-          <TaskInputBar
-            value="First"
-            onChange={onChange}
-            onSubmit={onSubmit}
-          />
-        </MemoryRouter>
+          <TaskInputBar value="First" onChange={onChange} onSubmit={onSubmit} />
+        </MemoryRouter>,
       );
 
       fireEvent.change(textarea, { target: { value: 'First input' } });
@@ -213,13 +186,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
       expect(submitButton).toBeDisabled();
@@ -229,13 +196,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value="   "
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="   " onChange={onChange} onSubmit={onSubmit} />);
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
       expect(submitButton).toBeDisabled();
@@ -246,11 +207,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Check my calendar"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Check my calendar" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -262,11 +219,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Submit this task"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Submit this task" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -280,11 +233,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Submit via Enter"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Submit via Enter" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -298,11 +247,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Multiline text"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Multiline text" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -315,13 +260,7 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
       fireEvent.click(submitButton);
@@ -341,7 +280,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -358,7 +297,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -375,7 +314,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -393,7 +332,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           isLoading={true}
-        />
+        />,
       );
 
       // Note: In jsdom, keydown events still fire on disabled elements,
@@ -414,7 +353,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           disabled={true}
-        />
+        />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -431,7 +370,7 @@ describe('TaskInputBar Integration', () => {
           onChange={onChange}
           onSubmit={onSubmit}
           disabled={true}
-        />
+        />,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -446,11 +385,7 @@ describe('TaskInputBar Integration', () => {
       const oversizedValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH + 1);
 
       renderWithRouter(
-        <TaskInputBar
-          value={oversizedValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value={oversizedValue} onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -463,11 +398,7 @@ describe('TaskInputBar Integration', () => {
       const exactLimitValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH);
 
       renderWithRouter(
-        <TaskInputBar
-          value={exactLimitValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value={exactLimitValue} onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -480,11 +411,7 @@ describe('TaskInputBar Integration', () => {
       const oversizedValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH + 1);
 
       renderWithRouter(
-        <TaskInputBar
-          value={oversizedValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value={oversizedValue} onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -497,16 +424,10 @@ describe('TaskInputBar Integration', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
-      renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
-      );
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
 
       const tooltips = screen.getAllByRole('tooltip');
-      const submitTooltip = tooltips.find(t => t.textContent === 'Enter a message');
+      const submitTooltip = tooltips.find((t) => t.textContent === 'Enter a message');
       expect(submitTooltip).toBeDefined();
     });
 
@@ -516,15 +437,11 @@ describe('TaskInputBar Integration', () => {
       const oversizedValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH + 1);
 
       renderWithRouter(
-        <TaskInputBar
-          value={oversizedValue}
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value={oversizedValue} onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const tooltips = screen.getAllByRole('tooltip');
-      const submitTooltip = tooltips.find(t => t.textContent === 'Message is too long');
+      const submitTooltip = tooltips.find((t) => t.textContent === 'Message is too long');
       expect(submitTooltip).toBeDefined();
     });
 
@@ -533,15 +450,11 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value="Normal message"
-          onChange={onChange}
-          onSubmit={onSubmit}
-        />
+        <TaskInputBar value="Normal message" onChange={onChange} onSubmit={onSubmit} />,
       );
 
       const tooltips = screen.getAllByRole('tooltip');
-      const submitTooltip = tooltips.find(t => t.textContent === 'Submit');
+      const submitTooltip = tooltips.find((t) => t.textContent === 'Submit');
       expect(submitTooltip).toBeDefined();
     });
   });
@@ -552,12 +465,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-          large={true}
-        />
+        <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={true} />,
       );
 
       const textarea = screen.getByRole('textbox');
@@ -569,12 +477,7 @@ describe('TaskInputBar Integration', () => {
       const onSubmit = vi.fn();
 
       renderWithRouter(
-        <TaskInputBar
-          value=""
-          onChange={onChange}
-          onSubmit={onSubmit}
-          large={false}
-        />
+        <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={false} />,
       );
 
       const textarea = screen.getByRole('textbox');

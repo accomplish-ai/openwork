@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ProviderId, ConnectedProvider, ApiKeyCredentials, OAuthCredentials } from '@accomplish_ai/agent-core/common';
+import type {
+  ProviderId,
+  ConnectedProvider,
+  ApiKeyCredentials,
+  OAuthCredentials,
+} from '@accomplish_ai/agent-core/common';
 import { PROVIDER_META, DEFAULT_PROVIDERS } from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
@@ -12,6 +17,15 @@ import {
   FormError,
 } from '../shared';
 import { PROVIDER_LOGOS, DARK_INVERT_PROVIDERS } from '@/lib/provider-logos';
+
+// Fallback models for OpenAI OAuth flow where no API key is available to call /v1/models.
+// Matches the static list that shipped before dynamic model fetching (agent-core < 0.3.3).
+const OPENAI_OAUTH_FALLBACK_MODELS: Array<{ id: string; name: string }> = [
+  { id: 'openai/gpt-5.2', name: 'GPT 5.2' },
+  { id: 'openai/gpt-5.2-codex', name: 'GPT 5.2 Codex' },
+  { id: 'openai/gpt-5.1-codex-max', name: 'GPT 5.1 Codex Max' },
+  { id: 'openai/gpt-5.1-codex-mini', name: 'GPT 5.1 Codex Mini' },
+];
 
 interface ClassicProviderFormProps {
   providerId: ProviderId;
@@ -35,14 +49,17 @@ export function ClassicProviderForm({
   const [error, setError] = useState<string | null>(null);
   const [openAiBaseUrl, setOpenAiBaseUrl] = useState('');
   const [signingIn, setSigningIn] = useState(false);
-  const [fetchedModels, setFetchedModels] = useState<Array<{ id: string; name: string }> | null>(null);
+  const [fetchedModels, setFetchedModels] = useState<Array<{ id: string; name: string }> | null>(
+    null,
+  );
 
   const meta = PROVIDER_META[providerId];
-  const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
-  const staticModels = providerConfig?.models.map(m => ({ id: m.fullId, name: m.displayName })) || [];
+  const providerConfig = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
+  const staticModels =
+    providerConfig?.models.map((m) => ({ id: m.fullId, name: m.displayName })) || [];
   const models = connectedProvider?.availableModels?.length
-    ? connectedProvider.availableModels.map(m => ({ id: m.id, name: m.name }))
-    : fetchedModels ?? staticModels;
+    ? connectedProvider.availableModels.map((m) => ({ id: m.id, name: m.name }))
+    : (fetchedModels ?? staticModels);
   const isConnected = connectedProvider?.connectionStatus === 'connected';
   const logoSrc = PROVIDER_LOGOS[providerId];
   const isOpenAI = providerId === 'openai';
@@ -61,13 +78,17 @@ export function ClassicProviderForm({
     if (!providerConfig?.modelsEndpoint) return;
 
     const accomplish = getAccomplish();
-    accomplish.fetchProviderModels(providerId, {
-      baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
-    }).then((result) => {
-      if (result.success && result.models?.length) {
-        setFetchedModels(result.models);
-      }
-    }).catch(console.error);
+    accomplish
+      .fetchProviderModels(providerId, {
+        baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
+      })
+      .then((result) => {
+        if (result.success && result.models?.length) {
+          setFetchedModels(result.models);
+        }
+      })
+      .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, providerId]);
 
   const handleConnect = async () => {
@@ -94,6 +115,7 @@ export function ClassicProviderForm({
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await accomplish.addApiKey(providerId as any, apiKey.trim());
 
       // Fetch models dynamically if provider has a models endpoint
@@ -109,16 +131,24 @@ export function ClassicProviderForm({
 
       const defaultModelId = providerConfig?.defaultModelId ?? null;
 
+      // Only auto-select if the defaultModelId exactly matches a fetched model.
+      // The API may return dated variants (e.g. "anthropic/claude-opus-4-5-20250514")
+      // that don't match — in that case, let the user pick manually.
+      const resolvedModelId = fetchedModels?.some((m) => m.id === defaultModelId)
+        ? defaultModelId
+        : null;
+
       const trimmedKey = apiKey.trim();
       const provider: ConnectedProvider = {
         providerId,
         connectionStatus: 'connected',
-        selectedModelId: defaultModelId,
+        selectedModelId: resolvedModelId,
         credentials: {
           type: 'api_key',
-          keyPrefix: trimmedKey.length > 40
-            ? trimmedKey.substring(0, 40) + '...'
-            : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
+          keyPrefix:
+            trimmedKey.length > 40
+              ? trimmedKey.substring(0, 40) + '...'
+              : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
         } as ApiKeyCredentials,
         lastConnectedAt: new Date().toISOString(),
         ...(fetchedModels ? { availableModels: fetchedModels } : {}),
@@ -142,17 +172,8 @@ export function ClassicProviderForm({
       const status = await accomplish.getOpenAiOauthStatus();
 
       if (status.connected) {
-        // Fetch models dynamically if provider has a models endpoint
-        let fetchedModels: Array<{ id: string; name: string }> | undefined;
-        if (providerConfig?.modelsEndpoint) {
-          const fetchResult = await accomplish.fetchProviderModels(providerId, {
-            baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
-          });
-          if (fetchResult.success && fetchResult.models) {
-            fetchedModels = fetchResult.models;
-          }
-        }
-
+        // OAuth stores a refresh token — no API key is available for /v1/models.
+        // Use a hardcoded fallback list so the model dropdown works.
         const defaultModelId = providerConfig?.defaultModelId ?? null;
         const provider: ConnectedProvider = {
           providerId,
@@ -163,7 +184,7 @@ export function ClassicProviderForm({
             oauthProvider: 'chatgpt',
           } as OAuthCredentials,
           lastConnectedAt: new Date().toISOString(),
-          ...(fetchedModels ? { availableModels: fetchedModels } : {}),
+          availableModels: OPENAI_OAUTH_FALLBACK_MODELS,
         };
         onConnect(provider);
       }
@@ -175,8 +196,15 @@ export function ClassicProviderForm({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
-      <ProviderFormHeader logoSrc={logoSrc} providerName={meta.name} invertInDark={DARK_INVERT_PROVIDERS.has(providerId)} />
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
+      <ProviderFormHeader
+        logoSrc={logoSrc}
+        providerName={meta.name}
+        invertInDark={DARK_INVERT_PROVIDERS.has(providerId)}
+      />
 
       {isOpenAI && !isConnected && (
         <div className="space-y-4">
@@ -228,7 +256,12 @@ export function ClassicProviderForm({
                 disabled={!apiKey}
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </button>
             </div>
@@ -249,7 +282,11 @@ export function ClassicProviderForm({
           </div>
 
           <FormError error={error} />
-          <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
+          <ConnectButton
+            onClick={handleConnect}
+            connecting={connecting}
+            disabled={!apiKey.trim()}
+          />
         </div>
       )}
 
@@ -297,13 +334,22 @@ export function ClassicProviderForm({
                     disabled={!apiKey}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
 
                 <FormError error={error} />
-                <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
+                <ConnectButton
+                  onClick={handleConnect}
+                  connecting={connecting}
+                  disabled={!apiKey.trim()}
+                />
               </motion.div>
             ) : (
               <motion.div

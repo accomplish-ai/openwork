@@ -83,9 +83,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
     if (!window.accomplish) return;
     try {
       await window.accomplish.setConnectorEnabled(id, enabled);
-      setConnectors((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, isEnabled: enabled } : c))
-      );
+      setConnectors((prev) => prev.map((c) => (c.id === id ? { ...c, isEnabled: enabled } : c)));
     } catch (err) {
       console.error('Failed to toggle connector:', err);
     }
@@ -99,51 +97,53 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
   return (
     <>
       <CreateSkillModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          disabled={disabled}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          title="Add content"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[200px]">
-        <DropdownMenuItem disabled className="text-muted-foreground/60">
-          <Paperclip className="h-4 w-4 mr-2 shrink-0" />
-          Attach Files
-          <span className="ml-auto pl-4 text-[10px] text-muted-foreground/50 whitespace-nowrap">Soon</span>
-        </DropdownMenuItem>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <button
+            disabled={disabled}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            title="Add content"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-[200px]">
+          <DropdownMenuItem disabled className="text-muted-foreground/60">
+            <Paperclip className="h-4 w-4 mr-2 shrink-0" />
+            Attach Files
+            <span className="ml-auto pl-4 text-[10px] text-muted-foreground/50 whitespace-nowrap">
+              Soon
+            </span>
+          </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <svg
-              className="h-4 w-4 mr-2"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Use Skills
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[280px] p-0">
-            <SkillsSubmenu
-              skills={skills}
-              onSkillSelect={handleSkillSelect}
-              onManageSkills={handleManageSkills}
-              onCreateNewSkill={handleCreateNewSkill}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
-            />
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <svg
+                className="h-4 w-4 mr-2"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Use Skills
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-[280px] p-0">
+              <SkillsSubmenu
+                skills={skills}
+                onSkillSelect={handleSkillSelect}
+                onManageSkills={handleManageSkills}
+                onCreateNewSkill={handleCreateNewSkill}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+              />
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
 
-        {connectors.length > 0 && (
+          {connectors.length > 0 && (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <svg
@@ -165,9 +165,9 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
                 />
               </DropdownMenuSubContent>
             </DropdownMenuSub>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 }

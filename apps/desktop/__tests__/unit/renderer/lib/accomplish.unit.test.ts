@@ -165,16 +165,15 @@ describe('Accomplish API', () => {
     });
 
     it('should throw when accomplish API is not available', async () => {
-      const unavailableScenarios = [
-        { accomplish: undefined },
-        {},
-      ];
+      const unavailableScenarios = [{ accomplish: undefined }, {}];
 
       for (const scenario of unavailableScenarios) {
         vi.resetModules();
         (globalThis as unknown as { window: Record<string, unknown> }).window = scenario;
         const { getAccomplish } = await import('@renderer/lib/accomplish');
-        expect(() => getAccomplish()).toThrow('Accomplish API not available - not running in Electron');
+        expect(() => getAccomplish()).toThrow(
+          'Accomplish API not available - not running in Electron',
+        );
       }
     });
   });
@@ -196,7 +195,9 @@ describe('Accomplish API', () => {
       };
 
       const { useAccomplish } = await import('@renderer/lib/accomplish');
-      expect(() => useAccomplish()).toThrow('Accomplish API not available - not running in Electron');
+      expect(() => useAccomplish()).toThrow(
+        'Accomplish API not available - not running in Electron',
+      );
     });
   });
 
@@ -211,7 +212,8 @@ describe('Accomplish API', () => {
         accomplishShell: completeShell,
       };
 
-      const { isRunningInElectron, getShellVersion, getShellPlatform } = await import('@renderer/lib/accomplish');
+      const { isRunningInElectron, getShellVersion, getShellPlatform } =
+        await import('@renderer/lib/accomplish');
 
       expect(isRunningInElectron()).toBe(true);
       expect(getShellVersion()).toBe('1.0.0');
@@ -224,7 +226,8 @@ describe('Accomplish API', () => {
         accomplishShell: partialShell,
       };
 
-      const { isRunningInElectron, getShellVersion, getShellPlatform } = await import('@renderer/lib/accomplish');
+      const { isRunningInElectron, getShellVersion, getShellPlatform } =
+        await import('@renderer/lib/accomplish');
 
       expect(isRunningInElectron()).toBe(true);
       expect(getShellVersion()).toBe('1.0.0');

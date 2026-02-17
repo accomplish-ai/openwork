@@ -5,10 +5,20 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { Task, TaskConfig, TaskStatus, TaskMessage, TaskResult } from '@accomplish_ai/agent-core';
+import type {
+  Task,
+  TaskConfig,
+  TaskStatus,
+  TaskMessage,
+  TaskResult,
+} from '@accomplish_ai/agent-core';
 
 // Helper to create a mock task
-function createMockTask(id: string, prompt: string = 'Test task', status: TaskStatus = 'pending'): Task {
+function createMockTask(
+  id: string,
+  prompt: string = 'Test task',
+  status: TaskStatus = 'pending',
+): Task {
   return {
     id,
     prompt,
@@ -22,7 +32,7 @@ function createMockTask(id: string, prompt: string = 'Test task', status: TaskSt
 function createMockMessage(
   id: string,
   type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
-  content: string = 'Test message'
+  content: string = 'Test message',
 ): TaskMessage {
   return {
     id,
@@ -345,7 +355,11 @@ describe('taskStore Integration', () => {
       const state = useTaskStore.getState();
 
       // Assert
-      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith('session-abc', 'Continue please', 'task-123');
+      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith(
+        'session-abc',
+        'Continue please',
+        'task-123',
+      );
       expect(state.currentTask?.status).toBe('running');
     });
 
@@ -365,7 +379,11 @@ describe('taskStore Integration', () => {
       await useTaskStore.getState().sendFollowUp('More work');
 
       // Assert
-      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith('result-session-xyz', 'More work', 'task-123');
+      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith(
+        'result-session-xyz',
+        'More work',
+        'task-123',
+      );
     });
 
     it('should add user message optimistically', async () => {
@@ -376,7 +394,9 @@ describe('taskStore Integration', () => {
         sessionId: 'session-abc',
         messages: [],
       };
-      mockAccomplish.resumeSession.mockResolvedValueOnce(createMockTask('task-123', 'Test', 'running'));
+      mockAccomplish.resumeSession.mockResolvedValueOnce(
+        createMockTask('task-123', 'Test', 'running'),
+      );
 
       useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession] });
 
@@ -601,8 +621,14 @@ describe('taskStore Integration', () => {
         ...createMockTask('task-123', 'Test', 'completed'),
         sessionId: 'session-abc',
       };
-      useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession], error: 'Previous error' });
-      mockAccomplish.resumeSession.mockResolvedValueOnce(createMockTask('task-123', 'Test', 'running'));
+      useTaskStore.setState({
+        currentTask: taskWithSession,
+        tasks: [taskWithSession],
+        error: 'Previous error',
+      });
+      mockAccomplish.resumeSession.mockResolvedValueOnce(
+        createMockTask('task-123', 'Test', 'running'),
+      );
 
       // Act
       await useTaskStore.getState().sendFollowUp('Continue');
@@ -670,11 +696,7 @@ describe('taskStore Integration', () => {
     it('should delete task and remove from list', async () => {
       // Arrange
       const { useTaskStore } = await import('@/stores/taskStore');
-      const tasks = [
-        createMockTask('task-1'),
-        createMockTask('task-2'),
-        createMockTask('task-3'),
-      ];
+      const tasks = [createMockTask('task-1'), createMockTask('task-2'), createMockTask('task-3')];
       useTaskStore.setState({ tasks });
       mockAccomplish.deleteTask.mockResolvedValueOnce(undefined);
 
@@ -685,7 +707,7 @@ describe('taskStore Integration', () => {
       // Assert
       expect(mockAccomplish.deleteTask).toHaveBeenCalledWith('task-2');
       expect(state.tasks).toHaveLength(2);
-      expect(state.tasks.find(t => t.id === 'task-2')).toBeUndefined();
+      expect(state.tasks.find((t) => t.id === 'task-2')).toBeUndefined();
     });
   });
 
@@ -789,7 +811,7 @@ describe('taskStore Integration', () => {
 
       // Assert
       expect(state.currentTask?.status).toBe('running'); // Unchanged
-      expect(state.tasks.find(t => t.id === 'task-other')?.status).toBe('running');
+      expect(state.tasks.find((t) => t.id === 'task-other')?.status).toBe('running');
     });
   });
 

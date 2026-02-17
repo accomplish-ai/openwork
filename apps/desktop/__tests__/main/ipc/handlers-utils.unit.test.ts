@@ -87,7 +87,9 @@ function sanitizeToolOutput(text: string, isError: boolean): string {
   let result = text;
 
   // Strip ANSI escape codes
+  // eslint-disable-next-line no-control-regex
   result = result.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+  // eslint-disable-next-line no-control-regex
   result = result.replace(/\x1B\[2m|\x1B\[22m|\x1B\[0m/g, '');
 
   // Remove WebSocket URLs
@@ -221,7 +223,7 @@ describe('handlers-utils', () => {
 
         // Act & Assert
         expect(() => sanitizeString(longString, 'field', 100)).toThrow(
-          'field exceeds maximum length'
+          'field exceeds maximum length',
         );
       });
 
@@ -230,7 +232,7 @@ describe('handlers-utils', () => {
         expect(() => sanitizeString(123, 'customField')).toThrow('customField must be a string');
         expect(() => sanitizeString('', 'anotherField')).toThrow('anotherField is required');
         expect(() => sanitizeString('abc', 'lengthField', 2)).toThrow(
-          'lengthField exceeds maximum length'
+          'lengthField exceeds maximum length',
         );
       });
     });
@@ -260,9 +262,7 @@ describe('handlers-utils', () => {
 
       it('should throw when exceeding custom max length', () => {
         // Act & Assert
-        expect(() => sanitizeString('a'.repeat(51), 'test', 50)).toThrow(
-          'exceeds maximum length'
-        );
+        expect(() => sanitizeString('a'.repeat(51), 'test', 50)).toThrow('exceeds maximum length');
       });
     });
   });
@@ -375,7 +375,8 @@ describe('handlers-utils', () => {
     describe('data URL extraction', () => {
       it('should extract PNG data URL', () => {
         // Arrange
-        const output = 'Here is the screenshot: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg== done';
+        const output =
+          'Here is the screenshot: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg== done';
 
         // Act
         const result = extractScreenshots(output);
@@ -401,7 +402,8 @@ describe('handlers-utils', () => {
 
       it('should extract WebP data URL', () => {
         // Arrange
-        const output = 'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAQAcJaQAA3AA/v3AgAA=';
+        const output =
+          'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAQAcJaQAA3AA/v3AgAA=';
 
         // Act
         const result = extractScreenshots(output);
@@ -677,7 +679,8 @@ describe('handlers-utils', () => {
 
       it('should remove stack traces', () => {
         // Arrange
-        const output = 'Error message\n    at Function.run (/path/to/file.js:10:5)\n    at async Context.<anonymous>';
+        const output =
+          'Error message\n    at Function.run (/path/to/file.js:10:5)\n    at async Context.<anonymous>';
 
         // Act
         const result = sanitizeToolOutput(output, true);
@@ -744,7 +747,8 @@ describe('handlers-utils', () => {
     describe('complex scenarios', () => {
       it('should handle combined ANSI codes, URLs, and call logs', () => {
         // Arrange
-        const output = '\x1b[32mConnected to ws://localhost:9222/debug\x1b[0m\nDoing work...\nCall log:\n- internal step';
+        const output =
+          '\x1b[32mConnected to ws://localhost:9222/debug\x1b[0m\nDoing work...\nCall log:\n- internal step';
 
         // Act
         const result = sanitizeToolOutput(output, false);
@@ -755,7 +759,8 @@ describe('handlers-utils', () => {
 
       it('should handle error mode with multiple cleanup patterns', () => {
         // Arrange
-        const output = '\x1b[31mError executing code: SomeError: timed out after 5000ms\x1b[0m\n    at something\nCall log:\n- step';
+        const output =
+          '\x1b[31mError executing code: SomeError: timed out after 5000ms\x1b[0m\n    at something\nCall log:\n- step';
 
         // Act
         const result = sanitizeToolOutput(output, true);

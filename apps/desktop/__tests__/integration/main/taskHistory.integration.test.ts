@@ -104,7 +104,7 @@ function createMockTask(id: string, prompt: string = 'Test task'): Task {
 function createMockMessage(
   id: string,
   type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
-  content: string = 'Test message'
+  content: string = 'Test message',
 ): TaskMessage {
   return {
     id,
