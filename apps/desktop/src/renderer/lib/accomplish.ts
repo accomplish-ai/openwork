@@ -214,6 +214,17 @@ interface AccomplishAPI {
   logEvent(payload: { level?: string; message: string; context?: Record<string, unknown> }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
 
+  // Debug bug reporting
+  captureScreenshot(): Promise<string>;
+  captureAxtree(): Promise<string>;
+  generateBugReport(data: {
+    taskId: string;
+    taskData: Record<string, unknown>;
+    debugLogs: Array<Record<string, unknown>>;
+    screenshotBase64?: string;
+    axtreeJson?: string;
+  }): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
+
   // Skills management
   getSkills(): Promise<Skill[]>;
   getEnabledSkills(): Promise<Skill[]>;

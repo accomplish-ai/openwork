@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import path from 'path';
 import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
@@ -1260,6 +1261,111 @@ export function registerIPCHandlers(): void {
   handle('connectors:disconnect', async (_event, connectorId: string) => {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+
+  handle('debug:capture-screenshot', async (event: IpcMainInvokeEvent) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('No window found');
+    }
+    const image = await window.capturePage();
+    return image.toPNG().toString('base64');
+  });
+
+  handle('debug:capture-axtree', async (event: IpcMainInvokeEvent) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('No window found');
+    }
+    const script = `
+      (function() {
+        function serializeNode(el) {
+          if (el.nodeType === Node.TEXT_NODE) {
+            const text = el.textContent.trim();
+            if (!text) return null;
+            return { role: 'text', text: text };
+          }
+          if (el.nodeType !== Node.ELEMENT_NODE) return null;
+          const role = el.getAttribute('role') || el.tagName.toLowerCase();
+          const label = el.getAttribute('aria-label') || el.getAttribute('alt') || el.getAttribute('title') || '';
+          const node = { role: role };
+          if (label) node.label = label;
+          if (el.id) node.id = el.id;
+          if (el.getAttribute('data-testid')) node.testId = el.getAttribute('data-testid');
+          const children = [];
+          for (const child of el.childNodes) {
+            const serialized = serializeNode(child);
+            if (serialized) children.push(serialized);
+          }
+          if (children.length > 0) node.children = children;
+          return node;
+        }
+        return JSON.stringify(serializeNode(document.body));
+      })()
+    `;
+    const result = await window.webContents.executeJavaScript(script);
+    return result;
+  });
+
+  handle('debug:generate-bug-report', async (
+    event: IpcMainInvokeEvent,
+    data: {
+      taskId: string;
+      taskData: Record<string, unknown>;
+      debugLogs: Array<Record<string, unknown>>;
+      screenshotBase64?: string;
+      axtreeJson?: string;
+    }
+  ) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('No window found');
+    }
+
+    const report = {
+      version: '1.0',
+      generatedAt: new Date().toISOString(),
+      app: {
+        version: app.getVersion(),
+        platform: process.platform,
+        arch: process.arch,
+      },
+      task: data.taskData,
+      debugLogs: data.debugLogs,
+      axtree: data.axtreeJson ? safeParseJson(data.axtreeJson) : null,
+      hasScreenshot: !!data.screenshotBase64,
+    };
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const defaultFilename = `accomplish-bug-report-${timestamp}.json`;
+
+    const result = await dialog.showSaveDialog(window, {
+      title: 'Save Bug Report',
+      defaultPath: defaultFilename,
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, reason: 'cancelled' };
+    }
+
+    try {
+      fs.writeFileSync(result.filePath, JSON.stringify(report, null, 2));
+
+      if (data.screenshotBase64) {
+        const { dir, name } = path.parse(result.filePath);
+        const screenshotPath = path.join(dir, `${name}-screenshot.png`);
+        fs.writeFileSync(screenshotPath, Buffer.from(data.screenshotBase64, 'base64'));
+      }
+
+      return { success: true, path: result.filePath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
+    }
   });
 }
 

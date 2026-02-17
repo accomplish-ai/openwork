@@ -193,6 +193,7 @@ export default function ExecutionPage() {
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
   const [debugModeEnabled, setDebugModeEnabled] = useState(false);
   const [debugExported, setDebugExported] = useState(false);
+  const [bugReportStatus, setBugReportStatus] = useState<'idle' | 'generating' | 'saved' | 'error'>('idle');
   const [debugSearchQuery, setDebugSearchQuery] = useState('');
   const [debugSearchIndex, setDebugSearchIndex] = useState(0); // Current focused match index
   const debugPanelRef = useRef<HTMLDivElement>(null);
@@ -606,6 +607,67 @@ export default function ExecutionPage() {
     setDebugExported(true);
     setTimeout(() => setDebugExported(false), 2000);
   }, [debugLogs, id]);
+
+  const handleGenerateBugReport = useCallback(async () => {
+    if (!currentTask || bugReportStatus === 'generating') {
+      return;
+    }
+    setBugReportStatus('generating');
+    try {
+      const [screenshotBase64, axtreeJson] = await Promise.all([
+        accomplish.captureScreenshot().catch(() => undefined),
+        accomplish.captureAxtree().catch(() => undefined),
+      ]);
+
+      const taskData: Record<string, unknown> = {
+        id: currentTask.id,
+        prompt: currentTask.prompt,
+        status: currentTask.status,
+        messages: currentTask.messages,
+        result: currentTask.result,
+      };
+
+      const result = await accomplish.generateBugReport({
+        taskId: currentTask.id,
+        taskData,
+        debugLogs: debugLogs.map((log) => ({
+          taskId: log.taskId,
+          timestamp: log.timestamp,
+          type: log.type,
+          message: log.message,
+          data: log.data,
+        })),
+        screenshotBase64,
+        axtreeJson,
+      });
+
+      if (result.success) {
+        setBugReportStatus('saved');
+        setTimeout(() => setBugReportStatus('idle'), 3000);
+      } else if (result.reason === 'cancelled') {
+        setBugReportStatus('idle');
+      } else {
+        setBugReportStatus('error');
+        setTimeout(() => setBugReportStatus('idle'), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to generate bug report:', err);
+      setBugReportStatus('error');
+      setTimeout(() => setBugReportStatus('idle'), 3000);
+    }
+  }, [currentTask, bugReportStatus, debugLogs, accomplish]);
+
+  const handleRepeatTask = useCallback(async () => {
+    if (!currentTask) {
+      return;
+    }
+    const prompt = currentTask.prompt;
+    const { startTask } = useTaskStore.getState();
+    const task = await startTask({ prompt });
+    if (task) {
+      navigate(`/execution/${task.id}`);
+    }
+  }, [currentTask, navigate]);
 
   const handlePermissionResponse = async (allowed: boolean) => {
     if (!permissionRequest || !currentTask) return;
@@ -1493,6 +1555,46 @@ export default function ExecutionPage() {
                     Clear
                   </Button>
                 </>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-6 px-2 text-xs hover:bg-zinc-700',
+                  bugReportStatus === 'saved'
+                    ? 'text-green-400'
+                    : bugReportStatus === 'error'
+                    ? 'text-red-400'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                )}
+                disabled={bugReportStatus === 'generating'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGenerateBugReport();
+                }}
+              >
+                {bugReportStatus === 'generating' ? (
+                  <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-current border-t-transparent" />
+                ) : bugReportStatus === 'saved' ? (
+                  <Check className="h-3 w-3 mr-1" />
+                ) : (
+                  <Bug className="h-3 w-3 mr-1" />
+                )}
+                {({ generating: 'Generating...', saved: 'Saved!', error: 'Failed', idle: 'Bug Report' } as const)[bugReportStatus]}
+              </Button>
+              {isComplete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRepeatTask();
+                  }}
+                >
+                  <Play className="h-3 w-3 mr-1" />
+                  Repeat Task
+                </Button>
               )}
               {debugPanelOpen ? (
                 <ChevronDown className="h-4 w-4 text-zinc-500" />

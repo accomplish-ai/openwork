@@ -316,6 +316,22 @@ const accomplishAPI = {
   exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
     ipcRenderer.invoke('logs:export'),
 
+  // Debug bug reporting
+  captureScreenshot: (): Promise<string> =>
+    ipcRenderer.invoke('debug:capture-screenshot'),
+
+  captureAxtree: (): Promise<string> =>
+    ipcRenderer.invoke('debug:capture-axtree'),
+
+  generateBugReport: (data: {
+    taskId: string;
+    taskData: Record<string, unknown>;
+    debugLogs: Array<Record<string, unknown>>;
+    screenshotBase64?: string;
+    axtreeJson?: string;
+  }): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
+    ipcRenderer.invoke('debug:generate-bug-report', data),
+
   // Speech-to-Text API
   speechIsConfigured: (): Promise<boolean> =>
     ipcRenderer.invoke('speech:is-configured'),
