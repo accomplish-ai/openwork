@@ -1,5 +1,6 @@
 // =============================================================================
-// @accomplish/core - Public API
+console.log("[agent-core] u2d sync test");
+// @accomplish/core - Public API (v0.4.0)
 // =============================================================================
 // This file explicitly exports the public API for the @accomplish/core package.
 // All exports are explicit named exports to ensure API stability and clarity.
@@ -98,7 +99,7 @@ export type {
 // -----------------------------------------------------------------------------
 
 // Error classes (still exported - these are safe)
-export { OpenCodeCliNotFoundError } from './opencode/adapter.js';
+export { OpenCodeCliNotFoundError } from './internal/classes/OpenCodeAdapter.js';
 
 // Adapter types - AdapterOptions/OpenCodeAdapterEvents are internal (use TaskAdapterOptions)
 // createLogWatcher/OpenCodeLogError are internal (used by OpenCodeAdapter internally)
@@ -121,6 +122,8 @@ export type { EnvironmentConfig } from './opencode/environment.js';
 export { buildProviderConfigs, syncApiKeysToOpenCodeAuth } from './opencode/config-builder.js';
 
 export { getOpenCodeAuthPath, getOpenAiOauthStatus } from './opencode/auth.js';
+
+export { sanitizeAssistantTextForDisplay } from './opencode/message-processor.js';
 
 // Message processing is now internal to TaskManager (use onBatchedMessages callback)
 // CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)
