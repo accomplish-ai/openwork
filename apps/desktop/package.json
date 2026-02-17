@@ -210,10 +210,10 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb",
-        "rpm"
+        "deb"
       ],
       "icon": "resources/icon.png",
+      "executableName": "accomplish",
       "category": "Utility",
       "synopsis": "AI desktop agent that automates tasks",
       "description": "Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine.",
@@ -226,6 +226,9 @@
         "!node_modules/opencode-darwin-*/**",
         "!node_modules/opencode-windows-*/**"
       ]
+    },
+    "deb": {
+      "packageName": "accomplish"
     }
   }
 }
