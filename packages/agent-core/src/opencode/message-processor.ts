@@ -88,9 +88,12 @@ const THOUGHT_BLOCK_RE = /<thought>[\s\S]*?<\/thought>/gi;
 const SCRATCHPAD_BLOCK_RE = /<scratchpad>[\s\S]*?<\/scratchpad>/gi;
 const THINKING_BLOCK_RE = /<thinking>[\s\S]*?<\/thinking>/gi;
 const REFLECTION_BLOCK_RE = /<reflection>[\s\S]*?<\/reflection>/gi;
-const UNCLOSED_INTERNAL_TAG_RE = /<(?:thought|nudge|instruction|scratchpad|thinking|reflection)(?:\b[^>]*)?>[\s\S]*$/gi;
-const ORPHAN_TAGS_RE = /<\/?(?:nudge|thought|scratchpad|thinking|reflection)>|<instruction\b[^>]*>|<\/instruction>/gi;
-const INTERNAL_LINES_RE = /^.*(?:context_management_protocol|policy_level=critical|<prunable-tools>|thoughtSignature).*$/gm;
+const UNCLOSED_INTERNAL_TAG_RE =
+  /<(?:thought|nudge|instruction|scratchpad|thinking|reflection)(?:\b[^>]*)?>[\s\S]*$/gi;
+const ORPHAN_TAGS_RE =
+  /<\/?(?:nudge|thought|scratchpad|thinking|reflection)>|<instruction\b[^>]*>|<\/instruction>/gi;
+const INTERNAL_LINES_RE =
+  /^.*(?:context_management_protocol|policy_level=critical|<prunable-tools>|thoughtSignature).*$/gm;
 const EXCESSIVE_NEWLINES_RE = /\n{3,}/g;
 
 export function sanitizeAssistantTextForDisplay(text: string): string | null {
@@ -123,7 +126,9 @@ export function getToolDisplayName(toolName: string): string | null {
 export function sanitizeToolOutput(text: string, isError: boolean): string {
   let result = text;
 
+  // eslint-disable-next-line no-control-regex
   result = result.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+  // eslint-disable-next-line no-control-regex
   result = result.replace(/\x1B\[2m|\x1B\[22m|\x1B\[0m/g, '');
 
   result = result.replace(/ws:\/\/[^\s\]]+/g, '[connection]');
@@ -202,9 +207,8 @@ export function toTaskMessage(message: OpenCodeMessage): TaskMessage | null {
       const { cleanedText, attachments } = extractScreenshots(toolOutput);
       const isError = status === 'error';
       const sanitizedText = sanitizeToolOutput(cleanedText, isError);
-      const displayText = sanitizedText.length > 500
-        ? sanitizedText.substring(0, 500) + '...'
-        : sanitizedText;
+      const displayText =
+        sanitizedText.length > 500 ? sanitizedText.substring(0, 500) + '...' : sanitizedText;
 
       return {
         id: createMessageId(),
@@ -238,7 +242,7 @@ const messageBatchers = new Map<string, MessageBatcher>();
 export function createMessageBatcher(
   taskId: string,
   forwardToRenderer: (channel: string, data: unknown) => void,
-  addTaskMessage: (taskId: string, message: TaskMessage) => void
+  addTaskMessage: (taskId: string, message: TaskMessage) => void,
 ): MessageBatcher {
   const batcher: MessageBatcher = {
     pendingMessages: [],
@@ -281,7 +285,7 @@ export function queueMessage(
   taskId: string,
   message: TaskMessage,
   forwardToRenderer: (channel: string, data: unknown) => void,
-  addTaskMessage: (taskId: string, message: TaskMessage) => void
+  addTaskMessage: (taskId: string, message: TaskMessage) => void,
 ): void {
   let batcher = messageBatchers.get(taskId);
   if (!batcher) {

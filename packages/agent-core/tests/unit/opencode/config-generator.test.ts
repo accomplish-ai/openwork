@@ -19,7 +19,7 @@ describe('ConfigGenerator', () => {
   beforeEach(() => {
     testDir = path.join(
       os.tmpdir(),
-      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mcpToolsPath = path.join(testDir, 'mcp-tools');
     userDataPath = path.join(testDir, 'user-data');
@@ -649,15 +649,11 @@ describe('ConfigGenerator', () => {
 
     it('should contain needs_planning: false for conversational messages', () => {
       expect(prompt).toContain('needs_planning: false');
-      expect(prompt).toContain(
-        'you can answer from knowledge alone using only start_task',
-      );
+      expect(prompt).toContain('you can answer from knowledge alone using only start_task');
     });
 
     it('should contain explicit instruction not to call complete_task for conversational responses', () => {
-      expect(prompt).toContain(
-        'Do NOT call complete_task for conversational responses',
-      );
+      expect(prompt).toContain('Do NOT call complete_task for conversational responses');
     });
 
     it('should require complete_task when needs_planning was true', () => {
@@ -689,9 +685,7 @@ describe('ConfigGenerator', () => {
     });
 
     it('should still contain start_task as mandatory first tool', () => {
-      expect(prompt).toContain(
-        'You MUST call start_task before any other tool',
-      );
+      expect(prompt).toContain('You MUST call start_task before any other tool');
       expect(prompt).toContain('CALL start_task FIRST - THIS IS MANDATORY');
     });
 
@@ -730,7 +724,7 @@ describe('ConfigGenerator', () => {
     });
 
     it('should still contain verification behavior', () => {
-      expect(prompt).toContain('You verified EVERY part of the user\'s request is done');
+      expect(prompt).toContain("You verified EVERY part of the user's request is done");
       expect(prompt).toContain('original_request_summary');
     });
 
@@ -740,7 +734,14 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
-        skills: [{ name: 'test-skill', command: '/test', description: 'A test skill', filePath: '/tmp/skill' }],
+        skills: [
+          {
+            name: 'test-skill',
+            command: '/test',
+            description: 'A test skill',
+            filePath: '/tmp/skill',
+          },
+        ],
       });
       expect(result.systemPrompt).toContain('available-skills');
       expect(result.systemPrompt).toContain('test-skill');

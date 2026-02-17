@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CompletionEnforcer, CompletionEnforcerCallbacks, StepFinishAction } from '../../../../src/opencode/completion/completion-enforcer.js';
+import {
+  CompletionEnforcer,
+  CompletionEnforcerCallbacks,
+} from '../../../../src/opencode/completion/completion-enforcer.js';
 import { CompletionFlowState } from '../../../../src/opencode/completion/completion-state.js';
 import type { TodoItem } from '../../../../src/shared';
 
@@ -47,11 +50,9 @@ describe('CompletionEnforcer', () => {
 
       enforcer.updateTodos(todos);
 
-      expect(onDebugMock).toHaveBeenCalledWith(
-        'todo_update',
-        'Todo list updated: 2 items',
-        { todos }
-      );
+      expect(onDebugMock).toHaveBeenCalledWith('todo_update', 'Todo list updated: 2 items', {
+        todos,
+      });
     });
   });
 
@@ -74,7 +75,7 @@ describe('CompletionEnforcer', () => {
       expect(onDebugMock).toHaveBeenCalledWith(
         'complete_task',
         expect.stringContaining('complete_task detected with status: success'),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -109,7 +110,7 @@ describe('CompletionEnforcer', () => {
       expect(onDebugMock).toHaveBeenCalledWith(
         'incomplete_todos',
         'Agent claimed success but has incomplete todos - downgrading to partial',
-        expect.any(Object)
+        expect.any(Object),
       );
 
       expect(enforcer.getState()).toBe(CompletionFlowState.PARTIAL_CONTINUATION_PENDING);
@@ -160,7 +161,7 @@ describe('CompletionEnforcer', () => {
       expect(onDebugMock).toHaveBeenCalledWith(
         'partial_continuation',
         'Scheduling continuation for partial completion',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -170,7 +171,7 @@ describe('CompletionEnforcer', () => {
       expect(result).toBe('complete');
       expect(onDebugMock).toHaveBeenCalledWith(
         'skip_continuation',
-        'No tools used and no complete_task called — treating as conversational response'
+        'No tools used and no complete_task called — treating as conversational response',
       );
     });
 
@@ -183,7 +184,7 @@ describe('CompletionEnforcer', () => {
       expect(enforcer.getContinuationAttempts()).toBe(1);
       expect(onDebugMock).toHaveBeenCalledWith(
         'continuation',
-        'Scheduled continuation prompt (attempt 1)'
+        'Scheduled continuation prompt (attempt 1)',
       );
     });
 
@@ -195,7 +196,7 @@ describe('CompletionEnforcer', () => {
       expect(result).toBe('complete');
       expect(onDebugMock).toHaveBeenCalledWith(
         'skip_continuation',
-        'No tools used and no complete_task called — treating as conversational response'
+        'No tools used and no complete_task called — treating as conversational response',
       );
     });
 
@@ -207,7 +208,7 @@ describe('CompletionEnforcer', () => {
       expect(result).toBe('pending');
       expect(onDebugMock).toHaveBeenCalledWith(
         'continuation',
-        'Scheduled continuation prompt (attempt 1)'
+        'Scheduled continuation prompt (attempt 1)',
       );
     });
 
@@ -248,12 +249,12 @@ describe('CompletionEnforcer', () => {
       await enforcer.handleProcessExit(0);
 
       expect(onStartContinuationMock).toHaveBeenCalledWith(
-        expect.stringContaining('You called complete_task with status="partial"')
+        expect.stringContaining('You called complete_task with status="partial"'),
       );
       expect(onDebugMock).toHaveBeenCalledWith(
         'partial_continuation',
         expect.stringContaining('Starting partial continuation'),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -264,7 +265,7 @@ describe('CompletionEnforcer', () => {
       await enforcer.handleProcessExit(0);
 
       expect(onStartContinuationMock).toHaveBeenCalledWith(
-        expect.stringContaining('REMINDER: You must call complete_task when finished')
+        expect.stringContaining('REMINDER: You must call complete_task when finished'),
       );
     });
 
@@ -315,7 +316,7 @@ describe('CompletionEnforcer', () => {
       expect(result).toBe('pending');
       expect(onDebugMock).toHaveBeenCalledWith(
         'continuation',
-        'Scheduled continuation prompt (attempt 2)'
+        'Scheduled continuation prompt (attempt 2)',
       );
     });
 
@@ -370,7 +371,7 @@ describe('CompletionEnforcer', () => {
       expect(onDebugMock).toHaveBeenCalledWith(
         'partial_continuation',
         expect.stringContaining('Starting partial continuation'),
-        expect.objectContaining({ continuationPrompt: expect.any(String) })
+        expect.objectContaining({ continuationPrompt: expect.any(String) }),
       );
     });
   });
@@ -465,7 +466,7 @@ describe('CompletionEnforcer', () => {
 
     it('should NOT be conversational when helper tools and real tools are mixed', () => {
       enforcer.markToolsUsed(false); // helper
-      enforcer.markToolsUsed(true);  // real
+      enforcer.markToolsUsed(true); // real
       expect(enforcer.handleStepFinish('stop')).toBe('pending');
     });
   });
@@ -497,7 +498,9 @@ describe('CompletionEnforcer', () => {
 
   describe('updateTodos interaction with conversational detection', () => {
     it('should set taskRequiresCompletion when todos are non-empty', () => {
-      enforcer.updateTodos([{ id: '1', content: 'Do something', status: 'pending', priority: 'high' }]);
+      enforcer.updateTodos([
+        { id: '1', content: 'Do something', status: 'pending', priority: 'high' },
+      ]);
       // No tools used, but taskRequiresCompletion is set → not conversational
       expect(enforcer.handleStepFinish('stop')).toBe('pending');
     });

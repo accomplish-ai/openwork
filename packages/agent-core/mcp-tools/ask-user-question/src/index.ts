@@ -26,7 +26,7 @@ interface AskUserQuestionInput {
 
 const server = new Server(
   { name: 'ask-user-question', version: '1.0.0' },
-  { capabilities: { tools: {} } }
+  { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -34,7 +34,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'AskUserQuestion',
       description:
-        'Ask the user a question and wait for their response. Use this for clarifications, confirmations before sensitive actions, or when you need user input to proceed. Returns the user\'s selected option(s) or custom text response.',
+        "Ask the user a question and wait for their response. Use this for clarifications, confirmations before sensitive actions, or when you need user input to proceed. Returns the user's selected option(s) or custom text response.",
       inputSchema: {
         type: 'object',
         properties: {
@@ -130,7 +130,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
     if (!response.ok) {
       const errorText = await response.text();
       return {
-        content: [{ type: 'text', text: `Error: Question API returned ${response.status}: ${errorText}` }],
+        content: [
+          { type: 'text', text: `Error: Question API returned ${response.status}: ${errorText}` },
+        ],
         isError: true,
       };
     }

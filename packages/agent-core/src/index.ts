@@ -1,5 +1,5 @@
 // =============================================================================
-console.log("[agent-core] u2d sync test");
+console.log('[agent-core] u2d sync test');
 // @accomplish/core - Public API (v0.4.0)
 // =============================================================================
 // This file explicitly exports the public API for the @accomplish/core package.
@@ -129,9 +129,7 @@ export { sanitizeAssistantTextForDisplay } from './opencode/message-processor.js
 // CompletionEnforcerCallbacks is internal (wiring between adapter and enforcer)
 // Proxy lifecycle is now internal to TaskManager.dispose()
 
-export {
-  getAzureEntraToken,
-} from './opencode/proxies/index.js';
+export { getAzureEntraToken } from './opencode/proxies/index.js';
 
 // -----------------------------------------------------------------------------
 // Storage Module (from ./storage/)
@@ -147,21 +145,11 @@ export { FutureSchemaError } from './storage/migrations/errors.js';
 // Validation functions
 export { validateApiKey } from './providers/validation.js';
 
-export {
-  validateBedrockCredentials,
-  fetchBedrockModels,
-} from './providers/bedrock.js';
+export { validateBedrockCredentials, fetchBedrockModels } from './providers/bedrock.js';
 
-export {
-  validateVertexCredentials,
-  fetchVertexModels,
-  VertexClient,
-} from './providers/vertex.js';
+export { validateVertexCredentials, fetchVertexModels, VertexClient } from './providers/vertex.js';
 
-export {
-  validateAzureFoundry,
-  testAzureFoundryConnection,
-} from './providers/azure-foundry.js';
+export { validateAzureFoundry, testAzureFoundryConnection } from './providers/azure-foundry.js';
 
 export { fetchOpenRouterModels } from './providers/openrouter.js';
 

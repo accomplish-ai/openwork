@@ -51,9 +51,24 @@ export interface TaskCallbacks {
   /** Called when the agent emits reasoning text */
   onReasoning?: (text: string) => void;
   /** Called when a tool call completes (success or error) */
-  onToolCallComplete?: (data: { toolName: string; toolInput: unknown; toolOutput: string; sessionId?: string }) => void;
+  onToolCallComplete?: (data: {
+    toolName: string;
+    toolInput: unknown;
+    toolOutput: string;
+    sessionId?: string;
+  }) => void;
   /** Called when a model step finishes */
-  onStepFinish?: (data: { reason: string; model?: string; tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } }; cost?: number }) => void;
+  onStepFinish?: (data: {
+    reason: string;
+    model?: string;
+    tokens?: {
+      input: number;
+      output: number;
+      reasoning: number;
+      cache?: { read: number; write: number };
+    };
+    cost?: number;
+  }) => void;
 }
 
 /** Adapter options for the underlying CLI adapter */

@@ -24,10 +24,7 @@ export type GetApiKeyFn = (provider: ApiKeyProvider) => string | null;
  * @param getApiKey Function to retrieve API keys by provider
  * @returns A short summary string, or truncated prompt as fallback
  */
-export async function generateTaskSummary(
-  prompt: string,
-  getApiKey: GetApiKeyFn
-): Promise<string> {
+export async function generateTaskSummary(prompt: string, getApiKey: GetApiKeyFn): Promise<string> {
   // Try providers in order of preference
   const providers: ApiKeyProvider[] = ['anthropic', 'openai', 'google', 'xai'];
 
@@ -55,7 +52,7 @@ export async function generateTaskSummary(
 async function callProvider(
   provider: ApiKeyProvider,
   apiKey: string,
-  prompt: string
+  prompt: string,
 ): Promise<string | null> {
   switch (provider) {
     case 'anthropic':
@@ -150,7 +147,7 @@ async function callGoogle(apiKey: string, prompt: string): Promise<string> {
           maxOutputTokens: 50,
         },
       }),
-    }
+    },
   );
 
   if (!response.ok) {
