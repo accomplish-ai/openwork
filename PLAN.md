@@ -78,12 +78,12 @@ Runs inside the container. Copies source from the mounted `/workspace` volume, b
 set -e
 
 # Copy source from mounted workspace into /app (where node_modules already exists from image build)
-# Use tar to exclude bind-mounted output dirs (they exist in both /workspace and /app, same host path)
 echo "Copying source into container..."
-(cd /workspace && tar cf - \
-  --exclude='./apps/desktop/e2e/test-results' \
-  --exclude='./apps/desktop/e2e/html-report' \
-  .) | (cd /app && tar xf -)
+cp -a /workspace/. /app/
+
+# Symlink output dirs to host bind mounts (mounted at /output to avoid overlap with /workspace)
+ln -sfn /output/test-results /app/apps/desktop/e2e/test-results
+ln -sfn /output/html-report /app/apps/desktop/e2e/html-report
 
 cd /app
 
@@ -156,8 +156,8 @@ docker run --rm \
   --shm-size=2gb \
   --security-opt seccomp=unconfined \
   -v "$REPO_ROOT:/workspace:ro" \
-  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/app/apps/desktop/e2e/test-results" \
-  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/app/apps/desktop/e2e/html-report" \
+  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/output/test-results" \
+  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/output/html-report" \
   "$IMAGE_NAME" \
   bash /workspace/apps/desktop/e2e/docker/entrypoint.sh
 ```
