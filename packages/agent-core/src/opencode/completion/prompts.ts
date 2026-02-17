@@ -16,7 +16,7 @@ export function getPartialContinuationPrompt(
   remainingWork: string,
   originalRequest: string,
   completedSummary: string,
-  incompleteTodos?: string
+  incompleteTodos?: string,
 ): string {
   if (incompleteTodos) {
     return `Your complete_task call was rejected because these todo items are still marked incomplete:

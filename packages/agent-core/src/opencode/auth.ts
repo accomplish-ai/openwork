@@ -51,7 +51,9 @@ export function getOpenCodeAuthPath(): string {
   return path.join(homeDir, '.local', 'share', 'opencode', 'auth.json');
 }
 
-export function writeOpenCodeAuth(providerKeys: Record<string, { type: string; key: string }>): void {
+export function writeOpenCodeAuth(
+  providerKeys: Record<string, { type: string; key: string }>,
+): void {
   const authPath = getOpenCodeAuthPath();
   const authDir = path.dirname(authPath);
 
@@ -63,7 +65,7 @@ export function writeOpenCodeAuth(providerKeys: Record<string, { type: string; k
   if (fs.existsSync(authPath)) {
     try {
       auth = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
-    } catch (e) {
+    } catch (_e) {
       console.warn('[OpenCode Auth] Failed to parse existing auth.json, creating new one');
       auth = {};
     }

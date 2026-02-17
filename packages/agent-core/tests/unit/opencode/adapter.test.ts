@@ -134,8 +134,7 @@ describe('Task lifecycle', () => {
 
 describe('Start task detection', () => {
   it('should recognize start_task tool', () => {
-    const isStartTask = (name: string) =>
-      name === 'start_task' || name.endsWith('_start_task');
+    const isStartTask = (name: string) => name === 'start_task' || name.endsWith('_start_task');
 
     expect(isStartTask('start_task')).toBe(true);
     expect(isStartTask('mcp_start_task')).toBe(true);
@@ -193,6 +192,7 @@ describe('Plan message formatting', () => {
 
 describe('ANSI escape code filtering', () => {
   it('should recognize CSI sequences', () => {
+    // eslint-disable-next-line no-control-regex
     const csiPattern = /\x1B\[[0-9;?]*[a-zA-Z]/g;
     const dataWithCsi = '\x1B[31mRed text\x1B[0m';
 
@@ -201,6 +201,7 @@ describe('ANSI escape code filtering', () => {
   });
 
   it('should recognize OSC sequences with BEL terminator', () => {
+    // eslint-disable-next-line no-control-regex
     const oscPattern = /\x1B\][^\x07]*\x07/g;
     const dataWithOsc = '\x1B]0;Window Title\x07';
 
@@ -209,6 +210,7 @@ describe('ANSI escape code filtering', () => {
   });
 
   it('should recognize OSC sequences with ST terminator', () => {
+    // eslint-disable-next-line no-control-regex
     const oscPattern = /\x1B\][^\x1B]*\x1B\\/g;
     const dataWithOsc = '\x1B]0;Title\x1B\\';
 
@@ -219,15 +221,17 @@ describe('ANSI escape code filtering', () => {
 describe('AskUserQuestion handling', () => {
   it('should create permission request from question input', () => {
     const input = {
-      questions: [{
-        question: 'Do you want to continue?',
-        header: 'Confirmation',
-        options: [
-          { label: 'Yes', description: 'Continue the task' },
-          { label: 'No', description: 'Stop the task' },
-        ],
-        multiSelect: false,
-      }],
+      questions: [
+        {
+          question: 'Do you want to continue?',
+          header: 'Confirmation',
+          options: [
+            { label: 'Yes', description: 'Continue the task' },
+            { label: 'No', description: 'Stop the task' },
+          ],
+          multiSelect: false,
+        },
+      ],
     };
 
     const question = input.questions[0];
@@ -236,7 +240,7 @@ describe('AskUserQuestion handling', () => {
       taskId: 'task_456',
       type: 'question' as const,
       question: question.question,
-      options: question.options.map(o => ({
+      options: question.options.map((o) => ({
         label: o.label,
         description: o.description,
       })),

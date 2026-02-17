@@ -1,4 +1,11 @@
-export const FILE_OPERATIONS = ['create', 'delete', 'rename', 'move', 'modify', 'overwrite'] as const;
+export const FILE_OPERATIONS = [
+  'create',
+  'delete',
+  'rename',
+  'move',
+  'modify',
+  'overwrite',
+] as const;
 
 export type FileOperation = (typeof FILE_OPERATIONS)[number];
 
