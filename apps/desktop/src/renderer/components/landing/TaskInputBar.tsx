@@ -1,6 +1,5 @@
 'use client';
-
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
 import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
@@ -61,8 +60,16 @@ export default function TaskInputBar({
   const isDisabled = disabled || isLoading;
   const isOverLimit = value.length > PROMPT_DEFAULT_MAX_LENGTH;
   const canSubmit = !!value.trim() && !isDisabled && !isOverLimit;
+  let submitTooltip = 'Submit';
+  if (isOverLimit) {
+    submitTooltip = 'Message is too long';
+  } else if (!value.trim()) {
+    submitTooltip = 'Enter a message';
+  }
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingAutoSubmitRef = useRef<string | null>(null);
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const accomplish = getAccomplish();
 
   // Speech input hook
@@ -116,7 +123,9 @@ export default function TaskInputBar({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Ignore Enter during IME composition (Chinese/Japanese input)
-    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (canSubmit) {
@@ -133,6 +142,19 @@ export default function TaskInputBar({
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 0);
+  };
+  // Enable drag and drop file support for task input
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+  // Captures dropped files for future attachment handling
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) {
+      return;
+    }
+    setDroppedFiles(files);  // Handle file drop and store files in state for attachment preview
   };
 
   return (
@@ -160,7 +182,12 @@ export default function TaskInputBar({
       )}
 
       {/* Input container - two rows: textarea top, toolbar bottom */}
-      <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+      <div
+        className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+
         {/* Textarea area */}
         <div className="px-4 pt-3 pb-2">
           <textarea
@@ -175,6 +202,12 @@ export default function TaskInputBar({
             className="w-full max-h-[160px] resize-none bg-transparent text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
+        {droppedFiles.length > 0 && (
+          <div className="px-4 pb-2 text-xs text-muted-foreground">
+            {droppedFiles.map(file => file.name).join(", ")}
+          </div>
+        )}
+
 
         {/* Toolbar - fixed at bottom */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
@@ -187,63 +220,63 @@ export default function TaskInputBar({
 
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-          {/* Model Indicator */}
-          {onOpenModelSettings && (
-            <ModelIndicator
-              isRunning={false}
-              onOpenSettings={onOpenModelSettings}
-              hideWhenNoModel={hideModelWhenNoModel}
+            {/* Model Indicator */}
+            {onOpenModelSettings && (
+              <ModelIndicator
+                isRunning={false}
+                onOpenSettings={onOpenModelSettings}
+                hideWhenNoModel={hideModelWhenNoModel}
+              />
+            )}
+
+            {/* Divider */}
+            <div className="w-px h-6 bg-border" />
+
+            {/* Speech Input Button */}
+            <SpeechInputButton
+              isRecording={speechInput.isRecording}
+              isTranscribing={speechInput.isTranscribing}
+              recordingDuration={speechInput.recordingDuration}
+              error={speechInput.error}
+              isConfigured={speechInput.isConfigured}
+              disabled={isDisabled}
+              onStartRecording={() => speechInput.startRecording()}
+              onStopRecording={() => speechInput.stopRecording()}
+              onCancel={() => speechInput.cancelRecording()}
+              onRetry={() => speechInput.retry()}
+              onOpenSettings={onOpenSpeechSettings}
+              size="md"
             />
-          )}
 
-          {/* Divider */}
-          <div className="w-px h-6 bg-border" />
-
-          {/* Speech Input Button */}
-          <SpeechInputButton
-            isRecording={speechInput.isRecording}
-            isTranscribing={speechInput.isTranscribing}
-            recordingDuration={speechInput.recordingDuration}
-            error={speechInput.error}
-            isConfigured={speechInput.isConfigured}
-            disabled={isDisabled}
-            onStartRecording={() => speechInput.startRecording()}
-            onStopRecording={() => speechInput.stopRecording()}
-            onCancel={() => speechInput.cancelRecording()}
-            onRetry={() => speechInput.retry()}
-            onOpenSettings={onOpenSpeechSettings}
-            size="md"
-          />
-
-          {/* Submit button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                data-testid="task-input-submit"
-                type="button"
-                aria-label="Submit"
-                onClick={() => {
-                  accomplish.logEvent({
-                    level: 'info',
-                    message: 'Task input submit clicked',
-                    context: { prompt: value },
-                  });
-                  onSubmit();
-                }}
-                disabled={!canSubmit || speechInput.isRecording}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CornerDownLeft className="h-4 w-4" />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>{isOverLimit ? 'Message is too long' : !value.trim() ? 'Enter a message' : 'Submit'}</span>
-            </TooltipContent>
-          </Tooltip>
+            {/* Submit button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  data-testid="task-input-submit"
+                  type="button"
+                  aria-label="Submit"
+                  onClick={() => {
+                    accomplish.logEvent({
+                      level: 'info',
+                      message: 'Task input submit clicked',
+                      context: { prompt: value },
+                    });
+                    onSubmit();
+                  }}
+                  disabled={!canSubmit || speechInput.isRecording}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CornerDownLeft className="h-4 w-4" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>{submitTooltip}</span>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
