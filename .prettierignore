@@ -5,6 +5,5 @@ node_modules/
 pnpm-lock.yaml
 *.min.js
 dist-electron/
-packages/agent-core/
 playwright-report/
 coverage/

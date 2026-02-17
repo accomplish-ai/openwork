@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 const server = new Server(
   { name: 'start-task', version: '1.0.0' },
-  { capabilities: { tools: {} } }
+  { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -23,30 +20,35 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           original_request: {
             type: 'string',
-            description: 'Echo the user\'s original request exactly as stated',
+            description: "Echo the user's original request exactly as stated",
           },
           needs_planning: {
             type: 'boolean',
-            description: 'true for multi-step tasks that need a plan, false for simple messages (greetings, questions, quick lookups)',
+            description:
+              'true for multi-step tasks that need a plan, false for simple messages (greetings, questions, quick lookups)',
           },
           goal: {
             type: 'string',
-            description: 'What you aim to accomplish for the user (required when needs_planning is true)',
+            description:
+              'What you aim to accomplish for the user (required when needs_planning is true)',
           },
           steps: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Planned actions to achieve the goal, in order (required when needs_planning is true)',
+            description:
+              'Planned actions to achieve the goal, in order (required when needs_planning is true)',
           },
           verification: {
             type: 'array',
             items: { type: 'string' },
-            description: 'How you will verify the task is complete (required when needs_planning is true)',
+            description:
+              'How you will verify the task is complete (required when needs_planning is true)',
           },
           skills: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Skill names or commands from the available-skills list that are relevant to this task. Use empty array [] if no skills apply.',
+            description:
+              'Skill names or commands from the available-skills list that are relevant to this task. Use empty array [] if no skills apply.',
           },
         },
       },
@@ -59,7 +61,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     throw new Error(`Unknown tool: ${request.params.name}`);
   }
 
-  const { original_request, needs_planning, goal, steps, verification, skills } = request.params.arguments as {
+  const { original_request, needs_planning, goal, steps, verification, skills } = request.params
+    .arguments as {
     original_request: string;
     needs_planning: boolean;
     goal?: string;
@@ -70,7 +73,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (needs_planning && (!goal || !steps?.length || !verification?.length)) {
     return {
-      content: [{ type: 'text', text: 'Error: goal, steps, and verification are required when needs_planning is true.' }],
+      content: [
+        {
+          type: 'text',
+          text: 'Error: goal, steps, and verification are required when needs_planning is true.',
+        },
+      ],
       isError: true,
     };
   }

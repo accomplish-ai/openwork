@@ -52,7 +52,7 @@ function getNodeExecutable(bundledNodeBinPath?: string): string {
 
 export async function installPlaywrightChromium(
   config: BrowserServerConfig,
-  onProgress?: (message: string) => void
+  onProgress?: (message: string) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const devBrowserDir = path.join(config.mcpToolsPath, 'dev-browser');
@@ -119,19 +119,23 @@ export async function isDevBrowserServerReady(port: number): Promise<boolean> {
 export async function waitForDevBrowserServer(
   port: number,
   maxWaitMs = 15000,
-  pollIntervalMs = 500
+  pollIntervalMs = 500,
 ): Promise<boolean> {
   const startTime = Date.now();
   let attempts = 0;
   while (Date.now() - startTime < maxWaitMs) {
     attempts++;
     if (await isDevBrowserServerReady(port)) {
-      console.log(`[Browser] Dev-browser server ready after ${attempts} attempts (${Date.now() - startTime}ms)`);
+      console.log(
+        `[Browser] Dev-browser server ready after ${attempts} attempts (${Date.now() - startTime}ms)`,
+      );
       return true;
     }
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
-  console.log(`[Browser] Dev-browser server not ready after ${attempts} attempts (${maxWaitMs}ms timeout)`);
+  console.log(
+    `[Browser] Dev-browser server not ready after ${attempts} attempts (${maxWaitMs}ms timeout)`,
+  );
   return false;
 }
 
@@ -142,7 +146,7 @@ export interface ServerStartResult {
 }
 
 export async function startDevBrowserServer(
-  config: BrowserServerConfig
+  config: BrowserServerConfig,
 ): Promise<ServerStartResult> {
   const serverScript = path.join(config.mcpToolsPath, 'dev-browser', 'server.cjs');
   const serverCwd = path.join(config.mcpToolsPath, 'dev-browser');
@@ -168,7 +172,10 @@ export async function startDevBrowserServer(
   });
 
   child.stdout?.on('data', (data: Buffer) => {
-    const lines = data.toString().split('\n').filter((l) => l.trim());
+    const lines = data
+      .toString()
+      .split('\n')
+      .filter((l) => l.trim());
     for (const line of lines) {
       serverLogs.push(`[stdout] ${line}`);
       console.log('[DevBrowser stdout]', line);
@@ -176,7 +183,10 @@ export async function startDevBrowserServer(
   });
 
   child.stderr?.on('data', (data: Buffer) => {
-    const lines = data.toString().split('\n').filter((l) => l.trim());
+    const lines = data
+      .toString()
+      .split('\n')
+      .filter((l) => l.trim());
     for (const line of lines) {
       serverLogs.push(`[stderr] ${line}`);
       console.log('[DevBrowser stderr]', line);
@@ -222,7 +232,7 @@ export async function startDevBrowserServer(
 
 export async function ensureDevBrowserServer(
   config: BrowserServerConfig,
-  onProgress?: (progress: { stage: string; message?: string }) => void
+  onProgress?: (progress: { stage: string; message?: string }) => void,
 ): Promise<ServerStartResult> {
   const hasChrome = isSystemChromeInstalled();
   const hasPlaywright = isPlaywrightInstalled();
