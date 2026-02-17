@@ -3,8 +3,11 @@ import { AwsAgentCoreForm } from './AwsAgentCoreForm';
 import { AwsAgentCoreConfig } from '@accomplish_ai/agent-core/common';
 import { getAccomplish } from '@/lib/accomplish';
 
-  import { useSettingsStore } from '@/stores/settingsStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
+/**
+ * Settings panel for configuring cloud browser providers and their credentials.
+ */
 export function CloudBrowsersSettings() {
     const { selectedProvider, awsConfig } = useSettingsStore((state) => state.cloudBrowsers);
     const setCloudBrowserProvider = useSettingsStore((state) => state.setCloudBrowserProvider);

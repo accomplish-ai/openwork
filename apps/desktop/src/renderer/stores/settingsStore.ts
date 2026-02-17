@@ -11,6 +11,10 @@ interface SettingsState {
   setAwsConfig: (config: Omit<AwsAgentCoreConfig, 'accessKeyId' | 'secretAccessKey'>) => void;
 }
 
+/**
+ * Zustand store hook for managing application settings, including cloud browser configurations.
+ * Persists data to local storage with security exclusions for sensitive keys.
+ */
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
@@ -25,9 +29,14 @@ export const useSettingsStore = create<SettingsState>()(
           cloudBrowsers: { ...state.cloudBrowsers, selectedProvider: provider },
         })),
       setAwsConfig: (config) =>
-        set((state) => ({
-          cloudBrowsers: { ...state.cloudBrowsers, awsConfig: config },
-        })),
+        set((state) => {
+          // Defensive strip: ensure no secrets are persisted even if passed by mistake
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { accessKeyId, secretAccessKey, ...safeConfig } = config as AwsAgentCoreConfig;
+          return {
+            cloudBrowsers: { ...state.cloudBrowsers, awsConfig: safeConfig },
+          };
+        }),
     }),
     {
       name: 'accomplish-settings-storage',
