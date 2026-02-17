@@ -21,6 +21,7 @@ import {
 } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
+import { ensureDaemon, disconnectDaemon } from './daemon-client';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
@@ -257,6 +258,12 @@ if (!gotTheLock) {
 
     createWindow();
 
+    // Connect to daemon (spawning it if needed) for task execution
+    if (mainWindow) {
+      await ensureDaemon(mainWindow);
+    }
+
+    // Fallback: keep local thought stream for backward compatibility
     if (mainWindow) {
       initThoughtStreamApi(mainWindow);
       startThoughtStreamServer();
@@ -278,6 +285,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  disconnectDaemon(); // Disconnect from daemon (daemon keeps running for background tasks)
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();

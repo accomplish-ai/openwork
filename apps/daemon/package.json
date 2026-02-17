@@ -1,0 +1,24 @@
+{
+  "name": "@accomplish/daemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Accomplish Daemon - Always-on background service for task execution",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@accomplish_ai/agent-core": "workspace:*",
+    "opencode-ai": "^1.2.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.2"
+  }
+}
