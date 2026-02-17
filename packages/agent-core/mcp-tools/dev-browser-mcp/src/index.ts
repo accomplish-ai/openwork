@@ -30,6 +30,29 @@ console.error('[dev-browser-mcp] All imports completed successfully');
 const connectionConfig = configureFromEnv();
 const TASK_ID = connectionConfig.taskId;
 
+interface ToolDebug {
+  handlePreAction?(name: string, args: unknown, context: { getPage: typeof getPage; getAISnapshot: typeof getAISnapshot }): Promise<unknown>;
+  handlePostAction?(name: string, args: unknown, result: CallToolResult, preCapture: unknown, context: { getPage: typeof getPage; getAISnapshot: typeof getAISnapshot }): Promise<CallToolResult>;
+}
+
+let toolDebug: ToolDebug | null = null;
+
+async function loadToolDebug(): Promise<void> {
+  const debugPath = process.env.ACCOMPLISH_TOOL_DEBUG_PATH;
+  if (debugPath) {
+    console.error(`[dev-browser-mcp] Loading tool debug from: ${debugPath}`);
+    try {
+      toolDebug = await import(debugPath);
+      console.error('[dev-browser-mcp] Tool debug loaded successfully');
+    } catch (err) {
+      console.error('[dev-browser-mcp] Failed to load tool debug:', err);
+    }
+  } else {
+    console.error('[dev-browser-mcp] ACCOMPLISH_TOOL_DEBUG_PATH not set, tool debug disabled');
+  }
+}
+loadToolDebug();
+
 function toAIFriendlyError(error: unknown, selector: string): Error {
   const message = error instanceof Error ? error.message : String(error);
 
@@ -1355,6 +1378,8 @@ async function getAISnapshot(page: Page, options: SnapshotOptions = {}): Promise
     maxElements: options.maxElements,
     viewportOnly: options.viewportOnly || false,
     maxTokens: options.maxTokens,
+    rawTree: options.rawTree || false,
+    includeBoundingBoxes: options.includeBoundingBoxes || false,
   });
   return snapshot;
 }
@@ -2378,6 +2403,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
 
   console.error(`[MCP] Tool called: ${name}`, JSON.stringify(args, null, 2));
 
+  const debugContext = { getPage, getAISnapshot };
+  let preCapture: unknown = undefined;
+  if (toolDebug?.handlePreAction) {
+    try {
+      preCapture = await toolDebug.handlePreAction(name, args, debugContext);
+    } catch (err) {
+      console.error('[dev-browser-mcp] debugPreAction error:', err);
+    }
+  }
+
+  const executeToolAction = async (): Promise<CallToolResult> => {
   try {
     switch (name) {
       case 'browser_navigate': {
@@ -3988,6 +4024,19 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
       isError: true,
     };
   }
+  };
+
+  let result = await executeToolAction();
+
+  if (toolDebug?.handlePostAction) {
+    try {
+      result = await toolDebug.handlePostAction(name, args, result, preCapture, debugContext);
+    } catch (err) {
+      console.error('[dev-browser-mcp] debugPostAction error:', err);
+    }
+  }
+
+  return result;
 });
 
 async function main() {

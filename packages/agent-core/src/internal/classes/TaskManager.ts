@@ -25,6 +25,9 @@ export interface TaskCallbacks {
   onDebug?: (log: { type: string; message: string; data?: unknown }) => void;
   onTodoUpdate?: (todos: TodoItem[]) => void;
   onAuthError?: (error: { providerId: string; message: string }) => void;
+  onReasoning?: (text: string) => void;
+  onToolCallComplete?: (data: { toolName: string; toolInput: unknown; toolOutput: string; sessionId?: string }) => void;
+  onStepFinish?: (data: { reason: string; model?: string; tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } }; cost?: number }) => void;
 }
 
 export interface TaskManagerOptions {
@@ -193,6 +196,18 @@ export class TaskManager {
       callbacks.onAuthError?.(error);
     };
 
+    const onReasoning = (text: string) => {
+      callbacks.onReasoning?.(text);
+    };
+
+    const onToolCallComplete = (data: { toolName: string; toolInput: unknown; toolOutput: string; sessionId?: string }) => {
+      callbacks.onToolCallComplete?.(data);
+    };
+
+    const onStepFinish = (data: { reason: string; model?: string; tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } }; cost?: number }) => {
+      callbacks.onStepFinish?.(data);
+    };
+
     adapter.on('message', onMessage);
     adapter.on('progress', onProgress);
     adapter.on('permission-request', onPermissionRequest);
@@ -201,6 +216,9 @@ export class TaskManager {
     adapter.on('debug', onDebug);
     adapter.on('todo:update', onTodoUpdate);
     adapter.on('auth-error', onAuthError);
+    adapter.on('reasoning', onReasoning);
+    adapter.on('tool-call-complete', onToolCallComplete);
+    adapter.on('step-finish', onStepFinish);
 
     const cleanup = () => {
       adapter.off('message', onMessage);
@@ -211,6 +229,9 @@ export class TaskManager {
       adapter.off('debug', onDebug);
       adapter.off('todo:update', onTodoUpdate);
       adapter.off('auth-error', onAuthError);
+      adapter.off('reasoning', onReasoning);
+      adapter.off('tool-call-complete', onToolCallComplete);
+      adapter.off('step-finish', onStepFinish);
       adapter.dispose();
     };
 
@@ -254,6 +275,7 @@ export class TaskManager {
           workingDirectory: config.workingDirectory || this.options.defaultWorkingDirectory,
         });
       } catch (error) {
+        console.error(`[TaskManager] Task startup failed for ${taskId}:`, error);
         callbacks.onError(error instanceof Error ? error : new Error(String(error)));
         this.cleanupTask(taskId);
         this.processQueue();

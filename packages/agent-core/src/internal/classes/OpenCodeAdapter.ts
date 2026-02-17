@@ -46,6 +46,19 @@ export interface OpenCodeAdapterEvents {
   debug: [{ type: string; message: string; data?: unknown }];
   'todo:update': [TodoItem[]];
   'auth-error': [{ providerId: string; message: string }];
+  'reasoning': [string];
+  'tool-call-complete': [{
+    toolName: string;
+    toolInput: unknown;
+    toolOutput: string;
+    sessionId?: string;
+  }];
+  'step-finish': [{
+    reason: string;
+    model?: string;
+    tokens?: { input: number; output: number; reasoning: number; cache?: { read: number; write: number } };
+    cost?: number;
+  }];
 }
 
 export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
@@ -439,6 +452,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
             timestamp: new Date().toISOString(),
           };
           this.messages.push(taskMessage);
+          this.emit('reasoning', message.part.text);
         }
         break;
 
@@ -478,6 +492,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
         if (toolUseStatus === 'completed' || toolUseStatus === 'error') {
           this.emit('tool-result', toolUseOutput);
+          this.emit('tool-call-complete', {
+            toolName: toolUseName,
+            toolInput: toolUseInput,
+            toolOutput: toolUseOutput,
+            sessionId: this.currentSessionId || undefined,
+          });
         }
 
         break;
@@ -489,6 +509,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         break;
 
       case 'step_finish':
+        this.emit('step-finish', {
+          reason: message.part.reason,
+          model: this.currentModelId || undefined,
+          tokens: message.part.tokens,
+          cost: message.part.cost,
+        });
         if (message.part.reason === 'error') {
           if (!this.hasCompleted) {
             this.hasCompleted = true;
