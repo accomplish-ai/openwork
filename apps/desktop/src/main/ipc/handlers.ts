@@ -3,6 +3,7 @@ import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electro
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
@@ -27,6 +28,10 @@ import {
   validateTaskConfig,
 } from '@accomplish_ai/agent-core';
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
+import {
+  TASK_ATTACHMENT_MAX_FILES,
+  TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES,
+} from '@accomplish_ai/agent-core';
 import {
   storeApiKey,
   getApiKey,
@@ -82,6 +87,7 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
   ToolSupportStatus,
+  TaskFileAttachment,
 } from '@accomplish_ai/agent-core';
 import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
@@ -102,6 +108,73 @@ import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
+const IMAGE_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.bmp',
+  '.svg',
+  '.tiff',
+  '.ico',
+  '.heic',
+  '.heif',
+]);
+const TEXT_EXTENSIONS = new Set([
+  '.txt',
+  '.md',
+  '.markdown',
+  '.json',
+  '.jsonc',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.xml',
+  '.csv',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.py',
+  '.java',
+  '.go',
+  '.rs',
+  '.c',
+  '.cc',
+  '.cpp',
+  '.h',
+  '.hpp',
+  '.rb',
+  '.php',
+  '.sh',
+  '.zsh',
+  '.sql',
+  '.css',
+  '.scss',
+  '.less',
+  '.html',
+  '.htm',
+  '.log',
+]);
+
+const DOCUMENT_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.ppt', '.pptx']);
+
+function classifyAttachmentType(filePath: string): TaskFileAttachment['type'] {
+  const ext = path.extname(filePath).toLowerCase();
+  if (IMAGE_EXTENSIONS.has(ext)) {
+    return 'image';
+  }
+  if (DOCUMENT_EXTENSIONS.has(ext)) {
+    return 'document';
+  }
+  if (TEXT_EXTENSIONS.has(ext)) {
+    return 'text';
+  }
+  return 'other';
+}
 
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   if (!window || window.isDestroyed()) {
@@ -214,6 +287,47 @@ export function registerIPCHandlers(): void {
       });
 
     return task;
+  });
+
+  handle('task:pick-files', async (event: IpcMainInvokeEvent) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Attach files',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return [];
+    }
+
+    const selectedPaths = result.filePaths.slice(0, TASK_ATTACHMENT_MAX_FILES);
+    const attachments: TaskFileAttachment[] = [];
+    for (const filePath of selectedPaths) {
+      try {
+        const stats = fs.statSync(filePath);
+        if (!stats.isFile()) {
+          continue;
+        }
+        if (stats.size > TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES) {
+          // Skip oversized files - UI should inform user
+          continue;
+        }
+        attachments.push({
+          id: crypto.randomUUID(),
+          path: filePath,
+          name: path.basename(filePath),
+          size: stats.size,
+          type: classifyAttachmentType(filePath),
+        });
+      } catch {
+        // Skip invalid or inaccessible files and keep processing remaining picks.
+      }
+    }
+
+    return attachments;
   });
 
   handle('task:cancel', async (_event: IpcMainInvokeEvent, taskId?: string) => {

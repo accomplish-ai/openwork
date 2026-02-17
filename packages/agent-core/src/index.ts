@@ -252,6 +252,8 @@ export type { GetApiKeyFn } from './services/summarizer.js';
 export type {
   TaskStatus,
   TaskConfig,
+  TaskFileAttachmentType,
+  TaskFileAttachment,
   Task,
   TaskAttachment,
   TaskMessage,
@@ -259,7 +261,11 @@ export type {
   TaskProgress,
   TaskUpdateEvent,
 } from './common/types/task.js';
-export { STARTUP_STAGES } from './common/types/task.js';
+export {
+  STARTUP_STAGES,
+  TASK_ATTACHMENT_MAX_FILES,
+  TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES,
+} from './common/types/task.js';
 
 // Permission types
 export type {

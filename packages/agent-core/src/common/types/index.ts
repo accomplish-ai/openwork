@@ -99,10 +99,16 @@ export type {
   McpConnector,
 } from './connector.js';
 
-export { STARTUP_STAGES } from './task.js';
+export {
+  STARTUP_STAGES,
+  TASK_ATTACHMENT_MAX_FILES,
+  TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES,
+} from './task.js';
 export type {
   TaskStatus,
   TaskConfig,
+  TaskFileAttachmentType,
+  TaskFileAttachment,
   Task,
   TaskAttachment,
   TaskMessage,

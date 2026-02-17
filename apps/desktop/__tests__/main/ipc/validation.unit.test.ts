@@ -6,6 +6,10 @@ import {
   permissionResponseSchema,
   resumeSessionSchema,
 } from '../../../src/main/ipc/validation';
+import {
+  TASK_ATTACHMENT_MAX_FILES,
+  TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES,
+} from '@accomplish_ai/agent-core/common';
 import { z } from 'zod';
 
 describe('validation.ts', () => {
@@ -265,6 +269,25 @@ describe('validation.ts', () => {
           expect(result.data.chrome).toBe(false);
         }
       });
+
+      it('should accept valid attachments', () => {
+        const config = {
+          prompt: 'Review file',
+          attachments: [
+            {
+              path: '/tmp/report.md',
+              name: 'report.md',
+              type: 'text',
+              size: 1024,
+              id: 'attachment-1',
+            },
+          ],
+        };
+
+        const result = taskConfigSchema.safeParse(config);
+
+        expect(result.success).toBe(true);
+      });
     });
 
     describe('invalid payloads', () => {
@@ -336,6 +359,41 @@ describe('validation.ts', () => {
         const result = taskConfigSchema.safeParse(config);
 
         // Assert
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject attachments over max file count', () => {
+        const attachments = Array.from({ length: TASK_ATTACHMENT_MAX_FILES + 1 }, (_, index) => ({
+          path: `/tmp/file-${index}.txt`,
+          name: `file-${index}.txt`,
+          type: 'text',
+          size: 128,
+        }));
+        const config = {
+          prompt: 'Too many files',
+          attachments,
+        };
+
+        const result = taskConfigSchema.safeParse(config);
+
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject attachments over max file size', () => {
+        const config = {
+          prompt: 'Large file',
+          attachments: [
+            {
+              path: '/tmp/huge.bin',
+              name: 'huge.bin',
+              type: 'other',
+              size: TASK_ATTACHMENT_MAX_FILE_SIZE_BYTES + 1,
+            },
+          ],
+        };
+
+        const result = taskConfigSchema.safeParse(config);
+
         expect(result.success).toBe(false);
       });
     });

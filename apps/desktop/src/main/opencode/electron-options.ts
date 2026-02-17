@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import type { TaskAdapterOptions, TaskManagerOptions, TaskCallbacks } from '@accomplish_ai/agent-core';
 import type { TaskConfig } from '@accomplish_ai/agent-core';
+import type { TaskFileAttachment } from '@accomplish_ai/agent-core';
 import { DEV_BROWSER_PORT } from '@accomplish_ai/agent-core';
 import {
   getAzureEntraToken,
@@ -25,6 +26,25 @@ import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
+
+function buildPromptWithAttachments(prompt: string, attachments?: TaskFileAttachment[]): string {
+  if (!attachments || attachments.length === 0) {
+    return prompt;
+  }
+
+  const attachmentList = attachments
+    .map((attachment, index) =>
+      `${index + 1}. ${attachment.name} (${attachment.type}, ${attachment.size} bytes)\n   Path: ${attachment.path}`
+    )
+    .join('\n');
+
+  return `${prompt}
+
+Attached files:
+${attachmentList}
+
+Use attached files as task context. Open and read relevant files by their exact paths before deciding or answering.`;
+}
 
 /**
  * Removes the Vertex AI service account key file from disk if it exists.
@@ -193,7 +213,7 @@ export async function buildCliArgs(config: TaskConfig, _taskId: string): Promise
   const selectedModel = activeModel || storage.getSelectedModel();
 
   return coreBuildCliArgs({
-    prompt: config.prompt,
+    prompt: buildPromptWithAttachments(config.prompt, config.attachments),
     sessionId: config.sessionId,
     selectedModel: selectedModel ? {
       provider: selectedModel.provider,
