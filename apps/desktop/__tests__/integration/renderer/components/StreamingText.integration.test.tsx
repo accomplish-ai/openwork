@@ -17,7 +17,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Hello World" isComplete={true}>
           {(text) => <span>{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -29,7 +29,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Complete text" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -41,7 +41,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Streaming text" isComplete={false}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert - Initially empty
@@ -53,7 +53,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Test" isComplete={true} className="custom-class">
           {(text) => <span>{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -68,7 +68,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Hello" isComplete={false}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -82,7 +82,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Immediate complete" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -94,14 +94,14 @@ describe('StreamingText Integration', () => {
       const { rerender } = render(
         <StreamingText text="Partial text" isComplete={false}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Act - Complete immediately
       rerender(
         <StreamingText text="Partial text" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert - Should immediately show full text
@@ -116,7 +116,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Already done" isComplete={true} onComplete={onComplete}>
           {(text) => <span>{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert - onComplete should NOT be called for already complete text
@@ -130,7 +130,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Streaming" isComplete={false}>
           {(text) => <span>{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -143,7 +143,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Done" isComplete={true}>
           {(text) => <span>{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -158,7 +158,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="Plain text content" isComplete={true}>
           {(text) => <p>{text}</p>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -170,7 +170,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="**Bold** and *italic* text" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -182,7 +182,7 @@ describe('StreamingText Integration', () => {
       render(
         <StreamingText text="const x = 42;" isComplete={true}>
           {(text) => <code data-testid="content">{text}</code>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -199,7 +199,7 @@ Line 3`;
       render(
         <StreamingText text={multilineText} isComplete={true}>
           {(text) => <pre data-testid="content">{text}</pre>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -213,7 +213,7 @@ Line 3`;
       render(
         <StreamingText text="" isComplete={true}>
           {(text) => <span data-testid="content">{text || 'empty'}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -225,7 +225,7 @@ Line 3`;
       render(
         <StreamingText text="Special chars: @#$%^&*()" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -237,7 +237,7 @@ Line 3`;
       render(
         <StreamingText text="Unicode: Hello World" isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -252,7 +252,7 @@ Line 3`;
       render(
         <StreamingText text={longText} isComplete={true}>
           {(text) => <span data-testid="content">{text}</span>}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -269,7 +269,7 @@ Line 3`;
       render(
         <StreamingText text="Test" isComplete={true}>
           {renderSpy}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -285,7 +285,7 @@ Line 3`;
               <strong>{text.toUpperCase()}</strong>
             </div>
           )}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -303,7 +303,7 @@ Line 3`;
               <footer>Footer</footer>
             </article>
           )}
-        </StreamingText>
+        </StreamingText>,
       );
 
       // Assert
@@ -316,9 +316,7 @@ describe('useStreamingState Hook', () => {
   describe('initial state', () => {
     it('should return shouldStream as true for latest running assistant message', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', true, true)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', true, true));
 
       // Assert
       expect(result.current.shouldStream).toBe(true);
@@ -326,9 +324,7 @@ describe('useStreamingState Hook', () => {
 
     it('should return shouldStream as false when not latest assistant message', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', false, true)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', false, true));
 
       // Assert
       expect(result.current.shouldStream).toBe(false);
@@ -336,9 +332,7 @@ describe('useStreamingState Hook', () => {
 
     it('should return shouldStream as false when task not running', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', true, false)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', true, false));
 
       // Assert
       expect(result.current.shouldStream).toBe(false);
@@ -346,9 +340,7 @@ describe('useStreamingState Hook', () => {
 
     it('should return isComplete as opposite of shouldStream', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', true, true)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', true, true));
 
       // Assert
       expect(result.current.isComplete).toBe(false);
@@ -358,9 +350,7 @@ describe('useStreamingState Hook', () => {
   describe('streaming completion', () => {
     it('should provide onComplete callback', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', true, true)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', true, true));
 
       // Assert
       expect(typeof result.current.onComplete).toBe('function');
@@ -368,9 +358,7 @@ describe('useStreamingState Hook', () => {
 
     it('should mark as complete after onComplete is called', () => {
       // Arrange
-      const { result, rerender } = renderHook(() =>
-        useStreamingState('msg-1', true, true)
-      );
+      const { result, rerender } = renderHook(() => useStreamingState('msg-1', true, true));
 
       // Act
       act(() => {
@@ -391,7 +379,7 @@ describe('useStreamingState Hook', () => {
       // Arrange
       const { result, rerender } = renderHook(
         ({ messageId }) => useStreamingState(messageId, true, true),
-        { initialProps: { messageId: 'msg-1' } }
+        { initialProps: { messageId: 'msg-1' } },
       );
 
       // Act - Complete streaming
@@ -412,7 +400,7 @@ describe('useStreamingState Hook', () => {
       // Arrange
       const { result, rerender } = renderHook(
         ({ isRunning }) => useStreamingState('msg-1', true, isRunning),
-        { initialProps: { isRunning: true } }
+        { initialProps: { isRunning: true } },
       );
 
       expect(result.current.shouldStream).toBe(true);
@@ -431,7 +419,7 @@ describe('useStreamingState Hook', () => {
       // Arrange
       const { result, rerender } = renderHook(
         ({ isLatest }) => useStreamingState('msg-1', isLatest, true),
-        { initialProps: { isLatest: true } }
+        { initialProps: { isLatest: true } },
       );
 
       expect(result.current.shouldStream).toBe(true);
@@ -447,9 +435,7 @@ describe('useStreamingState Hook', () => {
   describe('edge cases', () => {
     it('should handle all flags being false', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('msg-1', false, false)
-      );
+      const { result } = renderHook(() => useStreamingState('msg-1', false, false));
 
       // Assert
       expect(result.current.shouldStream).toBe(false);
@@ -459,9 +445,8 @@ describe('useStreamingState Hook', () => {
     it('should handle rapid state changes', () => {
       // Arrange
       const { result, rerender } = renderHook(
-        ({ isLatest, isRunning }) =>
-          useStreamingState('msg-1', isLatest, isRunning),
-        { initialProps: { isLatest: true, isRunning: true } }
+        ({ isLatest, isRunning }) => useStreamingState('msg-1', isLatest, isRunning),
+        { initialProps: { isLatest: true, isRunning: true } },
       );
 
       // Act - Rapid changes
@@ -476,9 +461,7 @@ describe('useStreamingState Hook', () => {
 
     it('should handle empty message ID', () => {
       // Arrange & Act
-      const { result } = renderHook(() =>
-        useStreamingState('', true, true)
-      );
+      const { result } = renderHook(() => useStreamingState('', true, true));
 
       // Assert - Should still work
       expect(result.current.shouldStream).toBe(true);

@@ -28,12 +28,11 @@ function getMetaRow(): ProviderMetaRow {
   return db.prepare('SELECT * FROM provider_meta WHERE id = 1').get() as ProviderMetaRow;
 }
 
-
 function rowToProvider(row: ProviderRow): ConnectedProvider {
-  const credentials = safeParseJsonWithFallback<ProviderCredentials>(
-    row.credentials_data,
-    { type: 'api_key', keyPrefix: '' }
-  )!;
+  const credentials = safeParseJsonWithFallback<ProviderCredentials>(row.credentials_data, {
+    type: 'api_key',
+    keyPrefix: '',
+  })!;
 
   return {
     providerId: row.provider_id as ProviderId,
@@ -41,7 +40,9 @@ function rowToProvider(row: ProviderRow): ConnectedProvider {
     selectedModelId: row.selected_model_id,
     credentials,
     lastConnectedAt: row.last_connected_at || new Date().toISOString(),
-    availableModels: safeParseJsonWithFallback<Array<{ id: string; name: string }>>(row.available_models) ?? undefined,
+    availableModels:
+      safeParseJsonWithFallback<Array<{ id: string; name: string }>>(row.available_models) ??
+      undefined,
   };
 }
 
@@ -74,22 +75,19 @@ export function getActiveProviderId(): ProviderId | null {
 
 export function getConnectedProvider(providerId: ProviderId): ConnectedProvider | null {
   const db = getDatabase();
-  const row = db
-    .prepare('SELECT * FROM providers WHERE provider_id = ?')
-    .get(providerId) as ProviderRow | undefined;
+  const row = db.prepare('SELECT * FROM providers WHERE provider_id = ?').get(providerId) as
+    | ProviderRow
+    | undefined;
 
   return row ? rowToProvider(row) : null;
 }
 
-export function setConnectedProvider(
-  providerId: ProviderId,
-  provider: ConnectedProvider
-): void {
+export function setConnectedProvider(providerId: ProviderId, provider: ConnectedProvider): void {
   const db = getDatabase();
   db.prepare(
     `INSERT OR REPLACE INTO providers
       (provider_id, connection_status, selected_model_id, credentials_type, credentials_data, last_connected_at, available_models)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     providerId,
     provider.connectionStatus,
@@ -97,7 +95,7 @@ export function setConnectedProvider(
     provider.credentials.type,
     JSON.stringify(provider.credentials),
     provider.lastConnectedAt,
-    provider.availableModels ? JSON.stringify(provider.availableModels) : null
+    provider.availableModels ? JSON.stringify(provider.availableModels) : null,
   );
 }
 
@@ -118,7 +116,7 @@ export function updateProviderModel(providerId: ProviderId, modelId: string | nu
   const db = getDatabase();
   db.prepare('UPDATE providers SET selected_model_id = ? WHERE provider_id = ?').run(
     modelId,
-    providerId
+    providerId,
   );
 }
 
@@ -136,7 +134,7 @@ export function clearProviderSettings(): void {
   db.transaction(() => {
     db.prepare('DELETE FROM providers').run();
     db.prepare(
-      'UPDATE provider_meta SET active_provider_id = NULL, debug_mode = 0 WHERE id = 1'
+      'UPDATE provider_meta SET active_provider_id = NULL, debug_mode = 0 WHERE id = 1',
     ).run();
   })();
 }
@@ -171,7 +169,7 @@ export function hasReadyProvider(): boolean {
   const row = db
     .prepare(
       `SELECT COUNT(*) as count FROM providers
-       WHERE connection_status = 'connected' AND selected_model_id IS NOT NULL`
+       WHERE connection_status = 'connected' AND selected_model_id IS NOT NULL`,
     )
     .get() as { count: number };
 

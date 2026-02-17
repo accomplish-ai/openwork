@@ -1,11 +1,10 @@
 // apps/desktop/src/renderer/components/settings/ProviderGrid.tsx
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ProviderId, ProviderSettings } from '@accomplish_ai/agent-core/common';
 import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
 import { ProviderCard } from './ProviderCard';
-import { settingsVariants, settingsTransitions } from '@/lib/animations';
 
 // Provider order matching Figma design (4 columns per row)
 const PROVIDER_ORDER: ProviderId[] = [
@@ -46,7 +45,7 @@ export function ProviderGrid({
   const filteredProviders = useMemo(() => {
     if (!search.trim()) return PROVIDER_ORDER;
     const query = search.toLowerCase();
-    return PROVIDER_ORDER.filter(id => {
+    return PROVIDER_ORDER.filter((id) => {
       const meta = PROVIDER_META[id];
       return meta.name.toLowerCase().includes(query);
     });
@@ -58,8 +57,18 @@ export function ProviderGrid({
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-medium text-foreground">Providers</span>
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             type="text"
@@ -75,7 +84,12 @@ export function ProviderGrid({
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -84,7 +98,7 @@ export function ProviderGrid({
 
       {/* Providers - first 4 always visible */}
       <div className="grid grid-cols-4 gap-3 min-h-[110px] justify-items-center">
-        {filteredProviders.slice(0, 4).map(providerId => (
+        {filteredProviders.slice(0, 4).map((providerId) => (
           <ProviderCard
             key={providerId}
             providerId={providerId}

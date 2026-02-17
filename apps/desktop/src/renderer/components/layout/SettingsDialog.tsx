@@ -4,12 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ProviderId, ConnectedProvider } from '@accomplish_ai/agent-core/common';
 import { hasAnyReadyProvider, isProviderReady } from '@accomplish_ai/agent-core/common';
 import { useProviderSettings } from '@/components/settings/hooks/useProviderSettings';
@@ -45,7 +40,9 @@ export default function SettingsDialog({
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about'>(initialTab);
+  const [activeTab, setActiveTab] = useState<
+    'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about'
+  >(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
 
@@ -62,7 +59,9 @@ export default function SettingsDialog({
   const [theme, setThemeState] = useState<string>('system');
   // Debug mode state - stored in appSettings, not providerSettings
   const [debugMode, setDebugModeState] = useState(false);
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>('idle');
+  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
+    'idle',
+  );
   const accomplish = getAccomplish();
 
   // Refetch settings and debug mode when dialog opens
@@ -84,6 +83,7 @@ export default function SettingsDialog({
     if (!providerToSelect) return;
 
     // Auto-select the provider to show its connection details immediately
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedProvider(providerToSelect);
 
     // Auto-expand grid if selected provider is not in the first 4 visible providers
@@ -95,6 +95,7 @@ export default function SettingsDialog({
   // Reset state when dialog closes, set initial tab when it opens
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedProvider(null);
       setGridExpanded(false);
       setCloseWarning(false);
@@ -106,46 +107,56 @@ export default function SettingsDialog({
   }, [open, initialTab]);
 
   // Handle close attempt
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (!newOpen && settings) {
-      // Check if user is trying to close
-      if (!hasAnyReadyProvider(settings)) {
-        // No ready provider - show warning
-        setCloseWarning(true);
-        return;
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen && settings) {
+        // Check if user is trying to close
+        if (!hasAnyReadyProvider(settings)) {
+          // No ready provider - show warning
+          setCloseWarning(true);
+          return;
+        }
       }
-    }
-    setCloseWarning(false);
-    onOpenChange(newOpen);
-  }, [settings, onOpenChange]);
+      setCloseWarning(false);
+      onOpenChange(newOpen);
+    },
+    [settings, onOpenChange],
+  );
 
   // Handle provider selection
-  const handleSelectProvider = useCallback(async (providerId: ProviderId) => {
-    setSelectedProvider(providerId);
-    setCloseWarning(false);
-    setShowModelError(false);
+  const handleSelectProvider = useCallback(
+    async (providerId: ProviderId) => {
+      setSelectedProvider(providerId);
+      setCloseWarning(false);
+      setShowModelError(false);
 
-    // Auto-set as active if the selected provider is ready
-    const provider = settings?.connectedProviders?.[providerId];
-    if (provider && isProviderReady(provider)) {
-      await setActiveProvider(providerId);
-    }
-  }, [settings?.connectedProviders, setActiveProvider]);
+      // Auto-set as active if the selected provider is ready
+      const provider = settings?.connectedProviders?.[providerId];
+      if (provider && isProviderReady(provider)) {
+        await setActiveProvider(providerId);
+      }
+    },
+    [settings?.connectedProviders, setActiveProvider],
+  );
 
   // Handle provider connection
-  const handleConnect = useCallback(async (provider: ConnectedProvider) => {
-    await connectProvider(provider.providerId, provider);
+  const handleConnect = useCallback(
+    async (provider: ConnectedProvider) => {
+      await connectProvider(provider.providerId, provider);
 
-    // Auto-set as active if the new provider is ready (connected + has model selected)
-    // This ensures newly connected ready providers become active, regardless of
-    // whether another provider was already active
-    if (isProviderReady(provider)) {
-      await setActiveProvider(provider.providerId);
-      onApiKeySaved?.();
-    }
-  }, [connectProvider, setActiveProvider, onApiKeySaved]);
+      // Auto-set as active if the new provider is ready (connected + has model selected)
+      // This ensures newly connected ready providers become active, regardless of
+      // whether another provider was already active
+      if (isProviderReady(provider)) {
+        await setActiveProvider(provider.providerId);
+        onApiKeySaved?.();
+      }
+    },
+    [connectProvider, setActiveProvider, onApiKeySaved],
+  );
 
   // Handle provider disconnection
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleDisconnect = useCallback(async () => {
     if (!selectedProvider) return;
     const wasActiveProvider = settings?.activeProviderId === selectedProvider;
@@ -155,36 +166,49 @@ export default function SettingsDialog({
     // If we just removed the active provider, auto-select another ready provider
     if (wasActiveProvider && settings?.connectedProviders) {
       const readyProviderId = Object.keys(settings.connectedProviders).find(
-        (id) => id !== selectedProvider && isProviderReady(settings.connectedProviders[id as ProviderId])
+        (id) =>
+          id !== selectedProvider && isProviderReady(settings.connectedProviders[id as ProviderId]),
       ) as ProviderId | undefined;
       if (readyProviderId) {
         await setActiveProvider(readyProviderId);
       }
     }
-  }, [selectedProvider, disconnectProvider, settings?.activeProviderId, settings?.connectedProviders, setActiveProvider]);
+  }, [
+    selectedProvider,
+    disconnectProvider,
+    settings?.activeProviderId,
+    settings?.connectedProviders,
+    setActiveProvider,
+  ]);
 
   // Handle model change
-  const handleModelChange = useCallback(async (modelId: string) => {
-    if (!selectedProvider) return;
-    await updateModel(selectedProvider, modelId);
+  const handleModelChange = useCallback(
+    async (modelId: string) => {
+      if (!selectedProvider) return;
+      await updateModel(selectedProvider, modelId);
 
-    // Auto-set as active if this provider is now ready
-    const provider = settings?.connectedProviders[selectedProvider];
-    if (provider && isProviderReady({ ...provider, selectedModelId: modelId })) {
-      if (!settings?.activeProviderId || settings.activeProviderId !== selectedProvider) {
-        await setActiveProvider(selectedProvider);
+      // Auto-set as active if this provider is now ready
+      const provider = settings?.connectedProviders[selectedProvider];
+      if (provider && isProviderReady({ ...provider, selectedModelId: modelId })) {
+        if (!settings?.activeProviderId || settings.activeProviderId !== selectedProvider) {
+          await setActiveProvider(selectedProvider);
+        }
       }
-    }
 
-    setShowModelError(false);
-    onApiKeySaved?.();
-  }, [selectedProvider, updateModel, settings, setActiveProvider, onApiKeySaved]);
+      setShowModelError(false);
+      onApiKeySaved?.();
+    },
+    [selectedProvider, updateModel, settings, setActiveProvider, onApiKeySaved],
+  );
 
-  const handleThemeChange = useCallback(async (value: string) => {
-    setThemeState(value);
-    applyTheme(value);
-    await accomplish.setTheme(value);
-  }, [accomplish]);
+  const handleThemeChange = useCallback(
+    async (value: string) => {
+      setThemeState(value);
+      applyTheme(value);
+      await accomplish.setTheme(value);
+    },
+    [accomplish],
+  );
 
   // Handle debug mode toggle - writes to appSettings (correct store)
   const handleDebugToggle = useCallback(async () => {
@@ -242,8 +266,8 @@ export default function SettingsDialog({
       const activeProvider = settings.connectedProviders[settings.activeProviderId];
       if (!isProviderReady(activeProvider)) {
         // Active provider is no longer ready - find a ready provider to set as active
-        const readyProviderId = Object.keys(settings.connectedProviders).find(
-          (id) => isProviderReady(settings.connectedProviders[id as ProviderId])
+        const readyProviderId = Object.keys(settings.connectedProviders).find((id) =>
+          isProviderReady(settings.connectedProviders[id as ProviderId]),
         ) as ProviderId | undefined;
         if (readyProviderId) {
           setActiveProvider(readyProviderId);
@@ -251,8 +275,8 @@ export default function SettingsDialog({
       }
     } else {
       // No active provider set - auto-select first ready provider
-      const readyProviderId = Object.keys(settings.connectedProviders).find(
-        (id) => isProviderReady(settings.connectedProviders[id as ProviderId])
+      const readyProviderId = Object.keys(settings.connectedProviders).find((id) =>
+        isProviderReady(settings.connectedProviders[id as ProviderId]),
       ) as ProviderId | undefined;
       if (readyProviderId) {
         setActiveProvider(readyProviderId);
@@ -366,7 +390,7 @@ export default function SettingsDialog({
             {activeTab === 'skills' && (
               <div className="pb-2">
                 <AddSkillDropdown
-                  onSkillAdded={() => setSkillsRefreshTrigger(t => t + 1)}
+                  onSkillAdded={() => setSkillsRefreshTrigger((t) => t + 1)}
                   onClose={() => onOpenChange(false)}
                 />
               </div>
@@ -385,8 +409,18 @@ export default function SettingsDialog({
                 transition={settingsTransitions.enter}
               >
                 <div className="flex items-start gap-3">
-                  <svg className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    className="h-5 w-5 text-warning flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-warning">No provider ready</p>
@@ -467,12 +501,14 @@ export default function SettingsDialog({
                           <button
                             data-testid="settings-debug-toggle"
                             onClick={handleDebugToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${debugMode ? 'bg-primary' : 'bg-muted'
-                              }`}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${
+                              debugMode ? 'bg-primary' : 'bg-muted'
+                            }`}
                           >
                             <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${debugMode ? 'translate-x-6' : 'translate-x-1'
-                                }`}
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${
+                                debugMode ? 'translate-x-6' : 'translate-x-1'
+                              }`}
                             />
                           </button>
                           {/* Export Logs Button */}
@@ -484,22 +520,53 @@ export default function SettingsDialog({
                               exportStatus === 'success'
                                 ? 'text-green-500'
                                 : exportStatus === 'error'
-                                ? 'text-destructive'
-                                : 'text-muted-foreground hover:text-foreground'
+                                  ? 'text-destructive'
+                                  : 'text-muted-foreground hover:text-foreground'
                             }`}
                           >
                             {exportStatus === 'exporting' ? (
                               <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
                               </svg>
                             ) : exportStatus === 'success' ? (
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                             ) : (
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
                               </svg>
                             )}
                           </button>
@@ -508,8 +575,8 @@ export default function SettingsDialog({
                       {debugMode && (
                         <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
                           <p className="text-sm text-warning">
-                            Debug mode is enabled. Backend logs will appear in the task view
-                            when running tasks.
+                            Debug mode is enabled. Backend logs will appear in the task view when
+                            running tasks.
                           </p>
                         </div>
                       )}
@@ -554,23 +621,67 @@ export default function SettingsDialog({
                   role="radiogroup"
                   aria-label="Theme preference"
                 >
-                  {([
-                    { value: 'system', label: 'System', icon: (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" />
-                      </svg>
-                    )},
-                    { value: 'light', label: 'Light', icon: (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                      </svg>
-                    )},
-                    { value: 'dark', label: 'Dark', icon: (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                      </svg>
-                    )},
-                  ] as const).map((option) => (
+                  {(
+                    [
+                      {
+                        value: 'system',
+                        label: 'System',
+                        icon: (
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z"
+                            />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: 'light',
+                        label: 'Light',
+                        icon: (
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+                            />
+                          </svg>
+                        ),
+                      },
+                      {
+                        value: 'dark',
+                        label: 'Dark',
+                        icon: (
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+                            />
+                          </svg>
+                        ),
+                      },
+                    ] as const
+                  ).map((option) => (
                     <button
                       key={option.value}
                       role="radio"
@@ -609,10 +720,7 @@ export default function SettingsDialog({
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Have a question?</div>
-                    <a
-                      href="mailto:support@accomplish.ai"
-                      className="text-primary hover:underline"
-                    >
+                    <a href="mailto:support@accomplish.ai" className="text-primary hover:underline">
                       support@accomplish.ai
                     </a>
                   </div>
@@ -636,7 +744,12 @@ export default function SettingsDialog({
               data-testid="settings-done-button"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               Done
             </button>

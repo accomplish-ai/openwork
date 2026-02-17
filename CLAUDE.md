@@ -17,9 +17,12 @@ pnpm dev:clean                                  # Dev mode with CLEAN_START=1 (c
 pnpm build                                      # Build all workspaces
 pnpm build:desktop                              # Build desktop app only
 
-# Type checking
-pnpm lint                                       # TypeScript checks (all workspaces)
+# Type checking & linting
+pnpm lint                                       # TypeScript + ESLint (all workspaces)
 pnpm typecheck                                  # Type validation (all workspaces)
+pnpm lint:eslint                                # ESLint only (flat config)
+pnpm format:check                               # Prettier check (no writes)
+pnpm format                                     # Prettier write (auto-fix)
 
 # Testing (desktop workspace — no root-level test scripts exist)
 pnpm -F @accomplish/desktop test                # Run all Vitest tests
@@ -41,8 +44,8 @@ pnpm clean                                      # Clean build outputs and node_m
 Always verify before committing. Run the relevant commands for what you changed:
 
 ```bash
-# After ANY code change — always run typecheck
-pnpm typecheck
+# After ANY code change — always run typecheck + lint
+pnpm typecheck && pnpm lint:eslint && pnpm format:check
 
 # After changing agent-core code
 pnpm -F @accomplish_ai/agent-core test
@@ -51,10 +54,10 @@ pnpm -F @accomplish_ai/agent-core test
 pnpm -F @accomplish/desktop test
 
 # After changing both packages
-pnpm lint && pnpm typecheck
+pnpm lint && pnpm format:check
 
 # Full verification before PR
-pnpm lint && pnpm typecheck && pnpm -F @accomplish/desktop test && pnpm -F @accomplish_ai/agent-core test
+pnpm lint && pnpm format:check && pnpm -F @accomplish/desktop test && pnpm -F @accomplish_ai/agent-core test
 ```
 
 ## Do NOT
@@ -71,6 +74,7 @@ pnpm lint && pnpm typecheck && pnpm -F @accomplish/desktop test && pnpm -F @acco
 See [docs/architecture.md](docs/architecture.md) for full architecture details (monorepo layout, package structure, IPC flow, storage, bundled Node.js).
 
 Key packages:
+
 - `@accomplish_ai/agent-core` — Core business logic, types, storage, MCP tools (ESM, published to npm)
 - `@accomplish/desktop` — Electron app (main/preload/renderer)
 
@@ -84,7 +88,7 @@ Key packages:
 - IPC handlers in `src/main/ipc/handlers.ts` must match `window.accomplish` API in preload
 - **Always use braces for `if`/`else`/`for`/`while`** - No single-line braceless statements (enforced by `curly` ESLint rule)
 - **Avoid nested ternaries** - Use mapper objects or if/else for readability
-- **No unnecessary comments** - Don't add comments that restate what the code does. Comments should explain *why*, not *what*
+- **No unnecessary comments** - Don't add comments that restate what the code does. Comments should explain _why_, not _what_
 - **Reuse UI components** - Check `src/renderer/components/ui/` before creating new ones
 
 ### Image Assets in Renderer
@@ -155,6 +159,7 @@ Static assets go in `apps/desktop/public/assets/`.
 ## Testing
 
 ### E2E Tests (Playwright)
+
 - Config: `apps/desktop/e2e/playwright.config.ts`
 - Tests: `apps/desktop/e2e/specs/`
 - Page objects: `apps/desktop/e2e/pages/`
@@ -162,6 +167,7 @@ Static assets go in `apps/desktop/public/assets/`.
 - Docker support: `apps/desktop/e2e/docker/`
 
 ### Unit/Integration Tests (Vitest)
+
 - Desktop config: `apps/desktop/vitest.config.ts`
 - Agent-core config: `packages/agent-core/vitest.config.ts`
 - Coverage thresholds (desktop): 80% statements/functions/lines, 70% branches
@@ -177,6 +183,7 @@ Static assets go in `apps/desktop/public/assets/`.
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:
+
 - `ci.yml` - Core tests, unit tests, integration tests, typecheck, E2E
 - `release.yml` - Desktop app build and publish to GitHub releases
 - `commitlint.yml` - Conventional commit validation

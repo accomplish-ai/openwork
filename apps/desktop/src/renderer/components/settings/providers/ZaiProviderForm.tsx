@@ -4,7 +4,11 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
-import type { ConnectedProvider, ZaiCredentials, ZaiRegion } from '@accomplish_ai/agent-core/common';
+import type {
+  ConnectedProvider,
+  ZaiCredentials,
+  ZaiRegion,
+} from '@accomplish_ai/agent-core/common';
 import { PROVIDER_META, DEFAULT_PROVIDERS } from '@accomplish_ai/agent-core/common';
 import {
   ModelSelector,
@@ -35,14 +39,17 @@ export function ZaiProviderForm({
   const [region, setRegion] = useState<ZaiRegion>('international');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fetchedModels, setFetchedModels] = useState<Array<{ id: string; name: string }> | null>(null);
+  const [fetchedModels, setFetchedModels] = useState<Array<{ id: string; name: string }> | null>(
+    null,
+  );
 
   const meta = PROVIDER_META['zai'];
-  const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === 'zai');
-  const staticModels = providerConfig?.models.map(m => ({ id: m.fullId, name: m.displayName })) || [];
+  const providerConfig = DEFAULT_PROVIDERS.find((p) => p.id === 'zai');
+  const staticModels =
+    providerConfig?.models.map((m) => ({ id: m.fullId, name: m.displayName })) || [];
   const models = connectedProvider?.availableModels?.length
-    ? connectedProvider.availableModels.map(m => ({ id: m.id, name: m.name }))
-    : fetchedModels ?? staticModels;
+    ? connectedProvider.availableModels.map((m) => ({ id: m.id, name: m.name }))
+    : (fetchedModels ?? staticModels);
   const isConnected = connectedProvider?.connectionStatus === 'connected';
 
   const storedCredentials = connectedProvider?.credentials as ZaiCredentials | undefined;
@@ -55,16 +62,22 @@ export function ZaiProviderForm({
 
     const accomplish = getAccomplish();
     const storedRegion = storedCredentials?.region || 'international';
-    accomplish.fetchProviderModels('zai', { zaiRegion: storedRegion }).then((result) => {
-      if (result.success && result.models?.length) {
-        setFetchedModels(result.models);
-        // Persist to connected provider so we don't re-fetch next time
-        accomplish.setConnectedProvider('zai', {
-          ...connectedProvider!,
-          availableModels: result.models,
-        }).catch(console.error);
-      }
-    }).catch(console.error);
+    accomplish
+      .fetchProviderModels('zai', { zaiRegion: storedRegion })
+      .then((result) => {
+        if (result.success && result.models?.length) {
+          setFetchedModels(result.models);
+          // Persist to connected provider so we don't re-fetch next time
+          accomplish
+            .setConnectedProvider('zai', {
+              ...connectedProvider!,
+              availableModels: result.models,
+            })
+            .catch(console.error);
+        }
+      })
+      .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected]);
 
   const handleConnect = async () => {
@@ -78,7 +91,9 @@ export function ZaiProviderForm({
 
     try {
       const accomplish = getAccomplish();
-      const validation = await accomplish.validateApiKeyForProvider('zai', apiKey.trim(), { region });
+      const validation = await accomplish.validateApiKeyForProvider('zai', apiKey.trim(), {
+        region,
+      });
 
       if (!validation.valid) {
         setError(validation.error || 'Invalid API key');
@@ -106,9 +121,10 @@ export function ZaiProviderForm({
         selectedModelId: defaultModelId,
         credentials: {
           type: 'zai',
-          keyPrefix: trimmedKey.length > 40
-            ? trimmedKey.substring(0, 40) + '...'
-            : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
+          keyPrefix:
+            trimmedKey.length > 40
+              ? trimmedKey.substring(0, 40) + '...'
+              : trimmedKey.substring(0, Math.min(trimmedKey.length, 20)) + '...',
           region,
         } as ZaiCredentials,
         lastConnectedAt: new Date().toISOString(),
@@ -125,7 +141,10 @@ export function ZaiProviderForm({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5" data-testid="provider-settings-panel">
+    <div
+      className="rounded-xl border border-border bg-card p-5"
+      data-testid="provider-settings-panel"
+    >
       <ProviderFormHeader logoSrc={zaiLogo} providerName={meta.name} />
 
       <div className="space-y-3">
@@ -203,14 +222,23 @@ export function ZaiProviderForm({
                     disabled={!apiKey}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
               </div>
 
               <FormError error={error} />
-              <ConnectButton onClick={handleConnect} connecting={connecting} disabled={!apiKey.trim()} />
+              <ConnectButton
+                onClick={handleConnect}
+                connecting={connecting}
+                disabled={!apiKey.trim()}
+              />
             </motion.div>
           ) : (
             <motion.div

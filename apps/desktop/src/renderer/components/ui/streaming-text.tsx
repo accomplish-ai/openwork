@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
 
 interface StreamingTextProps {
   text: string;
@@ -38,6 +37,7 @@ export function StreamingText({
   useEffect(() => {
     // If new text is longer, continue streaming from current position
     if (text.length > textRef.current.length && !isComplete) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsStreaming(true);
     }
     textRef.current = text;
@@ -46,6 +46,7 @@ export function StreamingText({
   // Handle immediate completion
   useEffect(() => {
     if (isComplete) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayedLength(text.length);
       setIsStreaming(false);
     }
@@ -57,6 +58,7 @@ export function StreamingText({
   // Call onComplete in a separate effect to avoid setState during render
   useEffect(() => {
     if (streamingJustFinished) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStreamingJustFinished(false);
       onComplete?.();
     }
@@ -121,7 +123,7 @@ export function StreamingText({
 export function useStreamingState(
   messageId: string,
   isLatestAssistantMessage: boolean,
-  isTaskRunning: boolean
+  isTaskRunning: boolean,
 ) {
   const [hasFinishedStreaming, setHasFinishedStreaming] = useState(false);
   const wasStreamingRef = useRef(false);
@@ -132,6 +134,7 @@ export function useStreamingState(
   // Track when streaming completes
   useEffect(() => {
     if (wasStreamingRef.current && !shouldStream) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasFinishedStreaming(true);
     }
     wasStreamingRef.current = shouldStream;
@@ -139,6 +142,7 @@ export function useStreamingState(
 
   // Reset if message ID changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasFinishedStreaming(false);
     wasStreamingRef.current = false;
   }, [messageId]);

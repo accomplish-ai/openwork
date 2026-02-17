@@ -122,17 +122,17 @@ Renderer (taskStore subscriptions)
 
 ### Key IPC Events (Main → Renderer)
 
-| Channel | Purpose |
-|---------|---------|
-| `task:update` | Task message updates |
-| `task:update:batch` | Batched messages (50ms window) |
-| `task:progress` | Startup stages, tool progress |
-| `task:status-change` | Status transitions |
-| `task:summary` | AI-generated summaries |
+| Channel              | Purpose                        |
+| -------------------- | ------------------------------ |
+| `task:update`        | Task message updates           |
+| `task:update:batch`  | Batched messages (50ms window) |
+| `task:progress`      | Startup stages, tool progress  |
+| `task:status-change` | Status transitions             |
+| `task:summary`       | AI-generated summaries         |
 | `permission:request` | File/tool/question permissions |
-| `todo:update` | Todo list updates |
-| `auth:error` | OAuth token expiry |
-| `debug:log` | Debug log entries |
+| `todo:update`        | Todo list updates              |
+| `auth:error`         | OAuth token expiry             |
+| `debug:log`          | Debug log entries              |
 
 ## Supported Providers
 
@@ -167,12 +167,13 @@ packages/agent-core/src/storage/
 ### Adding New Migrations
 
 1. Create `packages/agent-core/src/storage/migrations/vXXX-description.ts`:
+
 ```typescript
 import type { Database } from 'better-sqlite3';
 import type { Migration } from './index.js';
 
 export const migration: Migration = {
-  version: 7,  // Increment from CURRENT_VERSION (currently 6)
+  version: 7, // Increment from CURRENT_VERSION (currently 6)
   up(db: Database): void {
     db.exec(`ALTER TABLE app_settings ADD COLUMN new_field TEXT`);
   },
@@ -180,12 +181,13 @@ export const migration: Migration = {
 ```
 
 2. Update `packages/agent-core/src/storage/migrations/index.ts`:
+
 ```typescript
 import { migration as v007 } from './v007-description.js';
 
-export const CURRENT_VERSION = 7;  // Update this
+export const CURRENT_VERSION = 7; // Update this
 
-const migrations: Migration[] = [...existingMigrations, v007];  // Add to array
+const migrations: Migration[] = [...existingMigrations, v007]; // Add to array
 ```
 
 ### Rollback Protection

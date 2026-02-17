@@ -26,62 +26,74 @@ export function VertexServiceAccountTab({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processJson = useCallback((json: string, name?: string) => {
-    setJsonError(null);
-    setClientEmail(null);
+  const processJson = useCallback(
+    (json: string, name?: string) => {
+      setJsonError(null);
+      setClientEmail(null);
 
-    if (!json.trim()) {
-      onJsonChange('');
-      setFileName(null);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(json);
-      if (!parsed.type || !parsed.project_id || !parsed.private_key || !parsed.client_email) {
-        setJsonError('Missing required fields (type, project_id, private_key, client_email)');
+      if (!json.trim()) {
+        onJsonChange('');
+        setFileName(null);
         return;
       }
-      onJsonChange(json);
-      setClientEmail(parsed.client_email);
-      if (name) setFileName(name);
-      // Auto-fill project ID from the key
-      if (parsed.project_id && !projectId) {
-        onProjectIdChange(parsed.project_id);
+
+      try {
+        const parsed = JSON.parse(json);
+        if (!parsed.type || !parsed.project_id || !parsed.private_key || !parsed.client_email) {
+          setJsonError('Missing required fields (type, project_id, private_key, client_email)');
+          return;
+        }
+        onJsonChange(json);
+        setClientEmail(parsed.client_email);
+        if (name) setFileName(name);
+        // Auto-fill project ID from the key
+        if (parsed.project_id && !projectId) {
+          onProjectIdChange(parsed.project_id);
+        }
+      } catch {
+        setJsonError('Invalid JSON format');
       }
-    } catch {
-      setJsonError('Invalid JSON format');
-    }
-  }, [onJsonChange, onProjectIdChange, projectId]);
+    },
+    [onJsonChange, onProjectIdChange, projectId],
+  );
 
-  const handleFileRead = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      processJson(content, file.name);
-    };
-    reader.readAsText(file);
-  }, [processJson]);
+  const handleFileRead = useCallback(
+    (file: File) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        processJson(content, file.name);
+      };
+      reader.readAsText(file);
+    },
+    [processJson],
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file?.name.endsWith('.json')) {
-      handleFileRead(file);
-    } else {
-      setJsonError('Please drop a .json file');
-    }
-  }, [handleFileRead]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file?.name.endsWith('.json')) {
+        handleFileRead(file);
+      } else {
+        setJsonError('Please drop a .json file');
+      }
+    },
+    [handleFileRead],
+  );
 
   const handleBrowse = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileRead(file);
-  }, [handleFileRead]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFileRead(file);
+    },
+    [handleFileRead],
+  );
 
   return (
     <div className="space-y-3">
@@ -101,7 +113,7 @@ export function VertexServiceAccountTab({
         <textarea
           value={serviceAccountJson}
           onChange={(e) => processJson(e.target.value)}
-          placeholder='Paste your service account JSON key here...'
+          placeholder="Paste your service account JSON key here..."
           data-testid="vertex-sa-json-textarea"
           rows={6}
           className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm font-mono resize-none"
@@ -109,7 +121,10 @@ export function VertexServiceAccountTab({
       ) : (
         <>
           <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
@@ -123,12 +138,14 @@ export function VertexServiceAccountTab({
             {serviceAccountJson && fileName ? (
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">{fileName}</p>
-                {clientEmail && (
-                  <p className="text-xs text-muted-foreground">{clientEmail}</p>
-                )}
+                {clientEmail && <p className="text-xs text-muted-foreground">{clientEmail}</p>}
                 <button
                   type="button"
-                  onClick={() => { onJsonChange(''); setFileName(null); setClientEmail(null); }}
+                  onClick={() => {
+                    onJsonChange('');
+                    setFileName(null);
+                    setClientEmail(null);
+                  }}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
                   Remove
@@ -159,9 +176,7 @@ export function VertexServiceAccountTab({
         </>
       )}
 
-      {jsonError && (
-        <p className="text-xs text-destructive">{jsonError}</p>
-      )}
+      {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
 
       {/* Project ID */}
       <div>

@@ -20,7 +20,7 @@ const DEFAULT_TIMEOUT_MS = 10000;
 export async function validateApiKey(
   provider: ProviderType,
   apiKey: string,
-  options?: ValidationOptions
+  options?: ValidationOptions,
 ): Promise<ValidationResult> {
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT_MS;
 
@@ -44,7 +44,7 @@ export async function validateApiKey(
               messages: [{ role: 'user', content: 'test' }],
             }),
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -58,7 +58,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
       }
@@ -69,7 +69,7 @@ export async function validateApiKey(
           {
             method: 'GET',
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -82,7 +82,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -95,7 +95,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -108,7 +108,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -127,7 +127,7 @@ export async function validateApiKey(
               messages: [{ role: 'user', content: 'test' }],
             }),
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -142,7 +142,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
       }
@@ -163,7 +163,7 @@ export async function validateApiKey(
               messages: [{ role: 'user', content: 'test' }],
             }),
           },
-          timeout
+          timeout,
         );
         break;
 

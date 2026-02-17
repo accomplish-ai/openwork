@@ -38,20 +38,23 @@ export function useConnectors() {
     setConnectors((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
-  const toggleEnabled = useCallback(async (id: string) => {
-    const connector = connectors.find((c) => c.id === id);
-    if (!connector) return;
+  const toggleEnabled = useCallback(
+    async (id: string) => {
+      const connector = connectors.find((c) => c.id === id);
+      if (!connector) return;
 
-    const accomplish = getAccomplish();
-    await accomplish.setConnectorEnabled(id, !connector.isEnabled);
-    setConnectors((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isEnabled: !c.isEnabled } : c))
-    );
-  }, [connectors]);
+      const accomplish = getAccomplish();
+      await accomplish.setConnectorEnabled(id, !connector.isEnabled);
+      setConnectors((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, isEnabled: !c.isEnabled } : c)),
+      );
+    },
+    [connectors],
+  );
 
   const startOAuth = useCallback(async (connectorId: string) => {
     setConnectors((prev) =>
-      prev.map((c) => (c.id === connectorId ? { ...c, status: 'connecting' as const } : c))
+      prev.map((c) => (c.id === connectorId ? { ...c, status: 'connecting' as const } : c)),
     );
 
     try {
@@ -59,7 +62,7 @@ export function useConnectors() {
       return await accomplish.startConnectorOAuth(connectorId);
     } catch (err) {
       setConnectors((prev) =>
-        prev.map((c) => (c.id === connectorId ? { ...c, status: 'error' as const } : c))
+        prev.map((c) => (c.id === connectorId ? { ...c, status: 'error' as const } : c)),
       );
       throw err;
     }
@@ -69,9 +72,7 @@ export function useConnectors() {
     const accomplish = getAccomplish();
     const updated = await accomplish.completeConnectorOAuth(state, code);
     if (updated) {
-      setConnectors((prev) =>
-        prev.map((c) => (c.id === updated.id ? updated : c))
-      );
+      setConnectors((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     }
     return updated;
   }, []);
@@ -80,9 +81,7 @@ export function useConnectors() {
     const accomplish = getAccomplish();
     await accomplish.disconnectConnector(connectorId);
     setConnectors((prev) =>
-      prev.map((c) =>
-        c.id === connectorId ? { ...c, status: 'disconnected' as const } : c
-      )
+      prev.map((c) => (c.id === connectorId ? { ...c, status: 'disconnected' as const } : c)),
     );
   }, []);
 

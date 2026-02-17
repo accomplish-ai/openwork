@@ -11,8 +11,18 @@ export default function Header() {
         {/* Logo */}
         <Link to="/" className="no-drag flex items-center gap-2.5">
           <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
-            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg
+              className="h-4 w-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
             </svg>
           </div>
           <span className="text-base font-medium text-text">Accomplish</span>
@@ -53,7 +63,7 @@ function NavLink({
       className={cn(
         'no-drag px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
         'text-muted-foreground hover:text-foreground hover:bg-accent',
-        active && 'text-foreground bg-accent'
+        active && 'text-foreground bg-accent',
       )}
     >
       {children}

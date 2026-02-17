@@ -17,11 +17,7 @@ import loadingSymbol from '/assets/loading-symbol.svg';
 
 // Spinning Accomplish icon component
 const SpinningIcon = ({ className }: { className?: string }) => (
-  <img
-    src={loadingSymbol}
-    alt=""
-    className={cn('animate-spin-ccw', className)}
-  />
+  <img src={loadingSymbol} alt="" className={cn('animate-spin-ccw', className)} />
 );
 
 // Browser action type from the MCP tool
@@ -150,7 +146,7 @@ function getActionKey(action: BrowserAction, index: number): string {
 // Custom comparison for memo - compare actions by content, not reference
 function arePropsEqual(
   prevProps: BrowserScriptCardProps,
-  nextProps: BrowserScriptCardProps
+  nextProps: BrowserScriptCardProps,
 ): boolean {
   if (prevProps.isRunning !== nextProps.isRunning) return false;
   if (prevProps.actions.length !== nextProps.actions.length) return false;
@@ -233,7 +229,7 @@ export const BrowserScriptCard = memo(function BrowserScriptCard({
                 'inline-flex items-center px-2 py-1 rounded-md text-xs font-medium',
                 'bg-primary/10 text-primary cursor-pointer',
                 'hover:bg-primary/20 transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1'
+                'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-1',
               )}
             >
               {expanded ? 'Show less' : `+${hiddenCount} more`}
