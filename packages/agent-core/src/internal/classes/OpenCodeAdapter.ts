@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
 import fs from 'fs';
@@ -592,10 +593,17 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     }
 
     if (toolName === 'todowrite' || toolName.endsWith('_todowrite')) {
-      const input = toolInput as { todos?: TodoItem[] };
+      const input = toolInput as { todos?: Array<Partial<TodoItem> & { content: string }> };
       if (input?.todos && Array.isArray(input.todos) && input.todos.length > 0) {
-        this.emit('todo:update', input.todos);
-        this.completionEnforcer.updateTodos(input.todos);
+        // OpenCode's todowrite doesn't include an id field — synthesize a unique one
+        const todos: TodoItem[] = input.todos.map((todo) => ({
+          id: todo.id || crypto.randomUUID(),
+          content: todo.content,
+          status: (todo.status as TodoItem['status']) || 'pending',
+          priority: (todo.priority as TodoItem['priority']) || 'medium',
+        }));
+        this.emit('todo:update', todos);
+        this.completionEnforcer.updateTodos(todos);
       }
     }
 

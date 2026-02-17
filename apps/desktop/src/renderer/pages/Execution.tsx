@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { StreamingText } from '../components/ui/streaming-text';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import { BrowserScriptCard } from '../components/BrowserScriptCard';
@@ -1736,7 +1737,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
     }
   }, [message.content]);
 
-  const showCopyButton = !isTool && !(isAssistant && showContinueButton);
+  const showCopyButton = !isTool && !!message.content?.trim();
 
   const proseClasses = cn(
     'text-sm prose prose-sm max-w-none',
@@ -1751,6 +1752,7 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
     'prose-a:text-primary prose-a:underline',
     'prose-blockquote:text-muted-foreground prose-blockquote:border-l-4 prose-blockquote:border-border prose-blockquote:pl-4',
     'prose-hr:border-border',
+    'prose-table:w-full prose-thead:border-b prose-thead:border-border prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-foreground prose-th:font-semibold prose-td:px-3 prose-td:py-2 prose-td:text-foreground prose-tr:border-b prose-tr:border-border',
     'break-words'
   );
 
@@ -1815,13 +1817,13 @@ const MessageBubble = memo(function MessageBubble({ message, shouldStream = fals
               >
                 {(streamedText) => (
                   <div className={proseClasses}>
-                    <ReactMarkdown>{streamedText}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamedText}</ReactMarkdown>
                   </div>
                 )}
               </StreamingText>
             ) : (
               <div className={proseClasses}>
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
               </div>
             )}
             <p
