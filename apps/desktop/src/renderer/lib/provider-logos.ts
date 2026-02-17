@@ -14,10 +14,10 @@ import openrouterLogo from '/assets/ai-logos/openrouter.svg';
 import litellmLogo from '/assets/ai-logos/litellm.svg';
 import minimaxLogo from '/assets/ai-logos/minimax.svg';
 import lmstudioLogo from '/assets/ai-logos/lmstudio.png';
-import nebiusLogo from '/assets/ai-logos/nebius.jpg';
-import togetherLogo from '/assets/ai-logos/together.png';
-import fireworksLogo from '/assets/ai-logos/fireworks.png';
-import groqLogo from '/assets/ai-logos/groq.png';
+import nebiusLogo from '/assets/ai-logos/nebius.svg';
+import togetherLogo from '/assets/ai-logos/together.svg';
+import fireworksLogo from '/assets/ai-logos/fireworks.svg';
+import groqLogo from '/assets/ai-logos/groq.svg';
 
 export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   anthropic: anthropicLogo,
@@ -41,7 +41,7 @@ export const PROVIDER_LOGOS: Record<ProviderId, string> = {
   groq: groqLogo,
 };
 
-export const DARK_INVERT_PROVIDERS = new Set<ProviderId>(['openai', 'xai', 'ollama', 'openrouter']);
+export const DARK_INVERT_PROVIDERS = new Set<ProviderId>(['openai', 'xai', 'ollama', 'openrouter', 'groq', 'nebius']);
 
 export function getProviderLogo(providerId: ProviderId): string | undefined {
   return PROVIDER_LOGOS[providerId];

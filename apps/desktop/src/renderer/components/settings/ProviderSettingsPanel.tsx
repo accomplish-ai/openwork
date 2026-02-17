@@ -35,6 +35,15 @@ export function ProviderSettingsPanel({
 }: ProviderSettingsPanelProps) {
   const meta = PROVIDER_META[providerId];
 
+  // Safety check for missing metadata (prevents crash on new providers without built core)
+  if (!meta) {
+    console.warn(`Missing metadata for provider: ${providerId}`);
+    return (
+      <div className="flex items-center justify-center h-[260px] text-muted-foreground">
+        <p>Provider configuration not found for: <span className="font-mono text-xs">{providerId}</span></p>
+      </div>
+    );
+  }
 
   // Render form content based on provider category
   const renderForm = () => {
