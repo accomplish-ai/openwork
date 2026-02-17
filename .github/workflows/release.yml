@@ -398,7 +398,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm
+          sudo apt-get install -y rpm libfuse2t64
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

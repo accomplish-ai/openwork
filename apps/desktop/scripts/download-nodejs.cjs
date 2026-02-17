@@ -5,6 +5,8 @@
  * - macOS x64
  * - macOS arm64
  * - Windows x64
+ * - Linux x64
+ * - Linux arm64
  *
  * Usage: node scripts/download-nodejs.cjs
  */
