@@ -93,7 +93,7 @@
     "happy-dom": "^20.1.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
