@@ -26,7 +26,7 @@ export default defineConfig(() => ({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3', '@xenova/transformers'],
             },
           },
         },
@@ -73,14 +73,14 @@ export default defineConfig(() => ({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3', '@xenova/transformers'],
     },
   },
   optimizeDeps: {
-    exclude: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+    exclude: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3', '@xenova/transformers'],
     // Force exclude in development
     esbuildOptions: {
-      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+      external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3', '@xenova/transformers'],
     },
   },
 }));

@@ -156,6 +156,19 @@ interface AccomplishAPI {
     models?: Array<{ id: string; name: string; toolSupport: ToolSupportStatus }>;
   } | null): Promise<void>;
 
+  // HuggingFace configuration
+  getHuggingFaceConfig(): Promise<{ enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: ToolSupportStatus }>; defaultModelId?: string; quantization?: string; devicePreference?: string } | null>;
+  setHuggingFaceConfig(config: { enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: ToolSupportStatus }>; defaultModelId?: string; quantization?: string; devicePreference?: string } | null): Promise<void>;
+  listHuggingFaceModels(): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: ToolSupportStatus }>;
+    error?: string;
+  }>;
+  downloadHuggingFaceModel(modelId: string): Promise<{ success: boolean; error?: string }>;
+  checkHuggingFaceModelDownloaded(modelId: string): Promise<{ success: boolean; isDownloaded: boolean }>;
+  getHuggingFaceCacheStats(): Promise<{ success: boolean; stats: { totalSize: number; modelCount: number } }>;
+  clearHuggingFaceCache(modelId?: string): Promise<{ success: boolean; message: string }>;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;

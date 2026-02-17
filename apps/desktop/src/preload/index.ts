@@ -205,6 +205,31 @@ const accomplishAPI = {
     models?: Array<{ id: string; name: string; toolSupport: 'supported' | 'unsupported' | 'unknown' }>;
   } | null): Promise<void> => ipcRenderer.invoke('lmstudio:set-config', config),
 
+  // HuggingFace configuration
+  getHuggingFaceConfig: (): Promise<{ enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: 'supported' | 'unsupported' | 'unknown' }>; defaultModelId?: string; quantization?: string; devicePreference?: string } | null> =>
+    ipcRenderer.invoke('huggingface:get-config'),
+
+  setHuggingFaceConfig: (config: { enabled: boolean; lastValidated?: number; models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: 'supported' | 'unsupported' | 'unknown' }>; defaultModelId?: string; quantization?: string; devicePreference?: string } | null): Promise<void> =>
+    ipcRenderer.invoke('huggingface:set-config', config),
+
+  listHuggingFaceModels: (): Promise<{
+    success: boolean;
+    models?: Array<{ id: string; displayName: string; size: number; quantization: string; toolSupport?: 'supported' | 'unsupported' | 'unknown' }>;
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface:list-models'),
+
+  downloadHuggingFaceModel: (modelId: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('huggingface:download-model', modelId),
+
+  checkHuggingFaceModelDownloaded: (modelId: string): Promise<{ success: boolean; isDownloaded: boolean }> =>
+    ipcRenderer.invoke('huggingface:check-model-downloaded', modelId),
+
+  getHuggingFaceCacheStats: (): Promise<{ success: boolean; stats: { totalSize: number; modelCount: number } }> =>
+    ipcRenderer.invoke('huggingface:get-cache-stats'),
+
+  clearHuggingFaceCache: (modelId?: string): Promise<{ success: boolean; message: string }> =>
+    ipcRenderer.invoke('huggingface:clear-cache', modelId),
+
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>
     ipcRenderer.invoke('bedrock:validate', credentials),

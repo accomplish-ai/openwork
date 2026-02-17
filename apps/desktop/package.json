@@ -54,6 +54,7 @@
     "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@xenova/transformers": "^2.17.2",
     "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -101,7 +102,7 @@
     "vitest": "^4.0.17"
   },
   "build": {
-    "npmRebuild": false,
+    "npmRebuild": true,
     "compression": "normal",
     "appId": "ai.accomplish.desktop",
     "productName": "Accomplish (formerly Openwork)",
@@ -121,6 +122,7 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
+      "node_modules/@xenova/transformers/**",
       "!node_modules/@accomplish_ai/**",
       "!node_modules/opencode-darwin-*/**",
       "!node_modules/opencode-linux-*/**"
@@ -138,6 +140,11 @@
       "node_modules/node-pty/package.json",
       "node_modules/better-sqlite3/build/**/*.node",
       "node_modules/better-sqlite3/package.json",
+      "node_modules/@xenova/transformers/dist/transformers.node",
+      "node_modules/@xenova/transformers/bin/**/*",
+      "node_modules/@xenova/transformers/**/onnxruntime-binding.node",
+      "node_modules/@xenova/transformers/**/onnxruntime.node",
+      "node_modules/@xenova/transformers/**/binding.node",
       "dist-electron/main/mcp/*.js"
     ],
     "afterPack": "./scripts/after-pack.cjs",
