@@ -9,7 +9,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
@@ -83,14 +83,17 @@ const USE_CASE_EXAMPLES = [
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
+  const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'providers' | 'voice' | 'skills' | 'connectors'>('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, tasks, loadTasks } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
 
   // Subscribe to task events
   useEffect(() => {
+    loadTasks();
+
     const unsubscribeTask = accomplish.onTaskUpdate((event) => {
       addTaskUpdate(event);
     });
@@ -103,7 +106,10 @@ export default function HomePage() {
       unsubscribeTask();
       unsubscribePermission();
     };
-  }, [addTaskUpdate, setPermissionRequest, accomplish]);
+  }, [addTaskUpdate, setPermissionRequest, accomplish, loadTasks]);
+
+  const favoriteTasks = tasks?.filter((task) => task.favorite) || [];
+  const displayedFavorites = showAllFavorites ? favoriteTasks : favoriteTasks.slice(0, 3);
 
   const executeTask = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;
@@ -211,6 +217,36 @@ export default function HomePage() {
                 hideModelWhenNoModel={true}
               />
             </CardContent>
+
+            {favoriteTasks.length > 0 && (
+              <div className="border-t border-border px-6 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-foreground">Favorites</span>
+                  {favoriteTasks.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFavorites((prev) => !prev)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showAllFavorites ? 'Show less' : `Show all (${favoriteTasks.length})`}
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {displayedFavorites.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => handleExampleClick(task.prompt)}
+                      className="w-full flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                      <span className="truncate">{task.summary || task.prompt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Examples Toggle */}
             <div className="border-t border-border">

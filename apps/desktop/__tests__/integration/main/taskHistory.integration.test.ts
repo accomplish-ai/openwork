@@ -13,6 +13,7 @@ interface StoredTask {
   prompt: string;
   summary?: string;
   status: TaskStatus;
+  favorite?: boolean;
   sessionId?: string;
   messages: TaskMessage[];
   createdAt: string;
@@ -38,6 +39,7 @@ vi.mock('@accomplish_ai/agent-core', () => ({
       prompt: task.prompt,
       summary: task.summary,
       status: task.status,
+      favorite: task.favorite,
       sessionId: task.sessionId,
       messages: [...task.messages],
       createdAt: task.createdAt,
@@ -74,6 +76,13 @@ vi.mock('@accomplish_ai/agent-core', () => ({
     if (task) {
       task.summary = summary;
     }
+  }),
+
+  toggleTaskFavorite: vi.fn((taskId: string) => {
+    const task = mockTaskStore.get(taskId);
+    if (!task) return false;
+    task.favorite = !task.favorite;
+    return Boolean(task.favorite);
   }),
 
   deleteTask: vi.fn((taskId: string) => {

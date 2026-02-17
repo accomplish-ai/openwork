@@ -7,6 +7,7 @@ export interface StoredTask {
   prompt: string;
   summary?: string;
   status: TaskStatus;
+  favorite?: boolean;
   messages: TaskMessage[];
   sessionId?: string;
   createdAt: string;
@@ -19,6 +20,7 @@ interface TaskRow {
   prompt: string;
   summary: string | null;
   status: string;
+  is_favorite: number;
   session_id: string | null;
   created_at: string;
   started_at: string | null;
@@ -101,12 +103,22 @@ function rowToTask(row: TaskRow): StoredTask {
     prompt: row.prompt,
     summary: row.summary || undefined,
     status: row.status as TaskStatus,
+    favorite: row.is_favorite === 1,
     sessionId: row.session_id || undefined,
     createdAt: row.created_at,
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
     messages: getMessagesForTask(row.id),
   };
+}
+
+function getFavoriteValue(taskId: string): number {
+  const db = getDatabase();
+  const row = db
+    .prepare('SELECT is_favorite FROM tasks WHERE id = ?')
+    .get(taskId) as { is_favorite?: number } | undefined;
+
+  return row?.is_favorite === 1 ? 1 : 0;
 }
 
 export function getTasks(): StoredTask[] {
@@ -129,17 +141,21 @@ export function getTask(taskId: string): StoredTask | undefined {
 
 export function saveTask(task: Task): void {
   const db = getDatabase();
+  const favoriteValue = typeof task.favorite === 'boolean'
+    ? (task.favorite ? 1 : 0)
+    : getFavoriteValue(task.id);
 
   db.transaction(() => {
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        (id, prompt, summary, status, is_favorite, session_id, created_at, started_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       task.id,
       task.prompt,
       task.summary || null,
       task.status,
+      favoriteValue,
       task.sessionId || null,
       task.createdAt,
       task.startedAt || null,
@@ -249,6 +265,22 @@ export function updateTaskSessionId(taskId: string, sessionId: string): void {
 export function updateTaskSummary(taskId: string, summary: string): void {
   const db = getDatabase();
   db.prepare('UPDATE tasks SET summary = ? WHERE id = ?').run(summary, taskId);
+}
+
+export function toggleTaskFavorite(taskId: string): boolean {
+  const db = getDatabase();
+
+  db.prepare(
+    `UPDATE tasks
+      SET is_favorite = CASE WHEN is_favorite = 1 THEN 0 ELSE 1 END
+      WHERE id = ?`
+  ).run(taskId);
+
+  const row = db
+    .prepare('SELECT is_favorite FROM tasks WHERE id = ?')
+    .get(taskId) as { is_favorite?: number } | undefined;
+
+  return row?.is_favorite === 1;
 }
 
 export function deleteTask(taskId: string): void {

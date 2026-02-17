@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -225,6 +225,7 @@ export default function ExecutionPage() {
     respondToPermission,
     sendFollowUp,
     interruptTask,
+    toggleTaskFavorite,
     setupProgress,
     setupProgressTaskId,
     setupDownloadStep,
@@ -295,6 +296,11 @@ export default function ExecutionPage() {
     const rowEl = debugLogRefs.current.get(prevIndex);
     rowEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [filteredDebugLogs.length, debugSearchIndex]);
+
+  const handleToggleFavorite = useCallback(() => {
+    if (!currentTask) return;
+    void toggleTaskFavorite(currentTask.id);
+  }, [currentTask, toggleTaskFavorite]);
 
   // Highlight matching text in debug logs
   const highlightText = useCallback((text: string, query: string) => {
@@ -739,6 +745,25 @@ export default function ExecutionPage() {
                 {getStatusBadge()}
               </span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleToggleFavorite}
+              className="shrink-0 no-drag"
+              aria-pressed={Boolean(currentTask.favorite)}
+              aria-label={currentTask.favorite ? 'Unfavorite task' : 'Favorite task'}
+            >
+              <Star
+                className={cn(
+                  'h-4 w-4 transition-colors',
+                  currentTask.favorite
+                    ? 'text-amber-400 fill-amber-400'
+                    : 'text-muted-foreground'
+                )}
+              />
+            </Button>
           </div>
         </div>
       </div>
