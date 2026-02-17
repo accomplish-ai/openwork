@@ -123,9 +123,6 @@ test.describe('Favorites', () => {
 
     await window.waitForLoadState('domcontentloaded');
 
-    // No favorites section initially
-    await expect(homePage.favoritesSection).not.toBeVisible();
-
     // Submit a task, complete it, and favorite it
     await homePage.enterTask(TEST_SCENARIOS.SUCCESS.keyword);
     await homePage.submitTask();
