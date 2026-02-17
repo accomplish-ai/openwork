@@ -106,7 +106,10 @@ export function AddSkillDropdown({ onSkillAdded, onClose }: AddSkillDropdownProp
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="gap-1.5">
+          <button
+            className="flex items-center justify-center rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="Add skill"
+          >
             <svg
               className="h-4 w-4"
               viewBox="0 0 24 24"
@@ -116,17 +119,7 @@ export function AddSkillDropdown({ onSkillAdded, onClose }: AddSkillDropdownProp
             >
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Add
-            <svg
-              className="h-3 w-3"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </Button>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuItem

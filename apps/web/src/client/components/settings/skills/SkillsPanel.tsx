@@ -12,14 +12,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { SkillCard } from './SkillCard';
+import { AddSkillDropdown } from './AddSkillDropdown';
 
 type FilterType = 'all' | 'active' | 'inactive' | 'official';
 
 interface SkillsPanelProps {
   refreshTrigger?: number;
+  onSkillAdded?: () => void;
+  onSettingsClose?: () => void;
 }
 
-export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
+export function SkillsPanel({ refreshTrigger, onSkillAdded, onSettingsClose }: SkillsPanelProps) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -290,6 +293,9 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
             </svg>
           </motion.div>
         </motion.button>
+
+        {/* Add Skill Button */}
+        <AddSkillDropdown onSkillAdded={onSkillAdded} onClose={onSettingsClose} />
       </div>
 
       {/* Scrollable Skills Grid */}
