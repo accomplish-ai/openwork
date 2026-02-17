@@ -247,6 +247,13 @@ export function registerIPCHandlers(): void {
     return storage.getTasks();
   });
 
+  handle('task:toggle-favorite', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    if (!taskId) {
+      throw new Error('Invalid task ID');
+    }
+    return storage.toggleTaskFavorite(taskId);
+  });
+
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
     storage.deleteTask(taskId);
   });

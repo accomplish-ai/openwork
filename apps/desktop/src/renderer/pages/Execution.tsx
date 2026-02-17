@@ -55,6 +55,7 @@ import {
   CheckCircle,
   Lightbulb,
   Flag,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
@@ -270,6 +271,7 @@ export default function ExecutionPage() {
     respondToPermission,
     sendFollowUp,
     interruptTask,
+    toggleTaskFavorite,
     setupProgress,
     setupProgressTaskId,
     setupDownloadStep,
@@ -342,6 +344,13 @@ export default function ExecutionPage() {
     const rowEl = debugLogRefs.current.get(prevIndex);
     rowEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [filteredDebugLogs.length, debugSearchIndex]);
+
+  const handleToggleFavorite = useCallback(() => {
+    if (!currentTask) {
+      return;
+    }
+    void toggleTaskFavorite(currentTask.id);
+  }, [currentTask, toggleTaskFavorite]);
 
   // Highlight matching text in debug logs
   const highlightText = useCallback((text: string, query: string) => {
@@ -792,6 +801,25 @@ export default function ExecutionPage() {
                 </h1>
                 <span data-testid="execution-status-badge">{getStatusBadge()}</span>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleToggleFavorite}
+                className="shrink-0 no-drag"
+                aria-pressed={Boolean(currentTask.favorite)}
+                aria-label={currentTask.favorite ? 'Unfavorite task' : 'Favorite task'}
+              >
+                <Star
+                  className={cn(
+                    'h-4 w-4 transition-colors',
+                    currentTask.favorite
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-muted-foreground'
+                  )}
+                />
+              </Button>
             </div>
           </div>
         </div>

@@ -46,6 +46,7 @@ export {
   addTaskMessage,
   updateTaskSessionId,
   updateTaskSummary,
+  toggleTaskFavorite,
   deleteTask,
   clearHistory,
   setMaxHistoryItems,

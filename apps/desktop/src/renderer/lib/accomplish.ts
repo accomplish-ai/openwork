@@ -41,6 +41,7 @@ interface AccomplishAPI {
   interruptTask(taskId: string): Promise<void>;
   getTask(taskId: string): Promise<Task | null>;
   listTasks(): Promise<Task[]>;
+  toggleTaskFavorite(taskId: string): Promise<boolean>;
   deleteTask(taskId: string): Promise<void>;
   clearTaskHistory(): Promise<void>;
 

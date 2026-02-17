@@ -34,6 +34,7 @@ export interface StoredTask {
   prompt: string;
   summary?: string;
   status: TaskStatus;
+  favorite?: boolean;
   messages: TaskMessage[];
   sessionId?: string;
   createdAt: string;
@@ -76,6 +77,8 @@ export interface TaskStorageAPI {
   updateTaskSessionId(taskId: string, sessionId: string): void;
   /** Set the AI-generated summary for a task */
   updateTaskSummary(taskId: string, summary: string): void;
+  /** Toggle a task's favorite status and return the new value */
+  toggleTaskFavorite(taskId: string): boolean;
   /** Delete a task and its associated data */
   deleteTask(taskId: string): void;
   /** Delete all task history */

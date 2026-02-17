@@ -77,6 +77,7 @@ interface TaskState {
   addTaskUpdateBatch: (event: TaskUpdateBatchEvent) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   setTaskSummary: (taskId: string, summary: string) => void;
+  toggleTaskFavorite: (taskId: string) => Promise<void>;
   loadTasks: () => Promise<void>;
   loadTaskById: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -462,6 +463,23 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         tasks: updatedTasks,
         currentTask: updatedCurrentTask,
       };
+    });
+  },
+
+  toggleTaskFavorite: async (taskId: string) => {
+    const accomplish = getAccomplish();
+    const favorite = await accomplish.toggleTaskFavorite(taskId);
+    set((state) => {
+      const updatedTasks = state.tasks.map((task) =>
+        task.id === taskId ? { ...task, favorite } : task
+      );
+
+      const updatedCurrentTask =
+        state.currentTask?.id === taskId
+          ? { ...state.currentTask, favorite }
+          : state.currentTask;
+
+      return { tasks: updatedTasks, currentTask: updatedCurrentTask };
     });
   },
 

@@ -25,6 +25,7 @@ export interface Task {
   prompt: string;
   summary?: string;
   status: TaskStatus;
+  favorite?: boolean;
   sessionId?: string;
   messages: TaskMessage[];
   createdAt: string;
