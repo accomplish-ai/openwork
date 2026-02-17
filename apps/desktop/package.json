@@ -91,7 +91,7 @@
     "electron-builder": "^25.1.8",
     "esbuild": "^0.27.3",
     "happy-dom": "^20.1.0",
-    "jsdom": "^27.4.0",
+    "jsdom": "^28.1.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
