@@ -74,8 +74,13 @@ config({ path: envPath });
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
-export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+
+const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL;
+
+// In production, web's build output is packaged as an extraResource.
+const WEB_DIST = app.isPackaged
+  ? path.join(process.resourcesPath, 'web-ui')
+  : path.join(process.env.APP_ROOT, '../web/dist/client');
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -156,11 +161,22 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
-  if (VITE_DEV_SERVER_URL) {
-    console.log('[Main] Loading from Vite dev server:', VITE_DEV_SERVER_URL);
-    mainWindow.loadURL(VITE_DEV_SERVER_URL);
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+        ],
+      },
+    });
+  });
+
+  if (ROUTER_URL) {
+    console.log('[Main] Loading from router URL:', ROUTER_URL);
+    mainWindow.loadURL(ROUTER_URL);
   } else {
-    const indexPath = path.join(RENDERER_DIST, 'index.html');
+    const indexPath = path.join(WEB_DIST, 'index.html');
     console.log('[Main] Loading from file:', indexPath);
     mainWindow.loadFile(indexPath);
   }
