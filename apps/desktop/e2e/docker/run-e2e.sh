@@ -49,7 +49,7 @@ docker run --rm \
   --shm-size=2gb \
   --security-opt seccomp=unconfined \
   -v "$REPO_ROOT:/workspace:ro" \
-  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/app/apps/desktop/e2e/test-results" \
-  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/app/apps/desktop/e2e/html-report" \
+  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/output/test-results" \
+  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/output/html-report" \
   "$IMAGE_NAME" \
   bash /workspace/apps/desktop/e2e/docker/entrypoint.sh

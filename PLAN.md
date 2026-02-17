@@ -78,8 +78,12 @@ Runs inside the container. Copies source from the mounted `/workspace` volume, b
 set -e
 
 # Copy source from mounted workspace into /app (where node_modules already exists from image build)
+# Use tar to exclude bind-mounted output dirs (they exist in both /workspace and /app, same host path)
 echo "Copying source into container..."
-cp -a /workspace/. /app/
+(cd /workspace && tar cf - \
+  --exclude='./apps/desktop/e2e/test-results' \
+  --exclude='./apps/desktop/e2e/html-report' \
+  .) | (cd /app && tar xf -)
 
 cd /app
 
