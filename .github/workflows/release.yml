@@ -400,6 +400,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm libfuse2t64
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -414,6 +419,7 @@ jobs:
         working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHON: python
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -210,7 +210,8 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "rpm"
       ],
       "icon": "resources/icon.png",
       "executableName": "accomplish",
@@ -228,6 +229,9 @@
       ]
     },
     "deb": {
+      "packageName": "accomplish"
+    },
+    "rpm": {
       "packageName": "accomplish"
     }
   }
