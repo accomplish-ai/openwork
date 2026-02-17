@@ -871,19 +871,38 @@ export function registerIPCHandlers(): void {
     return storage.getTheme();
   });
 
+  const updateWindowsBackground = () => {
+    const bgColor = nativeTheme.shouldUseDarkColors ? '#171717' : '#f9f9f9';
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.setBackgroundColor(bgColor);
+    });
+  };
+
   handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
     if (!['system', 'light', 'dark'].includes(theme)) {
       throw new Error('Invalid theme value');
     }
     storage.setTheme(theme as 'system' | 'light' | 'dark');
     nativeTheme.themeSource = theme as 'system' | 'light' | 'dark';
-
     const resolved = theme === 'system'
       ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
       : theme;
 
-    for (const win of BrowserWindow.getAllWindows()) {
+    updateWindowsBackground();
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('settings:theme-changed', { theme, resolved });
+    });
+  });
+
+  // Listen for system theme changes and notify renderer
+  nativeTheme.on('updated', () => {
+    const theme = storage.getTheme();
+    if (theme === 'system') {
+      const resolved = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+      updateWindowsBackground();
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send('settings:theme-changed', { theme: 'system', resolved });
+      });
     }
   });
 

@@ -60,6 +60,14 @@ export function applyTheme(preference: string): void {
 export function initTheme(): void {
   const accomplish = getAccomplish();
 
+  // Apply stored theme immediately to prevent flicker while waiting for IPC
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored && ['system', 'light', 'dark'].includes(stored)) {
+    const resolved = resolveTheme(stored as ThemePreference);
+    applyClass(resolved);
+    if (stored === 'system') setupSystemListener();
+  }
+
   accomplish.getTheme().then((preference) => {
     applyTheme(preference);
   });
