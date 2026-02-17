@@ -5,11 +5,6 @@ set -e
 echo "Copying source into container..."
 cp -a /workspace/. /app/
 
-# Replace copied output dirs with symlinks to host bind mounts (mounted at /output)
-rm -rf /app/apps/desktop/e2e/test-results /app/apps/desktop/e2e/html-report
-ln -s /output/test-results /app/apps/desktop/e2e/test-results
-ln -s /output/html-report /app/apps/desktop/e2e/html-report
-
 cd /app
 
 # Build all packages (deps already installed in image)

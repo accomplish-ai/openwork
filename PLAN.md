@@ -81,11 +81,6 @@ set -e
 echo "Copying source into container..."
 cp -a /workspace/. /app/
 
-# Replace copied output dirs with symlinks to host bind mounts (mounted at /output)
-rm -rf /app/apps/desktop/e2e/test-results /app/apps/desktop/e2e/html-report
-ln -s /output/test-results /app/apps/desktop/e2e/test-results
-ln -s /output/html-report /app/apps/desktop/e2e/html-report
-
 cd /app
 
 # Build all packages (deps already installed in image)
@@ -103,7 +98,7 @@ pnpm -F @accomplish/desktop test:e2e:native
 
 ### 3. `apps/desktop/e2e/docker/run-e2e.sh` — New file
 
-Orchestrator script that handles building/caching the image and running the container. Works both locally and in CI. Replaces docker-compose.yml — all env vars, volumes, shm, and seccomp settings are passed via `docker run` flags.
+Orchestrator script that handles building/caching the image and running the container. Works both locally and in CI. Replaces docker-compose.yml — all env vars, volumes, shm, and seccomp settings are passed via `docker run` flags. Runs detached so test results can be extracted via `docker cp` after exit (avoids bind mount overlap issues with `/workspace`).
 
 ```bash
 #!/bin/bash
@@ -143,12 +138,8 @@ if [ "$1" = "--build-only" ]; then
   exit 0
 fi
 
-# Ensure output directories exist on host
-mkdir -p "$REPO_ROOT/apps/desktop/e2e/test-results"
-mkdir -p "$REPO_ROOT/apps/desktop/e2e/html-report"
-
-# Run the container (env vars, volumes, shm, seccomp from docker-compose.yml now here)
-docker run --rm \
+# Run the container (detached so we can extract results after it exits)
+CONTAINER_ID=$(docker run -d \
   -e E2E_SKIP_AUTH=1 \
   -e E2E_MOCK_TASK_EVENTS=1 \
   -e NODE_ENV=test \
@@ -157,10 +148,27 @@ docker run --rm \
   --shm-size=2gb \
   --security-opt seccomp=unconfined \
   -v "$REPO_ROOT:/workspace:ro" \
-  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/output/test-results" \
-  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/output/html-report" \
   "$IMAGE_NAME" \
-  bash /workspace/apps/desktop/e2e/docker/entrypoint.sh
+  bash /workspace/apps/desktop/e2e/docker/entrypoint.sh)
+
+# Stream logs while waiting
+docker logs -f "$CONTAINER_ID" &
+LOGS_PID=$!
+
+# Wait for container to finish
+EXIT_CODE=$(docker wait "$CONTAINER_ID")
+kill $LOGS_PID 2>/dev/null || true
+
+# Extract test results from container to host
+mkdir -p "$REPO_ROOT/apps/desktop/e2e/test-results"
+mkdir -p "$REPO_ROOT/apps/desktop/e2e/html-report"
+docker cp "$CONTAINER_ID:/app/apps/desktop/e2e/test-results/." "$REPO_ROOT/apps/desktop/e2e/test-results/" 2>/dev/null || true
+docker cp "$CONTAINER_ID:/app/apps/desktop/e2e/html-report/." "$REPO_ROOT/apps/desktop/e2e/html-report/" 2>/dev/null || true
+
+# Clean up
+docker rm "$CONTAINER_ID" > /dev/null
+
+exit "$EXIT_CODE"
 ```
 
 Note: The build context is `$REPO_ROOT` (not `$SCRIPT_DIR`) because the Dockerfile COPYs package files from the repo root for `pnpm install`.

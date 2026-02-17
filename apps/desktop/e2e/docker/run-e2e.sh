@@ -35,12 +35,8 @@ if [ "$1" = "--build-only" ]; then
   exit 0
 fi
 
-# Ensure output directories exist on host
-mkdir -p "$REPO_ROOT/apps/desktop/e2e/test-results"
-mkdir -p "$REPO_ROOT/apps/desktop/e2e/html-report"
-
-# Run the container
-docker run --rm \
+# Run the container (detached so we can extract results after it exits)
+CONTAINER_ID=$(docker run -d \
   -e E2E_SKIP_AUTH=1 \
   -e E2E_MOCK_TASK_EVENTS=1 \
   -e NODE_ENV=test \
@@ -49,7 +45,25 @@ docker run --rm \
   --shm-size=2gb \
   --security-opt seccomp=unconfined \
   -v "$REPO_ROOT:/workspace:ro" \
-  -v "$REPO_ROOT/apps/desktop/e2e/test-results:/output/test-results" \
-  -v "$REPO_ROOT/apps/desktop/e2e/html-report:/output/html-report" \
   "$IMAGE_NAME" \
-  bash /workspace/apps/desktop/e2e/docker/entrypoint.sh
+  bash /workspace/apps/desktop/e2e/docker/entrypoint.sh)
+
+# Stream logs while waiting
+docker logs -f "$CONTAINER_ID" &
+LOGS_PID=$!
+
+# Wait for container to finish
+EXIT_CODE=$(docker wait "$CONTAINER_ID")
+kill $LOGS_PID 2>/dev/null || true
+
+# Extract test results from the stopped container (docker cp works on stopped
+# containers — their filesystem persists until docker rm is called)
+mkdir -p "$REPO_ROOT/apps/desktop/e2e/test-results"
+mkdir -p "$REPO_ROOT/apps/desktop/e2e/html-report"
+docker cp "$CONTAINER_ID:/app/apps/desktop/e2e/test-results/." "$REPO_ROOT/apps/desktop/e2e/test-results/" 2>/dev/null || true
+docker cp "$CONTAINER_ID:/app/apps/desktop/e2e/html-report/." "$REPO_ROOT/apps/desktop/e2e/html-report/" 2>/dev/null || true
+
+# Clean up
+docker rm "$CONTAINER_ID" > /dev/null
+
+exit "$EXIT_CODE"
