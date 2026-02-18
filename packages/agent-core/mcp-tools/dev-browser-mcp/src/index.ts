@@ -33,6 +33,7 @@ const connectionConfig = configureFromEnv();
 const _TASK_ID = connectionConfig.taskId;
 
 interface ToolDebug {
+  getAISnapshot?(page: Page, options: SnapshotOptions): Promise<string>;
   handlePreAction?(
     name: string,
     args: unknown,
@@ -63,7 +64,7 @@ async function loadToolDebug(): Promise<void> {
     console.error('[dev-browser-mcp] ACCOMPLISH_TOOL_DEBUG_PATH not set, tool debug disabled');
   }
 }
-loadToolDebug();
+await loadToolDebug();
 
 function toAIFriendlyError(error: unknown, selector: string): Error {
   const message = error instanceof Error ? error.message : String(error);
@@ -426,7 +427,8 @@ const SNAPSHOT_SCRIPT = `
     if (!isElementStyleVisibilityVisible(element, style))
       return { cursor, visible: false, inline: false };
     const rect = element.getBoundingClientRect();
-    return { rect, cursor, visible: rect.width > 0 && rect.height > 0, inline: style.display === "inline" };
+    const zIndex = style.zIndex !== "auto" ? parseInt(style.zIndex, 10) : undefined;
+    return { rect, cursor, visible: rect.width > 0 && rect.height > 0, inline: style.display === "inline", zIndex: Number.isFinite(zIndex) ? zIndex : undefined };
   }
 
   function isElementVisible(element) {
@@ -930,8 +932,9 @@ const SNAPSHOT_SCRIPT = `
 
   let lastRef = 0;
 
-  function generateAriaTree(rootElement) {
-    const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true };
+  function generateAriaTree(rootElement, externalOptions) {
+    externalOptions = externalOptions || {};
+    const options = { visibility: "ariaOrVisible", refs: "interactable", refPrefix: "", includeGenericRole: true, renderActive: true, renderCursorPointer: true, preserveSubtrees: !!externalOptions.preserveSubtrees };
     const visited = new Set();
     const snapshot = {
       root: { role: "fragment", name: "", children: [], element: rootElement, props: {}, box: computeBox(rootElement), receivesPointerEvents: true },
@@ -1003,8 +1006,8 @@ const SNAPSHOT_SCRIPT = `
     beginAriaCaches();
     try { visit(snapshot.root, rootElement, true); }
     finally { endAriaCaches(); }
-    normalizeStringChildren(snapshot.root);
-    normalizeGenericRoles(snapshot.root);
+    if (!externalOptions.includeAllTextNodes) { normalizeStringChildren(snapshot.root); }
+    if (!externalOptions.preserveSubtrees) { normalizeGenericRoles(snapshot.root); }
     return snapshot;
   }
 
@@ -1032,7 +1035,7 @@ const SNAPSHOT_SCRIPT = `
     const name = normalizeWhiteSpace(getElementAccessibleName(element, false) || "");
     const receivesPointerEventsValue = receivesPointerEvents(element);
     const box = computeBox(element);
-    if (role === "generic" && box.inline && element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) return null;
+    if (!options.preserveSubtrees && role === "generic" && box.inline && element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) { return null; }
     const result = { role, name, children: [], props: {}, element, box, receivesPointerEvents: receivesPointerEventsValue, active };
     computeAriaRef(result, options);
     if (kAriaCheckedRoles.includes(role)) result.checked = getAriaChecked(element);
@@ -1235,7 +1238,7 @@ const SNAPSHOT_SCRIPT = `
     const isInteractiveRole = (role) => INTERACTIVE_ROLES.includes(role);
 
     const visitText = (text, indent) => {
-      if (snapshotOptions.interactiveOnly) return;
+      if (snapshotOptions.interactiveOnly && !snapshotOptions.includeAllTextNodes) { return; }
       const escaped = yamlEscapeValueIfNeeded(text);
       if (escaped) lines.push(indent + "- text: " + escaped);
     };
@@ -1267,6 +1270,7 @@ const SNAPSHOT_SCRIPT = `
         const r = ariaNode.box.rect;
         key += " [" + Math.round(r.x) + ", " + Math.round(r.y) + ", " + Math.round(r.width) + ", " + Math.round(r.height) + "]";
       }
+      if (ariaNode.box?.zIndex !== undefined) key += " [z-index=" + ariaNode.box.zIndex + "]";
       return key;
     };
 
@@ -1320,7 +1324,7 @@ const SNAPSHOT_SCRIPT = `
 
   function getAISnapshot(options) {
     options = options || {};
-    const snapshot = generateAriaTree(document.body);
+    const snapshot = generateAriaTree(document.body, options);
     const refsObject = {};
     for (const [ref, element] of snapshot.elements) refsObject[ref] = element;
     window.__devBrowserRefs = refsObject;
@@ -1348,6 +1352,8 @@ interface SnapshotOptions {
   fullSnapshot?: boolean;
   rawTree?: boolean;
   includeBoundingBoxes?: boolean;
+  includeAllTextNodes?: boolean;
+  preserveSubtrees?: boolean;
 }
 
 const DEFAULT_SNAPSHOT_OPTIONS: SnapshotOptions = {
@@ -1393,20 +1399,24 @@ async function getAISnapshot(page: Page, options: SnapshotOptions = {}): Promise
     }, SNAPSHOT_SCRIPT);
   }
 
-  const snapshot = await page.evaluate(
+  const optsToSend = {
+    interactiveOnly: options.interactiveOnly || false,
+    maxElements: options.maxElements,
+    viewportOnly: options.viewportOnly || false,
+    maxTokens: options.maxTokens,
+    rawTree: options.rawTree || false,
+    includeBoundingBoxes: options.includeBoundingBoxes || false,
+    includeAllTextNodes: options.includeAllTextNodes || false,
+    preserveSubtrees: options.preserveSubtrees || false,
+  };
+
+  const result = await page.evaluate(
     (opts) => {
       return (globalThis as any).__devBrowser_getAISnapshot(opts);
     },
-    {
-      interactiveOnly: options.interactiveOnly || false,
-      maxElements: options.maxElements,
-      viewportOnly: options.viewportOnly || false,
-      maxTokens: options.maxTokens,
-      rawTree: options.rawTree || false,
-      includeBoundingBoxes: options.includeBoundingBoxes || false,
-    },
+    optsToSend,
   );
-  return snapshot;
+  return result as string;
 }
 
 async function selectSnapshotRef(page: Page, ref: string): Promise<ElementHandle | null> {
@@ -2469,7 +2479,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
 
   console.error(`[MCP] Tool called: ${name}`, JSON.stringify(args, null, 2));
 
-  const debugContext = { getPage, getAISnapshot };
+  const debugContext = { getPage, getAISnapshot: toolDebug?.getAISnapshot ?? getAISnapshot };
   let preCapture: unknown = undefined;
   if (toolDebug?.handlePreAction) {
     try {
