@@ -49,7 +49,7 @@
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "overrides": {
-      "fast-xml-parser": ">=5.3.4",
+      "fast-xml-parser": "^5.3.6",
       "@modelcontextprotocol/sdk": "^1.26.0",
       "qs": "^6.15.0"
     }
