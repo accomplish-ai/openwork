@@ -89,6 +89,8 @@ export interface TaskAdapterOptions {
   onBeforeStart?: () => Promise<void>;
   /** Function to get display name for a model ID */
   getModelDisplayName?: (modelId: string) => string;
+  /** Function to get the sandbox configuration */
+  getSandboxConfig?: () => import('../common/types/sandbox.js').SandboxConfig | null;
 }
 
 /** Options for creating a TaskManager instance */

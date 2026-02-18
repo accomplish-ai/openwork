@@ -448,6 +448,11 @@ const accomplishAPI = {
   showSkillInFolder: (filePath: string): Promise<void> =>
     ipcRenderer.invoke('skills:show-in-folder', filePath),
 
+  // Sandbox Settings
+  getSandboxConfig: (): Promise<unknown> => ipcRenderer.invoke('settings:sandbox-config:get'),
+  setSandboxConfig: (config: unknown): Promise<void> =>
+    ipcRenderer.invoke('settings:sandbox-config:set', config ? JSON.stringify(config) : null),
+
   // MCP Connectors
   getConnectors: (): Promise<McpConnector[]> => ipcRenderer.invoke('connectors:list'),
   addConnector: (name: string, url: string): Promise<McpConnector> =>

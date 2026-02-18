@@ -13,6 +13,7 @@ import type {
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
 import type { McpConnector, ConnectorStatus, OAuthTokens } from '../common/types/connector.js';
+import type { SandboxConfig } from '../common/types/sandbox.js';
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -54,6 +55,7 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  sandboxConfig: SandboxConfig | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +128,10 @@ export interface AppSettingsAPI {
   getTheme(): ThemePreference;
   /** Set the theme preference */
   setTheme(theme: ThemePreference): void;
+  /** Get the sandbox configuration */
+  getSandboxConfig(): SandboxConfig | null;
+  /** Set the sandbox configuration */
+  setSandboxConfig(config: SandboxConfig | null): void;
   /** Get all application settings as a snapshot */
   getAppSettings(): AppSettings;
   /** Reset all application settings to defaults */
@@ -252,4 +258,5 @@ export type {
   McpConnector,
   ConnectorStatus,
   OAuthTokens,
+  SandboxConfig,
 };

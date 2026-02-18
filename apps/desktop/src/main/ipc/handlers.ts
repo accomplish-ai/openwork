@@ -1214,6 +1214,19 @@ export function registerIPCHandlers(): void {
 
   // ── MCP Connectors ──────────────────────────────────────────────────
 
+  // ── Sandbox Settings ────────────────────────────────────────────────
+
+  handle('settings:sandbox-config:get', async () => {
+    return storage.getSandboxConfig();
+  });
+
+  handle('settings:sandbox-config:set', async (_event: IpcMainInvokeEvent, configJson: string) => {
+    const config = configJson ? JSON.parse(configJson) : null;
+    storage.setSandboxConfig(config);
+  });
+
+  // ── MCP Connectors ──────────────────────────────────────────────────
+
   handle('connectors:list', async () => {
     return storage.getAllConnectors();
   });

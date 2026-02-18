@@ -14,6 +14,7 @@ import type { TaskConfig, Task, TaskMessage, TaskResult } from '../../common/typ
 import type { OpenCodeMessage } from '../../common/types/opencode.js';
 import type { PermissionRequest } from '../../common/types/permission.js';
 import type { TodoItem } from '../../common/types/todo.js';
+import type { SandboxConfig } from '../../common/types/sandbox.js';
 import { serializeError } from '../../utils/error.js';
 
 const LOG_TRUNCATION_LIMIT = 500;
@@ -36,6 +37,7 @@ export interface AdapterOptions {
   buildCliArgs: (config: TaskConfig) => Promise<string[]>;
   onBeforeStart?: () => Promise<void>;
   getModelDisplayName?: (modelId: string) => string;
+  getSandboxConfig?: () => SandboxConfig | null;
 }
 
 export interface OpenCodeAdapterEvents {
@@ -243,12 +245,63 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI]', spawnMsg);
       this.emit('debug', { type: 'info', message: spawnMsg });
 
-      this.ptyProcess = pty.spawn(spawnFile, spawnArgs, {
+      const sandboxConfig = this.options.getSandboxConfig?.() ?? null;
+      let spawnCmd: string;
+      let finalSpawnArgs: string[];
+      let spawnCwd: string;
+      let spawnEnv = env as { [key: string]: string };
+
+      if (sandboxConfig?.mode === 'docker') {
+        const dockerArgs = ['run', '--rm', '-i'];
+
+        // Mount working directory
+        dockerArgs.push('-v', `${safeCwd}:/workspace`, '-w', '/workspace');
+
+        // Mount additional allowed paths
+        if (sandboxConfig.allowedPaths) {
+          for (const p of sandboxConfig.allowedPaths) {
+            dockerArgs.push('-v', `${p}:${p}`);
+          }
+        }
+
+        // Network policy
+        if (!sandboxConfig.networkPolicy.allowOutbound) {
+          dockerArgs.push('--network', 'none');
+        }
+
+        // Forward environment variables
+        for (const [key, val] of Object.entries(env)) {
+          if (val && key !== 'PATH' && key !== 'HOME' && key !== 'USER') {
+            dockerArgs.push('-e', `${key}=${val}`);
+          }
+        }
+
+        const image = sandboxConfig.dockerImage || 'node:20-slim';
+        dockerArgs.push(image);
+
+        // Run the original command inside the container
+        dockerArgs.push('sh', '-c', `${spawnFile} ${spawnArgs.join(' ')}`);
+
+        spawnCmd = 'docker';
+        finalSpawnArgs = dockerArgs;
+        spawnCwd = safeCwd;
+        spawnEnv = { ...process.env } as { [key: string]: string };
+
+        const dockerMsg = `Docker sandbox: docker ${dockerArgs.join(' ')}`;
+        console.log('[OpenCode CLI]', dockerMsg);
+        this.emit('debug', { type: 'info', message: dockerMsg });
+      } else {
+        spawnCmd = spawnFile;
+        finalSpawnArgs = spawnArgs;
+        spawnCwd = safeCwd;
+      }
+
+      this.ptyProcess = pty.spawn(spawnCmd, finalSpawnArgs, {
         name: 'xterm-256color',
         cols: 32000,
         rows: 30,
-        cwd: safeCwd,
-        env: env as { [key: string]: string },
+        cwd: spawnCwd,
+        env: spawnEnv,
       });
       const pidMsg = `PTY Process PID: ${this.ptyProcess.pid}`;
       console.log('[OpenCode CLI]', pidMsg);
