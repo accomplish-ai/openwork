@@ -12,6 +12,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Last Commit" /></a>
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
+  <a href="https://github.com/accomplish-ai/accomplish/releases/latest"><img src="https://img.shields.io/badge/Download-Linux-f97316?style=flat-square" alt="Download for Linux" /></a>
 </p>
 
 # Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
@@ -160,6 +161,7 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 - macOS (Apple Silicon)
 - Windows 11
+- Linux (x64) — AppImage, .deb, .rpm
 
 <br />
 
@@ -222,7 +224,7 @@ You can use your own API keys (OpenAI, Anthropic, Google, xAI, etc.) or run loca
 Yes. Accomplish is open source and MIT licensed.
 
 **Which platforms are supported?**
-macOS (Apple Silicon) and Windows 11 are available now.
+macOS (Apple Silicon), Windows 11, and Linux (x64) are available now.
 
 <br />
 
@@ -321,6 +323,6 @@ MIT License · Built by [Accomplish](https://www.accomplish.ai)
 
 <br />
 
-**Keywords:** AI agent, AI desktop agent, desktop automation, file management, document creation, browser automation, local-first, macOS, privacy-first, open source, Electron, computer use, AI assistant, workflow automation, OpenAI, Anthropic, Google, xAI, Claude, GPT-4, Ollama
+**Keywords:** AI agent, AI desktop agent, desktop automation, file management, document creation, browser automation, local-first, macOS, Linux, privacy-first, open source, Electron, computer use, AI assistant, workflow automation, OpenAI, Anthropic, Google, xAI, Claude, GPT-4, Ollama
 
 </div>
