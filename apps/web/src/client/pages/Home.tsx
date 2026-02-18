@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { TaskInputBar } from '@/components/landing/TaskInputBar';
+import type { FileAttachmentInfo } from '@accomplish_ai/agent-core/common';
 import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
@@ -26,6 +27,7 @@ const USE_CASE_KEYS = [
 
 export function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachmentInfo[]>([]);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
@@ -60,22 +62,44 @@ export function HomePage() {
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
+  const buildPromptWithAttachments = useCallback(
+    (basePrompt: string, files: FileAttachmentInfo[]): string => {
+      if (files.length === 0) {
+        return basePrompt;
+      }
+
+      const fileRefs = files.map((file) => {
+        if (file.type === 'image') {
+          return `[Attached image: ${file.path}]`;
+        }
+        return `[Attached file: ${file.path}]`;
+      });
+
+      return `${basePrompt}\n\nAttached files:\n${fileRefs.join('\n')}`;
+    },
+    [],
+  );
+
   const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
+    if ((!prompt.trim() && attachments.length === 0) || isLoading) {
+      return;
+    }
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const enrichedPrompt = buildPromptWithAttachments(prompt.trim(), attachments);
+    const task = await startTask({ prompt: enrichedPrompt, taskId });
     if (task) {
+      setAttachments([]);
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, attachments, isLoading, startTask, navigate, buildPromptWithAttachments]);
 
   const handleSubmit = async () => {
     if (isLoading) {
       void interruptTask();
       return;
     }
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && attachments.length === 0) return;
 
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
@@ -133,6 +157,58 @@ export function HomePage() {
     focusPromptTextarea();
   };
 
+  const addFiles = useCallback(
+    (fileList: FileList | File[]) => {
+      const files = Array.from(fileList);
+      const remaining = 5 - attachments.length;
+      if (remaining <= 0) return;
+
+      const maxSize = 10 * 1024 * 1024;
+      const newAttachments: FileAttachmentInfo[] = [];
+      for (const file of files.slice(0, remaining)) {
+        if (file.size > maxSize) continue;
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+        let type: FileAttachmentInfo['type'] = 'other';
+        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
+          type = 'image';
+        } else if (['txt', 'md', 'csv', 'log', 'xml', 'html', 'yml', 'yaml'].includes(ext)) {
+          type = 'text';
+        } else if (
+          ['js', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'json', 'css'].includes(
+            ext,
+          )
+        ) {
+          type = 'code';
+        } else if (ext === 'pdf') {
+          type = 'pdf';
+        }
+        newAttachments.push({
+          id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          name: file.name,
+          path: (file as File & { path?: string }).path || file.name,
+          type,
+          size: file.size,
+        });
+      }
+      if (newAttachments.length > 0) {
+        setAttachments((prev) => [...prev, ...newAttachments]);
+      }
+    },
+    [attachments.length],
+  );
+
+  const handleAttachFiles = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = () => {
+      if (input.files) {
+        addFiles(input.files);
+      }
+    };
+    input.click();
+  }, [addFiles]);
+
   return (
     <>
       <SettingsDialog
@@ -173,6 +249,8 @@ export function HomePage() {
                 onOpenSpeechSettings={handleOpenSpeechSettings}
                 onOpenModelSettings={handleOpenModelSettings}
                 hideModelWhenNoModel={true}
+                attachments={attachments}
+                onAttachmentsChange={setAttachments}
                 toolbarLeft={
                   <PlusMenu
                     onSkillSelect={handleSkillSelect}
@@ -180,7 +258,10 @@ export function HomePage() {
                       setSettingsInitialTab(tab);
                       setShowSettingsDialog(true);
                     }}
+                    onAttachFiles={handleAttachFiles}
                     disabled={isLoading}
+                    attachmentCount={attachments.length}
+                    maxAttachments={5}
                   />
                 }
               />

@@ -18,6 +18,16 @@ export interface TaskConfig {
   sessionId?: string;
   /** Model ID for display name in progress events */
   modelId?: string;
+  /** File paths attached by the user via drag-and-drop or file picker */
+  files?: FileAttachmentInfo[];
+}
+
+export interface FileAttachmentInfo {
+  id: string;
+  name: string;
+  path: string;
+  type: 'image' | 'text' | 'code' | 'pdf' | 'other';
+  size: number;
 }
 
 export interface Task {

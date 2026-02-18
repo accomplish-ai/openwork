@@ -1,16 +1,106 @@
 'use client';
 
-import { useRef, useEffect, type ReactNode } from 'react';
+import { useRef, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '@/lib/accomplish';
-import { ArrowUp, WarningCircle } from '@phosphor-icons/react';
+import { ArrowUp, WarningCircle, X, FileText, Image, Code, File } from '@phosphor-icons/react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
+import type { FileAttachmentInfo } from '@accomplish_ai/agent-core/common';
 import { useSpeechInput } from '@/hooks/useSpeechInput';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton';
 import { ModelIndicator } from '@/components/ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+function getFileType(name: string): FileAttachmentInfo['type'] {
+  const ext = name.split('.').pop()?.toLowerCase() || '';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
+    return 'image';
+  }
+  if (
+    ['txt', 'md', 'csv', 'log', 'xml', 'html', 'yml', 'yaml', 'toml', 'ini', 'cfg'].includes(ext)
+  ) {
+    return 'text';
+  }
+  if (
+    [
+      'js',
+      'jsx',
+      'ts',
+      'tsx',
+      'py',
+      'rb',
+      'go',
+      'rs',
+      'java',
+      'c',
+      'cpp',
+      'h',
+      'hpp',
+      'cs',
+      'swift',
+      'kt',
+      'sh',
+      'bash',
+      'zsh',
+      'json',
+      'css',
+      'scss',
+      'less',
+      'sql',
+      'r',
+      'lua',
+      'php',
+      'pl',
+      'ex',
+      'exs',
+      'hs',
+      'ml',
+      'scala',
+      'clj',
+    ].includes(ext)
+  ) {
+    return 'code';
+  }
+  if (ext === 'pdf') {
+    return 'pdf';
+  }
+  return 'other';
+}
+
+function FileTypeIcon({
+  type,
+  className,
+}: {
+  type: FileAttachmentInfo['type'];
+  className?: string;
+}) {
+  switch (type) {
+    case 'image':
+      return <Image className={className} />;
+    case 'text':
+      return <FileText className={className} />;
+    case 'code':
+      return <Code className={className} />;
+    default:
+      return <File className={className} />;
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface TaskInputBarProps {
   value: string;
@@ -27,6 +117,8 @@ interface TaskInputBarProps {
   hideModelWhenNoModel?: boolean;
   autoSubmitOnTranscription?: boolean;
   toolbarLeft?: ReactNode;
+  attachments?: FileAttachmentInfo[];
+  onAttachmentsChange?: (attachments: FileAttachmentInfo[]) => void;
 }
 
 export function TaskInputBar({
@@ -44,6 +136,8 @@ export function TaskInputBar({
   hideModelWhenNoModel = false,
   autoSubmitOnTranscription = true,
   toolbarLeft,
+  attachments = [],
+  onAttachmentsChange,
 }: TaskInputBarProps) {
   const { t } = useTranslation('common');
   const isInputDisabled = disabled || isLoading;
@@ -59,6 +153,92 @@ export function TaskInputBar({
   const effectivePlaceholder = typingPlaceholder && !value ? animatedPlaceholder : placeholder;
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  const addFiles = useCallback(
+    (fileList: FileList | File[]) => {
+      if (!onAttachmentsChange) {
+        return;
+      }
+
+      const files = Array.from(fileList);
+      const remaining = MAX_FILES - attachments.length;
+      if (remaining <= 0) {
+        return;
+      }
+
+      const newAttachments: FileAttachmentInfo[] = [];
+      for (const file of files.slice(0, remaining)) {
+        if (file.size > MAX_FILE_SIZE) {
+          continue;
+        }
+        newAttachments.push({
+          id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          name: file.name,
+          path: (file as File & { path?: string }).path || file.name,
+          type: getFileType(file.name),
+          size: file.size,
+        });
+      }
+
+      if (newAttachments.length > 0) {
+        onAttachmentsChange([...attachments, ...newAttachments]);
+      }
+    },
+    [attachments, onAttachmentsChange],
+  );
+
+  const removeAttachment = useCallback(
+    (id: string) => {
+      if (onAttachmentsChange) {
+        onAttachmentsChange(attachments.filter((a) => a.id !== id));
+      }
+    },
+    [attachments, onAttachmentsChange],
+  );
+
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current++;
+      if (e.dataTransfer.types.includes('Files') && !isInputDisabled) {
+        setIsDragOver(true);
+      }
+    },
+    [isInputDisabled],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+
+      if (isInputDisabled || !e.dataTransfer.files.length) {
+        return;
+      }
+
+      addFiles(e.dataTransfer.files);
+    },
+    [isInputDisabled, addFiles],
+  );
 
   const speechInput = useSpeechInput({
     onTranscriptionComplete: (text) => {
@@ -136,22 +316,64 @@ export function TaskInputBar({
       )}
 
       <div
-        className="rounded-[12px] border border-border bg-popover/70 transition-all duration-200 ease-accomplish cursor-text focus-within:border-muted-foreground/40"
-        onClick={() => textareaRef.current?.focus()}
+        className={cn(
+          'rounded-[12px] border bg-popover/70 transition-all duration-200 ease-accomplish cursor-text focus-within:border-muted-foreground/40',
+          isDragOver
+            ? 'border-primary border-dashed ring-1 ring-primary bg-primary/5'
+            : 'border-border',
+        )}
+        onClick={() => !isDragOver && textareaRef.current?.focus()}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
-        <div className="px-4 pt-3 pb-1">
-          <textarea
-            data-testid="task-input-textarea"
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={effectivePlaceholder}
-            disabled={isInputDisabled || speechInput.isRecording}
-            rows={3}
-            className="w-full min-h-[60px] max-h-[200px] resize-none overflow-y-auto bg-transparent text-[16px] leading-relaxed tracking-[-0.015em] text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
+        {isDragOver && (
+          <div className="px-4 py-3 text-center text-sm text-primary font-medium">
+            Drop files here to attach (max {MAX_FILES} files, {MAX_FILE_SIZE / 1024 / 1024}MB each)
+          </div>
+        )}
+
+        {!isDragOver && (
+          <div className="px-4 pt-3 pb-1">
+            <textarea
+              data-testid="task-input-textarea"
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={effectivePlaceholder}
+              disabled={isInputDisabled || speechInput.isRecording}
+              rows={3}
+              className="w-full min-h-[60px] max-h-[200px] resize-none overflow-y-auto bg-transparent text-[16px] leading-relaxed tracking-[-0.015em] text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+        )}
+
+        {attachments.length > 0 && !isDragOver && (
+          <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+            {attachments.map((file) => (
+              <div
+                key={file.id}
+                className="flex items-center gap-1.5 rounded-md bg-muted/50 border border-border/50 px-2 py-1 text-xs text-muted-foreground group"
+              >
+                <FileTypeIcon type={file.type} className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[120px]" title={file.name}>
+                  {file.name}
+                </span>
+                <span className="text-muted-foreground/50">{formatFileSize(file.size)}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(file.id)}
+                  className="ml-0.5 rounded-sm opacity-50 hover:opacity-100 transition-opacity"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex h-[36px] items-center justify-between pl-3 pr-2 mb-2">
           <div className="flex items-center">{toolbarLeft}</div>
