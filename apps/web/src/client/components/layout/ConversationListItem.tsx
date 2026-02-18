@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Star } from 'lucide-react';
 import { useTaskStore } from '@/stores/taskStore';
 import { STATUS_COLORS, extractDomains } from '@/lib/task-utils';
 
@@ -14,7 +14,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname === `/execution/${task.id}`;
-  const deleteTask = useTaskStore((state) => state.deleteTask);
+  const { deleteTask, toggleTaskFavorite } = useTaskStore();
   const domains = useMemo(() => extractDomains(task), [task]);
 
   const handleClick = () => {
@@ -88,20 +88,42 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
             ))}
           </span>
         )}
-        <button
-          onClick={handleDelete}
-          title="Remove task"
+        <div
           className={cn(
-            'absolute right-0 top-1/2 -translate-y-1/2',
-            'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto',
-            'transition-opacity duration-200',
-            'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
-            'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
+            'absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1',
+            'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+            task.isFavorite && 'opacity-100', // Always show if favorite
           )}
-          aria-label="Remove task"
         >
-          <X className="h-3 w-3" />
-        </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTaskFavorite(task.id, !task.isFavorite);
+            }}
+            title={task.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            className={cn(
+              'p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800',
+              task.isFavorite
+                ? 'text-yellow-500 hover:text-yellow-600'
+                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300',
+            )}
+            aria-label={task.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star className={cn('h-3 w-3', task.isFavorite && 'fill-current')} />
+          </button>
+
+          <button
+            onClick={handleDelete}
+            title="Remove task"
+            className={cn(
+              'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
+              'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
+            )}
+            aria-label="Remove task"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
       </span>
     </div>
   );

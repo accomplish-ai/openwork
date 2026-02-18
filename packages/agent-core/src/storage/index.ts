@@ -73,6 +73,7 @@ export {
   getTask,
   saveTask,
   updateTaskStatus,
+  toggleTaskFavorite,
   addTaskMessage,
   updateTaskSessionId,
   updateTaskSummary,

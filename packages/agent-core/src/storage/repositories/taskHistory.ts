@@ -12,6 +12,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 interface TaskRow {
@@ -23,6 +24,7 @@ interface TaskRow {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  is_favorite: number;
 }
 
 interface MessageRow {
@@ -103,6 +105,7 @@ function rowToTask(row: TaskRow): StoredTask {
     createdAt: row.created_at,
     startedAt: row.started_at || undefined,
     completedAt: row.completed_at || undefined,
+    isFavorite: row.is_favorite === 1,
     messages: getMessagesForTask(row.id),
   };
 }
@@ -129,8 +132,8 @@ export function saveTask(task: Task): void {
   db.transaction(() => {
     db.prepare(
       `INSERT OR REPLACE INTO tasks
-        (id, prompt, summary, status, session_id, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, prompt, summary, status, session_id, created_at, started_at, completed_at, is_favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT is_favorite FROM tasks WHERE id = ?), 0))`,
     ).run(
       task.id,
       task.prompt,
@@ -140,6 +143,7 @@ export function saveTask(task: Task): void {
       task.createdAt,
       task.startedAt || null,
       task.completedAt || null,
+      task.id, // Parameter for the subquery
     );
 
     db.prepare('DELETE FROM task_messages WHERE task_id = ?').run(task.id);
@@ -180,6 +184,11 @@ export function saveTask(task: Task): void {
       )`,
     ).run(MAX_HISTORY_ITEMS);
   })();
+}
+
+export function toggleTaskFavorite(taskId: string, isFavorite: boolean): void {
+  const db = getDatabase();
+  db.prepare('UPDATE tasks SET is_favorite = ? WHERE id = ?').run(isFavorite ? 1 : 0, taskId);
 }
 
 export function updateTaskStatus(taskId: string, status: TaskStatus, completedAt?: string): void {

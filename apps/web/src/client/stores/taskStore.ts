@@ -86,6 +86,7 @@ interface TaskState {
   clearTodos: () => void;
   setAuthError: (error: { providerId: string; message: string }) => void;
   clearAuthError: () => void;
+  toggleTaskFavorite: (taskId: string, isFavorite: boolean) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -537,6 +538,35 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   openLauncherWithPrompt: (prompt: string) =>
     set({ isLauncherOpen: true, launcherInitialPrompt: prompt }),
   closeLauncher: () => set({ isLauncherOpen: false, launcherInitialPrompt: null }),
+
+  toggleTaskFavorite: async (taskId: string, isFavorite: boolean) => {
+    const accomplish = getAccomplish();
+
+    // Optimistic update
+    set((state) => {
+      const updateTask = (t: Task) => (t.id === taskId ? { ...t, isFavorite } : t);
+      return {
+        tasks: state.tasks.map(updateTask),
+        currentTask:
+          state.currentTask?.id === taskId ? updateTask(state.currentTask) : state.currentTask,
+      };
+    });
+
+    try {
+      await accomplish.toggleTaskFavorite(taskId, isFavorite);
+    } catch (err) {
+      // Revert on failure
+      console.error('Failed to toggle task favorite:', err);
+      set((state) => {
+        const revertTask = (t: Task) => (t.id === taskId ? { ...t, isFavorite: !isFavorite } : t);
+        return {
+          tasks: state.tasks.map(revertTask),
+          currentTask:
+            state.currentTask?.id === taskId ? revertTask(state.currentTask) : state.currentTask,
+        };
+      });
+    }
+  },
 }));
 
 if (typeof window !== 'undefined' && window.accomplish) {
