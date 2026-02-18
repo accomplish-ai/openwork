@@ -11,6 +11,24 @@ import {
 describe('CLI Resolver', () => {
   let testDir: string;
 
+  function createLocalCli(appRoot: string): { cliPath: string; cliDir: string; binName: string } {
+    if (process.platform === 'win32') {
+      const binName = 'opencode.exe';
+      const cliDir = path.join(appRoot, 'node_modules', 'opencode-windows-x64', 'bin');
+      const cliPath = path.join(cliDir, binName);
+      fs.mkdirSync(cliDir, { recursive: true });
+      fs.writeFileSync(cliPath, 'binary');
+      return { cliPath, cliDir, binName };
+    }
+
+    const binName = 'opencode';
+    const cliDir = path.join(appRoot, 'node_modules', '.bin');
+    const cliPath = path.join(cliDir, binName);
+    fs.mkdirSync(cliDir, { recursive: true });
+    fs.writeFileSync(cliPath, '#!/bin/bash\necho "opencode"');
+    return { cliPath, cliDir, binName };
+  }
+
   beforeEach(() => {
     // Create a unique temporary directory for each test
     testDir = path.join(
@@ -70,15 +88,12 @@ describe('CLI Resolver', () => {
 
     describe('development mode', () => {
       it('should find CLI in node_modules/.bin', () => {
-        // Create fake node_modules/.bin structure
-        const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-        const binDir = path.join(testDir, 'app', 'node_modules', '.bin');
-        fs.mkdirSync(binDir, { recursive: true });
-        fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "opencode"');
+        const appRoot = path.join(testDir, 'app');
+        const { binName } = createLocalCli(appRoot);
 
         const result = resolveCliPath({
           isPackaged: false,
-          appPath: path.join(testDir, 'app'),
+          appPath: appRoot,
         });
 
         expect(result).not.toBeNull();
@@ -112,11 +127,8 @@ describe('CLI Resolver', () => {
 
     describe('global preference', () => {
       it('should respect ACCOMPLISH_USE_GLOBAL_OPENCODE environment variable', () => {
-        // Create fake local CLI
-        const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-        const binDir = path.join(testDir, 'app', 'node_modules', '.bin');
-        fs.mkdirSync(binDir, { recursive: true });
-        fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "opencode"');
+        const appRoot = path.join(testDir, 'app');
+        createLocalCli(appRoot);
 
         // Set prefer global
         const originalEnv = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE;
@@ -124,7 +136,7 @@ describe('CLI Resolver', () => {
 
         const result = resolveCliPath({
           isPackaged: false,
-          appPath: path.join(testDir, 'app'),
+          appPath: appRoot,
         });
 
         // Restore env
@@ -142,34 +154,28 @@ describe('CLI Resolver', () => {
 
     describe('multiple locations search', () => {
       it('should check multiple locations and return first found', () => {
-        // Create only the local CLI
-        const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-        const binDir = path.join(testDir, 'app', 'node_modules', '.bin');
-        fs.mkdirSync(binDir, { recursive: true });
-        fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "opencode"');
+        const appRoot = path.join(testDir, 'app');
+        const { cliDir } = createLocalCli(appRoot);
 
         const result = resolveCliPath({
           isPackaged: false,
-          appPath: path.join(testDir, 'app'),
+          appPath: appRoot,
         });
 
         expect(result).not.toBeNull();
-        expect(result?.cliDir).toBe(binDir);
+        expect(result?.cliDir).toBe(cliDir);
       });
     });
   });
 
   describe('isCliAvailable', () => {
     it('should return true when CLI is found', () => {
-      // Create fake CLI
-      const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-      const binDir = path.join(testDir, 'app', 'node_modules', '.bin');
-      fs.mkdirSync(binDir, { recursive: true });
-      fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "opencode"');
+      const appRoot = path.join(testDir, 'app');
+      createLocalCli(appRoot);
 
       const result = isCliAvailable({
         isPackaged: false,
-        appPath: path.join(testDir, 'app'),
+        appPath: appRoot,
       });
 
       expect(result).toBe(true);
@@ -203,10 +209,13 @@ describe('CLI Resolver', () => {
       );
 
       // Create dummy binary
-      const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-      fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "1.2.3"');
-
-      const cliPath = path.join(binDir, binName);
+      const binName = process.platform === 'win32' ? 'opencode.exe' : 'opencode';
+      const cliPath =
+        process.platform === 'win32'
+          ? path.join(packageDir, 'bin', binName)
+          : path.join(binDir, binName);
+      fs.mkdirSync(path.dirname(cliPath), { recursive: true });
+      fs.writeFileSync(cliPath, '#!/bin/bash\necho "1.2.3"');
       const version = await getCliVersion(cliPath);
 
       expect(version).toBe('1.2.3');
@@ -220,14 +229,12 @@ describe('CLI Resolver', () => {
 
   describe('platform-specific behavior', () => {
     it('should use correct binary name for current platform', () => {
-      const binName = process.platform === 'win32' ? 'opencode.cmd' : 'opencode';
-      const binDir = path.join(testDir, 'app', 'node_modules', '.bin');
-      fs.mkdirSync(binDir, { recursive: true });
-      fs.writeFileSync(path.join(binDir, binName), '#!/bin/bash\necho "test"');
+      const appRoot = path.join(testDir, 'app');
+      const { binName } = createLocalCli(appRoot);
 
       const result = resolveCliPath({
         isPackaged: false,
-        appPath: path.join(testDir, 'app'),
+        appPath: appRoot,
       });
 
       expect(result).not.toBeNull();
