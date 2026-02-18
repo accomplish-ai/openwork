@@ -194,7 +194,7 @@ export { sanitizeString, PROMPT_DEFAULT_MAX_LENGTH } from './utils/sanitize.js';
 export { validateHttpUrl } from './utils/url.js';
 
 // Task validation functions
-export { validateTaskConfig } from './utils/task-validation.js';
+export { validateTaskConfig, validateAttachments } from './utils/task-validation.js';
 
 // JSON parsing functions
 export { safeParseJson } from './utils/json.js';

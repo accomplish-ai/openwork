@@ -3,6 +3,7 @@ import {
   createMessageId,
   STARTUP_STAGES,
   type Task,
+  type TaskAttachment,
   type TaskConfig,
   type TaskStatus,
   type TaskUpdateEvent,
@@ -68,7 +69,7 @@ interface TaskState {
     isFirstTask?: boolean,
   ) => void;
   clearStartupStage: (taskId: string) => void;
-  sendFollowUp: (message: string) => Promise<void>;
+  sendFollowUp: (message: string, attachments?: TaskAttachment[]) => Promise<void>;
   cancelTask: () => Promise<void>;
   interruptTask: () => Promise<void>;
   setPermissionRequest: (request: PermissionRequest | null) => void;
@@ -193,7 +194,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  sendFollowUp: async (message: string) => {
+  sendFollowUp: async (message: string, attachments?: TaskAttachment[]) => {
     const accomplish = getAccomplish();
     const { currentTask, startTask } = get();
     if (!currentTask) {
@@ -213,7 +214,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         message: 'UI follow-up: starting fresh task (no session from interrupted task)',
         context: { taskId: currentTask.id },
       });
-      await startTask({ prompt: message });
+      await startTask({ prompt: message, attachments });
       return;
     }
 
@@ -232,6 +233,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       type: 'user',
       content: message,
       timestamp: new Date().toISOString(),
+      attachments: attachments && attachments.length > 0 ? attachments : undefined,
     };
 
     const taskId = currentTask.id;
@@ -257,7 +259,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         message: 'UI follow-up sent',
         context: { taskId: currentTask.id, message },
       });
-      const task = await accomplish.resumeSession(sessionId, message, currentTask.id);
+      const task =
+        attachments && attachments.length > 0
+          ? await accomplish.resumeSession(sessionId, message, currentTask.id, attachments)
+          : await accomplish.resumeSession(sessionId, message, currentTask.id);
 
       set((state) => ({
         currentTask: state.currentTask ? { ...state.currentTask, status: task.status } : null,

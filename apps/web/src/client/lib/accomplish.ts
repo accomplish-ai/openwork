@@ -8,6 +8,7 @@
 import type {
   Task,
   TaskConfig,
+  TaskAttachment,
   TaskUpdateEvent,
   TaskStatus,
   PermissionRequest,
@@ -48,7 +49,12 @@ interface AccomplishAPI {
   respondToPermission(response: PermissionResponse): Promise<void>;
 
   // Session management
-  resumeSession(sessionId: string, prompt: string, taskId?: string): Promise<Task>;
+  resumeSession(
+    sessionId: string,
+    prompt: string,
+    taskId?: string,
+    attachments?: TaskAttachment[],
+  ): Promise<Task>;
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;

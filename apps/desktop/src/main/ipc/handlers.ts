@@ -24,6 +24,7 @@ import {
   sanitizeString,
   generateTaskSummary,
   validateTaskConfig,
+  validateAttachments,
 } from '@accomplish_ai/agent-core';
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
@@ -74,6 +75,7 @@ import {
 } from '../services/speechToText';
 import type {
   TaskConfig,
+  TaskAttachment,
   PermissionResponse,
   TaskMessage,
   SelectedModel,
@@ -197,6 +199,10 @@ export function registerIPCHandlers(): void {
       type: 'user',
       content: validatedConfig.prompt,
       timestamp: new Date().toISOString(),
+      attachments:
+        validatedConfig.attachments && validatedConfig.attachments.length > 0
+          ? validatedConfig.attachments
+          : undefined,
     };
     task.messages = [initialUserMessage];
 
@@ -306,6 +312,7 @@ export function registerIPCHandlers(): void {
       sessionId: string,
       prompt: string,
       existingTaskId?: string,
+      attachments?: TaskAttachment[],
     ) => {
       const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
       const sender = event.sender;
@@ -313,6 +320,9 @@ export function registerIPCHandlers(): void {
       const validatedPrompt = sanitizeString(prompt, 'prompt');
       const validatedExistingTaskId = existingTaskId
         ? sanitizeString(existingTaskId, 'taskId', 128)
+        : undefined;
+      const validatedAttachments = Array.isArray(attachments)
+        ? validateAttachments(attachments)
         : undefined;
 
       if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
@@ -329,6 +339,7 @@ export function registerIPCHandlers(): void {
           type: 'user',
           content: validatedPrompt,
           timestamp: new Date().toISOString(),
+          attachments: validatedAttachments,
         };
         storage.addTaskMessage(validatedExistingTaskId, userMessage);
       }
@@ -349,6 +360,7 @@ export function registerIPCHandlers(): void {
           sessionId: validatedSessionId,
           taskId,
           modelId: selectedModelForResume?.model,
+          attachments: validatedAttachments,
         },
         callbacks,
       );

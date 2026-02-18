@@ -8,6 +8,7 @@ import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import {
   XCircle,
   CornerDownLeft,
@@ -24,7 +25,10 @@ import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
 import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
+import { useAttachments } from '../hooks/useAttachments';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
+import { AttachmentThumbnails } from '../components/ui/AttachmentThumbnails';
+import { DragOverlay } from '../components/ui/DragOverlay';
 import { PlusMenu } from '../components/landing/PlusMenu';
 import { SpinningIcon } from '../components/execution/SpinningIcon';
 import { MessageBubble } from '../components/execution/MessageList';
@@ -56,6 +60,9 @@ export function ExecutionPage() {
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
+  const pendingAttachmentsRef = useRef<
+    import('@accomplish_ai/agent-core/common').TaskAttachment[] | undefined
+  >(undefined);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +105,10 @@ export function ExecutionPage() {
     },
     onError: () => {},
   });
+
+  const attachmentInput = useAttachments();
+
+  const hasFollowUpContent = !!followUp.trim() || attachmentInput.attachments.length > 0;
 
   const scrollToBottom = useMemo(
     () =>
@@ -239,25 +250,37 @@ export function ExecutionPage() {
   }, [canFollowUp]);
 
   const handleFollowUp = useCallback(async () => {
-    if (!followUp.trim()) return;
+    const hasAttachments = attachmentInput.attachments.length > 0;
+    if (!followUp.trim() && !hasAttachments) {
+      return;
+    }
+
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
       const settings = await accomplish.getProviderSettings();
       if (!hasAnyReadyProvider(settings)) {
         setPendingFollowUp(followUp);
+        pendingAttachmentsRef.current = hasAttachments ? attachmentInput.attachments : undefined;
         setSettingsInitialTab('providers');
         setShowSettingsDialog(true);
         return;
       }
     }
-    await sendFollowUp(followUp);
+
+    if (hasAttachments) {
+      await sendFollowUp(followUp, attachmentInput.attachments);
+    } else {
+      await sendFollowUp(followUp);
+    }
     setFollowUp('');
-  }, [followUp, accomplish, sendFollowUp]);
+    attachmentInput.clearAttachments();
+  }, [followUp, accomplish, sendFollowUp, attachmentInput]);
 
   const handleSettingsDialogClose = (open: boolean) => {
     setShowSettingsDialog(open);
     if (!open) {
       setPendingFollowUp(null);
+      pendingAttachmentsRef.current = undefined;
       setSettingsInitialTab('providers');
     }
   };
@@ -265,9 +288,12 @@ export function ExecutionPage() {
   const handleApiKeySaved = async () => {
     setShowSettingsDialog(false);
     if (pendingFollowUp) {
-      await sendFollowUp(pendingFollowUp);
+      const atts = pendingAttachmentsRef.current;
+      pendingAttachmentsRef.current = undefined;
+      await sendFollowUp(pendingFollowUp, atts);
       setFollowUp('');
       setPendingFollowUp(null);
+      attachmentInput.clearAttachments();
     }
   };
 
@@ -685,27 +711,51 @@ export function ExecutionPage() {
         {canFollowUp && (
           <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
             <div className="max-w-4xl mx-auto space-y-2">
-              {speechInput.error && (
+              {(speechInput.error || attachmentInput.error) && (
                 <Alert
                   variant="destructive"
                   className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
                 >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs leading-tight">
-                    {speechInput.error.message}
-                    {speechInput.error.code === 'EMPTY_RESULT' && (
-                      <button
-                        onClick={() => speechInput.retry()}
-                        className="ml-2 underline hover:no-underline"
-                        type="button"
-                      >
-                        Retry
-                      </button>
+                    {speechInput.error ? (
+                      <>
+                        {speechInput.error.message}
+                        {speechInput.error.code === 'EMPTY_RESULT' && (
+                          <button
+                            onClick={() => speechInput.retry()}
+                            className="ml-2 underline hover:no-underline"
+                            type="button"
+                          >
+                            Retry
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {attachmentInput.error}
+                        <button
+                          onClick={() => attachmentInput.clearError()}
+                          className="ml-2 underline hover:no-underline"
+                          type="button"
+                        >
+                          Dismiss
+                        </button>
+                      </>
                     )}
                   </AlertDescription>
                 </Alert>
               )}
-              <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+              <div
+                className={cn(
+                  'relative rounded-xl border bg-background shadow-sm transition-all duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring',
+                  attachmentInput.isDragging
+                    ? 'border-primary ring-1 ring-primary'
+                    : 'border-border',
+                )}
+                {...attachmentInput.dragHandlers}
+              >
+                <DragOverlay isDragging={attachmentInput.isDragging} />
                 <div className="px-4 pt-3 pb-2">
                   <textarea
                     ref={followUpInputRef}
@@ -716,12 +766,15 @@ export function ExecutionPage() {
                       e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
                     }}
                     onKeyDown={(e) => {
-                      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                      if (e.nativeEvent.isComposing || e.keyCode === 229) {
+                        return;
+                      }
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleFollowUp();
                       }
                     }}
+                    onPaste={attachmentInput.handlePaste}
                     placeholder={
                       currentTask.status === 'interrupted'
                         ? hasSession
@@ -738,19 +791,29 @@ export function ExecutionPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
-                  <PlusMenu
-                    onSkillSelect={(command) => {
-                      const newValue = `${command} ${followUp}`.trim();
-                      setFollowUp(newValue);
-                      setTimeout(() => followUpInputRef.current?.focus(), 0);
-                    }}
-                    onOpenSettings={(tab) => {
-                      setSettingsInitialTab(tab);
-                      setShowSettingsDialog(true);
-                    }}
-                    disabled={isLoading || speechInput.isRecording}
-                  />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <PlusMenu
+                      onSkillSelect={(command) => {
+                        const newValue = `${command} ${followUp}`.trim();
+                        setFollowUp(newValue);
+                        setTimeout(() => followUpInputRef.current?.focus(), 0);
+                      }}
+                      onOpenSettings={(tab) => {
+                        setSettingsInitialTab(tab);
+                        setShowSettingsDialog(true);
+                      }}
+                      onAttachFiles={attachmentInput.openFilePicker}
+                      disabled={isLoading || speechInput.isRecording}
+                    />
+
+                    <AttachmentThumbnails
+                      attachments={attachmentInput.attachments}
+                      isProcessing={attachmentInput.isProcessing}
+                      onRemove={attachmentInput.removeAttachment}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
                     <ModelIndicator isRunning={false} onOpenSettings={handleOpenModelSettings} />
                     <div className="w-px h-6 bg-border flex-shrink-0" />
                     <SpeechInputButton
@@ -769,7 +832,7 @@ export function ExecutionPage() {
                     <button
                       type="button"
                       onClick={handleFollowUp}
-                      disabled={!followUp.trim() || isLoading || speechInput.isRecording}
+                      disabled={!hasFollowUpContent || isLoading || speechInput.isRecording}
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Send"
                     >

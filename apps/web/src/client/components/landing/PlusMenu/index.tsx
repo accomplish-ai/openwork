@@ -20,10 +20,16 @@ import { CreateSkillModal } from '@/components/skills/CreateSkillModal';
 interface PlusMenuProps {
   onSkillSelect: (command: string) => void;
   onOpenSettings: (tab: 'skills' | 'connectors') => void;
+  onAttachFiles?: () => void;
   disabled?: boolean;
 }
 
-export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuProps) {
+export function PlusMenu({
+  onSkillSelect,
+  onOpenSettings,
+  onAttachFiles,
+  disabled,
+}: PlusMenuProps) {
   const [open, setOpen] = useState(false);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [connectors, setConnectors] = useState<McpConnector[]>([]);
@@ -108,12 +114,15 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
-          <DropdownMenuItem disabled className="text-muted-foreground/60">
+          <DropdownMenuItem
+            disabled={!onAttachFiles}
+            onClick={() => {
+              onAttachFiles?.();
+              setOpen(false);
+            }}
+          >
             <Paperclip className="h-4 w-4 mr-2 shrink-0" />
             Attach Files
-            <span className="ml-auto pl-4 text-[10px] text-muted-foreground/50 whitespace-nowrap">
-              Soon
-            </span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

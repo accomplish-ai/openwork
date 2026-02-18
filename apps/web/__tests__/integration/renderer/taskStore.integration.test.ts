@@ -432,6 +432,126 @@ describe('taskStore Integration', () => {
     });
   });
 
+  describe('sendFollowUp with attachments', () => {
+    it('should pass attachments to resumeSession', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const taskWithSession: Task = {
+        ...createMockTask('task-123', 'Test', 'completed'),
+        sessionId: 'session-abc',
+      };
+      const resumedTask = createMockTask('task-123', 'Test', 'running');
+      mockAccomplish.resumeSession.mockResolvedValueOnce(resumedTask);
+
+      useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession] });
+
+      const attachments = [{ type: 'screenshot' as const, data: 'base64data', label: 'bug.png' }];
+
+      // Act
+      await useTaskStore.getState().sendFollowUp('See screenshot', attachments);
+
+      // Assert
+      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith(
+        'session-abc',
+        'See screenshot',
+        'task-123',
+        attachments,
+      );
+    });
+
+    it('should not pass attachments arg when no attachments provided', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const taskWithSession: Task = {
+        ...createMockTask('task-123', 'Test', 'completed'),
+        sessionId: 'session-abc',
+      };
+      const resumedTask = createMockTask('task-123', 'Test', 'running');
+      mockAccomplish.resumeSession.mockResolvedValueOnce(resumedTask);
+
+      useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession] });
+
+      // Act
+      await useTaskStore.getState().sendFollowUp('No images');
+
+      // Assert - should be called with 3 args, not 4
+      expect(mockAccomplish.resumeSession).toHaveBeenCalledWith(
+        'session-abc',
+        'No images',
+        'task-123',
+      );
+    });
+
+    it('should include attachments in optimistic user message', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const taskWithSession: Task = {
+        ...createMockTask('task-123', 'Test', 'completed'),
+        sessionId: 'session-abc',
+        messages: [],
+      };
+      mockAccomplish.resumeSession.mockResolvedValueOnce(
+        createMockTask('task-123', 'Test', 'running'),
+      );
+
+      useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession] });
+
+      const attachments = [{ type: 'screenshot' as const, data: 'base64data' }];
+
+      // Act
+      await useTaskStore.getState().sendFollowUp('With image', attachments);
+      const state = useTaskStore.getState();
+
+      // Assert
+      expect(state.currentTask?.messages).toHaveLength(1);
+      expect(state.currentTask?.messages[0].type).toBe('user');
+      expect(state.currentTask?.messages[0].content).toBe('With image');
+      expect(state.currentTask?.messages[0].attachments).toEqual(attachments);
+    });
+
+    it('should not include attachments in optimistic message when empty array', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const taskWithSession: Task = {
+        ...createMockTask('task-123', 'Test', 'completed'),
+        sessionId: 'session-abc',
+        messages: [],
+      };
+      mockAccomplish.resumeSession.mockResolvedValueOnce(
+        createMockTask('task-123', 'Test', 'running'),
+      );
+
+      useTaskStore.setState({ currentTask: taskWithSession, tasks: [taskWithSession] });
+
+      // Act
+      await useTaskStore.getState().sendFollowUp('Text only', []);
+      const state = useTaskStore.getState();
+
+      // Assert
+      expect(state.currentTask?.messages[0].attachments).toBeUndefined();
+    });
+  });
+
+  describe('startTask with attachments', () => {
+    it('should forward attachments in TaskConfig', async () => {
+      // Arrange
+      const { useTaskStore } = await import('@/stores/taskStore');
+      const mockTask = createMockTask('task-123', 'Test prompt', 'running');
+      mockAccomplish.startTask.mockResolvedValueOnce(mockTask);
+
+      const config: TaskConfig = {
+        prompt: 'Test prompt',
+        attachments: [{ type: 'screenshot', data: 'base64data', label: 'screen.png' }],
+      };
+
+      // Act
+      await useTaskStore.getState().startTask(config);
+
+      // Assert
+      expect(mockAccomplish.startTask).toHaveBeenCalledWith(config);
+    });
+  });
+
   describe('cancelTask', () => {
     it('should call cancelTask API and update status', async () => {
       // Arrange

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
@@ -9,6 +9,7 @@ import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import type { TaskAttachment } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
 import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
@@ -111,20 +112,32 @@ export function HomePage() {
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
+  const pendingAttachmentsRef = useRef<TaskAttachment[] | undefined>(undefined);
+
   const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (!prompt.trim() || isLoading) {
+      return;
+    }
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const attachments = pendingAttachmentsRef.current;
+    pendingAttachmentsRef.current = undefined;
+    const task = await startTask({ prompt: prompt.trim(), taskId, attachments });
     if (task) {
       navigate(`/execution/${task.id}`);
     }
   }, [prompt, isLoading, startTask, navigate]);
 
-  const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+  const handleSubmit = async (attachments?: TaskAttachment[]) => {
+    if (!prompt.trim() && !attachments?.length) {
+      return;
+    }
+    if (isLoading) {
+      return;
+    }
 
-    // Check if any provider is ready before sending (skip in E2E mode)
+    pendingAttachmentsRef.current = attachments;
+
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
       const settings = await accomplish.getProviderSettings();
