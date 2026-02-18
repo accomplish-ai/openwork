@@ -59,7 +59,9 @@ class MockPty extends EventEmitter {
   // Helper to simulate exit
   simulateExit(exitCode: number, signal?: number) {
     const callbacks = this.listeners('exit');
-    callbacks.forEach((cb) => (cb as (params: { exitCode: number; signal?: number }) => void)({ exitCode, signal }));
+    callbacks.forEach((cb) =>
+      (cb as (params: { exitCode: number; signal?: number }) => void)({ exitCode, signal }),
+    );
   }
 
   // Override on to use onData/onExit interface
@@ -183,9 +185,7 @@ describe('OAuthBrowserFlow', () => {
 
       expect(mockPtySpawn).toHaveBeenCalled();
       const spawnCall = mockPtySpawn.mock.calls[0];
-      expect(spawnCall[1]).toEqual(expect.arrayContaining([
-        expect.stringContaining('auth'),
-      ]));
+      expect(spawnCall[1]).toEqual(expect.arrayContaining([expect.stringContaining('auth')]));
 
       mockPtyInstance.simulateExit(0);
       await startPromise;
@@ -221,7 +221,7 @@ describe('OAuthBrowserFlow', () => {
 
       // Should have written Enter for login method
       const writeCalls = mockPtyInstance.write.mock.calls;
-      const enterCalls = writeCalls.filter(call => call[0] === '\r');
+      const enterCalls = writeCalls.filter((call) => call[0] === '\r');
       expect(enterCalls.length).toBeGreaterThanOrEqual(2);
 
       mockPtyInstance.simulateExit(0);
@@ -238,7 +238,7 @@ describe('OAuthBrowserFlow', () => {
       mockPtyInstance.simulateData('Go to: https://auth.openai.com/oauth?code=123');
 
       expect(mockShell.openExternal).toHaveBeenCalledWith(
-        expect.stringContaining('https://auth.openai.com')
+        expect.stringContaining('https://auth.openai.com'),
       );
 
       mockPtyInstance.simulateExit(0);
@@ -356,7 +356,7 @@ describe('OAuthBrowserFlow', () => {
     it('should force kill if graceful exit times out', async () => {
       vi.useFakeTimers();
 
-      const startPromise = oauthBrowserFlow.start();
+      const _startPromise = oauthBrowserFlow.start();
 
       // Wait for async setup (using fake timers)
       await vi.advanceTimersByTimeAsync(10);

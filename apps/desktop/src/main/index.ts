@@ -1,5 +1,14 @@
 import { config } from 'dotenv';
-import { app, BrowserWindow, shell, ipcMain, nativeImage, dialog, nativeTheme } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  nativeImage,
+  dialog,
+  nativeTheme,
+  Menu,
+} from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -12,18 +21,18 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
-import {
-  FutureSchemaError,
-} from '@accomplish_ai/agent-core';
-import {
-  initThoughtStreamApi,
-  startThoughtStreamServer,
-} from './thought-stream-api';
+import { FutureSchemaError } from '@accomplish_ai/agent-core';
+import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
-import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
+import {
+  initializeStorage,
+  closeStorage,
+  getStorage,
+  resetStorageSingleton,
+} from './store/storage';
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
@@ -65,8 +74,13 @@ config({ path: envPath });
 process.env.APP_ROOT = path.join(__dirname, '../..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
-export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+
+const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL;
+
+// In production, web's build output is packaged as an extraResource.
+const WEB_DIST = app.isPackaged
+  ? path.join(process.resourcesPath, 'web-ui')
+  : path.join(process.env.APP_ROOT, '../web/dist/client');
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -103,7 +117,33 @@ function createWindow() {
       preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
+      spellcheck: true,
     },
+  });
+
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    if (!params.misspelledWord) {
+      return;
+    }
+
+    const menuItems: Electron.MenuItemConstructorOptions[] = params.dictionarySuggestions.map(
+      (suggestion) => ({
+        label: suggestion,
+        click: () => mainWindow?.webContents.replaceMisspelling(suggestion),
+      }),
+    );
+
+    if (menuItems.length > 0) {
+      menuItems.push({ type: 'separator' });
+    }
+
+    menuItems.push({
+      label: 'Add to Dictionary',
+      click: () =>
+        mainWindow?.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+    });
+
+    Menu.buildFromTemplate(menuItems).popup();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -121,11 +161,22 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'right' });
   }
 
-  if (VITE_DEV_SERVER_URL) {
-    console.log('[Main] Loading from Vite dev server:', VITE_DEV_SERVER_URL);
-    mainWindow.loadURL(VITE_DEV_SERVER_URL);
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+        ],
+      },
+    });
+  });
+
+  if (ROUTER_URL) {
+    console.log('[Main] Loading from router URL:', ROUTER_URL);
+    mainWindow.loadURL(ROUTER_URL);
   } else {
-    const indexPath = path.join(RENDERER_DIST, 'index.html');
+    const indexPath = path.join(WEB_DIST, 'index.html');
     console.log('[Main] Loading from file:', indexPath);
     mainWindow.loadFile(indexPath);
   }
@@ -138,14 +189,18 @@ process.on('uncaughtException', (error) => {
       name: error.name,
       stack: error.stack,
     });
-  } catch {}
+  } catch {
+    // ignore - log collector may not be initialized
+  }
 });
 
 process.on('unhandledRejection', (reason) => {
   try {
     const collector = getLogCollector();
     collector.log('ERROR', 'main', 'Unhandled promise rejection', { reason });
-  } catch {}
+  } catch {
+    // ignore - log collector may not be initialized
+  }
 });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -222,7 +277,9 @@ if (!gotTheLock) {
         if (!credType || credType === 'api_key') {
           const key = getApiKey(providerId);
           if (!key) {
-            console.warn(`[Main] Provider ${providerId} has api_key auth but key not found in secure storage`);
+            console.warn(
+              `[Main] Provider ${providerId} has api_key auth but key not found in secure storage`,
+            );
             storage.removeConnectedProvider(providerId);
             console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
@@ -286,9 +343,7 @@ app.on('before-quit', () => {
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {
-  app.setAsDefaultProtocolClient('accomplish', process.execPath, [
-    path.resolve(process.argv[1]),
-  ]);
+  app.setAsDefaultProtocolClient('accomplish', process.execPath, [path.resolve(process.argv[1])]);
 } else {
   app.setAsDefaultProtocolClient('accomplish');
 }
@@ -332,6 +387,8 @@ ipcMain.handle('app:platform', () => {
 });
 
 ipcMain.handle('app:is-e2e-mode', () => {
-  return (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
-    process.env.E2E_MOCK_TASK_EVENTS === '1';
+  return (
+    (global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS === true ||
+    process.env.E2E_MOCK_TASK_EVENTS === '1'
+  );
 });

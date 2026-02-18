@@ -111,13 +111,13 @@ Accomplish adalah agen desktop AI open source yang mengotomatisasi manajemen fil
 
 ## Apa yang sebenarnya dilakukan
 
-| | | |
-|:--|:--|:--|
-| **📁 Manajemen File** | **✍️ Penulisan Dokumen** | **🔗 Koneksi Tools** |
-| Urutkan, ganti nama, dan pindahkan file berdasarkan konten atau aturan yang Anda berikan | Minta untuk menulis, meringkas, atau menulis ulang dokumen | Bekerja dengan Notion, Google Drive, Dropbox, dan lainnya (melalui API lokal) |
-| | | |
-| **⚙️ Skill Kustom** | **🛡️ Kontrol Penuh** | |
-| Tentukan workflow yang dapat diulang, simpan sebagai skill | Anda menyetujui setiap tindakan. Anda bisa melihat log. Anda bisa menghentikannya kapan saja. | |
+|                                                                                          |                                                                                               |                                                                               |
+| :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------- |
+| **📁 Manajemen File**                                                                    | **✍️ Penulisan Dokumen**                                                                      | **🔗 Koneksi Tools**                                                          |
+| Urutkan, ganti nama, dan pindahkan file berdasarkan konten atau aturan yang Anda berikan | Minta untuk menulis, meringkas, atau menulis ulang dokumen                                    | Bekerja dengan Notion, Google Drive, Dropbox, dan lainnya (melalui API lokal) |
+|                                                                                          |                                                                                               |                                                                               |
+| **⚙️ Skill Kustom**                                                                      | **🛡️ Kontrol Penuh**                                                                          |                                                                               |
+| Tentukan workflow yang dapat diulang, simpan sebagai skill                               | Anda menyetujui setiap tindakan. Anda bisa melihat log. Anda bisa menghentikannya kapan saja. |                                                                               |
 
 <br />
 
@@ -171,15 +171,14 @@ Accomplish berjalan secara lokal di mesin Anda. File Anda tetap di perangkat And
 
 > **Setup hanya 2 menit.**
 
-| Langkah | Aksi | Detail |
-|:----:|--------|---------|
-| **1** | **Install Aplikasi** | Unduh DMG dan seret ke Applications |
-| **2** | **Hubungkan AI Anda** | Gunakan kunci API Google, OpenAI, Anthropic (atau lainnya) — atau masuk dengan ChatGPT (Plus/Pro). Tanpa langganan. |
-| **3** | **Berikan Akses** | Pilih folder mana yang bisa dilihat. Anda tetap memegang kontrol. |
-| **4** | **Mulai Bekerja** | Minta untuk meringkas dokumen, membersihkan folder, atau membuat laporan. Anda menyetujui semuanya. |
+| Langkah | Aksi                  | Detail                                                                                                              |
+| :-----: | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+|  **1**  | **Install Aplikasi**  | Unduh DMG dan seret ke Applications                                                                                 |
+|  **2**  | **Hubungkan AI Anda** | Gunakan kunci API Google, OpenAI, Anthropic (atau lainnya) — atau masuk dengan ChatGPT (Plus/Pro). Tanpa langganan. |
+|  **3**  | **Berikan Akses**     | Pilih folder mana yang bisa dilihat. Anda tetap memegang kontrol.                                                   |
+|  **4**  | **Mulai Bekerja**     | Minta untuk meringkas dokumen, membersihkan folder, atau membuat laporan. Anda menyetujui semuanya.                 |
 
 <br />
-
 
 <br />
 
@@ -251,25 +250,25 @@ Itu saja.
 <details>
 <summary><strong>Semua perintah</strong></summary>
 
-| Perintah | Deskripsi |
-|---------|-------------|
-| `pnpm dev` | Jalankan aplikasi desktop dalam mode dev |
-| `pnpm dev:clean` | Mode dev dengan start bersih |
-| `pnpm build` | Build semua workspace |
-| `pnpm build:desktop` | Build aplikasi desktop saja |
-| `pnpm lint` | Pemeriksaan TypeScript |
-| `pnpm typecheck` | Validasi tipe |
-| `pnpm -F @accomplish/desktop test:e2e` | Test E2E Playwright |
+| Perintah                               | Deskripsi                                |
+| -------------------------------------- | ---------------------------------------- |
+| `pnpm dev`                             | Jalankan aplikasi desktop dalam mode dev |
+| `pnpm dev:clean`                       | Mode dev dengan start bersih             |
+| `pnpm build`                           | Build semua workspace                    |
+| `pnpm build:desktop`                   | Build aplikasi desktop saja              |
+| `pnpm lint`                            | Pemeriksaan TypeScript                   |
+| `pnpm typecheck`                       | Validasi tipe                            |
+| `pnpm -F @accomplish/desktop test:e2e` | Test E2E Playwright                      |
 
 </details>
 
 <details>
 <summary><strong>Environment variables</strong></summary>
 
-| Variabel | Deskripsi |
-|----------|-------------|
-| `CLEAN_START=1` | Hapus semua data tersimpan saat aplikasi mulai |
-| `E2E_SKIP_AUTH=1` | Lewati alur onboarding (untuk testing) |
+| Variabel          | Deskripsi                                      |
+| ----------------- | ---------------------------------------------- |
+| `CLEAN_START=1`   | Hapus semua data tersimpan saat aplikasi mulai |
+| `E2E_SKIP_AUTH=1` | Lewati alur onboarding (untuk testing)         |
 
 </details>
 

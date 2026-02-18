@@ -259,7 +259,7 @@ describe('Bundled Node.js Utilities', () => {
       // Assert
       expect(result).toBe('node');
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('WARNING: Bundled Node.js not found')
+        expect.stringContaining('WARNING: Bundled Node.js not found'),
       );
 
       warnSpy.mockRestore();
@@ -386,9 +386,7 @@ describe('Bundled Node.js Utilities', () => {
       logBundledNodeInfo();
 
       // Assert
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Development mode')
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Development mode'));
 
       logSpy.mockRestore();
     });

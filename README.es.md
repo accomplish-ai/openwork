@@ -111,13 +111,13 @@ Accomplish es un agente de escritorio de IA de código abierto que automatiza la
 
 ## Lo que realmente hace
 
-| | | |
-|:--|:--|:--|
-| **📁 Gestión de Archivos** | **✍️ Escritura de Documentos** | **🔗 Conexiones de Herramientas** |
-| Ordena, renombra y mueve archivos según contenido o reglas que definas | Pídele que escriba, resuma o reescriba documentos | Funciona con Notion, Google Drive, Dropbox y más (a través de APIs locales) |
-| | | |
-| **⚙️ Habilidades Personalizadas** | **🛡️ Control Total** | |
-| Define flujos de trabajo repetibles, guárdalos como habilidades | Apruebas cada acción. Puedes ver los registros. Puedes detenerlo en cualquier momento. | |
+|                                                                        |                                                                                        |                                                                             |
+| :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| **📁 Gestión de Archivos**                                             | **✍️ Escritura de Documentos**                                                         | **🔗 Conexiones de Herramientas**                                           |
+| Ordena, renombra y mueve archivos según contenido o reglas que definas | Pídele que escriba, resuma o reescriba documentos                                      | Funciona con Notion, Google Drive, Dropbox y más (a través de APIs locales) |
+|                                                                        |                                                                                        |                                                                             |
+| **⚙️ Habilidades Personalizadas**                                      | **🛡️ Control Total**                                                                   |                                                                             |
+| Define flujos de trabajo repetibles, guárdalos como habilidades        | Apruebas cada acción. Puedes ver los registros. Puedes detenerlo en cualquier momento. |                                                                             |
 
 <br />
 
@@ -171,15 +171,14 @@ Accomplish se ejecuta localmente en tu máquina. Tus archivos permanecen en tu d
 
 > **Se configura en 2 minutos.**
 
-| Paso | Acción | Detalles |
-|:----:|--------|---------|
-| **1** | **Instala la App** | Descarga el DMG y arrástralo a Aplicaciones |
-| **2** | **Conecta tu IA** | Usa tu propia clave API de Google, OpenAI, Anthropic (u otra) — o inicia sesión con ChatGPT (Plus/Pro). Sin suscripciones. |
-| **3** | **Dale Acceso** | Elige qué carpetas puede ver. Tú mantienes el control. |
-| **4** | **Empieza a Trabajar** | Pídele que resuma un documento, organice una carpeta o cree un informe. Apruebas todo. |
+| Paso  | Acción                 | Detalles                                                                                                                   |
+| :---: | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Instala la App**     | Descarga el DMG y arrástralo a Aplicaciones                                                                                |
+| **2** | **Conecta tu IA**      | Usa tu propia clave API de Google, OpenAI, Anthropic (u otra) — o inicia sesión con ChatGPT (Plus/Pro). Sin suscripciones. |
+| **3** | **Dale Acceso**        | Elige qué carpetas puede ver. Tú mantienes el control.                                                                     |
+| **4** | **Empieza a Trabajar** | Pídele que resuma un documento, organice una carpeta o cree un informe. Apruebas todo.                                     |
 
 <br />
-
 
 <br />
 
@@ -251,25 +250,25 @@ Eso es todo.
 <details>
 <summary><strong>Todos los comandos</strong></summary>
 
-| Comando | Descripción |
-|---------|-------------|
-| `pnpm dev` | Ejecutar app de escritorio en modo desarrollo |
-| `pnpm dev:clean` | Modo desarrollo con inicio limpio |
-| `pnpm build` | Compilar todos los workspaces |
-| `pnpm build:desktop` | Compilar solo app de escritorio |
-| `pnpm lint` | Verificaciones de TypeScript |
-| `pnpm typecheck` | Validación de tipos |
-| `pnpm -F @accomplish/desktop test:e2e` | Pruebas E2E con Playwright |
+| Comando                                | Descripción                                   |
+| -------------------------------------- | --------------------------------------------- |
+| `pnpm dev`                             | Ejecutar app de escritorio en modo desarrollo |
+| `pnpm dev:clean`                       | Modo desarrollo con inicio limpio             |
+| `pnpm build`                           | Compilar todos los workspaces                 |
+| `pnpm build:desktop`                   | Compilar solo app de escritorio               |
+| `pnpm lint`                            | Verificaciones de TypeScript                  |
+| `pnpm typecheck`                       | Validación de tipos                           |
+| `pnpm -F @accomplish/desktop test:e2e` | Pruebas E2E con Playwright                    |
 
 </details>
 
 <details>
 <summary><strong>Variables de entorno</strong></summary>
 
-| Variable | Descripción |
-|----------|-------------|
-| `CLEAN_START=1` | Borrar todos los datos almacenados al iniciar la app |
-| `E2E_SKIP_AUTH=1` | Saltar flujo de onboarding (para pruebas) |
+| Variable          | Descripción                                          |
+| ----------------- | ---------------------------------------------------- |
+| `CLEAN_START=1`   | Borrar todos los datos almacenados al iniciar la app |
+| `E2E_SKIP_AUTH=1` | Saltar flujo de onboarding (para pruebas)            |
 
 </details>
 
