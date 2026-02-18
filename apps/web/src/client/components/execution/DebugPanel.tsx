@@ -2,7 +2,17 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
-import { Bug, ChevronUp, ChevronDown, Download, Trash2, Check, Search, Play, RefreshCw } from 'lucide-react';
+import {
+  Bug,
+  ChevronUp,
+  ChevronDown,
+  Download,
+  Trash2,
+  Check,
+  Search,
+  Play,
+  RefreshCw,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAccomplish } from '@/lib/accomplish';
 
@@ -26,7 +36,9 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
   const accomplish = getAccomplish();
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
   const [debugExported, setDebugExported] = useState(false);
-  const [bugReportStatus, setBugReportStatus] = useState<'idle' | 'generating' | 'success' | 'error'>('idle');
+  const [bugReportStatus, setBugReportStatus] = useState<
+    'idle' | 'generating' | 'success' | 'error'
+  >('idle');
   const [bugReportGenerating, setBugReportGenerating] = useState(false);
   const [repeatTaskLoading, setRepeatTaskLoading] = useState(false);
   const [debugSearchQuery, setDebugSearchQuery] = useState('');
@@ -113,6 +125,23 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
     }
     return 'Bug Report';
   }, [bugReportStatus]);
+
+  const BUG_REPORT_CLASS_MAP: Record<'idle' | 'generating' | 'success' | 'error', string> = {
+    idle: 'text-zinc-400 hover:text-zinc-200',
+    generating: 'text-zinc-400 hover:text-zinc-200',
+    success: 'text-green-400 hover:text-green-300',
+    error: 'text-red-400 hover:text-red-300',
+  };
+
+  const BUG_REPORT_ICON_MAP = {
+    idle: Bug,
+    generating: RefreshCw,
+    success: Check,
+    error: Bug,
+  };
+
+  const BugReportIcon = BUG_REPORT_ICON_MAP[bugReportStatus];
+  const bugReportIconClass = cn('h-3 w-3 mr-1', bugReportStatus === 'generating' && 'animate-spin');
 
   const handleGenerateBugReport = useCallback(async () => {
     if (!taskId || bugReportGenerating) {
@@ -220,11 +249,7 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
                 size="sm"
                 className={cn(
                   'h-6 px-2 text-xs hover:bg-zinc-700',
-                  bugReportStatus === 'success'
-                    ? 'text-green-400 hover:text-green-300'
-                    : bugReportStatus === 'error'
-                      ? 'text-red-400 hover:text-red-300'
-                      : 'text-zinc-400 hover:text-zinc-200',
+                  BUG_REPORT_CLASS_MAP[bugReportStatus],
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -233,13 +258,7 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
                 disabled={bugReportGenerating}
                 data-testid="debug-bug-report-button"
               >
-                {bugReportStatus === 'success' ? (
-                  <Check className="h-3 w-3 mr-1" />
-                ) : bugReportStatus === 'generating' ? (
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                ) : (
-                  <Bug className="h-3 w-3 mr-1" />
-                )}
+                <BugReportIcon className={bugReportIconClass} />
                 {getBugReportLabel()}
               </Button>
               {isTaskComplete && (
