@@ -39,6 +39,9 @@ import {
   testLMStudioConnection,
   fetchLMStudioModels,
   validateLMStudioConfig,
+  testHuggingFaceLocalConnection,
+  fetchHuggingFaceLocalModels,
+  validateHuggingFaceLocalConfig,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
 import { getOpenAiOauthStatus } from '@accomplish_ai/agent-core';
@@ -81,6 +84,7 @@ import type {
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceLocalConfig,
 } from '@accomplish_ai/agent-core';
 import {
   DEFAULT_PROVIDERS,
@@ -867,6 +871,35 @@ export function registerIPCHandlers(): void {
         validateLMStudioConfig(config);
       }
       storage.setLMStudioConfig(config);
+    },
+  );
+
+  // ── HuggingFace Local handlers ─────────────────────────────────────────
+
+  handle('huggingface-local:test-connection', async (_event: IpcMainInvokeEvent, url: string) => {
+    return testHuggingFaceLocalConnection(url);
+  });
+
+  handle('huggingface-local:fetch-models', async (_event: IpcMainInvokeEvent) => {
+    const config = storage.getHuggingFaceLocalConfig();
+    if (!config || !config.serverUrl) {
+      return { success: false, error: 'No HuggingFace Local server configured' };
+    }
+
+    return fetchHuggingFaceLocalModels({ baseUrl: config.serverUrl });
+  });
+
+  handle('huggingface-local:get-config', async (_event: IpcMainInvokeEvent) => {
+    return storage.getHuggingFaceLocalConfig();
+  });
+
+  handle(
+    'huggingface-local:set-config',
+    async (_event: IpcMainInvokeEvent, config: HuggingFaceLocalConfig | null) => {
+      if (config !== null) {
+        validateHuggingFaceLocalConfig(config);
+      }
+      storage.setHuggingFaceLocalConfig(config);
     },
   );
 

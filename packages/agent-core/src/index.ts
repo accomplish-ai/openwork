@@ -157,6 +157,20 @@ export { testLiteLLMConnection, fetchLiteLLMModels } from './providers/litellm.j
 
 export { testOllamaConnection } from './providers/ollama.js';
 
+export {
+  testHuggingFaceLocalConnection,
+  fetchHuggingFaceLocalModels,
+  validateHuggingFaceLocalConfig,
+  HF_LOCAL_DEFAULT_URL,
+  HF_RECOMMENDED_MODELS,
+} from './providers/huggingface-local.js';
+
+export type {
+  HuggingFaceLocalConnectionResult,
+  HuggingFaceLocalModel,
+  HuggingFaceModelDownloadProgress,
+} from './providers/huggingface-local.js';
+
 export { testOllamaModelToolSupport } from './providers/tool-support-testing.js';
 
 export {
@@ -275,6 +289,8 @@ export type {
   LiteLLMModel,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceLocalModelInfo,
+  HuggingFaceLocalConfig,
 } from './common/types/provider.js';
 export {
   DEFAULT_PROVIDERS,
@@ -300,6 +316,7 @@ export type {
   ZaiCredentials,
   LMStudioCredentials,
   AzureFoundryCredentials,
+  HuggingFaceLocalCredentials,
   OAuthCredentials,
   ProviderCredentials,
   ToolSupportStatus,

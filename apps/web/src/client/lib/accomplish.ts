@@ -263,6 +263,52 @@ interface AccomplishAPI {
     } | null,
   ): Promise<void>;
 
+  // HuggingFace Local configuration
+  testHuggingFaceLocalConnection(url: string): Promise<{
+    success: boolean;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: ToolSupportStatus;
+    }>;
+    error?: string;
+  }>;
+  fetchHuggingFaceLocalModels(): Promise<{
+    success: boolean;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: ToolSupportStatus;
+    }>;
+    error?: string;
+  }>;
+  getHuggingFaceLocalConfig(): Promise<{
+    serverUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: ToolSupportStatus;
+    }>;
+  } | null>;
+  setHuggingFaceLocalConfig(
+    config: {
+      serverUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        displayName: string;
+        size: number;
+        toolSupport?: ToolSupportStatus;
+      }>;
+    } | null,
+  ): Promise<void>;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;

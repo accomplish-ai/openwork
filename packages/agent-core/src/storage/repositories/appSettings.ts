@@ -4,6 +4,7 @@ import type {
   LiteLLMConfig,
   AzureFoundryConfig,
   LMStudioConfig,
+  HuggingFaceLocalConfig,
 } from '../../common/types/provider.js';
 import type { ThemePreference } from '../../types/storage.js';
 import { getDatabase } from '../database.js';
@@ -18,6 +19,7 @@ interface AppSettingsRow {
   litellm_config: string | null;
   azure_foundry_config: string | null;
   lmstudio_config: string | null;
+  huggingface_local_config: string | null;
   openai_base_url: string | null;
   theme: string;
 }
@@ -30,6 +32,7 @@ export interface AppSettings {
   litellmConfig: LiteLLMConfig | null;
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
+  huggingfaceLocalConfig: HuggingFaceLocalConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
 }
@@ -140,6 +143,23 @@ export function setLMStudioConfig(config: LMStudioConfig | null): void {
   );
 }
 
+export function getHuggingFaceLocalConfig(): HuggingFaceLocalConfig | null {
+  const row = getRow();
+  if (!row.huggingface_local_config) return null;
+  try {
+    return JSON.parse(row.huggingface_local_config) as HuggingFaceLocalConfig;
+  } catch {
+    return null;
+  }
+}
+
+export function setHuggingFaceLocalConfig(config: HuggingFaceLocalConfig | null): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET huggingface_local_config = ? WHERE id = 1').run(
+    config ? JSON.stringify(config) : null,
+  );
+}
+
 export function getOpenAiBaseUrl(): string {
   const row = getRow();
   return row.openai_base_url || '';
@@ -179,6 +199,9 @@ export function getAppSettings(): AppSettings {
     litellmConfig: safeParseJsonWithFallback<LiteLLMConfig>(row.litellm_config),
     azureFoundryConfig: safeParseJsonWithFallback<AzureFoundryConfig>(row.azure_foundry_config),
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
+    huggingfaceLocalConfig: safeParseJsonWithFallback<HuggingFaceLocalConfig>(
+      row.huggingface_local_config,
+    ),
     openaiBaseUrl: row.openai_base_url || '',
     theme: VALID_THEMES.includes(row.theme as ThemePreference)
       ? (row.theme as ThemePreference)
@@ -197,6 +220,7 @@ export function clearAppSettings(): void {
       litellm_config = NULL,
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
+      huggingface_local_config = NULL,
       openai_base_url = '',
       theme = 'system'
     WHERE id = 1`,

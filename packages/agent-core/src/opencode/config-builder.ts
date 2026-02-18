@@ -12,6 +12,7 @@ import { ensureAzureFoundryProxy, ensureMoonshotProxy } from './proxies/index.js
 import {
   getOllamaConfig,
   getLMStudioConfig,
+  getHuggingFaceLocalConfig,
   getProviderSettings,
   getActiveProviderModel,
   getConnectedProviderIds,
@@ -448,6 +449,54 @@ export async function buildProviderConfigs(
         models,
       });
       console.log('[OpenCode Config Builder] LM Studio (legacy) configured:', Object.keys(models));
+    }
+  }
+
+  // HuggingFace Local provider
+  const hfLocalProvider = providerSettings.connectedProviders['huggingface-local'];
+  if (
+    hfLocalProvider?.connectionStatus === 'connected' &&
+    hfLocalProvider.credentials.type === 'huggingface-local' &&
+    hfLocalProvider.selectedModelId
+  ) {
+    const modelId = hfLocalProvider.selectedModelId.replace(/^huggingface-local\//, '');
+    const modelInfo = hfLocalProvider.availableModels?.find(
+      (m) => m.id === hfLocalProvider.selectedModelId || m.id === modelId,
+    );
+    const supportsTools = (modelInfo as { toolSupport?: string })?.toolSupport === 'supported';
+    providerConfigs.push({
+      id: 'huggingface-local',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'HuggingFace Local',
+      options: {
+        baseURL: `${hfLocalProvider.credentials.serverUrl}/v1`,
+      },
+      models: {
+        [modelId]: { name: modelId, tools: supportsTools },
+      },
+    });
+    console.log(
+      `[OpenCode Config Builder] HuggingFace Local configured: ${modelId} (tools: ${supportsTools})`,
+    );
+  } else {
+    const hfLocalConfig = getHuggingFaceLocalConfig();
+    const hfLocalModels = hfLocalConfig?.models;
+    if (hfLocalConfig?.enabled && hfLocalModels && hfLocalModels.length > 0) {
+      const models: Record<string, ProviderModelConfig> = {};
+      for (const model of hfLocalModels) {
+        models[model.id] = { name: model.displayName, tools: model.toolSupport === 'supported' };
+      }
+      providerConfigs.push({
+        id: 'huggingface-local',
+        npm: '@ai-sdk/openai-compatible',
+        name: 'HuggingFace Local',
+        options: { baseURL: `${hfLocalConfig.serverUrl}/v1` },
+        models,
+      });
+      console.log(
+        '[OpenCode Config Builder] HuggingFace Local (legacy) configured:',
+        Object.keys(models),
+      );
     }
   }
 
