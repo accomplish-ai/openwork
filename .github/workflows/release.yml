@@ -45,7 +45,7 @@ jobs:
       platforms: ${{ steps.inputs.outputs.platforms }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -236,7 +236,7 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
@@ -287,7 +287,7 @@ jobs:
     runs-on: macos-15-large
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
@@ -338,7 +338,7 @@ jobs:
   #   runs-on: windows-latest
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v6
   #       with:
   #         ref: v${{ needs.version-bump.outputs.new_version }}
   #
@@ -411,7 +411,7 @@ jobs:
           echo "All requested platform builds succeeded"
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.version-bump.outputs.new_version }}
 
