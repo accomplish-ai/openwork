@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CloudBrowserConfig, CloudBrowserCredentials } from '@accomplish_ai/agent-core/common';
 import { getAccomplish } from '@/lib/accomplish';
 
@@ -20,7 +20,7 @@ const DEFAULT_CREDS: CloudBrowserCredentials = {
 };
 
 export function CloudBrowsersPanel() {
-  const accomplish = getAccomplish();
+  const accomplish = useMemo(() => getAccomplish(), []);
   const [config, setConfig] = useState<CloudBrowserConfig>(DEFAULT_CONFIG);
   const [credentials, setCredentials] = useState<CloudBrowserCredentials>(DEFAULT_CREDS);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,9 @@ export function CloudBrowsersPanel() {
     (async () => {
       try {
         const result = await accomplish.getCloudBrowserSettings();
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         if (result.config) {
           setConfig({ ...DEFAULT_CONFIG, ...result.config });
         }
@@ -45,7 +47,9 @@ export function CloudBrowsersPanel() {
           setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to load cloud browser settings' });
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     })();
     return () => { mounted = false; };

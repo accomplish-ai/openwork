@@ -35,6 +35,35 @@ export function getCloudBrowserCredentials(): Record<string, string> | null {
   return getStorage().getCloudBrowserCredentials();
 }
 
+/**
+ * Migrate cdpSecret from legacy config to secure storage
+ * This should be called during app startup to ensure secrets are properly secured
+ */
+export function migrateCloudBrowserSecret(): void {
+  try {
+    const storage = getStorage();
+    const config = storage.getCloudBrowserConfig();
+    
+    if (config && 'cdpSecret' in config && (config as any).cdpSecret) {
+      const legacySecret = (config as any).cdpSecret;
+      const existingCreds = getCloudBrowserCredentials();
+      
+      // Store the secret in secure storage
+      storeCloudBrowserCredentials(JSON.stringify({
+        ...existingCreds,
+        cdpSecret: legacySecret,
+      }));
+      
+      // Remove secret from config
+      const { cdpSecret, ...configWithoutSecret } = config as any;
+      storage.setCloudBrowserConfig(configWithoutSecret);
+    }
+  } catch (error) {
+    // Silently ignore migration errors
+    console.warn('Failed to migrate cloud browser secret:', error);
+  }
+}
+
 export async function hasAnyApiKey(): Promise<boolean> {
   return getStorage().hasAnyApiKey();
 }

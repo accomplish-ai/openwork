@@ -204,12 +204,12 @@ export async function ensureCloudBrowserSession(): Promise<CloudBrowserSession> 
       createdAt: Date.now(),
     };
     sessionManager.setSession(session);
-    return sessionManager.getCurrentSession()!;
+    return session;
   }
 
   const session = await createSessionFromAgentCoreApi(config, credentials);
   sessionManager.setSession(session);
-  return sessionManager.getCurrentSession()!;
+  return session;
 }
 
 /**

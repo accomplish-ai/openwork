@@ -1,9 +1,25 @@
 import type { CloudBrowserConfig, CloudBrowserCredentials } from '@accomplish_ai/agent-core';
+import type { CloudBrowserSession } from './cloudBrowserAgentCore';
 
 export interface CloudBrowserProvider {
   name: string;
   validateConfig(config: CloudBrowserConfig): { valid: boolean; error?: string };
-  createSession?(config: CloudBrowserConfig, credentials: CloudBrowserCredentials | null): Promise<any>;
+  createSession?(config: CloudBrowserConfig, credentials: CloudBrowserCredentials | null): Promise<CloudBrowserSession>;
+}
+
+/**
+ * Validates that a URL uses HTTP or HTTPS protocol
+ */
+function validateHttpUrl(url: string, urlType: 'CDP endpoint' | 'AgentCore API URL'): { valid: boolean; error?: string } {
+  try {
+    const parsedUrl = new URL(url);
+    if (!['https:', 'http:'].includes(parsedUrl.protocol)) {
+      return { valid: false, error: `${urlType} must use HTTP or HTTPS protocol` };
+    }
+    return { valid: true };
+  } catch {
+    return { valid: false, error: `Invalid ${urlType} format` };
+  }
 }
 
 class AwsAgentCoreProvider implements CloudBrowserProvider {
@@ -27,24 +43,16 @@ class AwsAgentCoreProvider implements CloudBrowserProvider {
     }
 
     if (config.cdpEndpoint) {
-      try {
-        new URL(config.cdpEndpoint);
-        if (!['https:', 'http:'].includes(new URL(config.cdpEndpoint).protocol)) {
-          return { valid: false, error: 'CDP endpoint must use HTTP or HTTPS protocol' };
-        }
-      } catch {
-        return { valid: false, error: 'Invalid CDP endpoint URL format' };
+      const validation = validateHttpUrl(config.cdpEndpoint, 'CDP endpoint');
+      if (!validation.valid) {
+        return validation;
       }
     }
 
     if (config.agentCoreApiUrl) {
-      try {
-        new URL(config.agentCoreApiUrl);
-        if (!['https:', 'http:'].includes(new URL(config.agentCoreApiUrl).protocol)) {
-          return { valid: false, error: 'AgentCore API URL must use HTTP or HTTPS protocol' };
-        }
-      } catch {
-        return { valid: false, error: 'Invalid AgentCore API URL format' };
+      const validation = validateHttpUrl(config.agentCoreApiUrl, 'AgentCore API URL');
+      if (!validation.valid) {
+        return validation;
       }
     }
 
