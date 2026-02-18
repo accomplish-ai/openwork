@@ -1,12 +1,14 @@
 import crypto from 'crypto';
-import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
+import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
   getTaskManager,
+  disposeTaskManager,
   cleanupVertexServiceAccountKey,
 } from '../opencode';
 import { getLogCollector } from '../logging';
@@ -35,22 +37,19 @@ import {
   getBedrockCredentials,
 } from '../store/secureStorage';
 import {
+  testOllamaModelToolSupport,
   testOllamaConnection,
   testLMStudioConnection,
   fetchLMStudioModels,
   validateLMStudioConfig,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
-import { getOpenAiOauthStatus } from '@accomplish_ai/agent-core';
-import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
-import type {
-  ProviderId,
-  ConnectedProvider,
-  BedrockCredentials,
-  McpConnector,
-  OAuthMetadata,
-  OAuthClientRegistration,
+import { safeParseJson } from '@accomplish_ai/agent-core';
+import {
+  getOpenAiOauthStatus,
 } from '@accomplish_ai/agent-core';
+import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
+import type { ProviderId, ConnectedProvider, BedrockCredentials, McpConnector, OAuthMetadata, OAuthClientRegistration } from '@accomplish_ai/agent-core';
 import {
   discoverOAuthMetadata,
   registerOAuthClient,
@@ -58,6 +57,7 @@ import {
   buildAuthorizationUrl,
   exchangeCodeForTokens,
 } from '@accomplish_ai/agent-core';
+import { getDesktopConfig } from '../config';
 import {
   startPermissionApiServer,
   startQuestionApiServer,
@@ -75,20 +75,23 @@ import {
 import type {
   TaskConfig,
   PermissionResponse,
+  OpenCodeMessage,
   TaskMessage,
   SelectedModel,
   OllamaConfig,
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
+  ToolSupportStatus,
 } from '@accomplish_ai/agent-core';
+import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
-  DEFAULT_PROVIDERS,
-  ALLOWED_API_KEY_PROVIDERS,
-  STANDARD_VALIDATION_PROVIDERS,
-  ZAI_ENDPOINTS,
-} from '@accomplish_ai/agent-core';
-import { normalizeIpcError, permissionResponseSchema, validate } from './validation';
+  normalizeIpcError,
+  permissionResponseSchema,
+  resumeSessionSchema,
+  taskConfigSchema,
+  validate,
+} from './validation';
 import { createTaskCallbacks } from './task-callbacks';
 import {
   isMockTaskEventsEnabled,
@@ -124,7 +127,7 @@ function isE2ESkipAuthEnabled(): boolean {
 
 function handle<Args extends unknown[], ReturnType = unknown>(
   channel: string,
-  handler: (event: IpcMainInvokeEvent, ...args: Args) => ReturnType,
+  handler: (event: IpcMainInvokeEvent, ...args: Args) => ReturnType
 ): void {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
@@ -148,9 +151,7 @@ export function registerIPCHandlers(): void {
     const validatedConfig = validateTaskConfig(config);
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
-      throw new Error(
-        'No provider is ready. Please connect a provider and select a model in Settings.',
-      );
+      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
     }
 
     if (!permissionApiInitialized) {
@@ -299,67 +300,53 @@ export function registerIPCHandlers(): void {
     }
   });
 
-  handle(
-    'session:resume',
-    async (
-      event: IpcMainInvokeEvent,
-      sessionId: string,
-      prompt: string,
-      existingTaskId?: string,
-    ) => {
-      const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
-      const sender = event.sender;
-      const validatedSessionId = sanitizeString(sessionId, 'sessionId', 128);
-      const validatedPrompt = sanitizeString(prompt, 'prompt');
-      const validatedExistingTaskId = existingTaskId
-        ? sanitizeString(existingTaskId, 'taskId', 128)
-        : undefined;
+  handle('session:resume', async (event: IpcMainInvokeEvent, sessionId: string, prompt: string, existingTaskId?: string) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const sender = event.sender;
+    const validatedSessionId = sanitizeString(sessionId, 'sessionId', 128);
+    const validatedPrompt = sanitizeString(prompt, 'prompt');
+    const validatedExistingTaskId = existingTaskId
+      ? sanitizeString(existingTaskId, 'taskId', 128)
+      : undefined;
 
-      if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
-        throw new Error(
-          'No provider is ready. Please connect a provider and select a model in Settings.',
-        );
-      }
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
+      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
+    }
 
-      const taskId = validatedExistingTaskId || createTaskId();
+    const taskId = validatedExistingTaskId || createTaskId();
 
-      if (validatedExistingTaskId) {
-        const userMessage: TaskMessage = {
-          id: createMessageId(),
-          type: 'user',
-          content: validatedPrompt,
-          timestamp: new Date().toISOString(),
-        };
-        storage.addTaskMessage(validatedExistingTaskId, userMessage);
-      }
+    if (validatedExistingTaskId) {
+      const userMessage: TaskMessage = {
+        id: createMessageId(),
+        type: 'user',
+        content: validatedPrompt,
+        timestamp: new Date().toISOString(),
+      };
+      storage.addTaskMessage(validatedExistingTaskId, userMessage);
+    }
 
-      const activeModelForResume = storage.getActiveProviderModel();
-      const selectedModelForResume = activeModelForResume || storage.getSelectedModel();
+    const activeModelForResume = storage.getActiveProviderModel();
+    const selectedModelForResume = activeModelForResume || storage.getSelectedModel();
 
-      const callbacks = createTaskCallbacks({
-        taskId,
-        window,
-        sender,
-      });
+    const callbacks = createTaskCallbacks({
+      taskId,
+      window,
+      sender,
+    });
 
-      const task = await taskManager.startTask(
-        taskId,
-        {
-          prompt: validatedPrompt,
-          sessionId: validatedSessionId,
-          taskId,
-          modelId: selectedModelForResume?.model,
-        },
-        callbacks,
-      );
+    const task = await taskManager.startTask(taskId, {
+      prompt: validatedPrompt,
+      sessionId: validatedSessionId,
+      taskId,
+      modelId: selectedModelForResume?.model,
+    }, callbacks);
 
-      if (validatedExistingTaskId) {
-        storage.updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
-      }
+    if (validatedExistingTaskId) {
+      storage.updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
+    }
 
-      return task;
-    },
-  );
+    return task;
+  });
 
   handle('settings:api-keys', async (_event: IpcMainInvokeEvent) => {
     const storedKeys = await getAllApiKeys();
@@ -393,7 +380,8 @@ export function registerIPCHandlers(): void {
             keyPrefix = 'GCP Credentials';
           }
         } else {
-          keyPrefix = apiKey && apiKey.length > 0 ? `${apiKey.substring(0, 8)}...` : '';
+          keyPrefix =
+            apiKey && apiKey.length > 0 ? `${apiKey.substring(0, 8)}...` : '';
         }
 
         const labelMap: Record<string, string> = {
@@ -447,7 +435,7 @@ export function registerIPCHandlers(): void {
         isActive: true,
         createdAt: new Date().toISOString(),
       };
-    },
+    }
   );
 
   handle('settings:remove-api-key', async (_event: IpcMainInvokeEvent, id: string) => {
@@ -487,76 +475,58 @@ export function registerIPCHandlers(): void {
     return result;
   });
 
-  handle(
-    'api-key:validate-provider',
-    async (
-      _event: IpcMainInvokeEvent,
-      provider: string,
-      key: string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      options?: Record<string, any>,
-    ) => {
-      if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
-        return { valid: false, error: 'Unsupported provider' };
+  handle('api-key:validate-provider', async (_event: IpcMainInvokeEvent, provider: string, key: string, options?: Record<string, any>) => {
+    if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
+      return { valid: false, error: 'Unsupported provider' };
+    }
+
+    console.log(`[API Key] Validation requested for provider: ${provider}`);
+
+    if (STANDARD_VALIDATION_PROVIDERS.has(provider)) {
+      let sanitizedKey: string;
+      try {
+        sanitizedKey = sanitizeString(key, 'apiKey', 256);
+      } catch (e) {
+        return { valid: false, error: e instanceof Error ? e.message : 'Invalid API key' };
       }
 
-      console.log(`[API Key] Validation requested for provider: ${provider}`);
+      const result = await validateApiKey(provider as import('@accomplish_ai/agent-core').ProviderType, sanitizedKey, {
+        timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+        baseUrl: provider === 'openai' ? storage.getOpenAiBaseUrl().trim() || undefined : undefined,
+        zaiRegion: provider === 'zai' ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) || 'international' : undefined,
+      });
 
-      if (STANDARD_VALIDATION_PROVIDERS.has(provider)) {
-        let sanitizedKey: string;
-        try {
-          sanitizedKey = sanitizeString(key, 'apiKey', 256);
-        } catch (e) {
-          return { valid: false, error: e instanceof Error ? e.message : 'Invalid API key' };
-        }
-
-        const result = await validateApiKey(
-          provider as import('@accomplish_ai/agent-core').ProviderType,
-          sanitizedKey,
-          {
-            timeout: API_KEY_VALIDATION_TIMEOUT_MS,
-            baseUrl:
-              provider === 'openai' ? storage.getOpenAiBaseUrl().trim() || undefined : undefined,
-            zaiRegion:
-              provider === 'zai'
-                ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) ||
-                  'international'
-                : undefined,
-          },
-        );
-
-        if (result.valid) {
-          console.log(`[API Key] Validation succeeded for ${provider}`);
-        } else {
-          console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
-        }
-
-        return result;
+      if (result.valid) {
+        console.log(`[API Key] Validation succeeded for ${provider}`);
+      } else {
+        console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
       }
 
-      if (provider === 'azure-foundry') {
-        const config = storage.getAzureFoundryConfig();
-        const result = await validateAzureFoundry(config, {
-          apiKey: key,
-          baseUrl: options?.baseUrl,
-          deploymentName: options?.deploymentName,
-          authType: options?.authType,
-          timeout: API_KEY_VALIDATION_TIMEOUT_MS,
-        });
+      return result;
+    }
 
-        if (result.valid) {
-          console.log(`[API Key] Validation succeeded for ${provider}`);
-        } else {
-          console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
-        }
+    if (provider === 'azure-foundry') {
+      const config = storage.getAzureFoundryConfig();
+      const result = await validateAzureFoundry(config, {
+        apiKey: key,
+        baseUrl: options?.baseUrl,
+        deploymentName: options?.deploymentName,
+        authType: options?.authType,
+        timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+      });
 
-        return result;
+      if (result.valid) {
+        console.log(`[API Key] Validation succeeded for ${provider}`);
+      } else {
+        console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
       }
 
-      console.log(`[API Key] Skipping validation for ${provider} (local/custom provider)`);
-      return { valid: true };
-    },
-  );
+      return result;
+    }
+
+    console.log(`[API Key] Skipping validation for ${provider} (local/custom provider)`);
+    return { valid: true };
+  });
 
   handle('bedrock:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
     console.log('[Bedrock] Validation requested');
@@ -693,11 +663,7 @@ export function registerIPCHandlers(): void {
           throw new Error('Invalid Ollama configuration: models must be an array');
         }
         for (const model of config.models) {
-          if (
-            typeof model.id !== 'string' ||
-            typeof model.displayName !== 'string' ||
-            typeof model.size !== 'number'
-          ) {
+          if (typeof model.id !== 'string' || typeof model.displayName !== 'string' || typeof model.size !== 'number') {
             throw new Error('Invalid Ollama configuration: invalid model format');
           }
         }
@@ -710,101 +676,77 @@ export function registerIPCHandlers(): void {
     return storage.getAzureFoundryConfig();
   });
 
-  handle(
-    'azure-foundry:set-config',
-    async (_event: IpcMainInvokeEvent, config: AzureFoundryConfig | null) => {
-      if (config !== null) {
-        if (typeof config.baseUrl !== 'string' || !config.baseUrl.trim()) {
-          throw new Error('Invalid Azure Foundry configuration: baseUrl is required');
-        }
-        if (typeof config.deploymentName !== 'string' || !config.deploymentName.trim()) {
-          throw new Error('Invalid Azure Foundry configuration: deploymentName is required');
-        }
-        if (config.authType !== 'api-key' && config.authType !== 'entra-id') {
-          throw new Error(
-            'Invalid Azure Foundry configuration: authType must be api-key or entra-id',
-          );
-        }
-        if (typeof config.enabled !== 'boolean') {
-          throw new Error('Invalid Azure Foundry configuration: enabled must be a boolean');
-        }
-        try {
-          validateHttpUrl(config.baseUrl, 'Azure Foundry base URL');
-        } catch {
-          throw new Error('Invalid Azure Foundry configuration: Invalid base URL format');
-        }
+  handle('azure-foundry:set-config', async (_event: IpcMainInvokeEvent, config: AzureFoundryConfig | null) => {
+    if (config !== null) {
+      if (typeof config.baseUrl !== 'string' || !config.baseUrl.trim()) {
+        throw new Error('Invalid Azure Foundry configuration: baseUrl is required');
       }
-      storage.setAzureFoundryConfig(config);
-    },
-  );
-
-  handle(
-    'azure-foundry:test-connection',
-    async (
-      _event: IpcMainInvokeEvent,
-      config: {
-        endpoint: string;
-        deploymentName: string;
-        authType: 'api-key' | 'entra-id';
-        apiKey?: string;
-      },
-    ) => {
-      return testAzureFoundryConnection({
-        endpoint: config.endpoint,
-        deploymentName: config.deploymentName,
-        authType: config.authType,
-        apiKey: config.apiKey,
-        timeout: API_KEY_VALIDATION_TIMEOUT_MS,
-      });
-    },
-  );
-
-  handle(
-    'azure-foundry:save-config',
-    async (
-      _event: IpcMainInvokeEvent,
-      config: {
-        endpoint: string;
-        deploymentName: string;
-        authType: 'api-key' | 'entra-id';
-        apiKey?: string;
-      },
-    ) => {
-      const { endpoint, deploymentName, authType, apiKey } = config;
-
-      if (authType === 'api-key' && apiKey) {
-        storeApiKey('azure-foundry', apiKey);
+      if (typeof config.deploymentName !== 'string' || !config.deploymentName.trim()) {
+        throw new Error('Invalid Azure Foundry configuration: deploymentName is required');
       }
+      if (config.authType !== 'api-key' && config.authType !== 'entra-id') {
+        throw new Error('Invalid Azure Foundry configuration: authType must be api-key or entra-id');
+      }
+      if (typeof config.enabled !== 'boolean') {
+        throw new Error('Invalid Azure Foundry configuration: enabled must be a boolean');
+      }
+      try {
+        validateHttpUrl(config.baseUrl, 'Azure Foundry base URL');
+      } catch {
+        throw new Error('Invalid Azure Foundry configuration: Invalid base URL format');
+      }
+    }
+    storage.setAzureFoundryConfig(config);
+  });
 
-      const azureConfig: AzureFoundryConfig = {
-        baseUrl: endpoint,
-        deploymentName,
-        authType,
-        enabled: true,
-        lastValidated: Date.now(),
-      };
-      storage.setAzureFoundryConfig(azureConfig);
+  handle('azure-foundry:test-connection', async (
+    _event: IpcMainInvokeEvent,
+    config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }
+  ) => {
+    return testAzureFoundryConnection({
+      endpoint: config.endpoint,
+      deploymentName: config.deploymentName,
+      authType: config.authType,
+      apiKey: config.apiKey,
+      timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+    });
+  });
 
-      console.log('[Azure Foundry] Config saved for new provider settings:', {
-        endpoint,
-        deploymentName,
-        authType,
-        hasApiKey: !!apiKey,
-      });
-    },
-  );
+  handle('azure-foundry:save-config', async (
+    _event: IpcMainInvokeEvent,
+    config: { endpoint: string; deploymentName: string; authType: 'api-key' | 'entra-id'; apiKey?: string }
+  ) => {
+    const { endpoint, deploymentName, authType, apiKey } = config;
+
+    if (authType === 'api-key' && apiKey) {
+      storeApiKey('azure-foundry', apiKey);
+    }
+
+    const azureConfig: AzureFoundryConfig = {
+      baseUrl: endpoint,
+      deploymentName,
+      authType,
+      enabled: true,
+      lastValidated: Date.now(),
+    };
+    storage.setAzureFoundryConfig(azureConfig);
+
+    console.log('[Azure Foundry] Config saved for new provider settings:', {
+      endpoint,
+      deploymentName,
+      authType,
+      hasApiKey: !!apiKey,
+    });
+  });
 
   handle('openrouter:fetch-models', async (_event: IpcMainInvokeEvent) => {
     const apiKey = getApiKey('openrouter');
     return fetchOpenRouterModels(apiKey || '', API_KEY_VALIDATION_TIMEOUT_MS);
   });
 
-  handle(
-    'litellm:test-connection',
-    async (_event: IpcMainInvokeEvent, url: string, apiKey?: string) => {
-      return testLiteLLMConnection(url, apiKey);
-    },
-  );
+  handle('litellm:test-connection', async (_event: IpcMainInvokeEvent, url: string, apiKey?: string) => {
+    return testLiteLLMConnection(url, apiKey);
+  });
 
   handle('litellm:fetch-models', async (_event: IpcMainInvokeEvent) => {
     const config = storage.getLiteLLMConfig();
@@ -830,11 +772,7 @@ export function registerIPCHandlers(): void {
           throw new Error('Invalid LiteLLM configuration: models must be an array');
         }
         for (const model of config.models) {
-          if (
-            typeof model.id !== 'string' ||
-            typeof model.name !== 'string' ||
-            typeof model.provider !== 'string'
-          ) {
+          if (typeof model.id !== 'string' || typeof model.name !== 'string' || typeof model.provider !== 'string') {
             throw new Error('Invalid LiteLLM configuration: invalid model format');
           }
         }
@@ -860,50 +798,40 @@ export function registerIPCHandlers(): void {
     return storage.getLMStudioConfig();
   });
 
-  handle(
-    'lmstudio:set-config',
-    async (_event: IpcMainInvokeEvent, config: LMStudioConfig | null) => {
-      if (config !== null) {
-        validateLMStudioConfig(config);
-      }
-      storage.setLMStudioConfig(config);
-    },
-  );
+  handle('lmstudio:set-config', async (_event: IpcMainInvokeEvent, config: LMStudioConfig | null) => {
+    if (config !== null) {
+      validateLMStudioConfig(config);
+    }
+    storage.setLMStudioConfig(config);
+  });
 
-  handle(
-    'provider:fetch-models',
-    async (
-      _event: IpcMainInvokeEvent,
-      providerId: string,
-      options?: { baseUrl?: string; zaiRegion?: string },
-    ) => {
-      const providerConfig = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
-      if (!providerConfig?.modelsEndpoint) {
-        return { success: false, error: 'No models endpoint configured for this provider' };
-      }
+  handle('provider:fetch-models', async (_event: IpcMainInvokeEvent, providerId: string, options?: { baseUrl?: string; zaiRegion?: string }) => {
+    const providerConfig = DEFAULT_PROVIDERS.find(p => p.id === providerId);
+    if (!providerConfig?.modelsEndpoint) {
+      return { success: false, error: 'No models endpoint configured for this provider' };
+    }
 
-      const apiKey = getApiKey(providerId);
-      if (!apiKey) {
-        return { success: false, error: 'No API key found for this provider' };
-      }
+    const apiKey = getApiKey(providerId);
+    if (!apiKey) {
+      return { success: false, error: 'No API key found for this provider' };
+    }
 
-      let urlOverride: string | undefined;
-      if (providerId === 'openai' && options?.baseUrl) {
-        urlOverride = `${options.baseUrl.replace(/\/+$/, '')}/models`;
-      }
-      if (providerId === 'zai' && options?.zaiRegion) {
-        const region = options.zaiRegion as import('@accomplish_ai/agent-core').ZaiRegion;
-        urlOverride = `${ZAI_ENDPOINTS[region]}/models`;
-      }
+    let urlOverride: string | undefined;
+    if (providerId === 'openai' && options?.baseUrl) {
+      urlOverride = `${options.baseUrl.replace(/\/+$/, '')}/models`;
+    }
+    if (providerId === 'zai' && options?.zaiRegion) {
+      const region = options.zaiRegion as import('@accomplish_ai/agent-core').ZaiRegion;
+      urlOverride = `${ZAI_ENDPOINTS[region]}/models`;
+    }
 
-      return fetchProviderModels({
-        endpointConfig: providerConfig.modelsEndpoint,
-        apiKey,
-        urlOverride,
-        timeout: API_KEY_VALIDATION_TIMEOUT_MS,
-      });
-    },
-  );
+    return fetchProviderModels({
+      endpointConfig: providerConfig.modelsEndpoint,
+      apiKey,
+      urlOverride,
+      timeout: API_KEY_VALIDATION_TIMEOUT_MS,
+    });
+  });
 
   handle('api-keys:all', async (_event: IpcMainInvokeEvent) => {
     const keys = await getAllApiKeys();
@@ -951,8 +879,9 @@ export function registerIPCHandlers(): void {
     storage.setTheme(theme as 'system' | 'light' | 'dark');
     nativeTheme.themeSource = theme as 'system' | 'light' | 'dark';
 
-    const resolved =
-      theme === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : theme;
+    const resolved = theme === 'system'
+      ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      : theme;
 
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:theme-changed', { theme, resolved });
@@ -1025,12 +954,9 @@ export function registerIPCHandlers(): void {
 
   handle(
     'log:event',
-    async (
-      _event: IpcMainInvokeEvent,
-      _payload: { level?: string; message?: string; context?: Record<string, unknown> },
-    ) => {
+    async (_event: IpcMainInvokeEvent, _payload: { level?: string; message?: string; context?: Record<string, unknown> }) => {
       return { ok: true };
-    },
+    }
   );
 
   handle('speech:is-configured', async (_event: IpcMainInvokeEvent) => {
@@ -1050,60 +976,42 @@ export function registerIPCHandlers(): void {
     return validateElevenLabsApiKey(apiKey);
   });
 
-  handle(
-    'speech:transcribe',
-    async (_event: IpcMainInvokeEvent, audioData: ArrayBuffer, mimeType?: string) => {
-      console.log('[IPC] speech:transcribe received:', {
-        audioDataType: typeof audioData,
-        audioDataByteLength: audioData?.byteLength,
-        mimeType,
-      });
-      const buffer = Buffer.from(audioData);
-      console.log('[IPC] Converted to buffer:', { bufferLength: buffer.length });
-      return transcribeAudio(buffer, mimeType);
-    },
-  );
+  handle('speech:transcribe', async (_event: IpcMainInvokeEvent, audioData: ArrayBuffer, mimeType?: string) => {
+    console.log('[IPC] speech:transcribe received:', {
+      audioDataType: typeof audioData,
+      audioDataByteLength: audioData?.byteLength,
+      mimeType,
+    });
+    const buffer = Buffer.from(audioData);
+    console.log('[IPC] Converted to buffer:', { bufferLength: buffer.length });
+    return transcribeAudio(buffer, mimeType);
+  });
   handle('provider-settings:get', async () => {
     return storage.getProviderSettings();
   });
 
-  handle(
-    'provider-settings:set-active',
-    async (_event: IpcMainInvokeEvent, providerId: ProviderId | null) => {
-      storage.setActiveProvider(providerId);
-    },
-  );
+  handle('provider-settings:set-active', async (_event: IpcMainInvokeEvent, providerId: ProviderId | null) => {
+    storage.setActiveProvider(providerId);
+  });
 
-  handle(
-    'provider-settings:get-connected',
-    async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-      return storage.getConnectedProvider(providerId);
-    },
-  );
+  handle('provider-settings:get-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
+    return storage.getConnectedProvider(providerId);
+  });
 
-  handle(
-    'provider-settings:set-connected',
-    async (_event: IpcMainInvokeEvent, providerId: ProviderId, provider: ConnectedProvider) => {
-      storage.setConnectedProvider(providerId, provider);
-    },
-  );
+  handle('provider-settings:set-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId, provider: ConnectedProvider) => {
+    storage.setConnectedProvider(providerId, provider);
+  });
 
-  handle(
-    'provider-settings:remove-connected',
-    async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
-      storage.removeConnectedProvider(providerId);
-      if (providerId === 'vertex') {
-        cleanupVertexServiceAccountKey();
-      }
-    },
-  );
+  handle('provider-settings:remove-connected', async (_event: IpcMainInvokeEvent, providerId: ProviderId) => {
+    storage.removeConnectedProvider(providerId);
+    if (providerId === 'vertex') {
+      cleanupVertexServiceAccountKey();
+    }
+  });
 
-  handle(
-    'provider-settings:update-model',
-    async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
-      storage.updateProviderModel(providerId, modelId);
-    },
-  );
+  handle('provider-settings:update-model', async (_event: IpcMainInvokeEvent, providerId: ProviderId, modelId: string | null) => {
+    storage.updateProviderModel(providerId, modelId);
+  });
 
   handle('provider-settings:set-debug', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
     storage.setProviderDebugMode(enabled);
@@ -1153,6 +1061,163 @@ export function registerIPCHandlers(): void {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, error: message };
     }
+  });
+
+  // Bug Report Generation
+  handle('bug-report:generate', async (event: IpcMainInvokeEvent, taskId: string, reportLogs?: Array<{ timestamp: string; type: string; message: string; data?: unknown }>) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const sanitizedTaskId = sanitizeString(taskId, 'taskId', 128);
+
+    try {
+      const screenshot = await window.capturePage();
+      const screenshotBase64 = screenshot.toDataURL();
+
+      const axtree = await window.webContents.executeJavaScript(`
+        (function() {
+          function serializeNode(node) {
+            if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+              return null;
+            }
+            const element = node;
+            const result = {
+              tag: element.tagName.toLowerCase(),
+              role: element.getAttribute('role') || '',
+              ariaLabel: element.getAttribute('aria-label') || '',
+              testId: element.getAttribute('data-testid') || '',
+              text: element.textContent ? element.textContent.slice(0, 100) : '',
+              id: element.id || '',
+              children: []
+            };
+            for (let i = 0; i < Math.min(element.children.length, 20); i++) {
+              const child = serializeNode(element.children[i]);
+              if (child) {
+                result.children.push(child);
+              }
+            }
+            return result;
+          }
+          if (!document.body) { return '{}'; }
+          return serializeNode(document.body);
+        })()
+      `);
+
+      const task = storage.getTask(sanitizedTaskId);
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      const debugLogs = reportLogs ?? [];
+
+      const report = {
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        appVersion: app.getVersion(),
+        platform: {
+          os: process.platform,
+          arch: process.arch,
+          nodeVersion: process.version,
+          electronVersion: process.versions.electron,
+        },
+        task: {
+          id: task.id,
+          prompt: task.prompt,
+          status: task.status,
+          createdAt: task.createdAt,
+          completedAt: task.completedAt,
+          messageCount: task.messages?.length || 0,
+          lastMessage: task.messages?.[task.messages.length - 1],
+        },
+        screenshot: screenshotBase64,
+        accessibilityTree: axtree,
+        debugLogs: debugLogs.map((log) => ({
+          timestamp: log.timestamp,
+          type: log.type,
+          message: log.message,
+          data: log.data,
+        })),
+        provider: {
+          active: storage.getActiveProviderModel(),
+          selected: storage.getSelectedModel(),
+        },
+      };
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const defaultFilename = `bug-report-${sanitizedTaskId}-${timestamp}.json`;
+
+      const result = await dialog.showSaveDialog(window, {
+        title: 'Save Bug Report',
+        defaultPath: defaultFilename,
+        filters: [
+          { name: 'JSON Files', extensions: ['json'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, reason: 'cancelled' };
+      }
+
+      const parsed = path.parse(result.filePath);
+      const reportPath = path.join(parsed.dir, `${parsed.name}.json`);
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      return { success: true, path: reportPath };
+    } catch (error) {
+      console.error('[Bug Report] Generation failed:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
+    }
+  });
+
+  handle('task:repeat', async (event: IpcMainInvokeEvent, taskId: string) => {
+    const sanitizedTaskId = sanitizeString(taskId, 'taskId', 128);
+    const task = storage.getTask(sanitizedTaskId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const sender = event.sender;
+
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
+      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
+    }
+
+    const newTaskId = createTaskId();
+    const config: TaskConfig = {
+      prompt: task.prompt,
+      taskId: newTaskId,
+    };
+
+    const activeModel = storage.getActiveProviderModel();
+    const selectedModel = activeModel || storage.getSelectedModel();
+    if (selectedModel?.model) {
+      config.modelId = selectedModel.model;
+    }
+
+    const callbacks = createTaskCallbacks({ taskId: newTaskId, window, sender });
+    const newTask = await taskManager.startTask(newTaskId, config, callbacks);
+
+    const initialUserMessage: TaskMessage = {
+      id: createMessageId(),
+      type: 'user',
+      content: config.prompt,
+      timestamp: new Date().toISOString(),
+    };
+    newTask.messages = [initialUserMessage];
+    storage.saveTask(newTask);
+
+    generateTaskSummary(config.prompt, getApiKey)
+      .then((summary) => {
+        storage.updateTaskSummary(newTaskId, summary);
+        if (!window.isDestroyed() && !sender.isDestroyed()) {
+          sender.send('task:summary', { taskId: newTaskId, summary });
+        }
+      })
+      .catch((err) => {
+        console.warn('[IPC] Failed to generate task summary:', err);
+      });
+
+    return newTask;
   });
 
   handle('skills:list', async () => {
@@ -1232,7 +1297,7 @@ export function registerIPCHandlers(): void {
       throw new Error(
         err instanceof Error && err.message.includes('http')
           ? err.message
-          : `Invalid connector URL: ${sanitizedUrl}`,
+          : `Invalid connector URL: ${sanitizedUrl}`
       );
     }
 

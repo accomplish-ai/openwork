@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
-import { Bug, ChevronUp, ChevronDown, Download, Trash2, Check, Search } from 'lucide-react';
+import { Bug, ChevronUp, ChevronDown, Download, Trash2, Check, Search, Play, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getAccomplish } from '@/lib/accomplish';
 
 export interface DebugLogEntry {
   taskId: string;
@@ -16,11 +18,17 @@ interface DebugPanelProps {
   debugLogs: DebugLogEntry[];
   taskId: string | undefined;
   onClearLogs: () => void;
+  isTaskComplete?: boolean;
 }
 
-export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) {
+export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: DebugPanelProps) {
+  const navigate = useNavigate();
+  const accomplish = getAccomplish();
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
   const [debugExported, setDebugExported] = useState(false);
+  const [bugReportStatus, setBugReportStatus] = useState<'idle' | 'generating' | 'success' | 'error'>('idle');
+  const [bugReportGenerating, setBugReportGenerating] = useState(false);
+  const [repeatTaskLoading, setRepeatTaskLoading] = useState(false);
   const [debugSearchQuery, setDebugSearchQuery] = useState('');
   const [debugSearchIndex, setDebugSearchIndex] = useState(0);
   const debugPanelRef = useRef<HTMLDivElement>(null);
@@ -93,6 +101,67 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
     );
   }, []);
 
+  const getBugReportLabel = useCallback(() => {
+    if (bugReportStatus === 'generating') {
+      return 'Generating...';
+    }
+    if (bugReportStatus === 'success') {
+      return 'Saved!';
+    }
+    if (bugReportStatus === 'error') {
+      return 'Error';
+    }
+    return 'Bug Report';
+  }, [bugReportStatus]);
+
+  const handleGenerateBugReport = useCallback(async () => {
+    if (!taskId || bugReportGenerating) {
+      return;
+    }
+    setBugReportGenerating(true);
+    setBugReportStatus('generating');
+    try {
+      const result = await accomplish.generateBugReport!(taskId, debugLogs);
+      if (result.success) {
+        setBugReportStatus('success');
+        setTimeout(() => {
+          setBugReportStatus('idle');
+        }, 2000);
+      } else if (result.reason === 'cancelled') {
+        setBugReportStatus('idle');
+      } else {
+        console.error('[Bug Report] Generation failed:', result.error);
+        setBugReportStatus('error');
+        setTimeout(() => {
+          setBugReportStatus('idle');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('[Bug Report] Generation failed:', error);
+      setBugReportStatus('error');
+      setTimeout(() => {
+        setBugReportStatus('idle');
+      }, 3000);
+    } finally {
+      setBugReportGenerating(false);
+    }
+  }, [taskId, bugReportGenerating, accomplish, debugLogs]);
+
+  const handleRepeatTask = useCallback(async () => {
+    if (!taskId || repeatTaskLoading) {
+      return;
+    }
+    setRepeatTaskLoading(true);
+    try {
+      const newTask = (await accomplish.repeatTask!(taskId)) as { id: string };
+      navigate(`/execution/${newTask.id}`);
+    } catch (error) {
+      console.error('[Repeat Task] Failed:', error);
+    } finally {
+      setRepeatTaskLoading(false);
+    }
+  }, [taskId, repeatTaskLoading, accomplish, navigate]);
+
   const handleExportDebugLogs = useCallback(() => {
     const text = debugLogs
       .map((log) => {
@@ -146,6 +215,53 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
         <div className="flex items-center gap-2">
           {debugLogs.length > 0 && (
             <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-6 px-2 text-xs hover:bg-zinc-700',
+                  bugReportStatus === 'success'
+                    ? 'text-green-400 hover:text-green-300'
+                    : bugReportStatus === 'error'
+                      ? 'text-red-400 hover:text-red-300'
+                      : 'text-zinc-400 hover:text-zinc-200',
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleGenerateBugReport();
+                }}
+                disabled={bugReportGenerating}
+                data-testid="debug-bug-report-button"
+              >
+                {bugReportStatus === 'success' ? (
+                  <Check className="h-3 w-3 mr-1" />
+                ) : bugReportStatus === 'generating' ? (
+                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Bug className="h-3 w-3 mr-1" />
+                )}
+                {getBugReportLabel()}
+              </Button>
+              {isTaskComplete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleRepeatTask();
+                  }}
+                  disabled={repeatTaskLoading}
+                  data-testid="debug-repeat-task-button"
+                >
+                  {repeatTaskLoading ? (
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Play className="h-3 w-3 mr-1" />
+                  )}
+                  Repeat Task
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
