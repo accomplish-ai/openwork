@@ -237,19 +237,13 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.emit('debug', { type: 'info', message: cwdMsg });
 
     {
-      const fullCommand = this.buildShellCommand(command, allArgs);
+      const { file: spawnFile, args: spawnArgs } = this.buildPtySpawnArgs(command, allArgs);
 
-      const shellCmdMsg = `Full shell command: ${fullCommand}`;
-      console.log('[OpenCode CLI]', shellCmdMsg);
-      this.emit('debug', { type: 'info', message: shellCmdMsg });
+      const spawnMsg = `PTY spawn: ${spawnFile} ${spawnArgs.join(' ')}`;
+      console.log('[OpenCode CLI]', spawnMsg);
+      this.emit('debug', { type: 'info', message: spawnMsg });
 
-      const shellCmd = this.getPlatformShell();
-      const shellArgs = this.getShellArgs(fullCommand);
-      const shellMsg = `Using shell: ${shellCmd} ${shellArgs.join(' ')}`;
-      console.log('[OpenCode CLI]', shellMsg);
-      this.emit('debug', { type: 'info', message: shellMsg });
-
-      this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
+      this.ptyProcess = pty.spawn(spawnFile, spawnArgs, {
         name: 'xterm-256color',
         cols: 32000,
         rows: 30,
@@ -739,12 +733,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const allArgs = [...baseArgs, ...cliArgs];
     const safeCwd = config.workingDirectory || this.options.tempPath;
 
-    const fullCommand = this.buildShellCommand(command, allArgs);
+    const { file: spawnFile, args: spawnArgs } = this.buildPtySpawnArgs(command, allArgs);
 
-    const shellCmd = this.getPlatformShell();
-    const shellArgs = this.getShellArgs(fullCommand);
-
-    this.ptyProcess = pty.spawn(shellCmd, shellArgs, {
+    this.ptyProcess = pty.spawn(spawnFile, spawnArgs, {
       name: 'xterm-256color',
       cols: 32000,
       rows: 30,
@@ -850,33 +841,28 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     console.log('[OpenCode Adapter] Emitted synthetic plan message');
   }
 
-  private getPlatformShell(): string {
+  private buildPtySpawnArgs(command: string, args: string[]): { file: string; args: string[] } {
     if (this.options.platform === 'win32') {
-      return 'cmd.exe';
-    } else if (this.options.isPackaged && this.options.platform === 'darwin') {
-      return '/bin/sh';
-    } else {
-      const userShell = process.env.SHELL;
-      if (userShell) {
-        return userShell;
+      // Windows policy: always spawn the real .exe, never cmd wrappers.
+      if (command.toLowerCase().endsWith('.exe')) {
+        return { file: command, args };
       }
-      if (fs.existsSync('/bin/bash')) return '/bin/bash';
-      if (fs.existsSync('/bin/zsh')) return '/bin/zsh';
-      return '/bin/sh';
-    }
-  }
 
-  private getShellArgs(command: string): string[] {
-    if (this.options.platform === 'win32') {
-      // cmd.exe /s /c strips the outermost pair of double quotes from the
-      // command string. When the executable path contains spaces (e.g.
-      // C:\Users\Li Yao\...\opencode.exe), wrapping the whole command in
-      // an additional pair of double quotes preserves inner quotes.
-      // See: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmd
-      return ['/s', '/c', `"${command}"`];
-    } else {
-      return ['-c', command];
+      throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
     }
+
+    const shell =
+      this.options.isPackaged && this.options.platform === 'darwin'
+        ? '/bin/sh'
+        : process.env.SHELL ||
+          (fs.existsSync('/bin/bash')
+            ? '/bin/bash'
+            : fs.existsSync('/bin/zsh')
+              ? '/bin/zsh'
+              : '/bin/sh');
+
+    const fullCommand = this.buildShellCommand(command, args);
+    return { file: shell, args: ['-c', fullCommand] };
   }
 }
 
