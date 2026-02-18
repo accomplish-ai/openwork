@@ -132,6 +132,10 @@ export async function buildProviderConfigs(
     'amazon-bedrock',
     'vertex',
     'minimax',
+    'nebius',
+    'together',
+    'fireworks',
+    'groq',
   ];
   let enabledProviders = baseProviders;
 
@@ -545,6 +549,10 @@ const _AUTH_KEY_MAPPING: Record<string, string> = {
   deepseek: 'deepseek',
   zai: 'zai-coding-plan',
   minimax: 'minimax',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };
 
 /**
