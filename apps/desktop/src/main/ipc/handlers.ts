@@ -1212,6 +1212,21 @@ export function registerIPCHandlers(): void {
     shell.showItemInFolder(filePath);
   });
 
+  // ── Daemon / Background Mode ────────────────────────────────────────
+
+  handle('daemon:get-run-in-background', async () => {
+    return storage.getRunInBackground();
+  });
+
+  handle('daemon:set-run-in-background', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    storage.setRunInBackground(enabled);
+  });
+
+  handle('daemon:get-socket-path', async () => {
+    const { getSocketPath } = await import('../daemon/server');
+    return getSocketPath();
+  });
+
   // ── MCP Connectors ──────────────────────────────────────────────────
 
   handle('connectors:list', async () => {

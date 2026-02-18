@@ -36,6 +36,14 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { initTray, destroyTray } from './tray';
+import {
+  startDaemonServer,
+  stopDaemonServer,
+  registerMethod,
+  getSocketPath,
+} from './daemon/server';
+import { getTaskManager } from './opencode';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -83,6 +91,8 @@ const WEB_DIST = app.isPackaged
   : path.join(process.env.APP_ROOT, '../web/dist/client');
 
 let mainWindow: BrowserWindow | null = null;
+// Track app quit intent so the close handler knows to allow it
+(app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting = false;
 
 function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
@@ -154,6 +164,22 @@ function createWindow() {
   });
 
   mainWindow.maximize();
+
+  // When runInBackground is enabled, hide to tray instead of closing
+  mainWindow.on('close', (event) => {
+    const runInBackground = (() => {
+      try {
+        return getStorage().getRunInBackground();
+      } catch {
+        return false;
+      }
+    })();
+
+    if (runInBackground && !(app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
 
   const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
   const isTestEnv = process.env.NODE_ENV === 'test';
@@ -319,22 +345,74 @@ if (!gotTheLock) {
       startThoughtStreamServer();
     }
 
+    // Initialize system tray
+    initTray({
+      getWindow: () => mainWindow,
+      getActiveTaskCount: () => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      },
+    });
+
+    // Start daemon socket server for external triggers
+    registerMethod('daemon.status', () => ({
+      running: true,
+      version: app.getVersion(),
+      activeTasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      })(),
+    }));
+    registerMethod('task.list', () => ({
+      tasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskIds();
+        } catch {
+          return [];
+        }
+      })(),
+    }));
+
+    startDaemonServer();
+    console.log('[Main] Daemon socket server started at:', getSocketPath());
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
         console.log('[Main] Application reactivated; recreated window');
+      } else if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
       }
     });
   });
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  // When runInBackground is enabled, keep the app alive (it lives in the system tray)
+  const runInBackground = (() => {
+    try {
+      return getStorage().getRunInBackground();
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!runInBackground && process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('before-quit', () => {
+  (app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting = true;
+  stopDaemonServer();
+  destroyTray();
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
