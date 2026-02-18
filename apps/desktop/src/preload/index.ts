@@ -401,6 +401,26 @@ const accomplishAPI = {
     ipcRenderer.on('auth:error', listener);
     return () => ipcRenderer.removeListener('auth:error', listener);
   },
+  // Browser live preview frames
+  onBrowserFrame: (
+    callback: (data: {
+      taskId: string;
+      data: string;
+      url?: string;
+      title?: string;
+      timestamp: number;
+    }) => void,
+  ) => {
+    const listener = (
+      _: unknown,
+      data: { taskId: string; data: string; url?: string; title?: string; timestamp: number },
+    ) => callback(data);
+    ipcRenderer.on('browser:frame', listener);
+    return () => ipcRenderer.removeListener('browser:frame', listener);
+  },
+  // Request a fresh browser screenshot
+  requestBrowserScreenshot: (taskId: string): Promise<void> =>
+    ipcRenderer.invoke('browser:request-screenshot', taskId),
 
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>
     ipcRenderer.invoke('log:event', payload),

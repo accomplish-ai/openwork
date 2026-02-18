@@ -53,6 +53,7 @@ export interface TaskCallbacks {
     };
     cost?: number;
   }) => void;
+  onBrowserFrame?: (frame: { data: string; url?: string; title?: string }) => void;
 }
 
 export interface TaskManagerOptions {

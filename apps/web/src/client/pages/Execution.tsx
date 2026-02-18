@@ -23,6 +23,7 @@ import {
 import { isWaitingForUser } from '../lib/waiting-detection';
 import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
+import { BrowserPreviewPanel } from '../components/BrowserPreviewPanel';
 import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
@@ -643,6 +644,10 @@ export function ExecutionPage() {
               </div>
             </div>
 
+            {/* Browser live preview - shown when browser tools are active */}
+            {currentTask.status === 'running' && currentTool?.startsWith('browser_') && id && (
+              <BrowserPreviewPanel taskId={id} isRunning={currentTask.status === 'running'} />
+            )}
             <AnimatePresence>
               {todosTaskId === id && todos.length > 0 && <TodoSidebar todos={todos} />}
             </AnimatePresence>

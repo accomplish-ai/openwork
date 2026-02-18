@@ -69,6 +69,8 @@ export interface TaskCallbacks {
     };
     cost?: number;
   }) => void;
+  /** Called with a browser screenshot frame for live preview */
+  onBrowserFrame?: (frame: { data: string; url?: string; title?: string }) => void;
 }
 
 /** Adapter options for the underlying CLI adapter */

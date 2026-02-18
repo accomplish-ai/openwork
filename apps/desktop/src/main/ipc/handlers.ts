@@ -1354,6 +1354,32 @@ export function registerIPCHandlers(): void {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
   });
+
+  // Browser live preview — request a fresh screenshot from dev-browser
+  handle('browser:request-screenshot', async (event: IpcMainInvokeEvent, taskId: string) => {
+    try {
+      const res = await fetch('http://127.0.0.1:9224/screenshot');
+      if (!res.ok) {
+        return;
+      }
+      const screenshot = (await res.json()) as {
+        data: string;
+        url: string;
+        title: string;
+        timestamp: number;
+      };
+      const sender = event.sender;
+      sender.send('browser:frame', {
+        taskId,
+        data: screenshot.data,
+        url: screenshot.url,
+        title: screenshot.title,
+        timestamp: screenshot.timestamp,
+      });
+    } catch {
+      // Dev browser not running — silently ignore
+    }
+  });
 }
 
 // In-memory store for pending OAuth flows (keyed by state parameter)
