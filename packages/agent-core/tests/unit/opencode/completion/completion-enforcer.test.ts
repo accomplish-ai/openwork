@@ -527,6 +527,79 @@ describe('CompletionEnforcer', () => {
     });
   });
 
+  describe('isInContinuation — suppress duplicate messages during continuation', () => {
+    it('should return false before any continuation', () => {
+      expect(enforcer.isInContinuation()).toBe(false);
+    });
+
+    it('should return true during a partial continuation session', async () => {
+      // Simulate: agent has in_progress todo, calls complete_task → downgraded to partial
+      const todos: TodoItem[] = [
+        { id: '1', content: 'Navigate to figma.com', status: 'in_progress', priority: 'medium' },
+      ];
+      enforcer.updateTodos(todos);
+
+      enforcer.handleCompleteTaskDetection({
+        status: 'success',
+        summary: 'Successfully navigated to figma.com.',
+        original_request_summary: 'Go to the Figma website',
+      });
+
+      // State is PARTIAL_CONTINUATION_PENDING after downgrade
+      expect(enforcer.getState()).toBe(CompletionFlowState.PARTIAL_CONTINUATION_PENDING);
+
+      // Process exits, continuation starts
+      await enforcer.handleProcessExit(0);
+
+      // During continuation, isInContinuation should be true
+      expect(enforcer.isInContinuation()).toBe(true);
+    });
+
+    it('should return false after continuation completes successfully', async () => {
+      const todos: TodoItem[] = [
+        { id: '1', content: 'Navigate to figma.com', status: 'in_progress', priority: 'medium' },
+      ];
+      enforcer.updateTodos(todos);
+
+      enforcer.handleCompleteTaskDetection({
+        status: 'success',
+        summary: 'Done',
+        original_request_summary: 'Test',
+      });
+
+      await enforcer.handleProcessExit(0);
+      expect(enforcer.isInContinuation()).toBe(true);
+
+      // Continuation session marks todo complete and calls complete_task again
+      enforcer.updateTodos([
+        { id: '1', content: 'Navigate to figma.com', status: 'completed', priority: 'medium' },
+      ]);
+      enforcer.handleCompleteTaskDetection({
+        status: 'success',
+        summary: 'Done',
+        original_request_summary: 'Test',
+      });
+
+      // Now that completion succeeded, isInContinuation should be false
+      expect(enforcer.isInContinuation()).toBe(false);
+    });
+
+    it('should return false after reset', async () => {
+      const todos: TodoItem[] = [{ id: '1', content: 'Task', status: 'pending', priority: 'high' }];
+      enforcer.updateTodos(todos);
+      enforcer.handleCompleteTaskDetection({
+        status: 'success',
+        summary: 'Done',
+        original_request_summary: 'Test',
+      });
+      await enforcer.handleProcessExit(0);
+      expect(enforcer.isInContinuation()).toBe(true);
+
+      enforcer.reset();
+      expect(enforcer.isInContinuation()).toBe(false);
+    });
+  });
+
   describe('continuation flow', () => {
     it('should allow multiple continuation attempts', async () => {
       const maxAttempts = 3;
