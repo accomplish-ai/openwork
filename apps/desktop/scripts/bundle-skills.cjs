@@ -11,7 +11,12 @@ const skillsDir = path.join(__dirname, '..', '..', '..', 'packages', 'agent-core
 const SKILLS_WITH_RUNTIME_DEPS = ['dev-browser', 'dev-browser-mcp'];
 
 // Skills that are fully bundled (no runtime node_modules needed)
-const SKILLS_FULLY_BUNDLED = ['ask-user-question', 'file-permission', 'complete-task', 'start-task'];
+const SKILLS_FULLY_BUNDLED = [
+  'ask-user-question',
+  'file-permission',
+  'complete-task',
+  'start-task',
+];
 
 const bundles = [
   {

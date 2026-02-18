@@ -57,9 +57,7 @@ export function getOnboardingComplete(): boolean {
 
 export function setOnboardingComplete(complete: boolean): void {
   const db = getDatabase();
-  db.prepare('UPDATE app_settings SET onboarding_complete = ? WHERE id = 1').run(
-    complete ? 1 : 0
-  );
+  db.prepare('UPDATE app_settings SET onboarding_complete = ? WHERE id = 1').run(complete ? 1 : 0);
 }
 
 export function getSelectedModel(): SelectedModel | null {
@@ -74,9 +72,7 @@ export function getSelectedModel(): SelectedModel | null {
 
 export function setSelectedModel(model: SelectedModel): void {
   const db = getDatabase();
-  db.prepare('UPDATE app_settings SET selected_model = ? WHERE id = 1').run(
-    JSON.stringify(model)
-  );
+  db.prepare('UPDATE app_settings SET selected_model = ? WHERE id = 1').run(JSON.stringify(model));
 }
 
 export function getOllamaConfig(): OllamaConfig | null {
@@ -92,7 +88,7 @@ export function getOllamaConfig(): OllamaConfig | null {
 export function setOllamaConfig(config: OllamaConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET ollama_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -109,7 +105,7 @@ export function getLiteLLMConfig(): LiteLLMConfig | null {
 export function setLiteLLMConfig(config: LiteLLMConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET litellm_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -126,7 +122,7 @@ export function getAzureFoundryConfig(): AzureFoundryConfig | null {
 export function setAzureFoundryConfig(config: AzureFoundryConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET azure_foundry_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -143,7 +139,7 @@ export function getLMStudioConfig(): LMStudioConfig | null {
 export function setLMStudioConfig(config: LMStudioConfig | null): void {
   const db = getDatabase();
   db.prepare('UPDATE app_settings SET lmstudio_config = ? WHERE id = 1').run(
-    config ? JSON.stringify(config) : null
+    config ? JSON.stringify(config) : null,
   );
 }
 
@@ -205,7 +201,9 @@ export function getAppSettings(): AppSettings {
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
     cloudBrowserConfig: safeParseJsonWithFallback<CloudBrowserConfig>(row.cloud_browser_config),
     openaiBaseUrl: row.openai_base_url || '',
-    theme: VALID_THEMES.includes(row.theme as ThemePreference) ? (row.theme as ThemePreference) : 'system',
+    theme: VALID_THEMES.includes(row.theme as ThemePreference)
+      ? (row.theme as ThemePreference)
+      : 'system',
   };
 }
 
@@ -223,6 +221,6 @@ export function clearAppSettings(): void {
       cloud_browser_config = NULL,
       openai_base_url = '',
       theme = 'system'
-    WHERE id = 1`
+    WHERE id = 1`,
   ).run();
 }

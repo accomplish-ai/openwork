@@ -32,15 +32,15 @@ const {
 
 // Mock electron modules before importing handlers
 vi.mock('electron', () => {
-  const mockHandlers = new Map<string, Function>();
-  const mockListeners = new Map<string, Set<Function>>();
+  const mockHandlers = new Map<string, (...args: unknown[]) => unknown>();
+  const mockListeners = new Map<string, Set<(...args: unknown[]) => unknown>>();
 
   return {
     ipcMain: {
-      handle: vi.fn((channel: string, handler: Function) => {
+      handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
         mockHandlers.set(channel, handler);
       }),
-      on: vi.fn((channel: string, listener: Function) => {
+      on: vi.fn((channel: string, listener: (...args: unknown[]) => unknown) => {
         if (!mockListeners.has(channel)) {
           mockListeners.set(channel, new Set());
         }
@@ -341,9 +341,7 @@ vi.mock('@main/store/secureStorage', () => ({
   getApiKey: vi.fn((provider: string) => mockApiKeys[provider] || null),
   deleteApiKey: vi.fn((provider: string) => {
     delete mockApiKeys[provider];
-    mockStoredCredentials = mockStoredCredentials.filter(
-      (c) => c.account !== `apiKey:${provider}`
-    );
+    mockStoredCredentials = mockStoredCredentials.filter((c) => c.account !== `apiKey:${provider}`);
   }),
   getAllApiKeys: vi.fn(() =>
     Promise.resolve({
@@ -352,14 +350,9 @@ vi.mock('@main/store/secureStorage', () => ({
       google: mockApiKeys['google'] ?? null,
       xai: mockApiKeys['xai'] ?? null,
       custom: mockApiKeys['custom'] ?? null,
-    })
+    }),
   ),
-  hasAnyApiKey: vi.fn(() =>
-    Promise.resolve(Object.values(mockApiKeys).some((k) => k !== null))
-  ),
-  storeCloudBrowserCredentials: vi.fn(),
-  getCloudBrowserCredentials: vi.fn(() => null),
-  getBedrockCredentials: vi.fn(() => null),
+  hasAnyApiKey: vi.fn(() => Promise.resolve(Object.values(mockApiKeys).some((k) => k !== null))),
   listStoredCredentials: vi.fn(() => mockStoredCredentials),
 }));
 
@@ -371,7 +364,7 @@ vi.mock('@main/config', () => ({
 }));
 
 // Mock permission API
-let mockPendingPermissions = new Map<string, { resolve: Function }>();
+const mockPendingPermissions = new Map<string, { resolve: (...args: unknown[]) => unknown }>();
 
 vi.mock('@main/permission-api', () => ({
   startPermissionApiServer: vi.fn(),
@@ -394,12 +387,12 @@ vi.mock('@main/permission-api', () => ({
 
 // Import after mocks are set up
 import { registerIPCHandlers } from '@main/ipc/handlers';
-import { ipcMain, BrowserWindow, shell } from 'electron';
+import { ipcMain, BrowserWindow as _BrowserWindow, shell } from 'electron';
 
 // Type the mocked ipcMain with helpers
 type MockedIpcMain = typeof ipcMain & {
-  _getHandler: (channel: string) => Function | undefined;
-  _getHandlers: () => Map<string, Function>;
+  _getHandler: (channel: string) => ((...args: unknown[]) => unknown) | undefined;
+  _getHandlers: () => Map<string, (...args: unknown[]) => unknown>;
   _clear: () => void;
 };
 
@@ -617,10 +610,10 @@ describe('IPC Handlers Integration', () => {
     it('settings:set-debug-mode should reject non-boolean values', async () => {
       // Arrange & Act & Assert
       await expect(invokeHandler('settings:set-debug-mode', 'true')).rejects.toThrow(
-        'Invalid debug mode flag'
+        'Invalid debug mode flag',
       );
       await expect(invokeHandler('settings:set-debug-mode', 1)).rejects.toThrow(
-        'Invalid debug mode flag'
+        'Invalid debug mode flag',
       );
     });
 
@@ -666,7 +659,7 @@ describe('IPC Handlers Integration', () => {
             provider: 'openai',
             keyPrefix: 'sk-opena...',
           }),
-        ])
+        ]),
       );
     });
 
@@ -684,14 +677,14 @@ describe('IPC Handlers Integration', () => {
           provider: 'anthropic',
           keyPrefix: 'sk-ant-n...',
           isActive: true,
-        })
+        }),
       );
     });
 
     it('settings:add-api-key should reject unsupported providers', async () => {
       // Arrange & Act & Assert
       await expect(
-        invokeHandler('settings:add-api-key', 'unsupported-provider', 'sk-test')
+        invokeHandler('settings:add-api-key', 'unsupported-provider', 'sk-test'),
       ).rejects.toThrow('Unsupported API key provider');
     });
 
@@ -791,13 +784,13 @@ describe('IPC Handlers Integration', () => {
       expect(mockTaskManager.startTask).toHaveBeenCalledWith(
         expect.stringMatching(/^task_/),
         expect.objectContaining({ prompt: 'Test task prompt' }),
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result).toEqual(
         expect.objectContaining({
           prompt: 'Test task prompt',
           status: 'running',
-        })
+        }),
       );
     });
 
@@ -879,7 +872,7 @@ describe('IPC Handlers Integration', () => {
           id: taskId,
           prompt: 'Existing task',
           status: 'completed',
-        })
+        }),
       );
     });
 
@@ -909,7 +902,7 @@ describe('IPC Handlers Integration', () => {
           status: 'running',
           messages: [],
           createdAt: new Date().toISOString(),
-        }
+        },
       );
 
       // Act
@@ -954,7 +947,7 @@ describe('IPC Handlers Integration', () => {
           status: 'completed',
           messages: [],
           createdAt: new Date().toISOString(),
-        }
+        },
       );
 
       // Act
@@ -1156,14 +1149,12 @@ describe('IPC Handlers Integration', () => {
 
     it('model:set should reject invalid model configuration', async () => {
       // Arrange & Act & Assert
-      await expect(invokeHandler('model:set', null)).rejects.toThrow(
-        'Invalid model configuration'
-      );
+      await expect(invokeHandler('model:set', null)).rejects.toThrow('Invalid model configuration');
       await expect(invokeHandler('model:set', { provider: 'test' })).rejects.toThrow(
-        'Invalid model configuration'
+        'Invalid model configuration',
       );
       await expect(invokeHandler('model:set', { model: 'test' })).rejects.toThrow(
-        'Invalid model configuration'
+        'Invalid model configuration',
       );
     });
   });
@@ -1198,10 +1189,10 @@ describe('IPC Handlers Integration', () => {
     it('shell:open-external should reject non-http/https protocols', async () => {
       // Arrange & Act & Assert
       await expect(invokeHandler('shell:open-external', 'file:///etc/passwd')).rejects.toThrow(
-        'must use http or https protocol'
+        'must use http or https protocol',
       );
       await expect(invokeHandler('shell:open-external', 'javascript:alert(1)')).rejects.toThrow(
-        'must use http or https protocol'
+        'must use http or https protocol',
       );
     });
 
@@ -1232,7 +1223,7 @@ describe('IPC Handlers Integration', () => {
           installed: true,
           version: '1.0.0',
           installCommand: 'npm install -g opencode-ai',
-        })
+        }),
       );
     });
 
@@ -1329,13 +1320,13 @@ describe('IPC Handlers Integration', () => {
           prompt,
           sessionId,
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result).toEqual(
         expect.objectContaining({
           prompt,
           status: 'running',
-        })
+        }),
       );
     });
 
@@ -1363,7 +1354,7 @@ describe('IPC Handlers Integration', () => {
           sessionId,
           taskId: existingTaskId,
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -1463,7 +1454,7 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Act
-      const result = await invokeHandler('task:start', config) as {
+      const result = (await invokeHandler('task:start', config)) as {
         id: string;
         messages: Array<{ type: string; content: string }>;
       };
@@ -1513,7 +1504,7 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Act
-      const result = await invokeHandler('task:start', config);
+      const _result = await invokeHandler('task:start', config);
 
       // Assert
       expect(mockTaskManager.startTask).toHaveBeenCalledWith(
@@ -1527,7 +1518,7 @@ describe('IPC Handlers Integration', () => {
           systemPromptAppend: 'Additional instructions',
           outputSchema: { type: 'object' },
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -1555,7 +1546,7 @@ describe('IPC Handlers Integration', () => {
         expect.objectContaining({
           allowedTools: expect.any(Array),
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
       const callArgs = mockTaskManager.startTask.mock.calls[0][1];
       expect(callArgs.allowedTools.length).toBe(20);
@@ -1619,7 +1610,7 @@ describe('IPC Handlers Integration', () => {
         expect.objectContaining({
           type: 'user',
           content: prompt,
-        })
+        }),
       );
     });
 
@@ -1642,11 +1633,7 @@ describe('IPC Handlers Integration', () => {
 
       // Assert
       const { updateTaskStatus } = await import('@accomplish_ai/agent-core');
-      expect(updateTaskStatus).toHaveBeenCalledWith(
-        existingTaskId,
-        'running',
-        expect.any(String)
-      );
+      expect(updateTaskStatus).toHaveBeenCalledWith(existingTaskId, 'running', expect.any(String));
     });
 
     it('session:resume should not add message when no existing task ID', async () => {
@@ -1668,10 +1655,7 @@ describe('IPC Handlers Integration', () => {
       // Assert
       const { addTaskMessage } = await import('@accomplish_ai/agent-core');
       // Should not be called for new tasks
-      expect(addTaskMessage).not.toHaveBeenCalledWith(
-        undefined,
-        expect.anything()
-      );
+      expect(addTaskMessage).not.toHaveBeenCalledWith(undefined, expect.anything());
     });
   });
 
@@ -1696,7 +1680,7 @@ describe('IPC Handlers Integration', () => {
       // Assert
       expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(
         taskId,
-        'option1, option2, option3'
+        'option1, option2, option3',
       );
     });
 
@@ -1715,9 +1699,7 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File permission request')
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('File permission request'));
       consoleSpy.mockRestore();
     });
   });
@@ -1737,9 +1719,9 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('Untrusted window');
+      await expect(invokeHandler('task:start', { prompt: 'Test' })).rejects.toThrow(
+        'Untrusted window',
+      );
     });
 
     it('should throw error when window is null', async () => {
@@ -1748,9 +1730,9 @@ describe('IPC Handlers Integration', () => {
       (BrowserWindow.fromWebContents as Mock).mockReturnValue(null);
 
       // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('Untrusted window');
+      await expect(invokeHandler('task:start', { prompt: 'Test' })).rejects.toThrow(
+        'Untrusted window',
+      );
     });
 
     it('should throw error when IPC from non-focused window with multiple windows', async () => {
@@ -1776,9 +1758,9 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('IPC request must originate from the focused window');
+      await expect(invokeHandler('task:start', { prompt: 'Test' })).rejects.toThrow(
+        'IPC request must originate from the focused window',
+      );
     });
 
     it('should allow IPC when only one window exists', async () => {
@@ -1837,7 +1819,7 @@ describe('IPC Handlers Integration', () => {
       process.env.E2E_SKIP_AUTH = '1';
 
       // Act
-      const result = await invokeHandler('opencode:check') as {
+      const result = (await invokeHandler('opencode:check')) as {
         installed: boolean;
         version: string;
       };
@@ -1864,14 +1846,17 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate should handle abort error', async () => {
       // Arrange
-      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
-        const abortError = new Error('Request aborted');
-        abortError.name = 'AbortError';
-        return Promise.reject(abortError);
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(() => {
+          const abortError = new Error('Request aborted');
+          abortError.name = 'AbortError';
+          return Promise.reject(abortError);
+        }),
+      );
 
       // Act
-      const result = await invokeHandler('api-key:validate', 'sk-test-key') as {
+      const result = (await invokeHandler('api-key:validate', 'sk-test-key')) as {
         valid: boolean;
         error: string;
       };
@@ -1886,7 +1871,7 @@ describe('IPC Handlers Integration', () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
       // Act
-      const result = await invokeHandler('api-key:validate', 'sk-test-key') as {
+      const result = (await invokeHandler('api-key:validate', 'sk-test-key')) as {
         valid: boolean;
         error: string;
       };
@@ -1898,14 +1883,17 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate should return invalid for non-200 response', async () => {
       // Arrange
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 401,
-        json: () => Promise.resolve({ error: { message: 'Invalid API key' } }),
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ error: { message: 'Invalid API key' } }),
+        }),
+      );
 
       // Act
-      const result = await invokeHandler('api-key:validate', 'sk-test-key') as {
+      const result = (await invokeHandler('api-key:validate', 'sk-test-key')) as {
         valid: boolean;
         error: string;
       };
@@ -1917,14 +1905,17 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate should return valid for 200 response', async () => {
       // Arrange
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({}),
+        }),
+      );
 
       // Act
-      const result = await invokeHandler('api-key:validate', 'sk-test-key') as {
+      const result = (await invokeHandler('api-key:validate', 'sk-test-key')) as {
         valid: boolean;
       };
 
@@ -1944,7 +1935,11 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate-provider should reject unsupported provider', async () => {
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'invalid-provider', 'key') as {
+      const result = (await invokeHandler(
+        'api-key:validate-provider',
+        'invalid-provider',
+        'key',
+      )) as {
         valid: boolean;
         error: string;
       };
@@ -1956,7 +1951,7 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate-provider should skip validation for custom provider', async () => {
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'custom', 'any-key') as {
+      const result = (await invokeHandler('api-key:validate-provider', 'custom', 'any-key')) as {
         valid: boolean;
       };
 
@@ -1973,7 +1968,11 @@ describe('IPC Handlers Integration', () => {
       vi.stubGlobal('fetch', mockFetch);
 
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'openai', 'sk-openai-key') as {
+      const result = (await invokeHandler(
+        'api-key:validate-provider',
+        'openai',
+        'sk-openai-key',
+      )) as {
         valid: boolean;
       };
 
@@ -1986,7 +1985,7 @@ describe('IPC Handlers Integration', () => {
           headers: expect.objectContaining({
             Authorization: 'Bearer sk-openai-key',
           }),
-        })
+        }),
       );
     });
 
@@ -1999,7 +1998,11 @@ describe('IPC Handlers Integration', () => {
       vi.stubGlobal('fetch', mockFetch);
 
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'google', 'AIza-test-key') as {
+      const result = (await invokeHandler(
+        'api-key:validate-provider',
+        'google',
+        'AIza-test-key',
+      )) as {
         valid: boolean;
       };
 
@@ -2009,7 +2012,7 @@ describe('IPC Handlers Integration', () => {
         'https://generativelanguage.googleapis.com/v1beta/models?key=AIza-test-key',
         expect.objectContaining({
           method: 'GET',
-        })
+        }),
       );
     });
 
@@ -2020,7 +2023,7 @@ describe('IPC Handlers Integration', () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abortError));
 
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'openai', 'sk-key') as {
+      const result = (await invokeHandler('api-key:validate-provider', 'openai', 'sk-key')) as {
         valid: boolean;
         error: string;
       };
@@ -2032,14 +2035,17 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate-provider should handle failed response with error message', async () => {
       // Arrange
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: () => Promise.resolve({ error: { message: 'Access denied' } }),
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 403,
+          json: () => Promise.resolve({ error: { message: 'Access denied' } }),
+        }),
+      );
 
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'openai', 'sk-bad-key') as {
+      const result = (await invokeHandler('api-key:validate-provider', 'openai', 'sk-bad-key')) as {
         valid: boolean;
         error: string;
       };
@@ -2051,14 +2057,17 @@ describe('IPC Handlers Integration', () => {
 
     it('api-key:validate-provider should handle failed response without error message', async () => {
       // Arrange
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          json: () => Promise.reject(new Error('Invalid JSON')),
+        }),
+      );
 
       // Act
-      const result = await invokeHandler('api-key:validate-provider', 'openai', 'sk-key') as {
+      const result = (await invokeHandler('api-key:validate-provider', 'openai', 'sk-key')) as {
         valid: boolean;
         error: string;
       };
@@ -2081,7 +2090,7 @@ describe('IPC Handlers Integration', () => {
       const label = 'My Production Key';
 
       // Act
-      const result = await invokeHandler('settings:add-api-key', provider, key, label) as {
+      const result = (await invokeHandler('settings:add-api-key', provider, key, label)) as {
         label: string;
       };
 
@@ -2095,7 +2104,7 @@ describe('IPC Handlers Integration', () => {
       const key = 'sk-no-label-key';
 
       // Act
-      const result = await invokeHandler('settings:add-api-key', provider, key) as {
+      const result = (await invokeHandler('settings:add-api-key', provider, key)) as {
         label: string;
       };
 
@@ -2110,9 +2119,9 @@ describe('IPC Handlers Integration', () => {
       const longLabel = 'x'.repeat(200);
 
       // Act & Assert
-      await expect(
-        invokeHandler('settings:add-api-key', provider, key, longLabel)
-      ).rejects.toThrow('exceeds maximum length');
+      await expect(invokeHandler('settings:add-api-key', provider, key, longLabel)).rejects.toThrow(
+        'exceeds maximum length',
+      );
     });
   });
 
@@ -2125,11 +2134,11 @@ describe('IPC Handlers Integration', () => {
       // Arrange - use mockApiKeys directly
       // Note: The handler now uses getAllApiKeys() which reads from mockApiKeys
       mockApiKeys = {
-        anthropic: '',  // Empty key value
+        anthropic: '', // Empty key value
       };
 
       // Act
-      const result = await invokeHandler('settings:api-keys') as Array<{ keyPrefix: string }>;
+      const result = (await invokeHandler('settings:api-keys')) as Array<{ keyPrefix: string }>;
 
       // Assert
       expect(result).toHaveLength(1);

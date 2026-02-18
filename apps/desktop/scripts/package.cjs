@@ -56,7 +56,6 @@ try {
     console.log('(Skipping native module rebuild on Windows - using prebuilt binaries)');
   }
   execSync(command, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
-
 } finally {
   // Restore the symlinks
   const packagesToRestore = Object.keys(symlinkTargets);
