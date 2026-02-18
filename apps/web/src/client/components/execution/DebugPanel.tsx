@@ -33,7 +33,14 @@ interface DebugPanelProps {
 
 export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: DebugPanelProps) {
   const navigate = useNavigate();
-  const accomplish = getAccomplish();
+  const accomplish = useMemo(() => {
+    try {
+      return getAccomplish();
+    } catch (error) {
+      console.error('[DebugPanel] Accomplish API not available:', error);
+      return null;
+    }
+  }, []);
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
   const [debugExported, setDebugExported] = useState(false);
   const [bugReportStatus, setBugReportStatus] = useState<
@@ -41,6 +48,7 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
   >('idle');
   const [bugReportGenerating, setBugReportGenerating] = useState(false);
   const [repeatTaskLoading, setRepeatTaskLoading] = useState(false);
+  const bugReportResetTimeoutRef = useRef<number | null>(null);
   const [debugSearchQuery, setDebugSearchQuery] = useState('');
   const [debugSearchIndex, setDebugSearchIndex] = useState(0);
   const debugPanelRef = useRef<HTMLDivElement>(null);
@@ -64,6 +72,14 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
   const handleSearchChange = useCallback((value: string) => {
     setDebugSearchQuery(value);
     setDebugSearchIndex(0);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (bugReportResetTimeoutRef.current !== null) {
+        clearTimeout(bugReportResetTimeoutRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -144,32 +160,39 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
   const bugReportIconClass = cn('h-3 w-3 mr-1', bugReportStatus === 'generating' && 'animate-spin');
 
   const handleGenerateBugReport = useCallback(async () => {
-    if (!taskId || bugReportGenerating) {
+    if (!taskId || bugReportGenerating || !accomplish?.generateBugReport) {
       return;
+    }
+    if (bugReportResetTimeoutRef.current !== null) {
+      clearTimeout(bugReportResetTimeoutRef.current);
+      bugReportResetTimeoutRef.current = null;
     }
     setBugReportGenerating(true);
     setBugReportStatus('generating');
     try {
-      const result = await accomplish.generateBugReport!(taskId, debugLogs);
+      const result = await accomplish.generateBugReport(taskId, debugLogs);
       if (result.success) {
         setBugReportStatus('success');
-        setTimeout(() => {
+        bugReportResetTimeoutRef.current = window.setTimeout(() => {
           setBugReportStatus('idle');
+          bugReportResetTimeoutRef.current = null;
         }, 2000);
       } else if (result.reason === 'cancelled') {
         setBugReportStatus('idle');
       } else {
         console.error('[Bug Report] Generation failed:', result.error);
         setBugReportStatus('error');
-        setTimeout(() => {
+        bugReportResetTimeoutRef.current = window.setTimeout(() => {
           setBugReportStatus('idle');
+          bugReportResetTimeoutRef.current = null;
         }, 3000);
       }
     } catch (error) {
       console.error('[Bug Report] Generation failed:', error);
       setBugReportStatus('error');
-      setTimeout(() => {
+      bugReportResetTimeoutRef.current = window.setTimeout(() => {
         setBugReportStatus('idle');
+        bugReportResetTimeoutRef.current = null;
       }, 3000);
     } finally {
       setBugReportGenerating(false);
@@ -177,12 +200,12 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
   }, [taskId, bugReportGenerating, accomplish, debugLogs]);
 
   const handleRepeatTask = useCallback(async () => {
-    if (!taskId || repeatTaskLoading) {
+    if (!taskId || repeatTaskLoading || !accomplish?.repeatTask) {
       return;
     }
     setRepeatTaskLoading(true);
     try {
-      const newTask = (await accomplish.repeatTask!(taskId)) as { id: string };
+      const newTask = (await accomplish.repeatTask(taskId)) as { id: string };
       navigate(`/execution/${newTask.id}`);
     } catch (error) {
       console.error('[Repeat Task] Failed:', error);

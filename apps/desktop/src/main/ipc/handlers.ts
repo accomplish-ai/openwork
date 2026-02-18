@@ -1211,7 +1211,7 @@ export function registerIPCHandlers(): void {
             }
             return result;
           }
-          if (!document.body) { return '{}'; }
+          if (!document.body) { return null; }
           return serializeNode(document.body);
         })()
       `);

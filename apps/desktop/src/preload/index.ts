@@ -468,6 +468,15 @@ const accomplishAPI = {
       ipcRenderer.removeListener('auth:mcp-callback', listener);
     };
   },
+
+  // Debug: Bug Report and Task Repeat
+  generateBugReport: (
+    taskId: string,
+    reportLogs?: Array<{ timestamp: string; type: string; message: string; data?: unknown }>,
+  ): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
+    ipcRenderer.invoke('bug-report:generate', taskId, reportLogs),
+
+  repeatTask: (taskId: string): Promise<unknown> => ipcRenderer.invoke('task:repeat', taskId),
 };
 
 // Expose the API to the renderer
