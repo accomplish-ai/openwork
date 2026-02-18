@@ -74,10 +74,16 @@ async function buildAzureFoundryProviderConfig(
 
     if (authMethod === 'api-key') {
       const azureApiKey = getApiKey('azure-foundry');
-      if (azureApiKey) {
-        azureOptions.apiKey = azureApiKey;
+      if (!azureApiKey) {
+        console.warn('[OpenCode Config Builder] Azure Foundry API key missing');
+        return null;
       }
-    } else if (authMethod === 'entra-id' && azureFoundryToken) {
+      azureOptions.apiKey = azureApiKey;
+    } else if (authMethod === 'entra-id') {
+      if (!azureFoundryToken) {
+        console.warn('[OpenCode Config Builder] Azure Foundry Entra token missing');
+        return null;
+      }
       azureOptions.apiKey = '';
       azureOptions.headers = {
         Authorization: `Bearer ${azureFoundryToken}`,
