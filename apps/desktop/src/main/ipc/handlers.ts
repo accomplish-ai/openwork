@@ -83,6 +83,8 @@ import type {
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
+  CloudBrowserConfig,
+  CloudBrowserCredentials,
 } from '@accomplish_ai/agent-core';
 import {
   DEFAULT_PROVIDERS,
