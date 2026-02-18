@@ -39,6 +39,8 @@ export interface ConfigGeneratorOptions {
   enabledProviders?: string[];
   /** Browser configuration. Defaults to { mode: 'builtin' } */
   browser?: BrowserConfig;
+  /** Enable desktop control MCP tool for native automation */
+  desktopControl?: boolean;
   /** Connected MCP remote servers with OAuth access tokens */
   connectors?: Array<{
     id: string;
@@ -169,7 +171,8 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-{{BROWSER_CAPABILITY}}{{DESKTOP_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **Desktop Automation**: Control native desktop apps — take screenshots, click, type, manage windows, and open applications
+- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -547,12 +550,6 @@ Example bad narration (too terse):
 - After each action, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
 `
-        : '',
-    )
-    .replace(
-      '{{DESKTOP_CAPABILITY}}',
-      options.desktopControl
-        ? '- **Desktop Automation**: Control native desktop apps — take screenshots, click, type, manage windows, and open applications\n'
         : '',
     );
 
