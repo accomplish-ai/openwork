@@ -166,19 +166,20 @@ describe('OpenCode CLI Path Module', () => {
         expect(result.args).toEqual([]);
       });
 
-      it('should fallback to PATH-based opencode when no paths found', async () => {
+      it('should throw when no OpenCode CLI path can be resolved', async () => {
         // Arrange
         mockApp.isPackaged = false;
         mockFs.existsSync.mockReturnValue(false);
         mockFs.readdirSync.mockReturnValue([]);
+        mockExecSync.mockImplementation(() => {
+          throw new Error('Command not found');
+        });
 
         // Act
         const { getOpenCodeCliPath } = await import('@main/opencode/electron-options');
-        const result = getOpenCodeCliPath();
 
         // Assert
-        expect(result.command).toBe('opencode');
-        expect(result.args).toEqual([]);
+        expect(() => getOpenCodeCliPath()).toThrow('OpenCode CLI executable not found');
       });
     });
 
@@ -222,21 +223,22 @@ describe('OpenCode CLI Path Module', () => {
         expect(result.args).toEqual([]);
       });
 
-      it('should fallback to opencode on PATH when bundled CLI not found in packaged app', async () => {
+      it('should throw when bundled CLI is missing in packaged app', async () => {
         // Arrange
         mockApp.isPackaged = true;
         const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
         (process as NodeJS.Process & { resourcesPath: string }).resourcesPath = resourcesPath;
 
         mockFs.existsSync.mockReturnValue(false);
+        mockExecSync.mockImplementation(() => {
+          throw new Error('Command not found');
+        });
 
         // Act
         const { getOpenCodeCliPath } = await import('@main/opencode/electron-options');
-        const result = getOpenCodeCliPath();
 
-        // Assert - falls back to system PATH instead of throwing
-        expect(result.command).toBe('opencode');
-        expect(result.args).toEqual([]);
+        // Assert
+        expect(() => getOpenCodeCliPath()).toThrow('OpenCode CLI executable not found');
       });
     });
   });
@@ -535,13 +537,15 @@ describe('OpenCode CLI Path Module', () => {
 
       mockFs.existsSync.mockReturnValue(false);
       mockFs.readdirSync.mockReturnValue([]);
+      mockExecSync.mockImplementation(() => {
+        throw new Error('Command not found');
+      });
 
       // Act
       const { getOpenCodeCliPath } = await import('@main/opencode/electron-options');
-      const result = getOpenCodeCliPath();
 
-      // Assert - should fallback to opencode on PATH
-      expect(result.command).toBe('opencode');
+      // Assert
+      expect(() => getOpenCodeCliPath()).toThrow('OpenCode CLI executable not found');
     });
   });
 });
