@@ -1,7 +1,14 @@
-# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.0
 ignore:
-  'snyk:lic:npm:sharp:Apache-2.0-AND-LGPL-3.0-or-later':
+  'snyk:lic:npm:sharp:LGPL-3.0-or-later':
     - '*':
         reason: 'LGPL allowed for sharp/libvips dynamic linking'
-        expires: '2026-03-18T00:00:00.000Z'
+        expires: '2026-06-18T00:00:00.000Z'
+  'snyk:lic:npm:onnxruntime-web:MIT':
+    - '*':
+        reason: 'MIT license with custom binary components accepted for desktop app'
+        expires: '2026-06-18T00:00:00.000Z'
+  'snyk:lic:npm:@huggingface/transformers:Apache-2.0':
+     - '*':
+         reason: 'Apache-2.0 license accepted'
+         expires: '2026-06-18T00:00:00.000Z'
