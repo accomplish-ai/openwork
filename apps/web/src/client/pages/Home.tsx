@@ -1,10 +1,8 @@
-'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskInputBar from '../components/landing/TaskInputBar';
-import SettingsDialog from '../components/layout/SettingsDialog';
+import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
@@ -86,7 +84,7 @@ const USE_CASE_EXAMPLES = [
   },
 ];
 
-export default function HomePage() {
+export function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -209,7 +207,7 @@ export default function HomePage() {
                   large={true}
                   autoFocus={true}
                   onOpenSpeechSettings={handleOpenSpeechSettings}
-                  onOpenSettings={(tab) => {
+                  onOpenSettings={(tab: 'providers' | 'voice' | 'skills' | 'connectors') => {
                     setSettingsInitialTab(tab);
                     setShowSettingsDialog(true);
                   }}
@@ -243,7 +241,7 @@ export default function HomePage() {
                       className="overflow-hidden"
                     >
                       <div
-                        className="px-6 pt-1 pb-4 overflow-y-auto max-h-[360px]"
+                        className="px-6 pt-3 pb-4 overflow-y-auto max-h-[360px]"
                         style={{
                           background:
                             'linear-gradient(to bottom, hsl(var(--muted)) 0%, hsl(var(--background)) 100%)',
@@ -295,3 +293,5 @@ export default function HomePage() {
     </>
   );
 }
+
+export default HomePage;

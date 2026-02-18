@@ -12,6 +12,7 @@ import {
   LiteLLMProviderForm,
   LMStudioProviderForm,
   VertexProviderForm,
+  HuggingFaceLocalProviderForm,
 } from './providers';
 import { ZaiProviderForm } from './providers/ZaiProviderForm';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -102,6 +103,17 @@ export function ProviderSettingsPanel({
         if (providerId === 'lmstudio') {
           return (
             <LMStudioProviderForm
+              connectedProvider={connectedProvider}
+              onConnect={onConnect}
+              onDisconnect={onDisconnect}
+              onModelChange={onModelChange}
+              showModelError={showModelError}
+            />
+          );
+        }
+        if (providerId === 'huggingface-local') {
+          return (
+            <HuggingFaceLocalProviderForm
               connectedProvider={connectedProvider}
               onConnect={onConnect}
               onDisconnect={onDisconnect}

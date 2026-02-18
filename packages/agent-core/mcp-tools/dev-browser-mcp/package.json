@@ -8,10 +8,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop",
     "playwright": "npm:rebrowser-playwright@^1.52.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "vitest": "^1.0.0"
   }
 }
