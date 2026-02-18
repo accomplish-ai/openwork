@@ -124,6 +124,13 @@ export type {
   McpConnector,
 } from './common/types/connector.js';
 
+// Cloud browser types
+export type {
+  CloudBrowserProviderId,
+  AwsAgentCoreConfig,
+  CloudBrowserConfig,
+} from './common/types/cloudBrowser.js';
+
 // Other types
 export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';

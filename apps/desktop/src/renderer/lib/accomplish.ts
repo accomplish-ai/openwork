@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  AwsAgentCoreConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -236,6 +237,16 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // Cloud Browsers
+  getAwsCloudBrowserConfig(): Promise<{
+    config: { region: string; authType: string; enabled: boolean; lastValidated?: number } | null;
+    hasCredentials: boolean;
+    credentialPrefix: string | null;
+  }>;
+  validateAwsCloudBrowser(credentials: string): Promise<{ valid: boolean; error?: string }>;
+  connectAwsCloudBrowser(credentials: string): Promise<void>;
+  disconnectAwsCloudBrowser(): Promise<void>;
 }
 
 interface AccomplishShell {
@@ -294,6 +305,14 @@ export function getAccomplish() {
     detectVertexProject: () => window.accomplish!.detectVertexProject(),
 
     listVertexProjects: () => window.accomplish!.listVertexProjects(),
+
+    validateAwsCloudBrowser: async (credentials: AwsAgentCoreConfig): Promise<{ valid: boolean; error?: string }> => {
+      return window.accomplish!.validateAwsCloudBrowser(JSON.stringify(credentials));
+    },
+
+    connectAwsCloudBrowser: async (credentials: AwsAgentCoreConfig): Promise<void> => {
+      return window.accomplish!.connectAwsCloudBrowser(JSON.stringify(credentials));
+    },
   };
 }
 

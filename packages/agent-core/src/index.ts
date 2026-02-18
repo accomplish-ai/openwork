@@ -45,6 +45,7 @@ export type {
   AppSettingsAPI,
   ProviderSettingsAPI,
   SecureStorageAPI,
+  CloudBrowserStorageAPI,
   DatabaseLifecycleAPI,
   // Permission Handler API
   PermissionHandlerAPI,
@@ -361,6 +362,13 @@ export type {
   OAuthClientRegistration,
   McpConnector,
 } from './common/types/connector.js';
+
+// Cloud browser types
+export type {
+  CloudBrowserProviderId,
+  AwsAgentCoreConfig,
+  CloudBrowserConfig,
+} from './common/types/cloudBrowser.js';
 
 // MCP OAuth
 export {

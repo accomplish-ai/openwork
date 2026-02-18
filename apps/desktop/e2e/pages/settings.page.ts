@@ -305,4 +305,87 @@ export class SettingsPage {
   async enterLiteLLMApiKey(key: string) {
     await this.litellmApiKeyInput.fill(key);
   }
+
+  // ===== Cloud Browsers =====
+
+  get cloudBrowsersTab() {
+    return this.page.getByRole('button', { name: 'Cloud Browsers' });
+  }
+
+  get cloudBrowsersPanel() {
+    return this.page.getByTestId('cloud-browsers-panel');
+  }
+
+  get awsAgentCoreCard() {
+    return this.page.getByTestId('aws-agentcore-card');
+  }
+
+  get awsAuthTypeProfile() {
+    return this.page.getByTestId('aws-auth-type-profile');
+  }
+
+  get awsAuthTypeAccessKeys() {
+    return this.page.getByTestId('aws-auth-type-access-keys');
+  }
+
+  get awsRegionSelect() {
+    return this.page.getByTestId('aws-region-select');
+  }
+
+  get awsProfileInput() {
+    return this.page.getByTestId('aws-profile-input');
+  }
+
+  get awsAccessKeyInput() {
+    return this.page.getByTestId('aws-access-key-input');
+  }
+
+  get awsSecretKeyInput() {
+    return this.page.getByTestId('aws-secret-key-input');
+  }
+
+  get awsConnectButton() {
+    return this.page.getByTestId('aws-connect-button');
+  }
+
+  get awsDisconnectButton() {
+    return this.page.getByTestId('aws-disconnect-button');
+  }
+
+  get awsConnectionStatus() {
+    return this.page.getByTestId('aws-connection-status');
+  }
+
+  async navigateToCloudBrowsers() {
+    await this.cloudBrowsersTab.click();
+    await this.cloudBrowsersPanel.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.NAVIGATION });
+  }
+
+  async selectAwsAuthTypeProfile() {
+    await this.awsAuthTypeProfile.click();
+    await this.awsProfileInput.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.NAVIGATION });
+  }
+
+  async selectAwsAuthTypeAccessKeys() {
+    await this.awsAuthTypeAccessKeys.click();
+    await this.awsAccessKeyInput.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.NAVIGATION });
+  }
+
+  async enterAwsProfileName(profileName: string) {
+    await this.awsProfileInput.clear();
+    await this.awsProfileInput.fill(profileName);
+  }
+
+  async enterAwsAccessKeyCredentials(accessKeyId: string, secretKey: string) {
+    await this.awsAccessKeyInput.fill(accessKeyId);
+    await this.awsSecretKeyInput.fill(secretKey);
+  }
+
+  async clickAwsConnect() {
+    await this.awsConnectButton.click();
+  }
+
+  async clickAwsDisconnect() {
+    await this.awsDisconnectButton.click();
+  }
 }

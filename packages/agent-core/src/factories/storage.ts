@@ -65,6 +65,12 @@ import {
   deleteConnector,
   clearAllConnectors,
 } from '../storage/repositories/connectors.js';
+import {
+  getCloudBrowserConfig,
+  setCloudBrowserConfig,
+  deleteCloudBrowserConfig,
+  setCloudBrowserLastValidated,
+} from '../storage/repositories/cloudBrowsers.js';
 import { SecureStorage } from '../internal/classes/SecureStorage.js';
 import type { OAuthTokens } from '../common/types/connector.js';
 import type { StorageAPI, StorageOptions } from '../types/storage.js';
@@ -162,6 +168,12 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     },
     deleteConnectorTokens: (connectorId) =>
       secureStorage.delete(`connector-tokens:${connectorId}`),
+
+    // Cloud Browsers
+    getCloudBrowserConfig: (providerId) => getCloudBrowserConfig(providerId),
+    setCloudBrowserConfig: (providerId, config, enabled) => setCloudBrowserConfig(providerId, config, enabled),
+    deleteCloudBrowserConfig: (providerId) => deleteCloudBrowserConfig(providerId),
+    setCloudBrowserLastValidated: (providerId, timestamp) => setCloudBrowserLastValidated(providerId, timestamp),
 
     // Secure Storage
     storeApiKey: (provider, apiKey) => secureStorage.storeApiKey(provider, apiKey),

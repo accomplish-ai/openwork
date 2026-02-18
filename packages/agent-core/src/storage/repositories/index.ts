@@ -77,3 +77,10 @@ export {
   deleteConnector,
   clearAllConnectors,
 } from './connectors.js';
+
+export {
+  getCloudBrowserConfig,
+  setCloudBrowserConfig,
+  deleteCloudBrowserConfig,
+  setCloudBrowserLastValidated,
+} from './cloudBrowsers.js';

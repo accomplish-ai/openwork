@@ -25,6 +25,7 @@ export type {
   AppSettingsAPI,
   ProviderSettingsAPI,
   SecureStorageAPI,
+  CloudBrowserStorageAPI,
   DatabaseLifecycleAPI,
 } from './storage.js';
 

@@ -1261,6 +1261,75 @@ export function registerIPCHandlers(): void {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
   });
+
+  // ── Cloud Browsers ───────────────────────────────────────────────────────
+
+  handle('cloud-browsers:get-aws-config', async () => {
+    const config = storage.getCloudBrowserConfig('aws-agentcore');
+    const storedCreds = getApiKey('cloud-browser-aws');
+    let credentialPrefix: string | null = null;
+    if (storedCreds) {
+      try {
+        const parsed = JSON.parse(storedCreds);
+        if (parsed.authType === 'accessKeys' && parsed.accessKeyId) {
+          credentialPrefix = `${parsed.accessKeyId.substring(0, 8)}...`;
+        } else if (parsed.authType === 'profile' && parsed.profileName) {
+          credentialPrefix = parsed.profileName;
+        }
+      } catch { /* ignore parse errors */ }
+    }
+    let parsedConfig: { region?: string; authType?: string } | null = null;
+    if (config) {
+      try {
+        parsedConfig = JSON.parse(config.config);
+      } catch { /* ignore parse errors */ }
+    }
+    return {
+      config: config ? { region: parsedConfig?.region || 'us-east-1', authType: parsedConfig?.authType || 'profile', enabled: config.enabled, lastValidated: config.lastValidated } : null,
+      hasCredentials: Boolean(storedCreds),
+      credentialPrefix,
+    };
+  });
+
+  handle('cloud-browsers:validate-aws', async (_event: IpcMainInvokeEvent, credentialsJson: string) => {
+    if (typeof credentialsJson !== 'string') {
+      throw new Error('Invalid credentials: expected a string');
+    }
+    const sanitizedCredentials = sanitizeString(credentialsJson, 'credentialsJson', 4096);
+    return validateBedrockCredentials(sanitizedCredentials);
+  });
+
+  handle('cloud-browsers:connect-aws', async (_event: IpcMainInvokeEvent, credentialsJson: string) => {
+    if (typeof credentialsJson !== 'string') {
+      throw new Error('Invalid credentials: expected a string');
+    }
+    const sanitizedCredentials = sanitizeString(credentialsJson, 'credentialsJson', 4096);
+    const result = await validateBedrockCredentials(sanitizedCredentials);
+    if (!result.valid) {
+      throw new Error(result.error ?? 'Validation failed');
+    }
+    const parseResult = safeParseJson<BedrockCredentials>(sanitizedCredentials);
+    if (!parseResult.success) {
+      throw new Error('Failed to parse credentials');
+    }
+    const parsed = parseResult.data;
+    const VALID_AUTH_TYPES = ['profile', 'accessKeys', 'apiKey'] as const;
+    if (!VALID_AUTH_TYPES.includes(parsed.authType as typeof VALID_AUTH_TYPES[number])) {
+      throw new Error('Invalid authType');
+    }
+    const AWS_REGION_PATTERN = /^[a-z]{2}-[a-z]+-\d+$/;
+    if (parsed.region && !AWS_REGION_PATTERN.test(parsed.region)) {
+      throw new Error('Invalid AWS region format');
+    }
+    storeApiKey('cloud-browser-aws', sanitizedCredentials);
+    storage.setCloudBrowserConfig('aws-agentcore', JSON.stringify({ region: parsed.region || 'us-east-1', authType: parsed.authType }), true);
+    storage.setCloudBrowserLastValidated('aws-agentcore', Date.now());
+  });
+
+  handle('cloud-browsers:disconnect-aws', async () => {
+    storage.deleteCloudBrowserConfig('aws-agentcore');
+    deleteApiKey('cloud-browser-aws');
+  });
 }
 
 // In-memory store for pending OAuth flows (keyed by state parameter)
