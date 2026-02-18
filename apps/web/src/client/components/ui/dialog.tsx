@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { motion } from 'framer-motion';
@@ -71,12 +69,13 @@ const DialogContent = React.forwardRef<
           initial={{ opacity: 0 }}
           animate={{ opacity: isOpen ? 1 : 0 }}
           transition={{ duration: EXIT_ANIMATION_DURATION / 1000 }}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-white/60 backdrop-blur-[12px]"
         />
       </DialogPrimitive.Overlay>
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"
+        aria-describedby={undefined}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         {...props}
       >

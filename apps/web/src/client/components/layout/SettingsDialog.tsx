@@ -1,5 +1,3 @@
-'use client';
-
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -12,8 +10,19 @@ import { ProviderGrid } from '@/components/settings/ProviderGrid';
 import { ProviderSettingsPanel } from '@/components/settings/ProviderSettingsPanel';
 import { SpeechSettingsForm } from '@/components/settings/SpeechSettingsForm';
 import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
+import { AboutTab } from '@/components/settings/AboutTab';
+import { DebugSection } from '@/components/settings/DebugSection';
 import { ConnectorsPanel } from '@/components/settings/connectors';
-import { applyTheme } from '@/lib/theme';
+import { Key, Zap, Mic, Info, Cable } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const TABS = [
+  { id: 'providers' as const, label: 'Providers', icon: Key },
+  { id: 'skills' as const, label: 'Skills', icon: Zap },
+  { id: 'connectors' as const, label: 'Connectors', icon: Cable },
+  { id: 'voice' as const, label: 'Voice Input', icon: Mic },
+  { id: 'about' as const, label: 'About', icon: Info },
+];
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
 const FIRST_FOUR_PROVIDERS: ProviderId[] = ['openai', 'anthropic', 'google', 'bedrock'];
@@ -26,10 +35,10 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about';
+  initialTab?: 'providers' | 'voice' | 'skills' | 'connectors' | 'about';
 }
 
-export default function SettingsDialog({
+export function SettingsDialog({
   open,
   onOpenChange,
   onApiKeySaved,
@@ -41,7 +50,7 @@ export default function SettingsDialog({
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'providers' | 'connectors' | 'voice' | 'skills' | 'appearance' | 'about'
+    'providers' | 'voice' | 'skills' | 'connectors' | 'about'
   >(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
@@ -56,55 +65,47 @@ export default function SettingsDialog({
     refetch,
   } = useProviderSettings();
 
-  const [theme, setThemeState] = useState<string>('system');
   // Debug mode state - stored in appSettings, not providerSettings
   const [debugMode, setDebugModeState] = useState(false);
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
-    'idle',
-  );
   const accomplish = getAccomplish();
 
   // Refetch settings and debug mode when dialog opens
   useEffect(() => {
     if (!open) return;
     refetch();
-    accomplish.getTheme().then(setThemeState);
+    // Load debug mode from appSettings (correct store)
     accomplish.getDebugMode().then(setDebugModeState);
     // Load app version
     accomplish.getVersion().then(setAppVersion);
   }, [open, refetch, accomplish]);
 
-  // Auto-select active provider (or initialProvider) and expand grid if needed when dialog opens
-  useEffect(() => {
-    if (!open || loading) return;
-
-    // Use initialProvider if provided, otherwise fall back to activeProviderId
-    const providerToSelect = initialProvider || settings?.activeProviderId;
-    if (!providerToSelect) return;
-
-    // Auto-select the provider to show its connection details immediately
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedProvider(providerToSelect);
-
-    // Auto-expand grid if selected provider is not in the first 4 visible providers
-    if (!FIRST_FOUR_PROVIDERS.includes(providerToSelect)) {
-      setGridExpanded(true);
-    }
-  }, [open, loading, initialProvider, settings?.activeProviderId]);
-
-  // Reset state when dialog closes, set initial tab when it opens
+  // Reset/initialize state when dialog opens or closes
   useEffect(() => {
     if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset on close
       setSelectedProvider(null);
       setGridExpanded(false);
       setCloseWarning(false);
       setShowModelError(false);
     } else {
-      // Set the tab when dialog opens based on initialTab prop
       setActiveTab(initialTab);
     }
   }, [open, initialTab]);
+
+  // Auto-select active provider (or initialProvider) and expand grid if needed when dialog opens
+  useEffect(() => {
+    if (!open || loading) return;
+
+    const providerToSelect = initialProvider || settings?.activeProviderId;
+    if (!providerToSelect) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: auto-select on open
+    setSelectedProvider(providerToSelect);
+
+    if (!FIRST_FOUR_PROVIDERS.includes(providerToSelect)) {
+      setGridExpanded(true);
+    }
+  }, [open, loading, initialProvider, settings?.activeProviderId]);
 
   // Handle close attempt
   const handleOpenChange = useCallback(
@@ -156,7 +157,6 @@ export default function SettingsDialog({
   );
 
   // Handle provider disconnection
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleDisconnect = useCallback(async () => {
     if (!selectedProvider) return;
     const wasActiveProvider = settings?.activeProviderId === selectedProvider;
@@ -173,13 +173,7 @@ export default function SettingsDialog({
         await setActiveProvider(readyProviderId);
       }
     }
-  }, [
-    selectedProvider,
-    disconnectProvider,
-    settings?.activeProviderId,
-    settings?.connectedProviders,
-    setActiveProvider,
-  ]);
+  }, [selectedProvider, disconnectProvider, settings, setActiveProvider]);
 
   // Handle model change
   const handleModelChange = useCallback(
@@ -201,44 +195,12 @@ export default function SettingsDialog({
     [selectedProvider, updateModel, settings, setActiveProvider, onApiKeySaved],
   );
 
-  const handleThemeChange = useCallback(
-    async (value: string) => {
-      setThemeState(value);
-      applyTheme(value);
-      await accomplish.setTheme(value);
-    },
-    [accomplish],
-  );
-
   // Handle debug mode toggle - writes to appSettings (correct store)
   const handleDebugToggle = useCallback(async () => {
     const newValue = !debugMode;
     await accomplish.setDebugMode(newValue);
     setDebugModeState(newValue);
   }, [debugMode, accomplish]);
-
-  // Handle log export
-  const handleExportLogs = useCallback(async () => {
-    setExportStatus('exporting');
-    try {
-      const result = await accomplish.exportLogs();
-      if (result.success) {
-        setExportStatus('success');
-        // Reset to idle after 2 seconds
-        setTimeout(() => setExportStatus('idle'), 2000);
-      } else if (result.reason === 'cancelled') {
-        setExportStatus('idle');
-      } else {
-        console.error('Failed to export logs:', result.error);
-        setExportStatus('error');
-        setTimeout(() => setExportStatus('idle'), 3000);
-      }
-    } catch (error) {
-      console.error('Export logs error:', error);
-      setExportStatus('error');
-      setTimeout(() => setExportStatus('idle'), 3000);
-    }
-  }, [accomplish]);
 
   // Handle done button (close with validation)
   const handleDone = useCallback(() => {
@@ -296,12 +258,12 @@ export default function SettingsDialog({
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
-          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          className="max-w-4xl w-full h-[80vh] flex flex-col overflow-hidden p-0"
           data-testid="settings-dialog"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <DialogHeader>
-            <DialogTitle>Set up Accomplish</DialogTitle>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Settings</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -314,448 +276,204 @@ export default function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="max-w-4xl w-full h-[65vh] flex overflow-hidden p-0"
         data-testid="settings-dialog"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle>Set up Accomplish</DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Tab Navigation */}
-          <div className="flex items-end justify-between border-b border-border">
-            <div className="flex gap-4">
-              <button
-                onClick={() => setActiveTab('providers')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'providers'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Providers
-              </button>
-              <button
-                onClick={() => setActiveTab('connectors')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'connectors'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Connectors
-              </button>
-              <button
-                onClick={() => setActiveTab('skills')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'skills'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Skills
-              </button>
-              <button
-                onClick={() => setActiveTab('voice')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'voice'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Voice Input
-              </button>
-              <button
-                onClick={() => setActiveTab('appearance')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'appearance'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Appearance
-              </button>
-              <button
-                onClick={() => setActiveTab('about')}
-                className={`pb-3 px-1 font-medium text-sm transition-colors ${
-                  activeTab === 'about'
-                    ? 'text-foreground border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                About
-              </button>
-            </div>
-            {activeTab === 'skills' && (
-              <div className="pb-2">
-                <AddSkillDropdown
-                  onSkillAdded={() => setSkillsRefreshTrigger((t) => t + 1)}
-                  onClose={() => onOpenChange(false)}
-                />
-              </div>
-            )}
+        {/* Left sidebar navigation */}
+        <nav className="w-48 shrink-0 border-r border-border bg-muted/30 p-3 flex flex-col gap-1">
+          <div className="px-3 py-2 mb-1">
+            <img
+              src="/assets/logo-1.png"
+              alt="Accomplish"
+              style={{ height: '20px', paddingLeft: '6px' }}
+            />
+          </div>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left',
+                activeTab === tab.id
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
+              )}
+            >
+              <tab.icon className="h-4 w-4 shrink-0" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Right content area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Content header with title + optional actions */}
+          <div className="flex items-center justify-between px-6 pt-5 pb-3">
+            <h3 className="text-sm font-semibold text-foreground">
+              {TABS.find((t) => t.id === activeTab)?.label}
+            </h3>
           </div>
 
-          {/* Close Warning - shown on all tabs when no provider ready */}
-          <AnimatePresence>
-            {closeWarning && (
-              <motion.div
-                className="rounded-lg border border-warning bg-warning/10 p-4 mb-6"
-                variants={settingsVariants.fadeSlide}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={settingsTransitions.enter}
-              >
-                <div className="flex items-start gap-3">
-                  <svg
-                    className="h-5 w-5 text-warning flex-shrink-0 mt-0.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-warning">No provider ready</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      You need to connect a provider and select a model before you can run tasks.
-                    </p>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={handleForceClose}
-                        className="rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80"
-                      >
-                        Close Anyway
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Providers Tab */}
-          {activeTab === 'providers' && (
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             <div className="space-y-6">
-              {/* Provider Grid Section */}
-              <section>
-                <ProviderGrid
-                  settings={settings}
-                  selectedProvider={selectedProvider}
-                  onSelectProvider={handleSelectProvider}
-                  expanded={gridExpanded}
-                  onToggleExpanded={() => setGridExpanded(!gridExpanded)}
-                />
-              </section>
-
-              {/* Provider Settings Panel (shown when a provider is selected) */}
+              {/* Close Warning */}
               <AnimatePresence>
-                {selectedProvider && (
-                  <motion.section
-                    variants={settingsVariants.slideDown}
+                {closeWarning && (
+                  <motion.div
+                    className="rounded-lg border border-warning bg-warning/10 p-4 mb-6"
+                    variants={settingsVariants.fadeSlide}
                     initial="initial"
                     animate="animate"
                     exit="exit"
                     transition={settingsTransitions.enter}
                   >
-                    <ProviderSettingsPanel
-                      key={selectedProvider}
-                      providerId={selectedProvider}
-                      connectedProvider={settings?.connectedProviders?.[selectedProvider]}
-                      onConnect={handleConnect}
-                      onDisconnect={handleDisconnect}
-                      onModelChange={handleModelChange}
-                      showModelError={showModelError}
-                    />
-                  </motion.section>
-                )}
-              </AnimatePresence>
-
-              {/* Debug Mode Section - only shown when a provider is selected */}
-              <AnimatePresence>
-                {selectedProvider && (
-                  <motion.section
-                    variants={settingsVariants.slideDown}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    transition={{ ...settingsTransitions.enter, delay: 0.05 }}
-                  >
-                    <div className="rounded-lg border border-border bg-card p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">Debug Mode</div>
-                          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                            Show detailed backend logs in the task view.
-                          </p>
-                        </div>
-                        <div className="ml-4 flex items-center gap-3">
-                          {/* Debug Toggle */}
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="h-5 w-5 text-warning flex-shrink-0 mt-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-warning">No provider ready</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          You need to connect a provider and select a model before you can run
+                          tasks.
+                        </p>
+                        <div className="mt-3 flex gap-2">
                           <button
-                            data-testid="settings-debug-toggle"
-                            onClick={handleDebugToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${
-                              debugMode ? 'bg-primary' : 'bg-muted'
-                            }`}
+                            onClick={handleForceClose}
+                            className="rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80"
                           >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${
-                                debugMode ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                          {/* Export Logs Button */}
-                          <button
-                            onClick={handleExportLogs}
-                            disabled={exportStatus === 'exporting'}
-                            title="Export Logs"
-                            className={`rounded-md p-1.5 transition-colors ${
-                              exportStatus === 'success'
-                                ? 'text-green-500'
-                                : exportStatus === 'error'
-                                  ? 'text-destructive'
-                                  : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            {exportStatus === 'exporting' ? (
-                              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                />
-                              </svg>
-                            ) : exportStatus === 'success' ? (
-                              <svg
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                              </svg>
-                            )}
+                            Close Anyway
                           </button>
                         </div>
                       </div>
-                      {debugMode && (
-                        <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
-                          <p className="text-sm text-warning">
-                            Debug mode is enabled. Backend logs will appear in the task view when
-                            running tasks.
-                          </p>
-                        </div>
-                      )}
                     </div>
-                  </motion.section>
+                  </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-          )}
 
-          {/* Connectors Tab */}
-          {activeTab === 'connectors' && (
-            <div className="space-y-6">
-              <ConnectorsPanel />
-            </div>
-          )}
+              {/* Providers Tab */}
+              {activeTab === 'providers' && (
+                <div className="space-y-6">
+                  <section>
+                    <ProviderGrid
+                      settings={settings}
+                      selectedProvider={selectedProvider}
+                      onSelectProvider={handleSelectProvider}
+                      expanded={gridExpanded}
+                      onToggleExpanded={() => setGridExpanded(!gridExpanded)}
+                    />
+                  </section>
 
-          {/* Skills Tab */}
-          {activeTab === 'skills' && (
-            <div className="space-y-6">
-              <SkillsPanel refreshTrigger={skillsRefreshTrigger} />
-            </div>
-          )}
+                  <AnimatePresence>
+                    {selectedProvider && (
+                      <motion.section
+                        variants={settingsVariants.slideDown}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={settingsTransitions.enter}
+                      >
+                        <ProviderSettingsPanel
+                          key={selectedProvider}
+                          providerId={selectedProvider}
+                          connectedProvider={settings?.connectedProviders?.[selectedProvider]}
+                          onConnect={handleConnect}
+                          onDisconnect={handleDisconnect}
+                          onModelChange={handleModelChange}
+                          showModelError={showModelError}
+                        />
+                      </motion.section>
+                    )}
+                  </AnimatePresence>
 
-          {/* Voice Input Tab */}
-          {activeTab === 'voice' && (
-            <div className="space-y-6">
-              <SpeechSettingsForm onSave={() => {}} onChange={() => {}} />
-            </div>
-          )}
-
-          {/* Appearance Tab */}
-          {activeTab === 'appearance' && (
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border bg-card p-5">
-                <div className="font-medium text-foreground">Theme</div>
-                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                  Choose how Accomplish looks. Select System to match your operating system setting.
-                </p>
-                <div
-                  className="mt-4 flex rounded-lg border border-border bg-muted p-1"
-                  role="radiogroup"
-                  aria-label="Theme preference"
-                >
-                  {(
-                    [
-                      {
-                        value: 'system',
-                        label: 'System',
-                        icon: (
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z"
-                            />
-                          </svg>
-                        ),
-                      },
-                      {
-                        value: 'light',
-                        label: 'Light',
-                        icon: (
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
-                            />
-                          </svg>
-                        ),
-                      },
-                      {
-                        value: 'dark',
-                        label: 'Dark',
-                        icon: (
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
-                            />
-                          </svg>
-                        ),
-                      },
-                    ] as const
-                  ).map((option) => (
-                    <button
-                      key={option.value}
-                      role="radio"
-                      aria-checked={theme === option.value}
-                      onClick={() => handleThemeChange(option.value)}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        theme === option.value
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {option.icon}
-                      {option.label}
-                    </button>
-                  ))}
+                  <AnimatePresence>
+                    {selectedProvider && (
+                      <motion.section
+                        variants={settingsVariants.slideDown}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={{ ...settingsTransitions.enter, delay: 0.05 }}
+                      >
+                        <DebugSection debugMode={debugMode} onDebugToggle={handleDebugToggle} />
+                      </motion.section>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* About Tab */}
-          {activeTab === 'about' && (
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border bg-card p-6">
+              {/* Skills Tab */}
+              {activeTab === 'skills' && (
                 <div className="space-y-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Visit us</div>
-                    <a
-                      href="https://www.accomplish.ai"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      www.accomplish.ai
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Have a question?</div>
-                    <a href="mailto:support@accomplish.ai" className="text-primary hover:underline">
-                      support@accomplish.ai
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Version</div>
-                    <div className="font-medium">{appVersion || 'Loading...'}</div>
-                  </div>
+                  <SkillsPanel refreshTrigger={skillsRefreshTrigger} />
                 </div>
-                <div className="mt-6 pt-4 border-t border-border text-xs text-muted-foreground">
-                  Accomplish™ All rights reserved.
+              )}
+
+              {/* Connectors Tab */}
+              {activeTab === 'connectors' && (
+                <div className="space-y-6">
+                  <ConnectorsPanel />
                 </div>
+              )}
+
+              {/* Voice Input Tab */}
+              {activeTab === 'voice' && (
+                <div className="space-y-6">
+                  <SpeechSettingsForm />
+                </div>
+              )}
+
+              {/* About Tab */}
+              {activeTab === 'about' && <AboutTab appVersion={appVersion} />}
+
+              {/* Footer: Add (skills only) + Done */}
+              <div className="mt-4 flex items-center justify-between">
+                <div>
+                  {activeTab === 'skills' && (
+                    <AddSkillDropdown
+                      onSkillAdded={() => setSkillsRefreshTrigger((t) => t + 1)}
+                      onClose={() => onOpenChange(false)}
+                    />
+                  )}
+                </div>
+                <button
+                  onClick={handleDone}
+                  className="flex items-center gap-2 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  data-testid="settings-done-button"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Done
+                </button>
               </div>
             </div>
-          )}
-
-          {/* Done Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleDone}
-              className="flex items-center gap-2 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              data-testid="settings-done-button"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              Done
-            </button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+export default SettingsDialog;

@@ -1,5 +1,3 @@
-// apps/desktop/src/renderer/components/settings/skills/SkillsPanel.tsx
-
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Skill } from '@accomplish_ai/agent-core/common';
@@ -296,7 +294,7 @@ export function SkillsPanel({ refreshTrigger }: SkillsPanelProps) {
       <div
         ref={scrollRef}
         onScroll={checkScrollPosition}
-        className="max-h-[480px] min-h-[480px] overflow-y-auto pr-1"
+        className="max-h-[480px] overflow-y-auto pr-1"
       >
         <div className="grid grid-cols-2 gap-3">
           <AnimatePresence mode="popLayout">
