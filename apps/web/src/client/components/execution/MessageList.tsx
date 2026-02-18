@@ -85,6 +85,10 @@ export const MessageBubble = memo(
       return null;
     }
 
+    if (isTool && message.toolName?.endsWith('complete_task')) {
+      return null;
+    }
+
     const showCopyButton = !isTool && !!message.content?.trim();
 
     const proseClasses = cn(
