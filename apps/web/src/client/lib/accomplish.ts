@@ -24,6 +24,8 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  CloudBrowserConfig,
+  MessagingConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -78,6 +80,10 @@ interface AccomplishAPI {
   setTheme(theme: string): Promise<void>;
   onThemeChange?(callback: (data: { theme: string; resolved: string }) => void): () => void;
   getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }>;
+  getCloudBrowserConfig(): Promise<CloudBrowserConfig | null>;
+  setCloudBrowserConfig(config: CloudBrowserConfig | null): Promise<void>;
+  getMessagingConfig(): Promise<MessagingConfig | null>;
+  setMessagingConfig(config: MessagingConfig | null): Promise<void>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;
   getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;

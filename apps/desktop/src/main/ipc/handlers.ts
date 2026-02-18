@@ -963,6 +963,45 @@ export function registerIPCHandlers(): void {
     return storage.getAppSettings();
   });
 
+  handle('settings:cloud-browser-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getCloudBrowserConfig();
+  });
+
+  handle(
+    'settings:cloud-browser-config:set',
+    async (_event: IpcMainInvokeEvent, config: string | null) => {
+      if (config === null) {
+        storage.setCloudBrowserConfig(null);
+        return;
+      }
+      if (typeof config !== 'string') {
+        throw new Error('Invalid cloud browser config');
+      }
+      const parsed = JSON.parse(config);
+      storage.setCloudBrowserConfig(parsed);
+    },
+  );
+
+  // --- Messaging Integration ---
+  handle('settings:messaging-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getMessagingConfig();
+  });
+
+  handle(
+    'settings:messaging-config:set',
+    async (_event: IpcMainInvokeEvent, config: string | null) => {
+      if (config === null) {
+        storage.setMessagingConfig(null);
+        return;
+      }
+      if (typeof config !== 'string') {
+        throw new Error('Invalid messaging config');
+      }
+      const parsed = JSON.parse(config);
+      storage.setMessagingConfig(parsed);
+    },
+  );
+
   handle('settings:openai-base-url:get', async (_event: IpcMainInvokeEvent) => {
     return storage.getOpenAiBaseUrl();
   });
