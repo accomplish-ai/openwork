@@ -27,6 +27,14 @@ export function getBedrockCredentials(): Record<string, string> | null {
   return getStorage().getBedrockCredentials();
 }
 
+export function storeCloudBrowserCredentials(credentials: string): void {
+  getStorage().storeCloudBrowserCredentials(credentials);
+}
+
+export function getCloudBrowserCredentials(): Record<string, string> | null {
+  return getStorage().getCloudBrowserCredentials();
+}
+
 export async function hasAnyApiKey(): Promise<boolean> {
   return getStorage().hasAnyApiKey();
 }

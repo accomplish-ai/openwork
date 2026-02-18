@@ -34,6 +34,8 @@ import {
   getAllApiKeys,
   hasAnyApiKey,
   getBedrockCredentials,
+  storeCloudBrowserCredentials,
+  getCloudBrowserCredentials,
 } from '../store/secureStorage';
 import {
   testOllamaModelToolSupport,
@@ -82,6 +84,8 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
   ToolSupportStatus,
+  CloudBrowserConfig,
+  CloudBrowserCredentials,
 } from '@accomplish_ai/agent-core';
 import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
@@ -100,6 +104,8 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import { clearCloudBrowserSession, testCloudBrowserConnection } from '../services/cloudBrowserAgentCore';
+import { cloudBrowserProviderRegistry } from '../services/cloudBrowserProviders';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -909,6 +915,64 @@ export function registerIPCHandlers(): void {
     validateHttpUrl(trimmed, 'OpenAI base URL');
     storage.setOpenAiBaseUrl(trimmed.replace(/\/+$/, ''));
   });
+
+  handle('settings:cloud-browser:get', async () => {
+    return {
+      config: storage.getCloudBrowserConfig(),
+      credentials: getCloudBrowserCredentials(),
+    };
+  });
+
+  handle(
+    'settings:cloud-browser:set',
+    async (
+      _event: IpcMainInvokeEvent,
+      config: CloudBrowserConfig | null,
+      credentials: CloudBrowserCredentials | null
+    ) => {
+      if (config !== null) {
+        // Use provider registry for validation
+        const validation = cloudBrowserProviderRegistry.validateConfig(config);
+        if (!validation.valid) {
+          throw new Error(`Invalid cloud browser config: ${validation.error}`);
+        }
+      }
+
+      if (credentials !== null) {
+        if (credentials.authMode !== 'accessKeys' && credentials.authMode !== 'profile') {
+          throw new Error('Invalid cloud browser credentials: authMode must be accessKeys or profile');
+        }
+        if (credentials.authMode === 'accessKeys') {
+          if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+            throw new Error('Invalid cloud browser credentials: accessKeyId and secretAccessKey are required');
+          }
+        }
+        if (credentials.authMode === 'profile' && !credentials.profileName) {
+          throw new Error('Invalid cloud browser credentials: profileName is required');
+        }
+      }
+
+      storage.setCloudBrowserConfig(config);
+      if (credentials) {
+        storeCloudBrowserCredentials(JSON.stringify(credentials));
+      }
+      if (config === null) {
+        storeCloudBrowserCredentials(JSON.stringify({}));
+      }
+      clearCloudBrowserSession();
+    }
+  );
+
+  handle(
+    'settings:cloud-browser:test-connection',
+    async (
+      _event: IpcMainInvokeEvent,
+      config: CloudBrowserConfig,
+      credentials: CloudBrowserCredentials | null
+    ) => {
+      return testCloudBrowserConnection(config, credentials);
+    }
+  );
 
   handle('opencode:auth:openai:status', async (_event: IpcMainInvokeEvent) => {
     return getOpenAiOauthStatus();

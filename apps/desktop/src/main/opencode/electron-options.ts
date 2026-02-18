@@ -23,6 +23,7 @@ import { getAllApiKeys, getBedrockCredentials, getApiKey } from '../store/secure
 import { generateOpenCodeConfig, getMcpToolsPath, syncApiKeysToOpenCodeAuth } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+import { ensureCloudBrowserSession, isCloudBrowserEnabled } from '../services/cloudBrowserAgentCore';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
 
@@ -249,8 +250,12 @@ export async function onBeforeTaskStart(
   callbacks: TaskCallbacks,
   isFirstTask: boolean
 ): Promise<void> {
-  if (isFirstTask) {
-    callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
+  callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
+
+  if (isCloudBrowserEnabled()) {
+    callbacks.onProgress({ stage: 'browser', message: 'Provisioning AWS AgentCore cloud browser...', isFirstTask });
+    await ensureCloudBrowserSession();
+    return;
   }
 
   const browserConfig = getBrowserServerConfig();

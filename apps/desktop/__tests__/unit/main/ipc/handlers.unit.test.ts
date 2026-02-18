@@ -22,6 +22,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
+const {
+  mockTestCloudBrowserConnection,
+  mockClearCloudBrowserSession,
+} = vi.hoisted(() => ({
+  mockTestCloudBrowserConnection: vi.fn(),
+  mockClearCloudBrowserSession: vi.fn(),
+}));
+
 // Mock electron modules before importing handlers
 vi.mock('electron', () => {
   const mockHandlers = new Map<string, Function>();
@@ -109,6 +117,11 @@ vi.mock('@main/opencode/auth', () => ({
   loginOpenAiWithChatGpt: vi.fn(() => Promise.resolve({ openedUrl: undefined })),
 }));
 
+vi.mock('@main/services/cloudBrowserAgentCore', () => ({
+  testCloudBrowserConnection: mockTestCloudBrowserConnection,
+  clearCloudBrowserSession: mockClearCloudBrowserSession,
+}));
+
 // Mock task history (stored in test state)
 const mockTasks: Array<{
   id: string;
@@ -168,7 +181,13 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
       debugMode: mockDebugMode,
       onboardingComplete: mockOnboardingComplete,
       selectedModel: mockSelectedModel,
+      ollamaConfig: null,
+      litellmConfig: null,
+      azureFoundryConfig: null,
+      lmstudioConfig: null,
+      cloudBrowserConfig: null,
       openaiBaseUrl: mockOpenAiBaseUrl,
+      theme: 'system',
     })),
     getOnboardingComplete: vi.fn(() => mockOnboardingComplete),
     setOnboardingComplete: vi.fn((complete: boolean) => {
@@ -190,6 +209,8 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     setLiteLLMConfig: vi.fn(),
     getLMStudioConfig: vi.fn(() => null),
     setLMStudioConfig: vi.fn(),
+    getCloudBrowserConfig: vi.fn(() => null),
+    setCloudBrowserConfig: vi.fn(),
     clearAppSettings: vi.fn(),
 
     // Provider settings
@@ -239,6 +260,8 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     getAllApiKeys: vi.fn(() => Promise.resolve({})),
     storeBedrockCredentials: vi.fn(),
     getBedrockCredentials: vi.fn(() => null),
+    storeCloudBrowserCredentials: vi.fn(),
+    getCloudBrowserCredentials: vi.fn(() => null),
     hasAnyApiKey: vi.fn(() => Promise.resolve(false)),
     listStoredCredentials: vi.fn(() => []),
     clearSecureStorage: vi.fn(),
@@ -334,6 +357,9 @@ vi.mock('@main/store/secureStorage', () => ({
   hasAnyApiKey: vi.fn(() =>
     Promise.resolve(Object.values(mockApiKeys).some((k) => k !== null))
   ),
+  storeCloudBrowserCredentials: vi.fn(),
+  getCloudBrowserCredentials: vi.fn(() => null),
+  getBedrockCredentials: vi.fn(() => null),
   listStoredCredentials: vi.fn(() => mockStoredCredentials),
 }));
 
@@ -561,6 +587,8 @@ describe('IPC Handlers Integration', () => {
   describe('Settings Handlers', () => {
     beforeEach(() => {
       registerIPCHandlers();
+      mockTestCloudBrowserConnection.mockReset();
+      mockClearCloudBrowserSession.mockReset();
     });
 
     it('settings:debug-mode should return current debug mode', async () => {
@@ -607,7 +635,7 @@ describe('IPC Handlers Integration', () => {
       const result = await invokeHandler('settings:app-settings');
 
       // Assert
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         debugMode: true,
         onboardingComplete: true,
         selectedModel: { provider: 'anthropic', model: 'claude-3-opus' },
@@ -677,6 +705,66 @@ describe('IPC Handlers Integration', () => {
       // Assert
       const { deleteApiKey } = await import('@main/store/secureStorage');
       expect(deleteApiKey).toHaveBeenCalledWith('openai');
+    });
+
+    it('settings:cloud-browser:get should return config and credentials', async () => {
+      const { getCloudBrowserCredentials } = await import('@main/store/secureStorage');
+      const mockCreds = {
+        authMode: 'accessKeys',
+        accessKeyId: 'AKIA123',
+        secretAccessKey: 'secret',
+      };
+      (getCloudBrowserCredentials as unknown as Mock).mockReturnValue(mockCreds);
+
+      const result = await invokeHandler('settings:cloud-browser:get');
+
+      expect(result).toEqual({
+        config: null,
+        credentials: mockCreds,
+      });
+    });
+
+    it('settings:cloud-browser:set should persist config and credentials', async () => {
+      const config = {
+        provider: 'aws-agentcore',
+        enabled: true,
+        region: 'us-east-1',
+        authMode: 'accessKeys',
+        cdpEndpoint: 'https://localhost:9222',
+      };
+      const credentials = {
+        authMode: 'accessKeys',
+        accessKeyId: 'AKIA123',
+        secretAccessKey: 'secret',
+      };
+
+      await invokeHandler('settings:cloud-browser:set', config, credentials);
+
+      const { setCloudBrowserConfig } = await import('@accomplish_ai/agent-core');
+      const { storeCloudBrowserCredentials } = await import('@main/store/secureStorage');
+
+      expect(setCloudBrowserConfig).toHaveBeenCalledWith(config);
+      expect(storeCloudBrowserCredentials).toHaveBeenCalledWith(JSON.stringify(credentials));
+      expect(mockClearCloudBrowserSession).toHaveBeenCalled();
+    });
+
+    it('settings:cloud-browser:test-connection should forward to service', async () => {
+      const config = {
+        provider: 'aws-agentcore',
+        enabled: true,
+        region: 'us-east-1',
+        authMode: 'profile',
+      };
+      const credentials = {
+        authMode: 'profile',
+        profileName: 'default',
+      };
+      mockTestCloudBrowserConnection.mockResolvedValue({ success: true });
+
+      const result = await invokeHandler('settings:cloud-browser:test-connection', config, credentials);
+
+      expect(mockTestCloudBrowserConnection).toHaveBeenCalledWith(config, credentials);
+      expect(result).toEqual({ success: true });
     });
   });
 

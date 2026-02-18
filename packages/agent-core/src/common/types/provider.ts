@@ -160,6 +160,45 @@ export interface LMStudioConfig {
   models?: LMStudioModel[];
 }
 
+export type CloudBrowserProvider = 'aws-agentcore';
+
+export type CloudBrowserAuthMode = 'accessKeys' | 'profile';
+
+export interface CloudBrowserConfig {
+  provider: CloudBrowserProvider;
+  enabled: boolean;
+  region: string;
+  authMode: CloudBrowserAuthMode;
+  workspaceId?: string;
+  browserPoolId?: string;
+  headless?: boolean;
+  viewportWidth?: number;
+  viewportHeight?: number;
+  connectTimeoutMs?: number;
+  /**
+   * Optional URL for an AgentCore Browser Tool broker service that returns
+   * a CDP endpoint and auth headers.
+   */
+  agentCoreApiUrl?: string;
+  /**
+   * Optional direct CDP endpoint override (used when no broker is required).
+   */
+  cdpEndpoint?: string;
+  /**
+   * Optional shared secret for CDP endpoint auth.
+   * Mapped to X-CDP-Secret/CDP_SECRET where needed.
+   */
+  cdpSecret?: string;
+}
+
+export interface CloudBrowserCredentials {
+  authMode: CloudBrowserAuthMode;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string;
+  profileName?: string;
+}
+
 export const DEFAULT_PROVIDERS: ProviderConfig[] = [
   {
     id: 'anthropic',

@@ -6,6 +6,7 @@ import type {
   LiteLLMConfig,
   AzureFoundryConfig,
   LMStudioConfig,
+  CloudBrowserConfig,
 } from '../common/types/provider.js';
 import type {
   ProviderId,
@@ -56,6 +57,7 @@ export interface AppSettings {
   litellmConfig: LiteLLMConfig | null;
   azureFoundryConfig: AzureFoundryConfig | null;
   lmstudioConfig: LMStudioConfig | null;
+  cloudBrowserConfig: CloudBrowserConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
 }
@@ -122,6 +124,10 @@ export interface AppSettingsAPI {
   getLMStudioConfig(): LMStudioConfig | null;
   /** Set the LM Studio configuration */
   setLMStudioConfig(config: LMStudioConfig | null): void;
+  /** Get the cloud browser configuration */
+  getCloudBrowserConfig(): CloudBrowserConfig | null;
+  /** Set the cloud browser configuration */
+  setCloudBrowserConfig(config: CloudBrowserConfig | null): void;
   /** Get the custom OpenAI base URL */
   getOpenAiBaseUrl(): string;
   /** Set the custom OpenAI base URL */
@@ -184,6 +190,10 @@ export interface SecureStorageAPI {
   storeBedrockCredentials(credentials: string): void;
   /** Retrieve AWS Bedrock credentials */
   getBedrockCredentials(): Record<string, string> | null;
+  /** Store cloud browser credentials */
+  storeCloudBrowserCredentials(credentials: string): void;
+  /** Retrieve cloud browser credentials */
+  getCloudBrowserCredentials(): Record<string, string> | null;
   /** Check if any API key is stored */
   hasAnyApiKey(): Promise<boolean>;
   /** List all stored credential entries */
@@ -249,6 +259,7 @@ export type {
   LiteLLMConfig,
   AzureFoundryConfig,
   LMStudioConfig,
+  CloudBrowserConfig,
   ProviderId,
   ProviderSettings,
   ConnectedProvider,

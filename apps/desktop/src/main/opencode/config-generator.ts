@@ -8,12 +8,14 @@ import {
   getOpenCodeAuthPath,
   isTokenExpired,
   refreshAccessToken,
+  type BrowserConfig,
 } from '@accomplish_ai/agent-core';
 import { getApiKey, getAllApiKeys } from '../store/secureStorage';
 import { getStorage } from '../store/storage';
 import { getNodePath } from '../utils/bundled-node';
 import { skillsManager } from '../skills';
 import { PERMISSION_API_PORT, QUESTION_API_PORT } from '@accomplish_ai/agent-core';
+import { getCurrentCloudBrowserSession } from '../services/cloudBrowserAgentCore';
 
 export { ACCOMPLISH_AGENT_NAME };
 
@@ -82,6 +84,22 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   // Fetch enabled connectors with valid tokens
   const storage = getStorage();
   const enabledConnectors = storage.getEnabledConnectors();
+  const cloudBrowserConfig = storage.getCloudBrowserConfig();
+  const cloudBrowserSession = getCurrentCloudBrowserSession();
+  let browser: BrowserConfig | undefined;
+
+  if (cloudBrowserConfig?.enabled && cloudBrowserConfig.provider === 'aws-agentcore') {
+    const cdpEndpoint = cloudBrowserSession?.cdpEndpoint || cloudBrowserConfig.cdpEndpoint;
+    if (cdpEndpoint) {
+      const cdpHeaders = cloudBrowserSession?.cdpHeaders
+        || (cloudBrowserConfig.cdpSecret ? { 'X-CDP-Secret': cloudBrowserConfig.cdpSecret } : undefined);
+      browser = {
+        mode: 'remote',
+        cdpEndpoint,
+        cdpHeaders,
+      };
+    }
+  }
   const connectors: Array<{ id: string; name: string; url: string; accessToken: string }> = [];
 
   for (const connector of enabledConnectors) {
@@ -138,6 +156,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     enabledProviders,
     model: modelOverride?.model,
     smallModel: modelOverride?.smallModel,
+    browser,
     connectors: connectors.length > 0 ? connectors : undefined,
   });
 

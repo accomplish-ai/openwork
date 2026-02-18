@@ -227,6 +227,20 @@ export class SecureStorage {
     }
   }
 
+  storeCloudBrowserCredentials(credentials: string): void {
+    this.set('cloudBrowser:aws-agentcore', credentials);
+  }
+
+  getCloudBrowserCredentials(): Record<string, string> | null {
+    const stored = this.get('cloudBrowser:aws-agentcore');
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  }
+
   async hasAnyApiKey(): Promise<boolean> {
     const keys = await this.getAllApiKeys();
     return Object.values(keys).some((k) => k !== null);

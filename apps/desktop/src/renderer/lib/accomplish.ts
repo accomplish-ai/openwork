@@ -24,6 +24,8 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  CloudBrowserConfig,
+  CloudBrowserCredentials,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -62,6 +64,9 @@ interface AccomplishAPI {
   getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }>;
   getOpenAiBaseUrl(): Promise<string>;
   setOpenAiBaseUrl(baseUrl: string): Promise<void>;
+  getCloudBrowserSettings(): Promise<{ config: CloudBrowserConfig | null; credentials: CloudBrowserCredentials | null }>;
+  setCloudBrowserSettings(config: CloudBrowserConfig | null, credentials: CloudBrowserCredentials | null): Promise<void>;
+  testCloudBrowserConnection(config: CloudBrowserConfig, credentials: CloudBrowserCredentials | null): Promise<{ success: boolean; error?: string }>;
   getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;
   loginOpenAiWithChatGpt(): Promise<{ ok: boolean; openedUrl?: string }>;
 

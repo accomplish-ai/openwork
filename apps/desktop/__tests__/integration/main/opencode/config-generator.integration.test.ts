@@ -27,6 +27,8 @@ import os from 'os';
 let tempUserDataDir: string;
 let tempAppDir: string;
 let tempMonorepoRoot: string;
+let mockCloudBrowserConfig: Record<string, unknown> | null = null;
+let mockCloudBrowserSession: Record<string, unknown> | null = null;
 
 // Mock only the external electron module
 const mockApp = {
@@ -40,6 +42,10 @@ const mockApp = {
 
 vi.mock('electron', () => ({
   app: mockApp,
+}));
+
+vi.mock('@main/services/cloudBrowserAgentCore', () => ({
+  getCurrentCloudBrowserSession: vi.fn(() => mockCloudBrowserSession),
 }));
 
 // Note: PERMISSION_API_PORT and QUESTION_API_PORT are now imported from @accomplish/shared
@@ -78,6 +84,7 @@ vi.mock('@accomplish_ai/agent-core', async () => {
       enabledProviders: string[];
       model?: string;
       smallModel?: string;
+      browser?: unknown;
     }) => {
       const configDir = actualPath.join(options.userDataPath, 'opencode');
       const configPath = actualPath.join(configDir, 'opencode.json');
@@ -154,6 +161,7 @@ Use AskUserQuestion tool for user interaction.`,
       storeConnectorTokens: vi.fn(),
       getConnectorTokens: vi.fn(() => null),
       deleteConnectorTokens: vi.fn(),
+      getCloudBrowserConfig: vi.fn(() => mockCloudBrowserConfig),
       initialize: vi.fn(),
       isDatabaseInitialized: vi.fn(() => true),
       close: vi.fn(),
@@ -205,6 +213,8 @@ Use AskUserQuestion tool for user interaction.`,
   setAzureFoundryConfig: vi.fn(),
   getLMStudioConfig: vi.fn(() => null),
   setLMStudioConfig: vi.fn(),
+  getCloudBrowserConfig: vi.fn(() => null),
+  setCloudBrowserConfig: vi.fn(),
   getAppSettings: vi.fn(() => ({
     debugMode: false,
     onboardingComplete: false,
@@ -213,6 +223,7 @@ Use AskUserQuestion tool for user interaction.`,
     litellmConfig: null,
     azureFoundryConfig: null,
     lmstudioConfig: null,
+    cloudBrowserConfig: null,
   })),
   clearAppSettings: vi.fn(),
 
@@ -251,6 +262,8 @@ describe('OpenCode Config Generator Integration', () => {
     vi.resetModules();
     originalEnv = { ...process.env };
     mockApp.isPackaged = false;
+    mockCloudBrowserConfig = null;
+    mockCloudBrowserSession = null;
 
     // Create real temp directories for each test
     tempUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'opencode-config-test-userData-'));
@@ -434,6 +447,57 @@ describe('OpenCode Config Generator Integration', () => {
       // Assert
       expect(result).toBe(path.join(tempUserDataDir, 'opencode', 'opencode.json'));
       expect(fs.existsSync(result)).toBe(true);
+    });
+
+    it('should pass remote browser config when cloud browser is enabled with direct endpoint', async () => {
+      mockCloudBrowserConfig = {
+        provider: 'aws-agentcore',
+        enabled: true,
+        region: 'us-east-1',
+        authMode: 'accessKeys',
+        cdpEndpoint: 'ws://remote-browser:9222',
+      };
+
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      await generateOpenCodeConfig();
+
+      const { generateConfig } = await import('@accomplish_ai/agent-core');
+      expect(generateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          browser: {
+            mode: 'remote',
+            cdpEndpoint: 'ws://remote-browser:9222',
+            cdpHeaders: undefined,
+          },
+        })
+      );
+    });
+
+    it('should prefer session browser config when cloud browser session exists', async () => {
+      mockCloudBrowserConfig = {
+        provider: 'aws-agentcore',
+        enabled: true,
+        region: 'us-east-1',
+        authMode: 'accessKeys',
+      };
+      mockCloudBrowserSession = {
+        cdpEndpoint: 'ws://session-browser:9222',
+        cdpHeaders: { 'X-CDP-Secret': 'session-secret' },
+      };
+
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      await generateOpenCodeConfig();
+
+      const { generateConfig } = await import('@accomplish_ai/agent-core');
+      expect(generateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          browser: {
+            mode: 'remote',
+            cdpEndpoint: 'ws://session-browser:9222',
+            cdpHeaders: { 'X-CDP-Secret': 'session-secret' },
+          },
+        })
+      );
     });
   });
 

@@ -6,7 +6,14 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import type {
+  ProviderType,
+  Skill,
+  TodoItem,
+  McpConnector,
+  CloudBrowserConfig,
+  CloudBrowserCredentials,
+} from '@accomplish_ai/agent-core';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -71,6 +78,18 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:openai-base-url:get'),
   setOpenAiBaseUrl: (baseUrl: string): Promise<void> =>
     ipcRenderer.invoke('settings:openai-base-url:set', baseUrl),
+  getCloudBrowserSettings: (): Promise<{ config: CloudBrowserConfig | null; credentials: CloudBrowserCredentials | null }> =>
+    ipcRenderer.invoke('settings:cloud-browser:get'),
+  setCloudBrowserSettings: (
+    config: CloudBrowserConfig | null,
+    credentials: CloudBrowserCredentials | null
+  ): Promise<void> =>
+    ipcRenderer.invoke('settings:cloud-browser:set', config, credentials),
+  testCloudBrowserConnection: (
+    config: CloudBrowserConfig,
+    credentials: CloudBrowserCredentials | null
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('settings:cloud-browser:test-connection', config, credentials),
   getOpenAiOauthStatus: (): Promise<{ connected: boolean; expires?: number }> =>
     ipcRenderer.invoke('opencode:auth:openai:status'),
   loginOpenAiWithChatGpt: (): Promise<{ ok: boolean; openedUrl?: string }> =>
