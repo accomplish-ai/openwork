@@ -46,19 +46,22 @@ export function ConnectorsPanel() {
     });
 
     return () => unsubscribe?.();
-  }, [completeOAuth]);
+  }, [completeOAuth, t]);
 
-  const deriveNameFromUrl = useCallback((serverUrl: string): string => {
-    try {
-      const parsed = new URL(serverUrl);
-      // Use hostname without TLD, capitalize first letter
-      const parts = parsed.hostname.split('.');
-      const name = parts.length > 1 ? parts[parts.length - 2] : parts[0];
-      return name.charAt(0).toUpperCase() + name.slice(1);
-    } catch {
-      return t('connectors.defaultName');
-    }
-  }, []);
+  const deriveNameFromUrl = useCallback(
+    (serverUrl: string): string => {
+      try {
+        const parsed = new URL(serverUrl);
+        // Use hostname without TLD, capitalize first letter
+        const parts = parsed.hostname.split('.');
+        const name = parts.length > 1 ? parts[parts.length - 2] : parts[0];
+        return name.charAt(0).toUpperCase() + name.slice(1);
+      } catch {
+        return t('connectors.defaultName');
+      }
+    },
+    [t],
+  );
 
   const handleAdd = useCallback(async () => {
     const trimmedUrl = url.trim();
@@ -89,7 +92,7 @@ export function ConnectorsPanel() {
     } finally {
       setAdding(false);
     }
-  }, [url, addConnector, deriveNameFromUrl]);
+  }, [url, addConnector, deriveNameFromUrl, t]);
 
   const handleConnect = useCallback(
     async (connectorId: string) => {
@@ -101,7 +104,7 @@ export function ConnectorsPanel() {
         setOauthError(err instanceof Error ? err.message : t('connectors.oauthStartFailed'));
       }
     },
-    [startOAuth],
+    [startOAuth, t],
   );
 
   const handleKeyDown = useCallback(

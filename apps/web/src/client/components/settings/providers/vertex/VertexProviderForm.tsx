@@ -160,7 +160,7 @@ export function VertexProviderForm({
 
     setCustomModelInput('');
     setCustomModelError(null);
-  }, [customModelInput, connectedProvider, availableModels, onConnect, onModelChange]);
+  }, [customModelInput, connectedProvider, availableModels, onConnect, onModelChange, t]);
 
   const handleRemoveCustomModel = useCallback(
     (modelId: string) => {

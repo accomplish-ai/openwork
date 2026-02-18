@@ -111,7 +111,7 @@ export function App() {
     };
 
     checkStatus();
-  }, []);
+  }, [t]);
 
   // Loading state
   if (status === 'loading') {
