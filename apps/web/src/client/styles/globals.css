@@ -76,33 +76,33 @@
 }
 
 .dark {
-  --background: 0 0% 9%;
-  --foreground: 0 0% 95%;
-  --card: 0 0% 11%;
-  --card-foreground: 0 0% 95%;
-  --popover: 0 0% 11%;
-  --popover-foreground: 0 0% 95%;
-  --primary: 123 30% 45%;
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 123 40% 45%;
   --primary-foreground: 0 0% 9%;
-  --secondary: 120 10% 20%;
-  --secondary-foreground: 120 14% 85%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 64%;
-  --accent: 0 0% 18%;
-  --accent-foreground: 0 0% 95%;
-  --destructive: 8 78% 54%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 20%;
-  --input: 0 0% 25%;
-  --ring: 20 25% 55%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
   --warning-subtle: 30 60% 15%;
   --success-subtle: 150 40% 12%;
-  --provider-bg: 0 0% 15%;
-  --provider-bg-active: 130 20% 15%;
-  --provider-bg-hover: 0 0% 13%;
-  --provider-border-active: 40 30% 50%;
+  --provider-bg: 240 10% 6%;
+  --provider-bg-active: 240 10% 9%;
+  --provider-bg-hover: 240 10% 8%;
+  --provider-border-active: 123 30% 45%;
   --provider-accent: 123 30% 45%;
-  --provider-accent-text: 123 30% 75%;
+  --provider-accent-text: 123 30% 85%;
 }
 
 /* Custom scrollbar */

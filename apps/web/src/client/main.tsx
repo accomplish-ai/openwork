@@ -4,8 +4,19 @@ import { RouterProvider } from 'react-router';
 import { initTheme } from './lib/theme';
 import { router } from './router';
 import './styles/globals.css';
+import { setupMockAccomplish } from './lib/mock';
 
-initTheme();
+// Initialize mock API if running in browser dev mode
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if (import.meta.env.DEV && !(window as any).accomplish) {
+  setupMockAccomplish();
+}
+
+try {
+  initTheme();
+} catch (e) {
+  console.warn('Failed to initialize theme (likely not running in Electron):', e);
+}
 
 const container = document.getElementById('root');
 if (!container) {
