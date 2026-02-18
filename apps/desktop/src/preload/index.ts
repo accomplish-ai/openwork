@@ -54,6 +54,10 @@ const accomplishAPI = {
   },
   getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }> =>
     ipcRenderer.invoke('settings:app-settings'),
+  getCloudBrowserConfig: (): Promise<unknown> =>
+    ipcRenderer.invoke('settings:cloud-browser-config:get'),
+  setCloudBrowserConfig: (config: unknown): Promise<void> =>
+    ipcRenderer.invoke('settings:cloud-browser-config:set', config ? JSON.stringify(config) : null),
   getOpenAiBaseUrl: (): Promise<string> => ipcRenderer.invoke('settings:openai-base-url:get'),
   setOpenAiBaseUrl: (baseUrl: string): Promise<void> =>
     ipcRenderer.invoke('settings:openai-base-url:set', baseUrl),

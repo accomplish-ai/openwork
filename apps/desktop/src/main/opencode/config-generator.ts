@@ -127,6 +127,26 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     });
   }
 
+  // Build browser config from cloud browser settings
+  const cloudBrowserConfig = storage.getCloudBrowserConfig();
+  let browserConfig:
+    | {
+        mode: 'builtin' | 'remote' | 'none';
+        cdpEndpoint?: string;
+        cdpHeaders?: Record<string, string>;
+      }
+    | undefined;
+  if (cloudBrowserConfig?.activeProvider) {
+    const providerCfg = cloudBrowserConfig.providers[cloudBrowserConfig.activeProvider];
+    if (providerCfg?.apiKey || providerCfg?.endpoint) {
+      browserConfig = {
+        mode: 'remote',
+        cdpEndpoint: providerCfg.endpoint,
+        cdpHeaders: providerCfg.apiKey ? { 'X-CDP-Secret': providerCfg.apiKey } : undefined,
+      };
+    }
+  }
+
   const result = generateConfig({
     platform: process.platform,
     mcpToolsPath,
@@ -141,6 +161,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     model: modelOverride?.model,
     smallModel: modelOverride?.smallModel,
     connectors: connectors.length > 0 ? connectors : undefined,
+    browser: browserConfig,
   });
 
   process.env.OPENCODE_CONFIG = result.configPath;
