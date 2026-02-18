@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef */
 /**
  * Cross-platform dev-browser server launcher.
  * Replaces server.sh for Windows compatibility.

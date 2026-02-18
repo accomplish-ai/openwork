@@ -101,6 +101,7 @@ interface OpenCodeConfigFile {
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, Omit<ProviderConfig, 'id'>>;
   plugin?: string[];
+  experimental?: Record<string, unknown>;
 }
 
 function getPlatformEnvironmentInstructions(platform: NodeJS.Platform): string {
@@ -127,12 +128,17 @@ You are Accomplish, a {{AGENT_ROLE}} assistant.
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: PLAN FIRST WITH start_task - THIS IS MANDATORY
+# CRITICAL: CALL start_task FIRST - THIS IS MANDATORY
 ##############################################################################
 
-**STEP 1: CALL start_task (before any other action)**
-
 You MUST call start_task before any other tool. This is enforced - other tools will fail until start_task is called.
+
+**Decide: Does this request need planning?**
+
+Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
+Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → stop. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
+
+**When needs_planning is TRUE** — provide goal, steps, verification:
 
 start_task requires:
 - original_request: Echo the user's request exactly as stated
@@ -148,16 +154,6 @@ As you complete each step, call \`todowrite\` to update progress:
 - Mark the current step as "in_progress"
 - Keep the same step content - do NOT change the text
 
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step (same as before)", "status": "completed", "priority": "high"},
-    {"id": "2", "content": "Second step (same as before)", "status": "in_progress", "priority": "medium"},
-    {"id": "3", "content": "Third step (same as before)", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
 **STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
 
 All todos must be "completed" or "cancelled" before calling complete_task.
@@ -165,6 +161,8 @@ All todos must be "completed" or "cancelled" before calling complete_task.
 WRONG: Starting work without calling start_task first
 WRONG: Forgetting to update todos as you progress
 CORRECT: Call start_task FIRST, update todos as you work, then complete_task
+
+**When needs_planning is FALSE** — skip goal, steps, verification. Respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
 
 ##############################################################################
 </behavior>
@@ -253,7 +251,7 @@ If the user gave you a task with specific criteria (e.g., "find 8-15 results", "
 
 **TASK COMPLETION - CRITICAL:**
 
-You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
+You MUST call the \`complete_task\` tool when \`needs_planning\` was true. For conversational responses (\`needs_planning: false\`), do NOT call complete_task — just respond and stop naturally.
 
 When to call \`complete_task\`:
 
@@ -311,7 +309,7 @@ function resolveMcpCommand(
   sourceRelPath: string,
   distRelPath: string,
   isPackaged: boolean,
-  nodePath?: string
+  nodePath?: string,
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
   const sourcePath = path.join(mcpDir, sourceRelPath);
@@ -346,8 +344,10 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
   } = options;
 
   const environmentInstructions = getPlatformEnvironmentInstructions(platform);
-  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
-    .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, environmentInstructions);
+  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE.replace(
+    /\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g,
+    environmentInstructions,
+  );
 
   if (skills.length > 0) {
     const skillsSection = `
@@ -362,8 +362,12 @@ After calling start_task, you MUST read the SKILL.md file for each skill you lis
 
 **Available Skills:**
 
-${skills.map(s => `- **${s.name}** (${s.command}): ${s.description}
-  File: ${s.filePath}`).join('\n\n')}
+${skills
+  .map(
+    (s) => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`,
+  )
+  .join('\n\n')}
 
 Use empty array [] if no skills apply to your task.
 
@@ -389,7 +393,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
@@ -406,13 +410,13 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       environment: {
         QUESTION_API_PORT: String(questionApiPort),
       },
-      timeout: 30000,
+      timeout: 600000, // 10 minutes — user needs time to read and respond
     },
     'complete-task': {
       type: 'local',
@@ -423,7 +427,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
@@ -437,7 +441,7 @@ Use empty array [] if no skills apply to your task.
         'src/index.ts',
         'dist/index.mjs',
         isPackaged,
-        nodePath
+        nodePath,
       ),
       enabled: true,
       timeout: 30000,
@@ -466,8 +470,13 @@ Use empty array [] if no skills apply to your task.
     mcpServers['dev-browser-mcp'] = {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand, mcpToolsPath, 'dev-browser-mcp',
-        'src/index.ts', 'dist/index.mjs', isPackaged, nodePath
+        tsxCommand,
+        mcpToolsPath,
+        'dev-browser-mcp',
+        'src/index.ts',
+        'dist/index.mjs',
+        isPackaged,
+        nodePath,
       ),
       enabled: true,
       ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
@@ -507,11 +516,16 @@ Use empty array [] if no skills apply to your task.
   const hasBrowser = browserConfig.mode !== 'none';
   systemPrompt = systemPrompt
     .replace('{{AGENT_ROLE}}', hasBrowser ? 'browser automation' : 'task automation')
-    .replace('{{BROWSER_CAPABILITY}}', hasBrowser
-      ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
-      : '')
-    .replace('{{BROWSER_BEHAVIOR}}', hasBrowser
-      ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
+    .replace(
+      '{{BROWSER_CAPABILITY}}',
+      hasBrowser
+        ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
+        : '',
+    )
+    .replace(
+      '{{BROWSER_BEHAVIOR}}',
+      hasBrowser
+        ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
 - For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
 - **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
 
@@ -532,7 +546,8 @@ Example bad narration (too terse):
 - After each action, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
 `
-      : '');
+        : '',
+    );
 
   const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
@@ -545,8 +560,16 @@ Example bad narration (too terse):
     enabledProviders = [...new Set([...customEnabledProviders, ...Object.keys(providerConfig)])];
   } else {
     const baseProviders = [
-      'anthropic', 'openai', 'openrouter', 'google', 'xai',
-      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+      'anthropic',
+      'openai',
+      'openrouter',
+      'google',
+      'xai',
+      'deepseek',
+      'moonshot',
+      'zai-coding-plan',
+      'amazon-bedrock',
+      'minimax',
     ];
     enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
   }
@@ -571,6 +594,9 @@ Example bad narration (too terse):
       },
     },
     mcp: mcpServers,
+    experimental: {
+      mcp_timeout: 600000, // 10 minutes — allow long-running MCP tools like AskUserQuestion
+    },
   };
 
   const configDir = path.join(userDataPath, 'opencode');
@@ -634,8 +660,9 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'openrouter') {
       args.push('--model', selectedModel.model);
     } else if (selectedModel.provider === 'ollama') {
-      const modelId = selectedModel.model.replace(/^ollama\//, '');
-      args.push('--model', `ollama/${modelId}`);
+      // Accept both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
+      const normalizedModelId = selectedModel.model.replace(/^ollama\//, '');
+      args.push('--model', `ollama/${normalizedModelId}`);
     } else if (selectedModel.provider === 'litellm') {
       const modelId = selectedModel.model.replace(/^litellm\//, '');
       args.push('--model', `litellm/${modelId}`);

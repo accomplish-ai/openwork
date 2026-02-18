@@ -5,7 +5,6 @@ import {
   getFullPageName,
   getConnectionMode,
   resetConnection,
-  type ConnectionConfig,
 } from './connection.js';
 
 describe('connection', () => {

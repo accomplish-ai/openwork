@@ -32,6 +32,7 @@ function getNvmOpenCodePaths(): string[] {
       }
     }
   } catch {
+    // intentionally empty
   }
 
   return paths;
@@ -59,7 +60,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
       'node_modules',
       packageName,
       'bin',
-      binaryName
+      binaryName,
     );
 
     if (fs.existsSync(cliPath)) {
@@ -98,15 +99,13 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
     };
   }
 
-  const globalOpenCodePaths = process.platform === 'win32'
-    ? [
-        path.join(process.env.APPDATA || '', 'npm', 'opencode.cmd'),
-        path.join(process.env.LOCALAPPDATA || '', 'npm', 'opencode.cmd'),
-      ]
-    : [
-        '/usr/local/bin/opencode',
-        '/opt/homebrew/bin/opencode',
-      ];
+  const globalOpenCodePaths =
+    process.platform === 'win32'
+      ? [
+          path.join(process.env.APPDATA || '', 'npm', 'opencode.cmd'),
+          path.join(process.env.LOCALAPPDATA || '', 'npm', 'opencode.cmd'),
+        ]
+      : ['/usr/local/bin/opencode', '/opt/homebrew/bin/opencode'];
 
   for (const opencodePath of globalOpenCodePaths) {
     if (fs.existsSync(opencodePath)) {
@@ -155,7 +154,7 @@ export async function getCliVersion(cliPath: string): Promise<string | null> {
       const packageJsonPath = path.join(
         path.dirname(path.dirname(cliPath)),
         packageName,
-        'package.json'
+        'package.json',
       );
 
       if (fs.existsSync(packageJsonPath)) {
@@ -169,7 +168,7 @@ export async function getCliVersion(cliPath: string): Promise<string | null> {
     const output = execSync(fullCommand, {
       encoding: 'utf-8',
       timeout: 5000,
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
 
     const versionMatch = output.match(/(\d+\.\d+\.\d+)/);
