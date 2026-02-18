@@ -141,6 +141,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     model: modelOverride?.model,
     smallModel: modelOverride?.smallModel,
     connectors: connectors.length > 0 ? connectors : undefined,
+    desktopControl: true,
   });
 
   process.env.OPENCODE_CONFIG = result.configPath;

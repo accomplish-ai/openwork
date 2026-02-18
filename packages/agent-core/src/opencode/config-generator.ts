@@ -169,7 +169,7 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}{{DESKTOP_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -289,6 +289,7 @@ function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platfor
     path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
     path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
     path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
+    path.join(mcpToolsPath, 'desktop-control', 'node_modules', '.bin', tsxBin),
   ];
 
   for (const candidate of candidates) {
@@ -546,6 +547,12 @@ Example bad narration (too terse):
 - After each action, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
 `
+        : '',
+    )
+    .replace(
+      '{{DESKTOP_CAPABILITY}}',
+      options.desktopControl
+        ? '- **Desktop Automation**: Control native desktop apps — take screenshots, click, type, manage windows, and open applications\n'
         : '',
     );
 
