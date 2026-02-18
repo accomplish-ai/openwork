@@ -13,7 +13,7 @@ export function TodoSidebar({ todos }: TodoSidebarProps) {
   const completed = todos.filter((t) => t.status === 'completed').length;
   const cancelled = todos.filter((t) => t.status === 'cancelled').length;
   const total = todos.length;
-  const progress = ((completed + cancelled) / total) * 100;
+  const done = completed + cancelled;
 
   return (
     <motion.div
@@ -25,25 +25,32 @@ export function TodoSidebar({ todos }: TodoSidebarProps) {
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-foreground">Tasks</span>
-          <span className="text-xs text-muted-foreground">
-            {completed} of {total}
+          <span className="text-xs font-medium text-foreground tracking-[0.18px]">Tasks</span>
+          <span className="text-xs text-muted-foreground tracking-[0.18px]">
+            {done}/{total}
           </span>
         </div>
-        {/* Progress bar */}
-        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-primary rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
+        {/* Segmented progress bar */}
+        <div className="flex gap-0.5">
+          {todos.map((todo, i) => (
+            <div
+              key={todo.id}
+              className={cn(
+                'h-[3px] flex-1',
+                i === 0 && 'rounded-l-full',
+                i === total - 1 && 'rounded-r-full',
+                todo.status === 'completed' || todo.status === 'cancelled'
+                  ? 'bg-foreground'
+                  : 'bg-[#d9d9d9]',
+              )}
+            />
+          ))}
         </div>
       </div>
 
       {/* Todo list */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
-        <ul className="space-y-1">
+        <ul className="flex flex-col gap-1">
           {todos.map((todo) => (
             <TodoListItem key={todo.id} todo={todo} />
           ))}
@@ -57,16 +64,16 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
   return (
     <li
       className={cn(
-        'flex items-start gap-2 px-2 py-1.5 rounded-md border-l-2 border-l-border',
-        todo.status === 'completed' && 'border-l-primary',
-        todo.status === 'in_progress' && 'border-l-primary',
+        'flex items-start gap-2 rounded-lg pl-2 pr-1 py-3',
+        todo.status === 'completed' && 'bg-[#f5f4f1]',
+        todo.status === 'in_progress' && 'bg-[#f9f9f9]',
         todo.status === 'cancelled' && 'opacity-50',
       )}
     >
       <StatusIcon status={todo.status} />
       <span
         className={cn(
-          'text-xs text-foreground leading-snug',
+          'text-xs text-foreground leading-snug tracking-[0.18px]',
           todo.status === 'cancelled' && 'line-through text-muted-foreground',
         )}
       >
@@ -79,13 +86,13 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
 function StatusIcon({ status }: { status: TodoItem['status'] }) {
   switch (status) {
     case 'completed':
-      return <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />;
+      return <CheckCircle2 className="h-4 w-4 text-foreground shrink-0 mt-px" />;
     case 'in_progress':
-      return <Loader2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5 animate-spin" />;
+      return <Loader2 className="h-4 w-4 text-muted-foreground shrink-0 mt-px animate-spin" />;
     case 'cancelled':
-      return <XCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />;
+      return <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-px" />;
     case 'pending':
     default:
-      return <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />;
+      return <Circle className="h-4 w-4 text-muted-foreground shrink-0 mt-px" />;
   }
 }

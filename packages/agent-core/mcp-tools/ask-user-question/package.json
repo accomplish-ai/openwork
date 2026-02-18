@@ -14,5 +14,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop"
+  }
 }

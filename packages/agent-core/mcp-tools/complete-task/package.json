@@ -9,5 +9,7 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop"
+  }
 }

@@ -28,9 +28,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -56,7 +53,6 @@
     }
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.39.2",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",

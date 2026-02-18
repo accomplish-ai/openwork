@@ -1,6 +1,7 @@
 {
   "name": "@accomplish_ai/agent-core",
   "version": "0.4.0",
+  "private": true,
   "description": "Core logic for Accomplish - OpenCode adapter, storage, providers, MCP tools, and skills",
   "type": "module",
   "license": "MIT",
@@ -22,10 +23,6 @@
     "ai",
     "electron"
   ],
-  "publishConfig": {
-    "name": "@accomplish_ai/agent-core",
-    "access": "public"
-  },
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
