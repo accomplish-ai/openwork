@@ -1304,6 +1304,7 @@ export function registerIPCHandlers(): void {
     const config: TaskConfig = {
       prompt: task.prompt,
       taskId: newTaskId,
+      ...(task.sessionId ? { sessionId: task.sessionId } : {}),
     };
 
     const activeModel = storage.getActiveProviderModel();
