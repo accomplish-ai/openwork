@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Accomplish Desktop App",
+  "homepage": "https://www.accomplish.ai",
+  "author": {
+    "name": "Accomplish AI",
+    "email": "team@accomplish.ai"
+  },
   "main": "dist-electron/main/index.js",
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
@@ -18,6 +23,8 @@
     "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
     "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
     "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
+    "package:linux": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --linux --x64 --publish never",
+    "release:linux": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --linux --x64 --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -93,9 +100,7 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
-      "!node_modules/@accomplish_ai/**",
-      "!node_modules/opencode-darwin-*/**",
-      "!node_modules/opencode-linux-*/**"
+      "!node_modules/@accomplish_ai/**"
     ],
     "extraResources": [
       {
@@ -160,6 +165,10 @@
       "target": [
         "dmg",
         "zip"
+      ],
+      "files": [
+        "!node_modules/opencode-linux-*/**",
+        "!node_modules/opencode-windows-*/**"
       ]
     },
     "dmg": {
@@ -180,7 +189,11 @@
       "target": [
         "nsis"
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.ico",
+      "files": [
+        "!node_modules/opencode-linux-*/**",
+        "!node_modules/opencode-darwin-*/**"
+      ]
     },
     "nsis": {
       "oneClick": true,
@@ -193,6 +206,33 @@
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "icon": "resources/icon.png",
+      "executableName": "accomplish",
+      "category": "Utility",
+      "synopsis": "AI desktop agent that automates tasks",
+      "description": "Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine.",
+      "desktop": {
+        "Name": "Accomplish",
+        "Comment": "Open source AI desktop agent",
+        "Categories": "Utility;Office;Productivity"
+      },
+      "files": [
+        "!node_modules/opencode-darwin-*/**",
+        "!node_modules/opencode-windows-*/**"
+      ]
+    },
+    "deb": {
+      "packageName": "accomplish"
+    },
+    "rpm": {
+      "packageName": "accomplish"
     }
   }
 }
