@@ -462,7 +462,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         if (!this.currentSessionId && message.part.sessionID) {
           this.currentSessionId = message.part.sessionID;
         }
-        this.emit('message', message);
+        if (!this.completionEnforcer.isInContinuation()) {
+          this.emit('message', message);
+        }
 
         if (message.part.text) {
           const taskMessage: TaskMessage = {
@@ -472,7 +474,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
             timestamp: new Date().toISOString(),
           };
           this.messages.push(taskMessage);
-          this.emit('reasoning', message.part.text);
+          if (!this.completionEnforcer.isInContinuation()) {
+            this.emit('reasoning', message.part.text);
+          }
         }
         break;
 
@@ -629,7 +633,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
       this.completionEnforcer.handleCompleteTaskDetection(toolInput);
       const completeInput = toolInput as { summary?: string };
-      if (completeInput?.summary) {
+      if (completeInput?.summary && this.completionEnforcer.shouldComplete()) {
         this.emit('message', {
           type: 'text',
           part: {

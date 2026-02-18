@@ -27,7 +27,7 @@ interface SetupProgressEvent {
   modelName?: string;
 }
 
-export interface StartupStageInfo {
+interface StartupStageInfo {
   stage: string;
   message: string;
   modelName?: string;
@@ -393,7 +393,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       if (newStatus) {
         const finalStatus = newStatus;
         updatedTasks = state.tasks.map((t) =>
-          t.id === event.taskId ? { ...t, status: finalStatus } : t,
+          t.id === event.taskId
+            ? {
+                ...t,
+                status: finalStatus,
+                ...(isCurrentTask && updatedCurrentTask
+                  ? { messages: updatedCurrentTask.messages }
+                  : {}),
+              }
+            : t,
         );
       }
 

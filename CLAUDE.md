@@ -81,7 +81,7 @@ See [docs/architecture.md](docs/architecture.md) for full architecture details (
 
 Key packages:
 
-- `@accomplish_ai/agent-core` — Core business logic, types, storage, MCP tools (ESM, published to npm)
+- `@accomplish_ai/agent-core` — Core business logic, types, storage, MCP tools (ESM, internal workspace package)
 - `@accomplish/web` — Standalone React UI (Vite + React Router + Zustand)
 - `@accomplish/desktop` — Thin Electron shell (main process + preload), loads web's build output
 
@@ -136,13 +136,6 @@ Static assets go in `apps/web/public/assets/`.
 2. Export from `packages/agent-core/src/index.ts` (or `common.ts` for shared types)
 3. All internal imports must use `.js` extensions
 4. Run `pnpm typecheck` to verify downstream consumers still compile
-
-### Publishing Agent-Core Changes
-
-1. Run `pnpm changeset` and select `@accomplish_ai/agent-core`
-2. Choose bump type (patch/minor/major) and write a summary
-3. Commit the generated `.changeset/*.md` file with your PR
-4. Automated: merge triggers "Version Packages" PR → merge that → npm publish
 
 ## TypeScript Path Aliases
 
@@ -204,5 +197,3 @@ GitHub Actions workflows in `.github/workflows/`:
 - `ci.yml` - Core tests, unit tests, integration tests, typecheck, E2E
 - `release.yml` - Desktop app build and publish to GitHub releases
 - `commitlint.yml` - Conventional commit validation
-- `publish-packages.yml` - Changeset-based npm package publishing
-- `pr-preview-release.yml` - PR snapshot releases for changesets

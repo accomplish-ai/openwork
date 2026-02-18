@@ -1,5 +1,3 @@
-// apps/desktop/src/renderer/components/settings/skills/AddSkillDropdown.tsx
-
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -106,7 +104,7 @@ export function AddSkillDropdown({ onSkillAdded, onClose }: AddSkillDropdownProp
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="gap-1.5">
+          <Button className="h-9 gap-1.5">
             <svg
               className="h-4 w-4"
               viewBox="0 0 24 24"
