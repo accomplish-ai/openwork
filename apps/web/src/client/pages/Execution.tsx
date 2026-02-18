@@ -54,6 +54,9 @@ export function ExecutionPage() {
   const [currentToolInput, setCurrentToolInput] = useState<unknown>(null);
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [debugModeEnabled, setDebugModeEnabled] = useState(false);
+  const [bugReporting, setBugReporting] = useState(false);
+  const [bugReportSaved, setBugReportSaved] = useState(false);
+  const [repeatingTask, setRepeatingTask] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
@@ -325,6 +328,78 @@ export function ExecutionPage() {
       interruptTask();
     }
   };
+
+  // Build accessibility tree for bug report
+  const buildAxtree = useCallback(() => {
+    const walk = (el: Element, depth: number): object[] => {
+      if (depth > 15) { return []; }
+      const nodes: object[] = [];
+      const role = el.getAttribute('role') || el.tagName.toLowerCase();
+      const label =
+        el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title');
+      const text = el.childNodes.length === 1 && el.childNodes[0].nodeType === 3
+        ? el.childNodes[0].textContent?.trim()
+        : undefined;
+      const node: Record<string, unknown> = { role };
+      if (label) { node.label = label; }
+      if (text) { node.text = text.slice(0, 100); }
+      const children: object[] = [];
+      for (const child of Array.from(el.children)) {
+        children.push(...walk(child, depth + 1));
+        if (nodes.length + children.length > 500) { break; }
+      }
+      if (children.length) { node.children = children; }
+      nodes.push(node);
+      return nodes;
+    };
+    return walk(document.body, 0);
+  }, []);
+
+  const handleBugReport = useCallback(async () => {
+    if (!currentTask || !id) { return; }
+    setBugReporting(true);
+    try {
+      const [screenshot, platform, version] = await Promise.all([
+        accomplish.captureScreenshot(),
+        accomplish.getPlatform(),
+        accomplish.getVersion(),
+      ]);
+      const report = {
+        generatedAt: new Date().toISOString(),
+        task: {
+          id: currentTask.id,
+          prompt: currentTask.prompt,
+          status: currentTask.status,
+          createdAt: currentTask.createdAt,
+          completedAt: currentTask.completedAt,
+          messages: currentTask.messages,
+        },
+        debugLogs,
+        axtree: buildAxtree(),
+        system: { platform, version, userAgent: navigator.userAgent },
+      };
+      const result = await accomplish.saveBugReport(JSON.stringify(report, null, 2), screenshot);
+      if (result) {
+        setBugReportSaved(true);
+        setTimeout(() => setBugReportSaved(false), 2500);
+      }
+    } finally {
+      setBugReporting(false);
+    }
+  }, [accomplish, buildAxtree, currentTask, debugLogs, id]);
+
+  const handleRepeatTask = useCallback(async () => {
+    if (!currentTask) { return; }
+    setRepeatingTask(true);
+    try {
+      const newTaskId = await accomplish.startTask({ prompt: currentTask.prompt });
+      navigate(`/execution/${newTaskId}`);
+    } catch (err) {
+      console.error('[Execution] Failed to repeat task:', err);
+    } finally {
+      setRepeatingTask(false);
+    }
+  }, [accomplish, currentTask, navigate]);
 
   if (error) {
     return (
@@ -804,7 +879,17 @@ export function ExecutionPage() {
 
         {/* Debug Panel */}
         {debugModeEnabled && (
-          <DebugPanel debugLogs={debugLogs} taskId={id} onClearLogs={() => setDebugLogs([])} />
+          <DebugPanel
+            debugLogs={debugLogs}
+            taskId={id}
+            onClearLogs={() => setDebugLogs([])}
+            onBugReport={handleBugReport}
+            bugReporting={bugReporting}
+            bugReportSaved={bugReportSaved}
+            onRepeatTask={handleRepeatTask}
+            repeatingTask={repeatingTask}
+            isRunning={currentTask?.status === 'running'}
+          />
         )}
       </div>
     </>

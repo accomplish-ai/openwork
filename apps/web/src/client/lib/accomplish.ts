@@ -345,6 +345,13 @@ interface AccomplishAPI {
   }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
 
+  // Debug bug reporting
+  captureScreenshot(): Promise<string | null>;
+  saveBugReport(
+    reportJson: string,
+    screenshotBase64: string | null,
+  ): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
+
   // Skills management
   getSkills(): Promise<Skill[]>;
   getEnabledSkills(): Promise<Skill[]>;

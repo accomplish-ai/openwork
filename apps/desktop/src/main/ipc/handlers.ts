@@ -1155,6 +1155,52 @@ export function registerIPCHandlers(): void {
     }
   });
 
+  handle('debug:capture-screenshot', async (event: IpcMainInvokeEvent) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      return null;
+    }
+    const image = await window.webContents.capturePage();
+    return image.toPNG().toString('base64');
+  });
+
+  handle(
+    'debug:save-report',
+    async (event: IpcMainInvokeEvent, reportJson: string, screenshotBase64: string | null) => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      if (!window) {
+        throw new Error('No window found');
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const defaultFilename = `bug-report-${timestamp}.json`;
+
+      const result = await dialog.showSaveDialog(window, {
+        title: 'Save Bug Report',
+        defaultPath: defaultFilename,
+        filters: [{ name: 'JSON Report', extensions: ['json'] }],
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, reason: 'cancelled' };
+      }
+
+      try {
+        fs.writeFileSync(result.filePath, reportJson, 'utf-8');
+
+        if (screenshotBase64) {
+          const pngPath = result.filePath.replace(/\.json$/, '.png');
+          fs.writeFileSync(pngPath, Buffer.from(screenshotBase64, 'base64'));
+        }
+
+        return { success: true, path: result.filePath };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: message };
+      }
+    },
+  );
+
   handle('skills:list', async () => {
     return skillsManager.getAll();
   });
