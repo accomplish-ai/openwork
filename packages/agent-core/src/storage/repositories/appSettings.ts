@@ -155,6 +155,30 @@ export function getCloudBrowserConfig(): CloudBrowserConfig | null {
 
 export function setCloudBrowserConfig(config: CloudBrowserConfig | null): void {
   const db = getDatabase();
+  
+  // Migration: Check for legacy cdpSecret in raw JSON and move to secure storage
+  if (config) {
+    const row = getRow();
+    if (row.cloud_browser_config) {
+      try {
+        const rawConfig = JSON.parse(row.cloud_browser_config) as any;
+        if (rawConfig.cdpSecret) {
+          // Move existing cdpSecret to secure storage
+          const { storeCloudBrowserCredentials, getCloudBrowserCredentials } = require('../secure-storage');
+          const existingCreds = getCloudBrowserCredentials();
+          if (existingCreds) {
+            storeCloudBrowserCredentials(JSON.stringify({
+              ...existingCreds,
+              cdpSecret: rawConfig.cdpSecret,
+            }));
+          }
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+  }
+  
   db.prepare('UPDATE app_settings SET cloud_browser_config = ? WHERE id = 1').run(
     config ? JSON.stringify(config) : null
   );

@@ -10,7 +10,7 @@ import {
   refreshAccessToken,
   type BrowserConfig,
 } from '@accomplish_ai/agent-core';
-import { getApiKey, getAllApiKeys } from '../store/secureStorage';
+import { getApiKey, getAllApiKeys, getCloudBrowserCredentials } from '../store/secureStorage';
 import { getStorage } from '../store/storage';
 import { getNodePath } from '../utils/bundled-node';
 import { skillsManager } from '../skills';
@@ -86,13 +86,14 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   const enabledConnectors = storage.getEnabledConnectors();
   const cloudBrowserConfig = storage.getCloudBrowserConfig();
   const cloudBrowserSession = getCurrentCloudBrowserSession();
+  const cloudBrowserCredentials = getCloudBrowserCredentials();
   let browser: BrowserConfig | undefined;
 
   if (cloudBrowserConfig?.enabled && cloudBrowserConfig.provider === 'aws-agentcore') {
     const cdpEndpoint = cloudBrowserSession?.cdpEndpoint || cloudBrowserConfig.cdpEndpoint;
     if (cdpEndpoint) {
       const cdpHeaders = cloudBrowserSession?.cdpHeaders
-        || (cloudBrowserConfig.cdpSecret ? { 'X-CDP-Secret': cloudBrowserConfig.cdpSecret } : undefined);
+        || (cloudBrowserCredentials?.cdpSecret ? { 'X-CDP-Secret': cloudBrowserCredentials.cdpSecret } : undefined);
       browser = {
         mode: 'remote',
         cdpEndpoint,

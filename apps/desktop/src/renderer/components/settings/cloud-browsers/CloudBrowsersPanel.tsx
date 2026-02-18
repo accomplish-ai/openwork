@@ -154,7 +154,7 @@ export function CloudBrowsersPanel() {
             value={config.cdpEndpoint || ''}
             onChange={(e) => setConfig(prev => ({ ...prev, cdpEndpoint: e.target.value || undefined }))}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            placeholder="wss://... or https://..."
+            placeholder="https://... or http://..."
           />
         </label>
       </div>
@@ -180,8 +180,8 @@ export function CloudBrowsersPanel() {
           <span className="mb-1 block text-muted-foreground">CDP Secret (optional)</span>
           <input
             type="password"
-            value={config.cdpSecret || ''}
-            onChange={(e) => setConfig(prev => ({ ...prev, cdpSecret: e.target.value || undefined }))}
+            value={credentials.cdpSecret || ''}
+            onChange={(e) => setCredentials(prev => ({ ...prev, cdpSecret: e.target.value || undefined }))}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
         </label>

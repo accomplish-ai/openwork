@@ -200,11 +200,6 @@ export interface CloudBrowserConfig {
    * Optional direct CDP endpoint override (used when no broker is required).
    */
   cdpEndpoint?: string;
-  /**
-   * Optional shared secret for CDP endpoint auth.
-   * Mapped to X-CDP-Secret/CDP_SECRET where needed.
-   */
-  cdpSecret?: string;
 }
 
 export interface CloudBrowserCredentials {
@@ -213,6 +208,11 @@ export interface CloudBrowserCredentials {
   secretAccessKey?: string;
   sessionToken?: string;
   profileName?: string;
+  /**
+   * Optional shared secret for CDP endpoint auth.
+   * Mapped to X-CDP-Secret/CDP_SECRET where needed.
+   */
+  cdpSecret?: string;
 }
 
 export const DEFAULT_PROVIDERS: ProviderConfig[] = [

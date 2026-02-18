@@ -1,17 +1,11 @@
 import type { CloudBrowserConfig, CloudBrowserCredentials } from '@accomplish_ai/agent-core';
 
-/**
- * Interface for cloud browser providers
- */
 export interface CloudBrowserProvider {
   name: string;
   validateConfig(config: CloudBrowserConfig): { valid: boolean; error?: string };
   createSession?(config: CloudBrowserConfig, credentials: CloudBrowserCredentials | null): Promise<any>;
 }
 
-/**
- * AWS AgentCore Provider Implementation
- */
 class AwsAgentCoreProvider implements CloudBrowserProvider {
   name = 'aws-agentcore';
 
@@ -58,9 +52,6 @@ class AwsAgentCoreProvider implements CloudBrowserProvider {
   }
 }
 
-/**
- * Registry for cloud browser providers
- */
 class CloudBrowserProviderRegistry {
   private providers = new Map<string, CloudBrowserProvider>();
 
@@ -90,5 +81,4 @@ class CloudBrowserProviderRegistry {
   }
 }
 
-// Export singleton instance
 export const cloudBrowserProviderRegistry = new CloudBrowserProviderRegistry();

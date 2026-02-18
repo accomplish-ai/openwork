@@ -63,7 +63,9 @@ function getEnabledCloudBrowserConfig(): CloudBrowserConfig | null {
 
 function getCloudBrowserCreds(): CloudBrowserCredentials | null {
   const raw = getCloudBrowserCredentials();
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   if (raw.authMode !== 'accessKeys' && raw.authMode !== 'profile') {
     return null;
   }
@@ -117,31 +119,47 @@ async function createSessionFromAgentCoreApi(
 
   // Remove trailing slashes for consistent URL construction
   const sanitizedUrl = url.toString().replace(/\/+$/, '');
-  const response = await fetch(`${sanitizedUrl}/sessions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      provider: config.provider,
-      region: config.region,
-      workspaceId: config.workspaceId,
-      browserPoolId: config.browserPoolId,
-      launchOptions: {
-        headless: config.headless ?? true,
-        viewportWidth: config.viewportWidth,
-        viewportHeight: config.viewportHeight,
-        connectTimeoutMs: config.connectTimeoutMs,
-      },
-      credentials,
-    }),
-  });
+  
+  // Add request timeout to prevent hung IPC calls
+  const timeoutMs = config.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(`${sanitizedUrl}/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        provider: config.provider,
+        region: config.region,
+        workspaceId: config.workspaceId,
+        browserPoolId: config.browserPoolId,
+        launchOptions: {
+          headless: config.headless ?? true,
+          viewportWidth: config.viewportWidth,
+          viewportHeight: config.viewportHeight,
+          connectTimeoutMs: timeoutMs,
+        },
+        credentials,
+      }),
+    });
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`AgentCore session creation failed (${response.status}): ${body}`);
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`AgentCore session creation failed (${response.status}): ${body}`);
+    }
+
+    const payload = (await response.json()) as unknown;
+    return parseSessionResponse(payload);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`AgentCore session creation timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const payload = (await response.json()) as unknown;
-  return parseSessionResponse(payload);
 }
 
 /**
@@ -176,10 +194,12 @@ export async function ensureCloudBrowserSession(): Promise<CloudBrowserSession> 
     throw new Error('Cloud browser is not enabled');
   }
 
+  const credentials = getCloudBrowserCreds();
+
   if (config.cdpEndpoint) {
     const session = {
       cdpEndpoint: config.cdpEndpoint,
-      cdpHeaders: config.cdpSecret ? { 'X-CDP-Secret': config.cdpSecret } : undefined,
+      cdpHeaders: credentials?.cdpSecret ? { 'X-CDP-Secret': credentials.cdpSecret } : undefined,
       sessionId: undefined,
       createdAt: Date.now(),
     };
@@ -187,7 +207,7 @@ export async function ensureCloudBrowserSession(): Promise<CloudBrowserSession> 
     return sessionManager.getCurrentSession()!;
   }
 
-  const session = await createSessionFromAgentCoreApi(config, getCloudBrowserCreds());
+  const session = await createSessionFromAgentCoreApi(config, credentials);
   sessionManager.setSession(session);
   return sessionManager.getCurrentSession()!;
 }
@@ -223,7 +243,7 @@ export async function testCloudBrowserConnection(
         success: true,
         session: {
           cdpEndpoint: config.cdpEndpoint,
-          cdpHeaders: config.cdpSecret ? { 'X-CDP-Secret': config.cdpSecret } : undefined,
+          cdpHeaders: credentials?.cdpSecret ? { 'X-CDP-Secret': credentials.cdpSecret } : undefined,
           sessionId: undefined,
           createdAt: Date.now(),
         },
