@@ -8,3 +8,4 @@ export { OpenRouterProviderForm } from './OpenRouterProviderForm';
 export { LiteLLMProviderForm } from './LiteLLMProviderForm';
 export { LMStudioProviderForm } from './LMStudioProviderForm';
 export { VertexProviderForm } from './vertex';
+export { HuggingFaceLocalProviderForm } from './HuggingFaceLocalProviderForm';

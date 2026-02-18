@@ -56,6 +56,8 @@ export type {
   LiteLLMConfig,
   LMStudioModel,
   LMStudioConfig,
+  HuggingFaceLocalModelInfo,
+  HuggingFaceLocalConfig,
 } from './provider.js';
 
 export {
@@ -82,6 +84,7 @@ export type {
   LMStudioCredentials,
   VertexProviderCredentials,
   AzureFoundryCredentials,
+  HuggingFaceLocalCredentials,
   OAuthCredentials,
   ProviderCredentials,
   ToolSupportStatus,

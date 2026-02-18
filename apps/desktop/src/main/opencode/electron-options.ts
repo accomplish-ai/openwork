@@ -16,6 +16,7 @@ import {
   type CliResolverConfig,
   type EnvironmentConfig,
 } from '@accomplish_ai/agent-core';
+import { getHuggingFaceServerStatus } from '../providers/huggingface-local';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
 import type {
   AzureFoundryCredentials,
@@ -156,6 +157,18 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     ollamaHost = selectedModel.baseUrl;
   }
 
+  // Determine HuggingFace Local server URL
+  const hfProvider =
+    activeModel?.provider === 'huggingface-local' ||
+    selectedModel?.provider === 'huggingface-local';
+  let hfBaseUrl: string | undefined;
+  if (hfProvider) {
+    const hfStatus = getHuggingFaceServerStatus();
+    if (hfStatus.running && hfStatus.port) {
+      hfBaseUrl = `http://127.0.0.1:${hfStatus.port}/v1`;
+    }
+  }
+
   // Handle Vertex AI credentials
   let vertexCredentials: VertexCredentials | undefined;
   let vertexServiceAccountKeyPath: string | undefined;
@@ -182,7 +195,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     vertexServiceAccountKeyPath,
     bundledNodeBinPath: bundledNode?.binDir,
     taskId: taskId || undefined,
-    openAiBaseUrl: configuredOpenAiBaseUrl || undefined,
+    openAiBaseUrl: hfProvider ? hfBaseUrl : configuredOpenAiBaseUrl || undefined,
     ollamaHost,
   };
 

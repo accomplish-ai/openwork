@@ -7,6 +7,9 @@
     "start": "npx tsx src/index.ts"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.26.0"
+  },
+  "dependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop"
   }
 }
