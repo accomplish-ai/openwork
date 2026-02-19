@@ -20,7 +20,7 @@
     "description": "设置您自己的 AI 助手的 API 密钥和模型。",
     "provider": "服务商",
     "apiKeyLabel": "{{provider}} API 密钥",
-    "saveButton": "保存 API 密钥",
+    "saveButton": "保存",
     "invalidFormat": "API 密钥格式无效。密钥应以 {{prefix}} 开头",
     "savedMessage": "{{provider}} API 密钥已安全保存。",
     "removedMessage": "{{provider}} API 密钥已移除。",

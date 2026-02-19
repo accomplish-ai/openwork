@@ -1,6 +1,15 @@
 {
   "title": "今天想完成什么？",
   "inputPlaceholder": "描述一个任务，让 AI 来处理",
+  "plusMenu": {
+    "addContent": "添加内容",
+    "attachFiles": "附加文件",
+    "soon": "即将推出",
+    "useSkills": "使用技能",
+    "connectors": "连接器",
+    "noConnectors": "暂无连接器",
+    "manage": "管理"
+  },
   "examplePrompts": "示例任务",
   "useCases": {
     "calendarPrepNotes": {

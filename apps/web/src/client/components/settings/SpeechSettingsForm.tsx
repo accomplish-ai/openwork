@@ -105,7 +105,7 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
           <button
             onClick={handleSaveApiKey}
             disabled={isLoading || !apiKey.trim()}
-            className="inline-flex h-7 items-center justify-center rounded-md bg-primary px-3 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t('apiKey.saveButton')}
           </button>

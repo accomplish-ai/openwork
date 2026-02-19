@@ -80,5 +80,11 @@
     "skill": "技能文件",
     "all": "所有文件"
   },
+  "model": {
+    "selectModel": "选择模型",
+    "current": "当前",
+    "configureModel": "配置模型",
+    "changeModel": "更换模型"
+  },
   "messages": "{{count}} 条消息"
 }

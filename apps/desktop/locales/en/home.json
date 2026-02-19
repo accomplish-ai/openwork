@@ -1,6 +1,15 @@
 {
   "title": "What will you accomplish today?",
   "inputPlaceholder": "Describe a task and let AI handle the rest",
+  "plusMenu": {
+    "addContent": "Add content",
+    "attachFiles": "Attach Files",
+    "soon": "Soon",
+    "useSkills": "Use Skills",
+    "connectors": "Connectors",
+    "noConnectors": "No connectors yet",
+    "manage": "Manage"
+  },
   "examplePrompts": "Example prompts",
   "useCases": {
     "calendarPrepNotes": {

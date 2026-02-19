@@ -80,5 +80,11 @@
     "skill": "Skill Files",
     "all": "All Files"
   },
+  "model": {
+    "selectModel": "Select model",
+    "current": "Current",
+    "configureModel": "Configure model",
+    "changeModel": "Change model"
+  },
   "messages": "{{count}} messages"
 }
