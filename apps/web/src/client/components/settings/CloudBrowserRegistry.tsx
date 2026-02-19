@@ -32,7 +32,7 @@ export function CloudBrowserRegistry() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accomplish]);
 
   useEffect(() => {
     loadProviders();
@@ -83,7 +83,6 @@ export function CloudBrowserRegistry() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar List */}
         <div className="w-48 border-r bg-muted/10">
           <div className="p-2 space-y-1">
             {PROVIDER_LIST.map((provider) => (
@@ -105,7 +104,6 @@ export function CloudBrowserRegistry() {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-2xl">
             {selectedProvider === 'browserbase' && (

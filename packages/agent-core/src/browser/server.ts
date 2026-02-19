@@ -14,7 +14,6 @@ import { BrowserFactory } from '../factories/BrowserFactory.js';
 function buildNodeEnvironment(bundledNodeBinPath?: string): NodeJS.ProcessEnv {
   const spawnEnv: NodeJS.ProcessEnv = { ...process.env };
 
-  // Inject Cloud Browser configuration if available
   const browserEnv = BrowserFactory.getBrowserConnectionEnv();
   Object.assign(spawnEnv, browserEnv);
 

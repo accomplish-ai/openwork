@@ -52,6 +52,7 @@ import type {
   OAuthClientRegistration,
   CloudBrowserProviderId,
   CloudBrowserConfig,
+  BrowserbaseConfig,
 } from '@accomplish_ai/agent-core';
 import {
   discoverOAuthMetadata,
@@ -539,11 +540,15 @@ export function registerIPCHandlers(): void {
 
       if (provider === 'azure-foundry') {
         const config = storage.getAzureFoundryConfig();
+        const baseUrl = options?.baseUrl as string | undefined;
+        const deploymentName = options?.deploymentName as string | undefined;
+        const authType = options?.authType as 'api-key' | 'entra-id' | undefined;
+
         const result = await validateAzureFoundry(config, {
           apiKey: key,
-          baseUrl: options?.baseUrl,
-          deploymentName: options?.deploymentName,
-          authType: options?.authType,
+          baseUrl,
+          deploymentName,
+          authType,
           timeout: API_KEY_VALIDATION_TIMEOUT_MS,
         });
 
@@ -814,7 +819,11 @@ export function registerIPCHandlers(): void {
 
   handle(
     'cloud-provider:save',
-    async (_event: IpcMainInvokeEvent, providerId: string, config: CloudBrowserConfig) => {
+    async (
+      _event: IpcMainInvokeEvent,
+      providerId: string,
+      config: CloudBrowserConfig['config'],
+    ) => {
       storage.saveCloudProviderConfig(providerId as CloudBrowserProviderId, config);
     },
   );
@@ -828,9 +837,14 @@ export function registerIPCHandlers(): void {
 
   handle(
     'cloud-provider:validate',
-    async (_event: IpcMainInvokeEvent, providerId: string, config: CloudBrowserConfig) => {
+    async (
+      _event: IpcMainInvokeEvent,
+      providerId: string,
+      config: CloudBrowserConfig['config'],
+    ) => {
       if (providerId === 'browserbase') {
-        return validateBrowserbaseConfig(config);
+        // Cast to BrowserbaseConfig to satisfy the linter and validateBrowserbaseConfig signature
+        return validateBrowserbaseConfig(config as BrowserbaseConfig);
       }
       throw new Error(`Validation not implemented for provider: ${providerId}`);
     },

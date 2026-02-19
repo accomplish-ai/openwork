@@ -69,6 +69,8 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   const baseProfileDir = profileDir ?? join(process.cwd(), '.browser-data');
 
   let context: BrowserContext;
+  let browser: import('playwright').Browser | undefined;
+  let wsEndpoint = '';
 
   // Cloud Browser Support (Browserbase)
   if (process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID) {
@@ -91,13 +93,11 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
         `[Browser] \x1b[36mLive View: https://browserbase.com/sessions/${session.id}\x1b[0m`,
       );
 
-      context = await chromium.connect({
-        wsEndpoint: session.connectUrl,
-      });
+      wsEndpoint = session.connectUrl;
+      browser = await chromium.connect({ wsEndpoint });
+      context = browser.contexts()[0] ?? (await browser.newContext());
 
       console.log('[Browser] Successfully connected to Browserbase cloud session');
-      // We don't need to define usedSystemChrome here as we have a context.
-      // However, we skip local launch blocks below.
     } catch (error) {
       console.error('[Browser] Failed to connect to Browserbase:', error);
       console.log('[Browser] Falling back to local browser...');
@@ -145,9 +145,11 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     process.exit(0);
   });
 
-  const cdpResponse = await fetchWithRetry(`http://127.0.0.1:${cdpPort}/json/version`);
-  const cdpInfo = (await cdpResponse.json()) as { webSocketDebuggerUrl: string };
-  const wsEndpoint = cdpInfo.webSocketDebuggerUrl;
+  if (!wsEndpoint) {
+    const cdpResponse = await fetchWithRetry(`http://127.0.0.1:${cdpPort}/json/version`);
+    const cdpInfo = (await cdpResponse.json()) as { webSocketDebuggerUrl: string };
+    wsEndpoint = cdpInfo.webSocketDebuggerUrl;
+  }
   console.log(`CDP WebSocket endpoint: ${wsEndpoint}`);
 
   interface PageEntry {

@@ -73,7 +73,7 @@ export function BrowserbaseForm({ initialConfig, onSave }: BrowserbaseFormProps)
       setStatus('saved');
       setIsDirty(false);
       setTimeout(() => {
-        if (status === 'saved') setStatus('idle');
+        setStatus((current) => (current === 'saved' ? 'idle' : current));
       }, 2000);
     } catch (error) {
       console.error('Failed to save config:', error);
