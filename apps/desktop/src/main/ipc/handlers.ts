@@ -10,7 +10,6 @@ import {
   cleanupVertexServiceAccountKey,
 } from '../opencode';
 import { getLogCollector } from '../logging';
-import { getWarmUpPromise } from '../opencode';
 import {
   validateApiKey,
   validateBedrockCredentials,
@@ -144,7 +143,6 @@ export function registerIPCHandlers(): void {
   let permissionApiInitialized = false;
 
   handle('task:start', async (event: IpcMainInvokeEvent, config: TaskConfig) => {
-    await getWarmUpPromise();
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);

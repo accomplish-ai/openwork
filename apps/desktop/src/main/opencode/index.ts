@@ -32,7 +32,7 @@ export {
 
 export { loginOpenAiWithChatGpt } from './auth-browser';
 
-export { warmUpCliExecutable, getWarmUpPromise } from './warm-up';
+export { warmUpCliExecutable, awaitCliWarmUpForTaskStart, getWarmUpPromise } from './warm-up';
 
 import { createTaskManager, type TaskManagerAPI } from '@accomplish_ai/agent-core';
 import {

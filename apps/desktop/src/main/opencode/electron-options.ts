@@ -29,6 +29,7 @@ import {
   getMcpToolsPath,
   syncApiKeysToOpenCodeAuth,
 } from './config-generator';
+import { awaitCliWarmUpForTaskStart } from './warm-up';
 import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
@@ -264,6 +265,8 @@ export async function onBeforeTaskStart(
   callbacks: TaskCallbacks,
   isFirstTask: boolean,
 ): Promise<void> {
+  await awaitCliWarmUpForTaskStart();
+
   if (isFirstTask) {
     callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
   }

@@ -31,6 +31,7 @@ vi.mock('@accomplish_ai/agent-core', () => ({
 // We need to reset module state between tests since warmUpPromise is module-level
 let warmUpCliExecutable: typeof import('../../../../src/main/opencode/warm-up').warmUpCliExecutable;
 let getWarmUpPromise: typeof import('../../../../src/main/opencode/warm-up').getWarmUpPromise;
+let awaitCliWarmUpForTaskStart: typeof import('../../../../src/main/opencode/warm-up').awaitCliWarmUpForTaskStart;
 
 describe('warm-up', () => {
   const originalPlatform = process.platform;
@@ -43,6 +44,7 @@ describe('warm-up', () => {
     const mod = await import('../../../../src/main/opencode/warm-up');
     warmUpCliExecutable = mod.warmUpCliExecutable;
     getWarmUpPromise = mod.getWarmUpPromise;
+    awaitCliWarmUpForTaskStart = mod.awaitCliWarmUpForTaskStart;
 
     // Reset mock child process listeners
     mockChildProcess.removeAllListeners();
@@ -51,6 +53,7 @@ describe('warm-up', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
@@ -90,6 +93,23 @@ describe('warm-up', () => {
     await expect(getWarmUpPromise()).resolves.toBeUndefined();
   });
 
+  it('spawns only once when warm-up is called multiple times', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    mockResolveCliPath.mockReturnValue({
+      cliPath: '/mock/opencode.exe',
+      cliDir: '/mock',
+      source: 'bundled',
+    });
+
+    warmUpCliExecutable();
+    warmUpCliExecutable();
+
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+
+    mockChildProcess.emit('exit');
+    await expect(getWarmUpPromise()).resolves.toBeUndefined();
+  });
+
   it('resolves without throwing when spawn emits error', async () => {
     Object.defineProperty(process, 'platform', { value: 'win32' });
     mockResolveCliPath.mockReturnValue({
@@ -115,13 +135,28 @@ describe('warm-up', () => {
 
     warmUpCliExecutable();
 
-    // Advance past the 60s timeout
-    vi.advanceTimersByTime(60_000);
+    // Advance past the 15s timeout
+    vi.advanceTimersByTime(15_000);
 
     expect(mockChildProcess.kill).toHaveBeenCalled();
     await expect(getWarmUpPromise()).resolves.toBeUndefined();
+  });
 
-    vi.useRealTimers();
+  it('task-start wait returns after budget when warm-up is still running', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    mockResolveCliPath.mockReturnValue({
+      cliPath: '/mock/opencode.exe',
+      cliDir: '/mock',
+      source: 'bundled',
+    });
+
+    warmUpCliExecutable();
+
+    const budgetWait = awaitCliWarmUpForTaskStart(2_500);
+    vi.advanceTimersByTime(2_500);
+    await expect(budgetWait).resolves.toBeUndefined();
+    expect(mockChildProcess.kill).not.toHaveBeenCalled();
   });
 
   it('returns resolved promise when getWarmUpPromise called before warmUp', async () => {
