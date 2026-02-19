@@ -41,6 +41,15 @@ function runCommand(command, description) {
   }
 }
 
+function getWindowsNodePtyPrebuildCandidates() {
+  // On Windows ARM64, Node/Electron can run as either arm64 or x64 depending on install/emulation.
+  // Accept either prebuild so postinstall doesn't fail on valid setups.
+  if (process.arch === 'arm64') {
+    return ['win32-arm64', 'win32-x64'];
+  }
+  return ['win32-x64'];
+}
+
 if (isWindows) {
   // On Windows, we need to install Electron-compatible prebuilt binaries for better-sqlite3
   // node-pty has working prebuilt binaries, so we skip it
@@ -81,11 +90,18 @@ if (isWindows) {
   // Verify node-pty prebuilds exist
   const pnpmNodePty = findNodePty();
   if (pnpmNodePty) {
-    const prebuildsPath = path.join(pnpmNodePty, 'prebuilds', 'win32-x64');
-    if (fs.existsSync(prebuildsPath)) {
-      console.log('> node-pty prebuilds found, setup complete');
+    const prebuildCandidates = getWindowsNodePtyPrebuildCandidates();
+    const foundPrebuild = prebuildCandidates.find((candidate) =>
+      fs.existsSync(path.join(pnpmNodePty, 'prebuilds', candidate)),
+    );
+
+    if (foundPrebuild) {
+      console.log(`> node-pty prebuilds found (${foundPrebuild}), setup complete`);
     } else {
-      console.error('> Error: node-pty prebuilds not found at', prebuildsPath);
+      const expectedDirs = prebuildCandidates
+        .map((candidate) => path.join(pnpmNodePty, 'prebuilds', candidate))
+        .join(', ');
+      console.error('> Error: node-pty prebuilds not found. Expected one of:', expectedDirs);
       console.error('> The app will not work correctly without prebuilds on Windows.');
       process.exit(1);
     }

@@ -70,6 +70,8 @@
     "vitest": "^4.0.17"
   },
   "optionalDependencies": {
+    "opencode-windows-x64": "1.2.6",
+    "opencode-windows-x64-baseline": "1.2.6",
     "opencode-darwin-arm64": "1.2.6",
     "opencode-darwin-x64": "1.2.6",
     "opencode-darwin-x64-baseline": "1.2.6"
@@ -90,6 +92,8 @@
       "node_modules/opencode-darwin-arm64/**",
       "node_modules/opencode-darwin-x64/**",
       "node_modules/opencode-darwin-x64-baseline/**",
+      "node_modules/opencode-windows-x64/**",
+      "node_modules/opencode-windows-x64-baseline/**",
       "node_modules/node-pty/**",
       "node_modules/electron-store/**",
       "node_modules/conf/**",

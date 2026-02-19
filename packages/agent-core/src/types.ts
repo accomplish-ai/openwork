@@ -12,6 +12,8 @@ export interface CliResolverConfig {
   isPackaged: boolean;
   resourcesPath?: string;
   appPath?: string;
+  platform?: NodeJS.Platform;
+  arch?: string;
 }
 
 export interface ResolvedCliPaths {

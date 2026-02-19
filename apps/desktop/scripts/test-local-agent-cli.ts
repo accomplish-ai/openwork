@@ -98,30 +98,24 @@ Set it with:
 
 function findOpenCodeCli(): string {
   const appRoot = path.resolve(__dirname, '..');
+  const windowsPackageCandidates =
+    process.arch === 'arm64'
+      ? ['opencode-windows-arm64', 'opencode-windows-x64', 'opencode-windows-x64-baseline']
+      : ['opencode-windows-x64', 'opencode-windows-x64-baseline'];
   const localCandidates =
     process.platform === 'win32'
-      ? [
-          path.join(appRoot, 'node_modules', 'opencode-windows-x64', 'bin', 'opencode.exe'),
-          path.join(appRoot, 'node_modules', 'opencode-windows-x64-baseline', 'bin', 'opencode.exe'),
+      ? windowsPackageCandidates.flatMap((packageName) => [
+          path.join(appRoot, 'node_modules', packageName, 'bin', 'opencode.exe'),
           path.join(
             appRoot,
             'node_modules',
             'opencode-ai',
             'node_modules',
-            'opencode-windows-x64',
+            packageName,
             'bin',
             'opencode.exe',
           ),
-          path.join(
-            appRoot,
-            'node_modules',
-            'opencode-ai',
-            'node_modules',
-            'opencode-windows-x64-baseline',
-            'bin',
-            'opencode.exe',
-          ),
-        ]
+        ])
       : [
           path.join(appRoot, 'node_modules', '.bin', 'opencode'),
           path.join(appRoot, 'node_modules', 'opencode-ai', 'bin', 'opencode'),
@@ -133,7 +127,13 @@ function findOpenCodeCli(): string {
     }
   }
 
-  logError('OpenCode CLI not found in workspace node_modules. Run "pnpm install".');
+  if (process.platform === 'win32' && process.arch === 'arm64') {
+    logError(
+      'OpenCode CLI not found in workspace node_modules. Windows ARM64 requires local x64 OpenCode packages; run "pnpm install".',
+    );
+  } else {
+    logError('OpenCode CLI not found in workspace node_modules. Run "pnpm install".');
+  }
   process.exit(1);
 }
 

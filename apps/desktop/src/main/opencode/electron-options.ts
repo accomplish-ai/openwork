@@ -74,20 +74,18 @@ export function isOpenCodeBundled(): boolean {
 }
 
 export function getBundledOpenCodeVersion(): string | null {
-  if (app.isPackaged) {
+  const resolved = resolveCliPath(getCliResolverConfig());
+  if (resolved?.source === 'bundled') {
     try {
-      const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
       const packageJsonPath = path.join(
-        process.resourcesPath,
-        'app.asar.unpacked',
-        'node_modules',
-        packageName,
+        path.dirname(path.dirname(resolved.cliPath)),
         'package.json',
       );
-
       if (fs.existsSync(packageJsonPath)) {
         const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        return pkg.version;
+        if (typeof pkg.version === 'string') {
+          return pkg.version;
+        }
       }
     } catch {
       // intentionally empty

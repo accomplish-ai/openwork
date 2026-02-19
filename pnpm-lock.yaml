@@ -114,6 +114,12 @@ importers:
       opencode-darwin-x64-baseline:
         specifier: 1.2.6
         version: 1.2.6
+      opencode-windows-x64:
+        specifier: 1.2.6
+        version: 1.2.6
+      opencode-windows-x64-baseline:
+        specifier: 1.2.6
+        version: 1.2.6
     devDependencies:
       '@electron/rebuild':
         specifier: ^4.0.2

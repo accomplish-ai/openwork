@@ -376,8 +376,10 @@ describe('OpenCode CLI Path Module', () => {
   });
 
   describe('getBundledOpenCodeVersion()', () => {
-    const getPlatformPackageName = () =>
-      process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
+    const getPlatformInfo = () => ({
+      pkg: process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai',
+      binary: process.platform === 'win32' ? 'opencode.exe' : 'opencode',
+    });
 
     describe('Packaged Mode', () => {
       it('should read version from package.json in unpacked asar', async () => {
@@ -386,15 +388,24 @@ describe('OpenCode CLI Path Module', () => {
         const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
         (process as NodeJS.Process & { resourcesPath: string }).resourcesPath = resourcesPath;
 
+        const { pkg, binary } = getPlatformInfo();
+        const cliPath = path.join(
+          resourcesPath,
+          'app.asar.unpacked',
+          'node_modules',
+          pkg,
+          'bin',
+          binary,
+        );
         const packageJsonPath = path.join(
           resourcesPath,
           'app.asar.unpacked',
           'node_modules',
-          getPlatformPackageName(),
+          pkg,
           'package.json',
         );
 
-        mockFs.existsSync.mockImplementation((p: string) => p === packageJsonPath);
+        mockFs.existsSync.mockImplementation((p: string) => p === cliPath || p === packageJsonPath);
         mockFs.readFileSync.mockImplementation((p: string) => {
           if (p === packageJsonPath) {
             return JSON.stringify({ version: '1.2.3' });
@@ -497,5 +508,4 @@ describe('OpenCode CLI Path Module', () => {
       });
     });
   });
-
 });

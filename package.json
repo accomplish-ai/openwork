@@ -45,6 +45,19 @@
   },
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "current",
+        "win32"
+      ],
+      "cpu": [
+        "current",
+        "x64"
+      ],
+      "libc": [
+        "current"
+      ]
+    },
     "overrides": {
       "fast-xml-parser": ">=5.3.4"
     }

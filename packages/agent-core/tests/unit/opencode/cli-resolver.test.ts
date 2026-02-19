@@ -29,7 +29,9 @@ describe('CLI Resolver', () => {
     return { cliPath, cliDir, binName };
   }
 
-  function createWindowsNestedLocalCli(appRoot: string): { cliPath: string; cliDir: string } | null {
+  function createWindowsNestedLocalCli(
+    appRoot: string,
+  ): { cliPath: string; cliDir: string } | null {
     if (process.platform !== 'win32') {
       return null;
     }
@@ -48,6 +50,17 @@ describe('CLI Resolver', () => {
     return { cliPath, cliDir };
   }
 
+  function createWindowsPackageCli(
+    appRoot: string,
+    packageName: string,
+  ): { cliPath: string; cliDir: string } {
+    const cliDir = path.join(appRoot, 'node_modules', packageName, 'bin');
+    const cliPath = path.join(cliDir, 'opencode.exe');
+    fs.mkdirSync(cliDir, { recursive: true });
+    fs.writeFileSync(cliPath, 'binary');
+    return { cliPath, cliDir };
+  }
+
   beforeEach(() => {
     // Create a unique temporary directory for each test
     testDir = path.join(
@@ -58,6 +71,7 @@ describe('CLI Resolver', () => {
 
     // Suppress console.log during tests
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -236,6 +250,66 @@ describe('CLI Resolver', () => {
 
       expect(result).not.toBeNull();
       expect(result?.cliPath).toContain(binName);
+    });
+  });
+
+  describe('windows arm64 compatibility', () => {
+    it('should resolve to local x64 OpenCode package on Windows ARM64 in development', () => {
+      const appRoot = path.join(testDir, 'app');
+      const x64Cli = createWindowsPackageCli(appRoot, 'opencode-windows-x64');
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+        platform: 'win32',
+        arch: 'arm64',
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('local');
+      expect(result?.cliPath).toBe(x64Cli.cliPath);
+    });
+
+    it('should resolve to bundled x64 OpenCode package on Windows ARM64 when packaged', () => {
+      const resourcesPath = path.join(testDir, 'resources');
+      const cliDir = path.join(
+        resourcesPath,
+        'app.asar.unpacked',
+        'node_modules',
+        'opencode-windows-x64',
+        'bin',
+      );
+      const cliPath = path.join(cliDir, 'opencode.exe');
+      fs.mkdirSync(cliDir, { recursive: true });
+      fs.writeFileSync(cliPath, 'binary');
+
+      const result = resolveCliPath({
+        isPackaged: true,
+        resourcesPath,
+        platform: 'win32',
+        arch: 'arm64',
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('bundled');
+      expect(result?.cliPath).toBe(cliPath);
+    });
+
+    it('should log actionable diagnostics when Windows ARM64 local binaries are missing', () => {
+      const appRoot = path.join(testDir, 'app-without-cli');
+      const warnSpy = vi.spyOn(console, 'warn');
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+        platform: 'win32',
+        arch: 'arm64',
+      });
+
+      expect(result).toBeNull();
+      const warningText = warnSpy.mock.calls.flat().join(' ');
+      expect(warningText).toContain('Windows ARM64 detected');
+      expect(warningText).toContain('Run "pnpm install"');
     });
   });
 });
