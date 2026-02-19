@@ -1,6 +1,7 @@
 // apps/desktop/src/renderer/components/landing/PlusMenu/index.tsx
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Paperclip } from 'lucide-react';
 import type { Skill, McpConnector } from '@accomplish_ai/agent-core/common';
 import {
@@ -24,6 +25,7 @@ interface PlusMenuProps {
 }
 
 export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuProps) {
+  const { t } = useTranslation('home');
   const [open, setOpen] = useState(false);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [connectors, setConnectors] = useState<McpConnector[]>([]);
@@ -102,7 +104,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
           <button
             disabled={disabled}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            title="Add content"
+            title={t('plusMenu.addContent')}
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -110,9 +112,9 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
         <DropdownMenuContent align="start" className="w-[200px]">
           <DropdownMenuItem disabled className="text-muted-foreground/60">
             <Paperclip className="h-4 w-4 mr-2 shrink-0" />
-            Attach Files
+            {t('plusMenu.attachFiles')}
             <span className="ml-auto pl-4 text-[10px] text-muted-foreground/50 whitespace-nowrap">
-              Soon
+              {t('plusMenu.soon')}
             </span>
           </DropdownMenuItem>
 
@@ -129,7 +131,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
               >
                 <path d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Use Skills
+              {t('plusMenu.useSkills')}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-[280px] p-0">
               <SkillsSubmenu
@@ -155,7 +157,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
                 >
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                 </svg>
-                Connectors
+                {t('plusMenu.connectors')}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="w-[280px] p-0">
                 <ConnectorsSubmenu

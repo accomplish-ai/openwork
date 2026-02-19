@@ -374,7 +374,7 @@ describe('ConfigGenerator', () => {
 
       const result = generateConfig(options);
 
-      expect(result.config.plugin).toContain('@tarquinen/opencode-dcp@^1.2.7');
+      expect(result.config.plugin).toContain('@tarquinen/opencode-dcp@^2.0.0');
     });
 
     it('should use bundled MCP entry when packaged and dist exists', () => {
