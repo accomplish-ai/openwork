@@ -19,6 +19,7 @@ import {
   type PermissionQuestionRequestData as QuestionRequestData,
   type PermissionQuestionResponseData as QuestionResponseData,
 } from '@accomplish_ai/agent-core';
+import { readJsonBody, HttpError } from './http/readJsonBody';
 
 export { PERMISSION_API_PORT, QUESTION_API_PORT, isFilePermissionRequest, isQuestionRequest };
 
@@ -77,19 +78,15 @@ export function startPermissionApiServer(): http.Server {
       return;
     }
 
-    // Parse request body
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
-    }
-
+    // Parse request body with a 1 MB size cap to prevent memory exhaustion.
     let data: FilePermissionRequestData;
-
     try {
-      data = JSON.parse(body);
-    } catch {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      data = await readJsonBody<FilePermissionRequestData>(req, { maxBytes: 1 * 1024 * 1024 });
+    } catch (err) {
+      const status = err instanceof HttpError ? err.statusCode : 400;
+      const message = err instanceof HttpError ? err.message : 'Invalid request';
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: message }));
       return;
     }
 
@@ -176,19 +173,15 @@ export function startQuestionApiServer(): http.Server {
       return;
     }
 
-    // Parse request body
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
-    }
-
+    // Parse request body with a 1 MB size cap to prevent memory exhaustion.
     let data: QuestionRequestData;
-
     try {
-      data = JSON.parse(body);
-    } catch {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      data = await readJsonBody<QuestionRequestData>(req, { maxBytes: 1 * 1024 * 1024 });
+    } catch (err) {
+      const status = err instanceof HttpError ? err.statusCode : 400;
+      const message = err instanceof HttpError ? err.message : 'Invalid request';
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: message }));
       return;
     }
 
