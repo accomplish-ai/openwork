@@ -16,6 +16,7 @@ import { DebugSection } from '@/components/settings/DebugSection';
 import { ConnectorsPanel } from '@/components/settings/connectors';
 import { Key, Zap, Mic, Info, Cable } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoImage from '/assets/logo-1.png';
 
 const TABS = [
   { id: 'providers' as const, labelKey: 'tabs.providers', icon: Key },
@@ -290,8 +291,9 @@ export function SettingsDialog({
         <nav className="w-48 shrink-0 border-r border-border bg-muted/30 p-3 flex flex-col gap-1">
           <div className="px-3 py-2 mb-1">
             <img
-              src="/assets/logo-1.png"
+              src={logoImage}
               alt="Accomplish"
+              className="dark:invert"
               style={{ height: '20px', paddingLeft: '6px' }}
             />
           </div>
