@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import type { TaskManagerOptions, TaskCallbacks } from '@accomplish_ai/agent-core';
@@ -33,6 +33,13 @@ import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
+const CLI_PREWARM_TIMEOUT_MS = 15000;
+
+let coldStartPrewarmStarted = false;
+let browserServerReady = false;
+let browserServerWarmupPromise: Promise<void> | null = null;
+let cliPrewarmAttempted = false;
+let cliPrewarmPromise: Promise<void> | null = null;
 
 /**
  * Removes the Vertex AI service account key file from disk if it exists.
@@ -259,6 +266,122 @@ function getBrowserServerConfig(): BrowserServerConfig {
   };
 }
 
+async function ensureBrowserServerReady(
+  onProgress?: (progress: { stage: string; message?: string }) => void,
+): Promise<void> {
+  if (browserServerReady) {
+    return;
+  }
+
+  if (!browserServerWarmupPromise) {
+    const startedAt = Date.now();
+    const browserConfig = getBrowserServerConfig();
+    browserServerWarmupPromise = ensureDevBrowserServer(browserConfig, onProgress)
+      .then((result) => {
+        const durationMs = Date.now() - startedAt;
+        if (result.ready) {
+          browserServerReady = true;
+          console.log(`[OpenCode Warmup] Browser server ready in ${durationMs}ms`);
+          return;
+        }
+        console.warn(
+          `[OpenCode Warmup] Browser server startup completed but not ready after ${durationMs}ms`,
+        );
+      })
+      .catch((error) => {
+        console.warn('[OpenCode Warmup] Browser server warmup failed:', error);
+      })
+      .finally(() => {
+        if (!browserServerReady) {
+          browserServerWarmupPromise = null;
+        }
+      });
+  }
+
+  await browserServerWarmupPromise;
+}
+
+async function prewarmWindowsCli(): Promise<void> {
+  if (process.platform !== 'win32' || cliPrewarmAttempted) {
+    return;
+  }
+
+  if (!cliPrewarmPromise) {
+    cliPrewarmPromise = (async () => {
+      const startedAt = Date.now();
+      try {
+        const { command, args } = getOpenCodeCliPath();
+        if (!command.toLowerCase().endsWith('.exe')) {
+          console.warn(
+            `[OpenCode Warmup] Skipping CLI prewarm because command is not an .exe: ${command}`,
+          );
+          return;
+        }
+
+        await new Promise<void>((resolve) => {
+          const child = spawn(command, [...args, '--version'], {
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+
+          const timeout = setTimeout(() => {
+            try {
+              child.kill();
+            } catch {
+              // intentionally empty
+            }
+            console.warn(
+              `[OpenCode Warmup] CLI prewarm timed out after ${CLI_PREWARM_TIMEOUT_MS}ms`,
+            );
+            resolve();
+          }, CLI_PREWARM_TIMEOUT_MS);
+
+          child.once('error', (error) => {
+            clearTimeout(timeout);
+            console.warn('[OpenCode Warmup] CLI prewarm spawn failed:', error);
+            resolve();
+          });
+
+          child.once('exit', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+
+        const durationMs = Date.now() - startedAt;
+        console.log(`[OpenCode Warmup] CLI prewarm completed in ${durationMs}ms`);
+      } catch (error) {
+        console.warn('[OpenCode Warmup] CLI prewarm failed:', error);
+      } finally {
+        cliPrewarmAttempted = true;
+        cliPrewarmPromise = null;
+      }
+    })();
+  }
+
+  await cliPrewarmPromise;
+}
+
+export function startColdStartPrewarm(): void {
+  if (coldStartPrewarmStarted || process.platform !== 'win32') {
+    return;
+  }
+  coldStartPrewarmStarted = true;
+
+  const startedAt = Date.now();
+  void Promise.allSettled([ensureBrowserServerReady(), prewarmWindowsCli()]).then((results) => {
+    const durationMs = Date.now() - startedAt;
+    const failedCount = results.filter((result) => result.status === 'rejected').length;
+    if (failedCount > 0) {
+      console.warn(
+        `[OpenCode Warmup] Background warmup finished in ${durationMs}ms with ${failedCount} rejected task(s)`,
+      );
+      return;
+    }
+    console.log(`[OpenCode Warmup] Background warmup finished in ${durationMs}ms`);
+  });
+}
+
 export async function onBeforeTaskStart(
   callbacks: TaskCallbacks,
   isFirstTask: boolean,
@@ -267,8 +390,7 @@ export async function onBeforeTaskStart(
     callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
   }
 
-  const browserConfig = getBrowserServerConfig();
-  await ensureDevBrowserServer(browserConfig, callbacks.onProgress);
+  await ensureBrowserServerReady(callbacks.onProgress);
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {

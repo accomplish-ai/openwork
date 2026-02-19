@@ -291,10 +291,15 @@ export class TaskManager {
     const isFirstTask = this.isFirstTask;
     (async () => {
       try {
+        const startupStartedAt = Date.now();
         callbacks.onProgress({ stage: 'starting', message: 'Starting task...', isFirstTask });
 
         if (this.options.onBeforeTaskStart) {
+          const beforeTaskStartStartedAt = Date.now();
           await this.options.onBeforeTaskStart(callbacks, isFirstTask);
+          console.log(
+            `[TaskManager] onBeforeTaskStart completed in ${Date.now() - beforeTaskStartStartedAt}ms for task ${taskId}`,
+          );
         }
 
         if (this.isFirstTask) {
@@ -307,11 +312,15 @@ export class TaskManager {
           isFirstTask,
         });
 
+        const adapterStartStartedAt = Date.now();
         await adapter.startTask({
           ...config,
           taskId,
           workingDirectory: config.workingDirectory || this.options.defaultWorkingDirectory,
         });
+        console.log(
+          `[TaskManager] adapter.startTask completed in ${Date.now() - adapterStartStartedAt}ms for task ${taskId} (total startup ${Date.now() - startupStartedAt}ms)`,
+        );
       } catch (error) {
         console.error(`[TaskManager] Task startup failed for ${taskId}:`, error);
         callbacks.onError(error instanceof Error ? error : new Error(String(error)));

@@ -20,6 +20,7 @@ export {
   getOpenCodeCliPath,
   isOpenCodeBundled,
   getBundledOpenCodeVersion,
+  startColdStartPrewarm,
   cleanupVertexServiceAccountKey,
 } from './electron-options';
 
