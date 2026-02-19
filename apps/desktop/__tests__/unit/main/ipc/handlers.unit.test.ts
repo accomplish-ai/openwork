@@ -101,6 +101,7 @@ vi.mock('@main/opencode', () => ({
   disposeTaskManager: vi.fn(),
   isOpenCodeCliInstalled: vi.fn(() => Promise.resolve(true)),
   getOpenCodeCliVersion: vi.fn(() => Promise.resolve('1.0.0')),
+  getWarmUpPromise: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock OpenCode auth (ChatGPT OAuth) - used by handlers.ts for OpenAI OAuth
