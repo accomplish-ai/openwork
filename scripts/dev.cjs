@@ -1,6 +1,9 @@
 const { spawn, execSync } = require('child_process');
 const path = require('path');
 
+const isWin=process.platform==='win32';
+const pnpmCmd = isWin ? 'pnpm.cmd' : 'pnpm';
+
 try {
   execSync('lsof -ti:5173 | xargs kill -9', { stdio: 'ignore' });
   console.log('Killed existing process on port 5173');
@@ -11,10 +14,11 @@ try {
 const env = { ...process.env };
 const isClean = process.env.CLEAN_START === '1';
 
-const web = spawn('pnpm', ['-F', '@accomplish/web', 'dev'], {
+const web = spawn(pnpmCmd, ['-F', '@accomplish/web', 'dev'], {
   stdio: 'inherit',
   env,
   detached: true,
+  shell: isWin,
 });
 
 const waitOn = require(path.join(__dirname, '..', 'node_modules', 'wait-on'));
@@ -23,10 +27,11 @@ let electron;
 waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
   .then(() => {
     const electronCmd = isClean ? 'dev:clean' : 'dev';
-    electron = spawn('pnpm', ['-F', '@accomplish/desktop', electronCmd], {
+    electron = spawn(pnpmCmd, ['-F', '@accomplish/desktop', electronCmd], {
       stdio: 'inherit',
       env,
       detached: true,
+      shell: isWin,
     });
     electron.on('exit', cleanup);
   })
