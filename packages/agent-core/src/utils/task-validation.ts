@@ -1,5 +1,9 @@
-import type { TaskConfig } from '../common/types/task.js';
+import type { TaskConfig, TaskAttachment } from '../common/types/task.js';
 import { sanitizeString } from './sanitize.js';
+
+const MAX_ATTACHMENTS = 5;
+const MAX_ATTACHMENT_DATA_LENGTH = 10 * 1024 * 1024; // ~10MB base64
+const VALID_ATTACHMENT_TYPES = new Set<TaskAttachment['type']>(['screenshot', 'json']);
 
 /**
  * Validates and sanitizes a TaskConfig object.
@@ -33,6 +37,27 @@ export function validateTaskConfig(config: TaskConfig): TaskConfig {
   if (config.outputSchema && typeof config.outputSchema === 'object') {
     validated.outputSchema = config.outputSchema;
   }
+  if (Array.isArray(config.attachments) && config.attachments.length > 0) {
+    validated.attachments = validateAttachments(config.attachments);
+  }
 
   return validated;
+}
+
+export function validateAttachments(attachments: unknown[]): TaskAttachment[] | undefined {
+  const valid = attachments.slice(0, MAX_ATTACHMENTS).filter((att): att is TaskAttachment => {
+    if (!att || typeof att !== 'object') {
+      return false;
+    }
+    const a = att as Record<string, unknown>;
+    return (
+      typeof a.type === 'string' &&
+      VALID_ATTACHMENT_TYPES.has(a.type as TaskAttachment['type']) &&
+      typeof a.data === 'string' &&
+      a.data.length > 0 &&
+      a.data.length <= MAX_ATTACHMENT_DATA_LENGTH &&
+      (a.label === undefined || typeof a.label === 'string')
+    );
+  });
+  return valid.length > 0 ? valid : undefined;
 }

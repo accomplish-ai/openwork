@@ -1,45 +1,34 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
 import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
+import type { TaskAttachment } from '@accomplish_ai/agent-core/common';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
+import { useAttachments } from '../../hooks/useAttachments';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { ModelIndicator } from '../ui/ModelIndicator';
+import { AttachmentThumbnails } from '../ui/AttachmentThumbnails';
+import { DragOverlay } from '../ui/DragOverlay';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusMenu } from './PlusMenu';
+import { cn } from '@/lib/utils';
 
 interface TaskInputBarProps {
   value: string;
   onChange: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: (attachments?: TaskAttachment[]) => void;
   placeholder?: string;
   isLoading?: boolean;
   disabled?: boolean;
   large?: boolean;
   autoFocus?: boolean;
-  /**
-   * Called when user clicks mic button while voice input is not configured
-   * (to open settings dialog)
-   */
   onOpenSpeechSettings?: () => void;
-  /**
-   * Called when user wants to open settings (e.g., from "Manage Skills")
-   */
   onOpenSettings?: (tab: 'providers' | 'voice' | 'skills' | 'connectors') => void;
-  /**
-   * Called when user wants to open settings to change model
-   */
   onOpenModelSettings?: () => void;
-  /**
-   * Hide model indicator when no model is selected (instead of showing warning)
-   */
   hideModelWhenNoModel?: boolean;
-  /**
-   * Automatically submit after a successful transcription.
-   */
   autoSubmitOnTranscription?: boolean;
 }
 
@@ -60,15 +49,37 @@ export default function TaskInputBar({
 }: TaskInputBarProps) {
   const isDisabled = disabled || isLoading;
   const isOverLimit = value.length > PROMPT_DEFAULT_MAX_LENGTH;
-  const canSubmit = !!value.trim() && !isDisabled && !isOverLimit;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
 
+  const attachmentInput = useAttachments();
+
+  const isProcessing = attachmentInput.isProcessing;
+  const hasContent = !!value.trim() || attachmentInput.attachments.length > 0;
+  const canSubmit = hasContent && !isDisabled && !isOverLimit && !isProcessing;
+
+  let submitTooltipLabel = 'Submit';
+  if (isOverLimit) {
+    submitTooltipLabel = 'Message is too long';
+  } else if (isProcessing) {
+    submitTooltipLabel = 'Processing attachments';
+  } else if (!hasContent) {
+    submitTooltipLabel = 'Enter a message';
+  }
+
+  const handleSubmit = useCallback(() => {
+    if (attachmentInput.isProcessing) {
+      return;
+    }
+    const atts = attachmentInput.attachments.length > 0 ? attachmentInput.attachments : undefined;
+    onSubmit(atts);
+    attachmentInput.clearAttachments();
+  }, [attachmentInput, onSubmit]);
+
   // Speech input hook
   const speechInput = useSpeechInput({
     onTranscriptionComplete: (text) => {
-      // Append transcribed text to existing input
       const newValue = value.trim() ? `${value} ${text}` : text;
       onChange(newValue);
 
@@ -76,36 +87,31 @@ export default function TaskInputBar({
         pendingAutoSubmitRef.current = newValue;
       }
 
-      // Auto-focus textarea
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 0);
     },
     onError: (error) => {
       console.error('[Speech] Error:', error.message);
-      // Error is stored in speechInput.error state
     },
   });
 
-  // Auto-focus on mount
   useEffect(() => {
     if (autoFocus && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [autoFocus]);
 
-  // Auto-submit once the parent value reflects the transcription.
   useEffect(() => {
-    if (!autoSubmitOnTranscription || isDisabled || isOverLimit) {
+    if (!autoSubmitOnTranscription || isDisabled || isOverLimit || isProcessing) {
       return;
     }
     if (pendingAutoSubmitRef.current && value === pendingAutoSubmitRef.current) {
       pendingAutoSubmitRef.current = null;
-      onSubmit();
+      handleSubmit();
     }
-  }, [autoSubmitOnTranscription, isDisabled, isOverLimit, onSubmit, value]);
+  }, [autoSubmitOnTranscription, isDisabled, isOverLimit, isProcessing, value, handleSubmit]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -115,21 +121,20 @@ export default function TaskInputBar({
   }, [value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Ignore Enter during IME composition (Chinese/Japanese input)
-    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (canSubmit) {
-        onSubmit();
+        handleSubmit();
       }
     }
   };
 
   const handleSkillSelect = (command: string) => {
-    // Prepend command to input with space
     const newValue = `${command} ${value}`.trim();
     onChange(newValue);
-    // Focus textarea
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 0);
@@ -137,31 +142,51 @@ export default function TaskInputBar({
 
   return (
     <div className="w-full space-y-2">
-      {/* Error message */}
-      {speechInput.error && (
+      {(speechInput.error || attachmentInput.error) && (
         <Alert
           variant="destructive"
           className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
         >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs leading-tight">
-            {speechInput.error.message}
-            {speechInput.error.code === 'EMPTY_RESULT' && (
-              <button
-                onClick={() => speechInput.retry()}
-                className="ml-2 underline hover:no-underline"
-                type="button"
-              >
-                Retry
-              </button>
+            {speechInput.error ? (
+              <>
+                {speechInput.error.message}
+                {speechInput.error.code === 'EMPTY_RESULT' && (
+                  <button
+                    onClick={() => speechInput.retry()}
+                    className="ml-2 underline hover:no-underline"
+                    type="button"
+                  >
+                    Retry
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                {attachmentInput.error}
+                <button
+                  onClick={() => attachmentInput.clearError()}
+                  className="ml-2 underline hover:no-underline"
+                  type="button"
+                >
+                  Dismiss
+                </button>
+              </>
             )}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Input container - two rows: textarea top, toolbar bottom */}
-      <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-        {/* Textarea area */}
+      <div
+        className={cn(
+          'relative rounded-xl border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring',
+          attachmentInput.isDragging ? 'border-primary ring-1 ring-primary' : 'border-border',
+        )}
+        {...attachmentInput.dragHandlers}
+      >
+        <DragOverlay isDragging={attachmentInput.isDragging} />
+
         <div className="px-4 pt-3 pb-2">
           <textarea
             data-testid="task-input-textarea"
@@ -169,6 +194,7 @@ export default function TaskInputBar({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={attachmentInput.handlePaste}
             placeholder={placeholder}
             disabled={isDisabled || speechInput.isRecording}
             rows={1}
@@ -176,18 +202,23 @@ export default function TaskInputBar({
           />
         </div>
 
-        {/* Toolbar - fixed at bottom */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
-          {/* Plus Menu on left */}
-          <PlusMenu
-            onSkillSelect={handleSkillSelect}
-            onOpenSettings={(tab) => onOpenSettings?.(tab)}
-            disabled={isDisabled || speechInput.isRecording}
-          />
+          <div className="flex items-center gap-2 min-w-0">
+            <PlusMenu
+              onSkillSelect={handleSkillSelect}
+              onOpenSettings={(tab) => onOpenSettings?.(tab)}
+              onAttachFiles={attachmentInput.openFilePicker}
+              disabled={isDisabled || speechInput.isRecording}
+            />
 
-          {/* Right side controls */}
-          <div className="flex items-center gap-2">
-            {/* Model Indicator */}
+            <AttachmentThumbnails
+              attachments={attachmentInput.attachments}
+              isProcessing={attachmentInput.isProcessing}
+              onRemove={attachmentInput.removeAttachment}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             {onOpenModelSettings && (
               <ModelIndicator
                 isRunning={false}
@@ -196,10 +227,8 @@ export default function TaskInputBar({
               />
             )}
 
-            {/* Divider */}
             <div className="w-px h-6 bg-border" />
 
-            {/* Speech Input Button */}
             <SpeechInputButton
               isRecording={speechInput.isRecording}
               isTranscribing={speechInput.isTranscribing}
@@ -215,7 +244,6 @@ export default function TaskInputBar({
               size="md"
             />
 
-            {/* Submit button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -228,7 +256,7 @@ export default function TaskInputBar({
                       message: 'Task input submit clicked',
                       context: { prompt: value },
                     });
-                    onSubmit();
+                    handleSubmit();
                   }}
                   disabled={!canSubmit || speechInput.isRecording}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
@@ -241,13 +269,7 @@ export default function TaskInputBar({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>
-                  {isOverLimit
-                    ? 'Message is too long'
-                    : !value.trim()
-                      ? 'Enter a message'
-                      : 'Submit'}
-                </span>
+                <span>{submitTooltipLabel}</span>
               </TooltipContent>
             </Tooltip>
           </div>
