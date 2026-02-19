@@ -53,9 +53,9 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
       title={task.summary || task.prompt}
       className={cn(
         'w-full text-left p-2 rounded-lg text-xs font-medium transition-colors duration-200',
-        'text-foreground hover:bg-[#E8E8E8] hover:text-foreground',
+        'text-foreground hover:bg-accent hover:text-foreground',
         'flex items-center gap-3 group relative cursor-pointer',
-        isActive && 'bg-[#EDEBE7] text-foreground',
+        isActive && 'bg-accent text-foreground',
       )}
     >
       <span className="flex items-center justify-center shrink-0 w-3 h-3">
@@ -73,7 +73,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
               <span
                 key={domain}
                 className={cn(
-                  'flex items-center p-0.5 rounded-full bg-white shrink-0 relative',
+                  'flex items-center p-0.5 rounded-full bg-card shrink-0 relative',
                   i > 0 && '-ml-1',
                   i === 0 && 'z-30',
                   i === 1 && 'z-20',
