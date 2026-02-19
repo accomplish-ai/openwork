@@ -1327,8 +1327,8 @@ export function registerIPCHandlers(): void {
   });
 
   handle('cloud-browsers:disconnect-aws', async () => {
-    storage.deleteCloudBrowserConfig('aws-agentcore');
     deleteApiKey('cloud-browser-aws');
+    storage.deleteCloudBrowserConfig('aws-agentcore');
   });
 }
 

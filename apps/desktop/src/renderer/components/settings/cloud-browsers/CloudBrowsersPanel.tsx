@@ -282,14 +282,13 @@ export function CloudBrowsersPanel() {
                 />
               </div>
 
-              <a
-                href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block text-xs text-muted-foreground hover:text-foreground transition-colors"
+              <button
+                type="button"
+                onClick={() => accomplish.openExternal('https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html')}
+                className="inline-block text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                Get credentials from AWS Console &rarr;
-              </a>
+                Get credentials from AWS Console →
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
