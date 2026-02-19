@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,13 +16,14 @@ import { DebugSection } from '@/components/settings/DebugSection';
 import { ConnectorsPanel } from '@/components/settings/connectors';
 import { Key, Zap, Mic, Info, Cable } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoImage from '/assets/logo-1.png';
 
 const TABS = [
-  { id: 'providers' as const, label: 'Providers', icon: Key },
-  { id: 'skills' as const, label: 'Skills', icon: Zap },
-  { id: 'connectors' as const, label: 'Connectors', icon: Cable },
-  { id: 'voice' as const, label: 'Voice Input', icon: Mic },
-  { id: 'about' as const, label: 'About', icon: Info },
+  { id: 'providers' as const, labelKey: 'tabs.providers', icon: Key },
+  { id: 'skills' as const, labelKey: 'tabs.skills', icon: Zap },
+  { id: 'connectors' as const, labelKey: 'tabs.connectors', icon: Cable },
+  { id: 'voice' as const, labelKey: 'tabs.voiceInput', icon: Mic },
+  { id: 'about' as const, labelKey: 'tabs.about', icon: Info },
 ];
 
 // First 4 providers shown in collapsed view (matches PROVIDER_ORDER in ProviderGrid)
@@ -45,6 +47,7 @@ export function SettingsDialog({
   initialProvider,
   initialTab = 'providers',
 }: SettingsDialogProps) {
+  const { t } = useTranslation('settings');
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
   const [gridExpanded, setGridExpanded] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
@@ -263,7 +266,7 @@ export function SettingsDialog({
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="sr-only">
-            <DialogTitle>Settings</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -281,15 +284,16 @@ export function SettingsDialog({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
 
         {/* Left sidebar navigation */}
         <nav className="w-48 shrink-0 border-r border-border bg-muted/30 p-3 flex flex-col gap-1">
           <div className="px-3 py-2 mb-1">
             <img
-              src="/assets/logo-1.png"
+              src={logoImage}
               alt="Accomplish"
+              className="dark:invert"
               style={{ height: '20px', paddingLeft: '6px' }}
             />
           </div>
@@ -305,7 +309,7 @@ export function SettingsDialog({
               )}
             >
               <tab.icon className="h-4 w-4 shrink-0" />
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </nav>
@@ -315,7 +319,8 @@ export function SettingsDialog({
           {/* Content header with title + optional actions */}
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
             <h3 className="text-sm font-semibold text-foreground">
-              {TABS.find((t) => t.id === activeTab)?.label}
+              {TABS.find((tab) => tab.id === activeTab)?.labelKey &&
+                t(TABS.find((tab) => tab.id === activeTab)!.labelKey)}
             </h3>
           </div>
 
@@ -348,17 +353,18 @@ export function SettingsDialog({
                         />
                       </svg>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-warning">No provider ready</p>
+                        <p className="text-sm font-medium text-warning">
+                          {t('warnings.noProviderReady')}
+                        </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          You need to connect a provider and select a model before you can run
-                          tasks.
+                          {t('warnings.noProviderReadyDescription')}
                         </p>
                         <div className="mt-3 flex gap-2">
                           <button
                             onClick={handleForceClose}
                             className="rounded-md px-3 py-1.5 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80"
                           >
-                            Close Anyway
+                            {t('warnings.closeAnyway')}
                           </button>
                         </div>
                       </div>
@@ -447,7 +453,7 @@ export function SettingsDialog({
                 <div>
                   {activeTab === 'skills' && (
                     <AddSkillDropdown
-                      onSkillAdded={() => setSkillsRefreshTrigger((t) => t + 1)}
+                      onSkillAdded={() => setSkillsRefreshTrigger((prev) => prev + 1)}
                       onClose={() => onOpenChange(false)}
                     />
                   )}
@@ -465,7 +471,7 @@ export function SettingsDialog({
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Done
+                  {t('buttons.done')}
                 </button>
               </div>
             </div>

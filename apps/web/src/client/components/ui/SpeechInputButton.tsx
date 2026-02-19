@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mic, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -100,6 +101,7 @@ export function SpeechInputButton({
   className,
   tooltipText,
 }: SpeechInputButtonProps) {
+  const { t } = useTranslation('settings');
   const sizeClasses = useMemo(() => {
     switch (size) {
       case 'sm':
@@ -135,12 +137,13 @@ export function SpeechInputButton({
 
   const tooltipLabel = useMemo(() => {
     if (tooltipText) return tooltipText;
-    if (!isConfigured) return 'Click to set up voice input';
-    if (isRecording) return `Recording (${formatDuration(recordingDuration)}) - Click to stop`;
-    if (isTranscribing) return 'Transcribing...';
-    if (error) return 'Error during transcription - Click to retry';
-    return 'Click to record or hold Alt to record voice input';
-  }, [tooltipText, isConfigured, isRecording, isTranscribing, error, recordingDuration]);
+    if (!isConfigured) return t('speech.tooltipSetup');
+    if (isRecording)
+      return t('speech.tooltipRecording', { duration: formatDuration(recordingDuration) });
+    if (isTranscribing) return t('speech.tooltipTranscribing');
+    if (error) return t('speech.tooltipError');
+    return t('speech.tooltipDefault');
+  }, [tooltipText, isConfigured, isRecording, isTranscribing, error, recordingDuration, t]);
 
   const handleClick = React.useCallback(
     (e: React.MouseEvent) => {

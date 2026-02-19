@@ -585,7 +585,7 @@ Example bad narration (too terse):
       todowrite: 'allow',
     },
     provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
-    plugin: ['@tarquinen/opencode-dcp@^1.2.7'],
+    plugin: ['@tarquinen/opencode-dcp@^2.0.0'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
