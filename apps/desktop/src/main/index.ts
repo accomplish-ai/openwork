@@ -21,7 +21,7 @@ if (process.platform === 'win32') {
 }
 
 import { registerIPCHandlers } from './ipc/handlers';
-import { FutureSchemaError, getLanguage } from '@accomplish_ai/agent-core';
+import { FutureSchemaError } from '@accomplish_ai/agent-core';
 import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
@@ -36,7 +36,6 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
-import { initializeI18n, t } from './i18n';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -139,7 +138,7 @@ function createWindow() {
     }
 
     menuItems.push({
-      label: t('contextMenu.addToDictionary'),
+      label: 'Add to Dictionary',
       click: () =>
         mainWindow?.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
     });
@@ -256,24 +255,18 @@ if (!gotTheLock) {
       initializeStorage();
     } catch (err) {
       if (err instanceof FutureSchemaError) {
-        // Initialize i18n before showing error dialog (storage failed, use system locale)
-        initializeI18n(null);
         await dialog.showMessageBox({
           type: 'error',
-          title: t('errors:app.updateRequired'),
-          message: t('errors:app.schemaNewerMessage', { version: String(err.storedVersion) }),
-          detail: t('errors:app.schemaNewerDetail', { version: String(err.appVersion) }),
-          buttons: [t('buttons.quit')],
+          title: 'Update Required',
+          message: `This data was created by a newer version of Accomplish (schema v${err.storedVersion}).`,
+          detail: `Your app supports up to schema v${err.appVersion}. Please update Accomplish to continue.`,
+          buttons: ['Quit'],
         });
         app.quit();
         return;
       }
       throw err;
     }
-
-    // Initialize i18n with stored language preference
-    const storedLanguagePref = getLanguage();
-    initializeI18n(storedLanguagePref === 'auto' ? null : storedLanguagePref);
 
     try {
       const storage = getStorage();

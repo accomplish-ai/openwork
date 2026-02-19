@@ -138,9 +138,6 @@ export { getAzureEntraToken } from './opencode/proxies/index.js';
 // Errors
 export { FutureSchemaError } from './storage/migrations/errors.js';
 
-// i18n language settings (standalone, not on StorageAPI)
-export { getLanguage, setLanguage, type UILanguage } from './storage/repositories/appSettings.js';
-
 // -----------------------------------------------------------------------------
 // Providers Module (from ./providers/)
 // -----------------------------------------------------------------------------

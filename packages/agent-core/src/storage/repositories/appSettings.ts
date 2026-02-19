@@ -9,9 +9,6 @@ import type { ThemePreference } from '../../types/storage.js';
 import { getDatabase } from '../database.js';
 import { safeParseJsonWithFallback } from '../../utils/json.js';
 
-/** Supported UI languages */
-export type UILanguage = 'en' | 'zh-CN' | 'auto';
-
 interface AppSettingsRow {
   id: number;
   debug_mode: number;
@@ -20,7 +17,6 @@ interface AppSettingsRow {
   ollama_config: string | null;
   litellm_config: string | null;
   azure_foundry_config: string | null;
-  language: string;
   lmstudio_config: string | null;
   openai_base_url: string | null;
   theme: string;
@@ -33,7 +29,6 @@ export interface AppSettings {
   ollamaConfig: OllamaConfig | null;
   litellmConfig: LiteLLMConfig | null;
   azureFoundryConfig: AzureFoundryConfig | null;
-  language: UILanguage;
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
@@ -145,20 +140,6 @@ export function setLMStudioConfig(config: LMStudioConfig | null): void {
   );
 }
 
-export function getLanguage(): UILanguage {
-  const row = getRow();
-  const lang = row.language;
-  if (lang === 'en' || lang === 'zh-CN' || lang === 'auto') {
-    return lang;
-  }
-  return 'auto';
-}
-
-export function setLanguage(language: UILanguage): void {
-  const db = getDatabase();
-  db.prepare('UPDATE app_settings SET language = ? WHERE id = 1').run(language);
-}
-
 export function getOpenAiBaseUrl(): string {
   const row = getRow();
   return row.openai_base_url || '';
@@ -190,9 +171,6 @@ export function setTheme(theme: ThemePreference): void {
 
 export function getAppSettings(): AppSettings {
   const row = getRow();
-  const lang = row.language;
-  const validLang: UILanguage =
-    lang === 'en' || lang === 'zh-CN' || lang === 'auto' ? lang : 'auto';
   return {
     debugMode: row.debug_mode === 1,
     onboardingComplete: row.onboarding_complete === 1,
@@ -200,7 +178,6 @@ export function getAppSettings(): AppSettings {
     ollamaConfig: safeParseJsonWithFallback<OllamaConfig>(row.ollama_config),
     litellmConfig: safeParseJsonWithFallback<LiteLLMConfig>(row.litellm_config),
     azureFoundryConfig: safeParseJsonWithFallback<AzureFoundryConfig>(row.azure_foundry_config),
-    language: validLang,
     lmstudioConfig: safeParseJsonWithFallback<LMStudioConfig>(row.lmstudio_config),
     openaiBaseUrl: row.openai_base_url || '',
     theme: VALID_THEMES.includes(row.theme as ThemePreference)
@@ -219,7 +196,6 @@ export function clearAppSettings(): void {
       ollama_config = NULL,
       litellm_config = NULL,
       azure_foundry_config = NULL,
-      language = 'auto',
       lmstudio_config = NULL,
       openai_base_url = '',
       theme = 'system'

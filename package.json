@@ -28,10 +28,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "prepare": "husky",
-    "i18n:validate": "npx tsx scripts/validate-translations.ts",
-    "i18n:sync": "npx tsx scripts/sync-translations.ts",
-    "i18n:sync:zh": "npx tsx scripts/sync-translations.ts --lang zh-CN"
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

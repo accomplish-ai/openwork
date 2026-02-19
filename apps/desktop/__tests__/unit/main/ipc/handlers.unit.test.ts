@@ -303,10 +303,6 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     validateLMStudioConfig: vi.fn(),
     validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
     validateMoonshotApiKey: vi.fn(() => Promise.resolve({ valid: true })),
-
-    // i18n language settings
-    getLanguage: vi.fn(() => 'auto'),
-    setLanguage: vi.fn(),
   };
 });
 
@@ -338,16 +334,6 @@ vi.mock('@main/store/secureStorage', () => ({
 }));
 
 // Note: App settings and provider settings are now mocked via @accomplish/core mock above
-
-// Mock i18n module
-vi.mock('@main/i18n', () => ({
-  initializeI18n: vi.fn(),
-  getLanguage: vi.fn(() => 'en'),
-  setLanguage: vi.fn(),
-  getAllTranslations: vi.fn(() => ({})),
-  SUPPORTED_LANGUAGES: ['en', 'zh-CN'],
-  t: vi.fn((key: string) => key),
-}));
 
 // Mock config
 vi.mock('@main/config', () => ({
@@ -599,10 +585,10 @@ describe('IPC Handlers Integration', () => {
     it('settings:set-debug-mode should reject non-boolean values', async () => {
       // Arrange & Act & Assert
       await expect(invokeHandler('settings:set-debug-mode', 'true')).rejects.toThrow(
-        'errors:settings.invalidDebugFlag',
+        'Invalid debug mode flag',
       );
       await expect(invokeHandler('settings:set-debug-mode', 1)).rejects.toThrow(
-        'errors:settings.invalidDebugFlag',
+        'Invalid debug mode flag',
       );
     });
 
@@ -674,7 +660,7 @@ describe('IPC Handlers Integration', () => {
       // Arrange & Act & Assert
       await expect(
         invokeHandler('settings:add-api-key', 'unsupported-provider', 'sk-test'),
-      ).rejects.toThrow('errors:validation.unsupportedProvider');
+      ).rejects.toThrow('Unsupported API key provider');
     });
 
     it('settings:remove-api-key should delete the API key', async () => {
@@ -1078,12 +1064,12 @@ describe('IPC Handlers Integration', () => {
 
     it('model:set should reject invalid model configuration', async () => {
       // Arrange & Act & Assert
-      await expect(invokeHandler('model:set', null)).rejects.toThrow('errors:model.invalidConfig');
+      await expect(invokeHandler('model:set', null)).rejects.toThrow('Invalid model configuration');
       await expect(invokeHandler('model:set', { provider: 'test' })).rejects.toThrow(
-        'errors:model.invalidConfig',
+        'Invalid model configuration',
       );
       await expect(invokeHandler('model:set', { model: 'test' })).rejects.toThrow(
-        'errors:model.invalidConfig',
+        'Invalid model configuration',
       );
     });
   });
@@ -1875,7 +1861,7 @@ describe('IPC Handlers Integration', () => {
 
       // Assert
       expect(result.valid).toBe(false);
-      expect(result.error).toBe('errors:api.unsupportedProvider');
+      expect(result.error).toBe('Unsupported provider');
     });
 
     it('api-key:validate-provider should skip validation for custom provider', async () => {
@@ -2038,7 +2024,7 @@ describe('IPC Handlers Integration', () => {
       };
 
       // Assert
-      expect(result.label).toBe('labels.localApiKey');
+      expect(result.label).toBe('Local API Key');
     });
 
     it('settings:add-api-key should validate label length', async () => {

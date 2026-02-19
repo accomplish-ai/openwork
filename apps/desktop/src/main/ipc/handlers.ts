@@ -24,9 +24,6 @@ import {
   sanitizeString,
   generateTaskSummary,
   validateTaskConfig,
-  getLanguage,
-  setLanguage,
-  type UILanguage,
 } from '@accomplish_ai/agent-core';
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
@@ -100,15 +97,6 @@ import {
   detectScenarioFromPrompt,
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
-import {
-  initializeI18n,
-  getLanguage as getI18nLanguage,
-  setLanguage as setI18nLanguage,
-  getAllTranslations,
-  SUPPORTED_LANGUAGES,
-  t,
-  type SupportedLanguage,
-} from '../i18n';
 import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
@@ -160,7 +148,9 @@ export function registerIPCHandlers(): void {
     const validatedConfig = validateTaskConfig(config);
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
-      throw new Error(t('errors:provider.notReady'));
+      throw new Error(
+        'No provider is ready. Please connect a provider and select a model in Settings.',
+      );
     }
 
     if (!permissionApiInitialized) {
@@ -326,7 +316,9 @@ export function registerIPCHandlers(): void {
         : undefined;
 
       if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
-        throw new Error(t('errors:provider.notReady'));
+        throw new Error(
+          'No provider is ready. Please connect a provider and select a model in Settings.',
+        );
       }
 
       const taskId = validatedExistingTaskId || createTaskId();
@@ -384,10 +376,10 @@ export function registerIPCHandlers(): void {
             } else if (bedrockCreds.authType === 'profile') {
               keyPrefix = `Profile: ${bedrockCreds.profileName || 'default'}`;
             } else {
-              keyPrefix = t('labels.awsCredentials');
+              keyPrefix = 'AWS Credentials';
             }
           } else {
-            keyPrefix = t('labels.awsCredentials');
+            keyPrefix = 'AWS Credentials';
           }
         } else if (provider === 'vertex') {
           try {
@@ -395,24 +387,24 @@ export function registerIPCHandlers(): void {
             if (vertexCreds?.projectId) {
               keyPrefix = `${vertexCreds.projectId} (${vertexCreds.location || 'unknown'})`;
             } else {
-              keyPrefix = t('labels.gcpCredentials');
+              keyPrefix = 'GCP Credentials';
             }
           } catch {
-            keyPrefix = t('labels.gcpCredentials');
+            keyPrefix = 'GCP Credentials';
           }
         } else {
           keyPrefix = apiKey && apiKey.length > 0 ? `${apiKey.substring(0, 8)}...` : '';
         }
 
         const labelMap: Record<string, string> = {
-          bedrock: t('labels.awsCredentials'),
-          vertex: t('labels.gcpCredentials'),
+          bedrock: 'AWS Credentials',
+          vertex: 'GCP Credentials',
         };
 
         return {
           id: `local-${provider}`,
           provider,
-          label: labelMap[provider] || t('labels.localApiKey'),
+          label: labelMap[provider] || 'Local API Key',
           keyPrefix,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -426,7 +418,7 @@ export function registerIPCHandlers(): void {
       keys.push({
         id: 'local-azure-foundry',
         provider: 'azure-foundry',
-        label: t('labels.azureFoundryEntraId'),
+        label: 'Azure Foundry (Entra ID)',
         keyPrefix: 'Entra ID',
         isActive: azureConfig.enabled ?? true,
         createdAt: new Date().toISOString(),
@@ -440,7 +432,7 @@ export function registerIPCHandlers(): void {
     'settings:add-api-key',
     async (_event: IpcMainInvokeEvent, provider: string, key: string, label?: string) => {
       if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
-        throw new Error(t('errors:validation.unsupportedProvider'));
+        throw new Error('Unsupported API key provider');
       }
       const sanitizedKey = sanitizeString(key, 'apiKey', 256);
       const sanitizedLabel = label ? sanitizeString(label, 'label', 128) : undefined;
@@ -450,7 +442,7 @@ export function registerIPCHandlers(): void {
       return {
         id: `local-${provider}`,
         provider,
-        label: sanitizedLabel || t('labels.localApiKey'),
+        label: sanitizedLabel || 'Local API Key',
         keyPrefix: sanitizedKey.substring(0, 8) + '...',
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -505,7 +497,7 @@ export function registerIPCHandlers(): void {
       options?: Record<string, any>,
     ) => {
       if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
-        return { valid: false, error: t('errors:api.unsupportedProvider') };
+        return { valid: false, error: 'Unsupported provider' };
       }
 
       console.log(`[API Key] Validation requested for provider: ${provider}`);
@@ -515,10 +507,7 @@ export function registerIPCHandlers(): void {
         try {
           sanitizedKey = sanitizeString(key, 'apiKey', 256);
         } catch (e) {
-          return {
-            valid: false,
-            error: e instanceof Error ? e.message : t('errors:api.invalidKey'),
-          };
+          return { valid: false, error: e instanceof Error ? e.message : 'Invalid API key' };
         }
 
         const result = await validateApiKey(
@@ -593,18 +582,18 @@ export function registerIPCHandlers(): void {
 
     if (parsed.authType === 'apiKey') {
       if (!parsed.apiKey) {
-        throw new Error(t('errors:bedrock.apiKeyRequired'));
+        throw new Error('API Key is required');
       }
     } else if (parsed.authType === 'accessKeys') {
       if (!parsed.accessKeyId || !parsed.secretAccessKey) {
-        throw new Error(t('errors:bedrock.accessKeyRequired'));
+        throw new Error('Access Key ID and Secret Access Key are required');
       }
     } else if (parsed.authType === 'profile') {
       if (!parsed.profileName) {
-        throw new Error(t('errors:bedrock.profileNameRequired'));
+        throw new Error('Profile name is required');
       }
     } else {
-      throw new Error(t('errors:bedrock.invalidAuthType'));
+      throw new Error('Invalid authentication type');
     }
 
     storeApiKey('bedrock', credentials);
@@ -612,13 +601,13 @@ export function registerIPCHandlers(): void {
     let label: string;
     let keyPrefix: string;
     if (parsed.authType === 'apiKey') {
-      label = t('labels.bedrockApiKey');
+      label = 'Bedrock API Key';
       keyPrefix = `${parsed.apiKey.substring(0, 8)}...`;
     } else if (parsed.authType === 'accessKeys') {
-      label = t('labels.awsAccessKeys');
+      label = 'AWS Access Keys';
       keyPrefix = `${parsed.accessKeyId.substring(0, 8)}...`;
     } else {
-      label = t('labels.awsProfile', { name: parsed.profileName });
+      label = `AWS Profile: ${parsed.profileName}`;
       keyPrefix = parsed.profileName;
     }
 
@@ -677,7 +666,7 @@ export function registerIPCHandlers(): void {
 
   handle('model:set', async (_event: IpcMainInvokeEvent, model: SelectedModel) => {
     if (!model || typeof model.provider !== 'string' || typeof model.model !== 'string') {
-      throw new Error(t('errors:model.invalidConfig'));
+      throw new Error('Invalid model configuration');
     }
     storage.setSelectedModel(model);
   });
@@ -693,15 +682,15 @@ export function registerIPCHandlers(): void {
   handle('ollama:set-config', async (_event: IpcMainInvokeEvent, config: OllamaConfig | null) => {
     if (config !== null) {
       if (typeof config.baseUrl !== 'string' || typeof config.enabled !== 'boolean') {
-        throw new Error(t('errors:ollama.invalidConfig'));
+        throw new Error('Invalid Ollama configuration');
       }
       validateHttpUrl(config.baseUrl, 'Ollama base URL');
       if (config.lastValidated !== undefined && typeof config.lastValidated !== 'number') {
-        throw new Error(t('errors:ollama.invalidConfig'));
+        throw new Error('Invalid Ollama configuration');
       }
       if (config.models !== undefined) {
         if (!Array.isArray(config.models)) {
-          throw new Error(t('errors:ollama.modelsArray'));
+          throw new Error('Invalid Ollama configuration: models must be an array');
         }
         for (const model of config.models) {
           if (
@@ -709,7 +698,7 @@ export function registerIPCHandlers(): void {
             typeof model.displayName !== 'string' ||
             typeof model.size !== 'number'
           ) {
-            throw new Error(t('errors:ollama.invalidModelFormat'));
+            throw new Error('Invalid Ollama configuration: invalid model format');
           }
         }
       }
@@ -726,21 +715,23 @@ export function registerIPCHandlers(): void {
     async (_event: IpcMainInvokeEvent, config: AzureFoundryConfig | null) => {
       if (config !== null) {
         if (typeof config.baseUrl !== 'string' || !config.baseUrl.trim()) {
-          throw new Error(t('errors:azureFoundry.baseUrlRequired'));
+          throw new Error('Invalid Azure Foundry configuration: baseUrl is required');
         }
         if (typeof config.deploymentName !== 'string' || !config.deploymentName.trim()) {
-          throw new Error(t('errors:azureFoundry.deploymentRequired'));
+          throw new Error('Invalid Azure Foundry configuration: deploymentName is required');
         }
         if (config.authType !== 'api-key' && config.authType !== 'entra-id') {
-          throw new Error(t('errors:azureFoundry.invalidAuthType'));
+          throw new Error(
+            'Invalid Azure Foundry configuration: authType must be api-key or entra-id',
+          );
         }
         if (typeof config.enabled !== 'boolean') {
-          throw new Error(t('errors:azureFoundry.invalidEnabled'));
+          throw new Error('Invalid Azure Foundry configuration: enabled must be a boolean');
         }
         try {
           validateHttpUrl(config.baseUrl, 'Azure Foundry base URL');
         } catch {
-          throw new Error(t('errors:azureFoundry.invalidBaseUrl'));
+          throw new Error('Invalid Azure Foundry configuration: Invalid base URL format');
         }
       }
       storage.setAzureFoundryConfig(config);
@@ -828,15 +819,15 @@ export function registerIPCHandlers(): void {
   handle('litellm:set-config', async (_event: IpcMainInvokeEvent, config: LiteLLMConfig | null) => {
     if (config !== null) {
       if (typeof config.baseUrl !== 'string' || typeof config.enabled !== 'boolean') {
-        throw new Error(t('errors:litellm.invalidConfig'));
+        throw new Error('Invalid LiteLLM configuration');
       }
       validateHttpUrl(config.baseUrl, 'LiteLLM base URL');
       if (config.lastValidated !== undefined && typeof config.lastValidated !== 'number') {
-        throw new Error(t('errors:litellm.invalidConfig'));
+        throw new Error('Invalid LiteLLM configuration');
       }
       if (config.models !== undefined) {
         if (!Array.isArray(config.models)) {
-          throw new Error(t('errors:litellm.modelsArray'));
+          throw new Error('Invalid LiteLLM configuration: models must be an array');
         }
         for (const model of config.models) {
           if (
@@ -844,7 +835,7 @@ export function registerIPCHandlers(): void {
             typeof model.name !== 'string' ||
             typeof model.provider !== 'string'
           ) {
-            throw new Error(t('errors:litellm.invalidModelFormat'));
+            throw new Error('Invalid LiteLLM configuration: invalid model format');
           }
         }
       }
@@ -859,7 +850,7 @@ export function registerIPCHandlers(): void {
   handle('lmstudio:fetch-models', async (_event: IpcMainInvokeEvent) => {
     const config = storage.getLMStudioConfig();
     if (!config || !config.baseUrl) {
-      return { success: false, error: t('errors:lmstudio.notConfigured') };
+      return { success: false, error: 'No LM Studio configured' };
     }
 
     return fetchLMStudioModels({ baseUrl: config.baseUrl });
@@ -888,12 +879,12 @@ export function registerIPCHandlers(): void {
     ) => {
       const providerConfig = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
       if (!providerConfig?.modelsEndpoint) {
-        return { success: false, error: t('errors:provider.noModelsEndpoint') };
+        return { success: false, error: 'No models endpoint configured for this provider' };
       }
 
       const apiKey = getApiKey(providerId);
       if (!apiKey) {
-        return { success: false, error: t('errors:provider.noApiKey') };
+        return { success: false, error: 'No API key found for this provider' };
       }
 
       let urlOverride: string | undefined;
@@ -941,7 +932,7 @@ export function registerIPCHandlers(): void {
 
   handle('settings:set-debug-mode', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
     if (typeof enabled !== 'boolean') {
-      throw new Error(t('errors:settings.invalidDebugFlag'));
+      throw new Error('Invalid debug mode flag');
     }
     storage.setDebugMode(enabled);
     for (const win of BrowserWindow.getAllWindows()) {
@@ -955,7 +946,7 @@ export function registerIPCHandlers(): void {
 
   handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
     if (!['system', 'light', 'dark'].includes(theme)) {
-      throw new Error(t('errors:settings.invalidTheme'));
+      throw new Error('Invalid theme value');
     }
     storage.setTheme(theme as 'system' | 'light' | 'dark');
     nativeTheme.themeSource = theme as 'system' | 'light' | 'dark';
@@ -978,7 +969,7 @@ export function registerIPCHandlers(): void {
 
   handle('settings:openai-base-url:set', async (_event: IpcMainInvokeEvent, baseUrl: string) => {
     if (typeof baseUrl !== 'string') {
-      throw new Error(t('errors:settings.invalidBaseUrl'));
+      throw new Error('Invalid base URL');
     }
 
     const trimmed = baseUrl.trim();
@@ -1031,60 +1022,6 @@ export function registerIPCHandlers(): void {
       throw error;
     }
   });
-
-  // ==================== i18n Handlers ====================
-
-  handle('i18n:get-language', async (_event: IpcMainInvokeEvent) => {
-    return getLanguage();
-  });
-
-  handle('i18n:set-language', async (_event: IpcMainInvokeEvent, language: UILanguage) => {
-    if (language !== 'auto' && !SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
-      throw new Error(t('errors:i18n.unsupportedLanguage'));
-    }
-    setLanguage(language);
-
-    if (language === 'auto') {
-      initializeI18n(null);
-    } else {
-      setI18nLanguage(language as SupportedLanguage);
-    }
-
-    const resolvedLanguage = getI18nLanguage();
-    for (const win of BrowserWindow.getAllWindows()) {
-      win.webContents.send('i18n:language-changed', {
-        language,
-        resolvedLanguage,
-      });
-    }
-
-    console.log(`[i18n] Language set to: ${language} (resolved: ${resolvedLanguage})`);
-  });
-
-  handle('i18n:get-translations', async (_event: IpcMainInvokeEvent, language?: string) => {
-    let targetLanguage: SupportedLanguage;
-
-    if (language && SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
-      targetLanguage = language as SupportedLanguage;
-    } else {
-      targetLanguage = getI18nLanguage();
-    }
-
-    return {
-      language: targetLanguage,
-      translations: getAllTranslations(targetLanguage),
-    };
-  });
-
-  handle('i18n:get-supported-languages', async (_event: IpcMainInvokeEvent) => {
-    return SUPPORTED_LANGUAGES;
-  });
-
-  handle('i18n:get-resolved-language', async (_event: IpcMainInvokeEvent) => {
-    return getI18nLanguage();
-  });
-
-  // ==================== End i18n Handlers ====================
 
   handle(
     'log:event',
@@ -1190,12 +1127,12 @@ export function registerIPCHandlers(): void {
     const defaultFilename = `accomplish-logs-${timestamp}.txt`;
 
     const result = await dialog.showSaveDialog(window, {
-      title: t('settings:developer.exportDialogTitle'),
+      title: 'Export Application Logs',
       defaultPath: defaultFilename,
       filters: [
-        { name: t('fileFilters.text'), extensions: ['txt'] },
-        { name: t('fileFilters.log'), extensions: ['log'] },
-        { name: t('fileFilters.all'), extensions: ['*'] },
+        { name: 'Text Files', extensions: ['txt'] },
+        { name: 'Log Files', extensions: ['log'] },
+        { name: 'All Files', extensions: ['*'] },
       ],
     });
 
@@ -1207,10 +1144,7 @@ export function registerIPCHandlers(): void {
       if (fs.existsSync(logPath)) {
         fs.copyFileSync(logPath, result.filePath);
       } else {
-        const header = t('settings:developer.exportHeader', {
-          timestamp: new Date().toISOString(),
-          logDir,
-        });
+        const header = `Accomplish Application Logs\nExported: ${new Date().toISOString()}\nLog Directory: ${logDir}\n\nNo logs recorded yet.\n`;
         fs.writeFileSync(result.filePath, header);
       }
 
@@ -1240,10 +1174,10 @@ export function registerIPCHandlers(): void {
   handle('skills:pick-file', async () => {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: t('settings:skills.selectFile'),
+      title: 'Select a SKILL.md file',
       filters: [
-        { name: t('fileFilters.skill'), extensions: ['md'] },
-        { name: t('fileFilters.all'), extensions: ['*'] },
+        { name: 'Skill Files', extensions: ['md'] },
+        { name: 'All Files', extensions: ['*'] },
       ],
       properties: ['openFile'],
     });
@@ -1292,13 +1226,13 @@ export function registerIPCHandlers(): void {
     try {
       const parsed = new URL(sanitizedUrl);
       if (!parsed.protocol.startsWith('http')) {
-        throw new Error(t('errors:connector.protocolRequired'));
+        throw new Error('Connector URL must use http:// or https://');
       }
     } catch (err) {
       throw new Error(
         err instanceof Error && err.message.includes('http')
           ? err.message
-          : t('errors:connector.invalidUrl', { url: sanitizedUrl }),
+          : `Invalid connector URL: ${sanitizedUrl}`,
       );
     }
 

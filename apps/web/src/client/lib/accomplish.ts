@@ -319,21 +319,6 @@ interface AccomplishAPI {
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
 
-  // i18n
-  i18n?: {
-    getLanguage(): Promise<'en' | 'zh-CN' | 'auto'>;
-    setLanguage(language: 'en' | 'zh-CN' | 'auto'): Promise<void>;
-    getTranslations(language?: string): Promise<{
-      language: string;
-      translations: Record<string, Record<string, unknown>>;
-    }>;
-    getSupportedLanguages(): Promise<readonly string[]>;
-    getResolvedLanguage(): Promise<string>;
-    onLanguageChange(
-      callback: (data: { language: string; resolvedLanguage: string }) => void,
-    ): () => void;
-  };
-
   // Speech-to-Text
   speechIsConfigured(): Promise<boolean>;
   speechGetConfig(): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }>;

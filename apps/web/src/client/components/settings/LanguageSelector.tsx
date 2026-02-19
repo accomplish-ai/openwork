@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
-import { getAccomplish } from '@/lib/accomplish';
+import { changeLanguage, getLanguagePreference } from '@/i18n';
 
 // Auto label in each supported system language so it's always recognizable
 const AUTO_LABELS: Record<string, string> = {
@@ -26,33 +26,13 @@ const LANGUAGE_OPTIONS = [
 type LanguageValue = (typeof LANGUAGE_OPTIONS)[number]['value'];
 
 export function LanguageSelector() {
-  const { t, i18n } = useTranslation('settings');
-  const [currentLanguage, setCurrentLanguage] = useState<LanguageValue>('auto');
-  const accomplish = getAccomplish();
+  const { t } = useTranslation('settings');
+  const [currentLanguage, setCurrentLanguage] = useState<LanguageValue>(getLanguagePreference);
 
-  useEffect(() => {
-    accomplish.i18n?.getLanguage().then(setCurrentLanguage);
-  }, [accomplish]);
-
-  const handleChange = useCallback(
-    async (value: LanguageValue) => {
-      setCurrentLanguage(value);
-      await accomplish.i18n?.setLanguage(value);
-
-      // Update react-i18next to match
-      const resolved = await accomplish.i18n?.getResolvedLanguage();
-      if (resolved) {
-        const translations = await accomplish.i18n?.getTranslations(resolved);
-        if (translations) {
-          for (const [ns, resources] of Object.entries(translations.translations)) {
-            i18n.addResourceBundle(resolved, ns, resources, true, true);
-          }
-        }
-        await i18n.changeLanguage(resolved);
-      }
-    },
-    [accomplish, i18n],
-  );
+  const handleChange = useCallback(async (value: LanguageValue) => {
+    setCurrentLanguage(value);
+    await changeLanguage(value);
+  }, []);
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
