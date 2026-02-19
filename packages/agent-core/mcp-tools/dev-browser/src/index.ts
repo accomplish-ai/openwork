@@ -68,7 +68,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
 
   const baseProfileDir = profileDir ?? join(process.cwd(), '.browser-data');
 
-  let context: BrowserContext;
+  let context: BrowserContext | undefined;
   let browser: import('playwright').Browser | undefined;
   let wsEndpoint = '';
 
@@ -104,7 +104,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     }
   }
 
-  if (!context! && useSystemChrome) {
+  if (!context && useSystemChrome) {
     try {
       console.log('Trying to use system Chrome...');
       const chromeUserDataDir = join(baseProfileDir, 'chrome-profile');
@@ -125,7 +125,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     }
   }
 
-  if (!context!) {
+  if (!context) {
     const playwrightUserDataDir = join(baseProfileDir, 'playwright-profile');
     mkdirSync(playwrightUserDataDir, { recursive: true });
 
@@ -139,6 +139,10 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   }
 
   console.log('Browser launched with persistent profile...');
+
+  if (!context) {
+    throw new Error('Failed to initialize browser context');
+  }
 
   context.on('close', () => {
     console.log('Browser context closed (user may have closed Chrome). Exiting server...');
@@ -271,9 +275,17 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     registry.clear();
 
     try {
-      await context.close();
+      await context?.close();
     } catch {
       // intentionally empty
+    }
+
+    if (browser) {
+      try {
+        await browser.close();
+      } catch {
+        // intentionally empty
+      }
     }
 
     server.close();
@@ -282,7 +294,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
 
   const syncCleanup = () => {
     try {
-      context.close();
+      context?.close();
     } catch {
       // intentionally empty
     }

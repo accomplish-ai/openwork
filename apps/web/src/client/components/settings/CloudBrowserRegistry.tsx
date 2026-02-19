@@ -3,17 +3,33 @@ import type {
   CloudBrowserProviderId,
   CloudProviderAccount,
 } from '@accomplish_ai/agent-core/common';
-import { getAccomplish } from '@/lib/accomplish';
+import { useAccomplish } from '@/lib/accomplish';
 import { BrowserbaseForm } from './cloud-browsers/BrowserbaseForm';
 import { cn } from '@/lib/utils';
 import { Cloud, ExternalLink } from 'lucide-react';
+
+const PROVIDER_LIST = [
+  {
+    id: 'browserbase' as CloudBrowserProviderId,
+    name: 'Browserbase',
+    description: 'Serverless browser infrastructure for AI agents.',
+    url: 'https://browserbase.com',
+  },
+  {
+    id: 'brightdata' as CloudBrowserProviderId,
+    name: 'Bright Data',
+    description: 'Scraping Browser with built-in unblocking.',
+    url: 'https://brightdata.com',
+    disabled: true, // Placeholder for Phase 2/3
+  },
+];
 
 export function CloudBrowserRegistry() {
   const [selectedProvider, setSelectedProvider] = useState<CloudBrowserProviderId>('browserbase');
   const [providers, setProviders] = useState<Record<string, CloudProviderAccount>>({});
   const [loading, setLoading] = useState(true);
 
-  const accomplish = getAccomplish();
+  const accomplish = useAccomplish();
 
   const loadProviders = useCallback(async () => {
     setLoading(true);
@@ -39,28 +55,8 @@ export function CloudBrowserRegistry() {
   }, [loadProviders]);
 
   const handleSaveBrowserbase = async () => {
-    try {
-      await loadProviders(); // Reload to get updated state
-    } catch (err) {
-      console.error('Failed to reload providers after save', err);
-    }
+    await loadProviders();
   };
-
-  const PROVIDER_LIST = [
-    {
-      id: 'browserbase' as CloudBrowserProviderId,
-      name: 'Browserbase',
-      description: 'Serverless browser infrastructure for AI agents.',
-      url: 'https://browserbase.com',
-    },
-    {
-      id: 'brightdata' as CloudBrowserProviderId,
-      name: 'Bright Data',
-      description: 'Scraping Browser with built-in unblocking.',
-      url: 'https://brightdata.com',
-      disabled: true, // Placeholder for Phase 2/3
-    },
-  ];
 
   if (loading) {
     return (

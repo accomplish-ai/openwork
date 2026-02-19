@@ -159,6 +159,9 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+      zustand:
+        specifier: ^5.0.2
+        version: 5.0.11(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     optionalDependencies:
       opencode-darwin-arm64:
         specifier: 1.2.6
@@ -4669,13 +4672,28 @@ packages:
     cpu: [arm64]
     os: [darwin]
 
+  opencode-darwin-arm64@1.2.6:
+    resolution: {integrity: sha512-v5/Qs2vHAb1J/cMwQ13jTMiDPsEnf1bH+AvQYNlsLNFQbDtWc2gc9FJcXqva0/lhI+aVo2X/Z45E6ZfGE3ffDA==}
+    cpu: [arm64]
+    os: [darwin]
+
   opencode-darwin-x64-baseline@1.2.1:
     resolution: {integrity: sha512-yCMVKtioz6YuXJIhwRamDRXxBcLrq7kx2Quh0bcbzZO4Q2S3siriEQJPXFitMOvcza1LyM937005KRlauAqeVA==}
     cpu: [x64]
     os: [darwin]
 
+  opencode-darwin-x64-baseline@1.2.6:
+    resolution: {integrity: sha512-4EkBCNhr9ukVf8BYjBqPbWy4OyFLGeRDkM/Jtemu6/+2GoQfOvYeedGoixx6WSdgIF9XcqQAltHuP09Uq2+wgg==}
+    cpu: [x64]
+    os: [darwin]
+
   opencode-darwin-x64@1.2.1:
     resolution: {integrity: sha512-UaxZPlaMqQuZPzoSgytSOAmcnuMzLjaP5M3iS+tAvWj+mLTi4hf8WqGNzVQVJspSXLbYjr9aJCHO8BwRcPUqzQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  opencode-darwin-x64@1.2.6:
+    resolution: {integrity: sha512-fyk1Y2+M7n0OC7ANAZKXYjJ7o4SdBmgDi2lxoWfixUcx+hauGhQoSmDSl047QMhbVUMYT0/GrJ0Wz/VpaKQG7A==}
     cpu: [x64]
     os: [darwin]
 
@@ -11448,10 +11466,19 @@ snapshots:
   opencode-darwin-arm64@1.2.1:
     optional: true
 
+  opencode-darwin-arm64@1.2.6:
+    optional: true
+
   opencode-darwin-x64-baseline@1.2.1:
     optional: true
 
+  opencode-darwin-x64-baseline@1.2.6:
+    optional: true
+
   opencode-darwin-x64@1.2.1:
+    optional: true
+
+  opencode-darwin-x64@1.2.6:
     optional: true
 
   opencode-linux-arm64-musl@1.2.1:
