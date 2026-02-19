@@ -12,12 +12,9 @@
     "build": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/bundle-skills.cjs",
     "build:electron": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs",
     "build:unpack": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs --dir",
-    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "release": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
-    "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "package": "pnpm download:nodejs && ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package:mac": "pnpm download:nodejs && ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
-    "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -41,7 +38,6 @@
     "test:local-agent": "npx tsx scripts/test-local-agent-cli.ts"
   },
   "dependencies": {
-    "@accomplish/web": "workspace:*",
     "@accomplish_ai/agent-core": "workspace:*",
     "@aws-sdk/client-bedrock": "^3.971.0",
     "@aws-sdk/credential-providers": "^3.971.0",

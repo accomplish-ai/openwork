@@ -65,9 +65,6 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@accomplish/web':
-        specifier: workspace:*
-        version: link:../web
       '@accomplish_ai/agent-core':
         specifier: workspace:*
         version: link:../../packages/agent-core
