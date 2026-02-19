@@ -155,7 +155,7 @@ export class LogFileWriter {
         if (fileDate < cutoffDate) {
           const filePath = path.join(this.logDir, file);
           fs.unlinkSync(filePath);
-          console.log(`[LogFileWriter] Deleted old log file: ${file}`);
+          // console.log(`[LogFileWriter] Deleted old log file: ${file}`);
         }
       }
     } catch (error) {

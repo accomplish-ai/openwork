@@ -91,7 +91,7 @@ export async function testModelToolSupport(
         errorText.includes('function') ||
         errorText.includes('does not support')
       ) {
-        console.log(`[${providerName}] Model ${modelId} does not support tools (error response)`);
+        // console.log(`[${providerName}] Model ${modelId} does not support tools (error response)`);
         return 'unsupported';
       }
       console.warn(`[${providerName}] Tool test failed for ${modelId}: ${response.status}`);
@@ -102,12 +102,12 @@ export async function testModelToolSupport(
 
     const choice = data.choices?.[0];
     if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
-      console.log(`[${providerName}] Model ${modelId} supports tools (made tool call)`);
+      // console.log(`[${providerName}] Model ${modelId} supports tools (made tool call)`);
       return 'supported';
     }
 
     if (choice?.finish_reason === 'tool_calls') {
-      console.log(`[${providerName}] Model ${modelId} supports tools (finish_reason)`);
+      // console.log(`[${providerName}] Model ${modelId} supports tools (finish_reason)`);
       return 'supported';
     }
 
@@ -119,7 +119,7 @@ export async function testModelToolSupport(
         return 'unknown';
       }
       if (error.message.includes('tool') || error.message.includes('function')) {
-        console.log(`[${providerName}] Model ${modelId} does not support tools (exception)`);
+        // console.log(`[${providerName}] Model ${modelId} does not support tools (exception)`);
         return 'unsupported';
       }
     }
@@ -159,18 +159,15 @@ export async function testOllamaModelToolSupport(
     const data = (await response.json()) as { capabilities?: string[] };
 
     if (data.capabilities?.includes('tools')) {
-      console.log(`[Ollama] Model ${modelId} supports tools (capabilities)`);
+      // console.log(`[Ollama] Model ${modelId} supports tools (capabilities)`);
       return 'supported';
     }
 
     if (Array.isArray(data.capabilities)) {
-      console.log(
-        `[Ollama] Model ${modelId} does not support tools (capabilities: ${data.capabilities.join(', ')})`,
-      );
       return 'unsupported';
     }
 
-    console.log(`[Ollama] Model ${modelId} has no capabilities field`);
+    // console.log(`[Ollama] Model ${modelId} has no capabilities field`);
     return 'unknown';
   } catch (error) {
     console.warn(`[Ollama] Tool check error for ${modelId}:`, error);

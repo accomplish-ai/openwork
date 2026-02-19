@@ -76,14 +76,14 @@ export function logBundledNodeInfo(config: PlatformConfig): void {
   const paths = getBundledNodePaths(config);
 
   if (!paths) {
-    console.log('[Bundled Node] Development mode - using system Node.js');
+    // console.log('[Bundled Node] Development mode - using system Node.js');
     return;
   }
 
-  console.log('[Bundled Node] Configuration:');
-  console.log(`  Platform: ${config.platform}`);
-  console.log(`  Architecture: ${config.arch}`);
-  console.log(`  Node directory: ${paths.nodeDir}`);
-  console.log(`  Node path: ${paths.nodePath}`);
-  console.log(`  Available: ${fs.existsSync(paths.nodePath)}`);
+  // console.log('[Bundled Node] Configuration:');
+  // console.log(`  Platform: ${config.platform}`);
+  // console.log(`  Architecture: ${config.arch}`);
+  // console.log(`  Node directory: ${paths.nodeDir}`);
+  // console.log(`  Node path: ${paths.nodePath}`);
+  // console.log(`  Available: ${fs.existsSync(paths.nodePath)}`);
 }

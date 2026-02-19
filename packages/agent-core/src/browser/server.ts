@@ -59,7 +59,7 @@ export async function installPlaywrightChromium(
     const npxPath = getNpxExecutable(config.bundledNodeBinPath);
     const spawnEnv = buildNodeEnvironment(config.bundledNodeBinPath);
 
-    console.log(`[Browser] Installing Playwright Chromium using npx: ${npxPath}`);
+    // console.log(`[Browser] Installing Playwright Chromium using npx: ${npxPath}`);
     onProgress?.('Downloading browser...');
 
     const child = spawn(npxPath, ['playwright', 'install', 'chromium'], {
@@ -72,7 +72,7 @@ export async function installPlaywrightChromium(
     child.stdout?.on('data', (data: Buffer) => {
       const line = data.toString().trim();
       if (line) {
-        console.log(`[Playwright Install] ${line}`);
+        // console.log(`[Playwright Install] ${line}`);
         if (line.includes('%') || line.toLowerCase().startsWith('downloading')) {
           onProgress?.(line);
         }
@@ -82,13 +82,13 @@ export async function installPlaywrightChromium(
     child.stderr?.on('data', (data: Buffer) => {
       const line = data.toString().trim();
       if (line) {
-        console.log(`[Playwright Install] ${line}`);
+        // console.log(`[Playwright Install] ${line}`);
       }
     });
 
     child.on('close', (code) => {
       if (code === 0) {
-        console.log('[Browser] Playwright Chromium installed successfully');
+        // console.log('[Browser] Playwright Chromium installed successfully');
         onProgress?.('Browser installed successfully!');
         resolve();
       } else {
@@ -122,20 +122,14 @@ export async function waitForDevBrowserServer(
   pollIntervalMs = 500,
 ): Promise<boolean> {
   const startTime = Date.now();
-  let attempts = 0;
   while (Date.now() - startTime < maxWaitMs) {
-    attempts++;
     if (await isDevBrowserServerReady(port)) {
-      console.log(
-        `[Browser] Dev-browser server ready after ${attempts} attempts (${Date.now() - startTime}ms)`,
-      );
+      // console.log(
+
       return true;
     }
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
-  console.log(
-    `[Browser] Dev-browser server not ready after ${attempts} attempts (${maxWaitMs}ms timeout)`,
-  );
   return false;
 }
 
@@ -155,12 +149,12 @@ export async function startDevBrowserServer(
 
   const serverLogs: string[] = [];
 
-  console.log('[Browser] ========== DEV-BROWSER SERVER STARTUP ==========');
-  console.log('[Browser] Node executable:', nodeExe);
-  console.log('[Browser] Server script:', serverScript);
-  console.log('[Browser] Working directory:', serverCwd);
-  console.log('[Browser] Script exists:', fs.existsSync(serverScript));
-  console.log('[Browser] CWD exists:', fs.existsSync(serverCwd));
+  // console.log('[Browser] ========== DEV-BROWSER SERVER STARTUP ==========');
+  // console.log('[Browser] Node executable:', nodeExe);
+  // console.log('[Browser] Server script:', serverScript);
+  // console.log('[Browser] Working directory:', serverCwd);
+  // console.log('[Browser] Script exists:', fs.existsSync(serverScript));
+  // console.log('[Browser] CWD exists:', fs.existsSync(serverCwd));
 
   // detached + unref allows server to outlive parent process
   const child = spawn(nodeExe, [serverScript], {
@@ -178,7 +172,7 @@ export async function startDevBrowserServer(
       .filter((l) => l.trim());
     for (const line of lines) {
       serverLogs.push(`[stdout] ${line}`);
-      console.log('[DevBrowser stdout]', line);
+      // console.log('[DevBrowser stdout]', line);
     }
   });
 
@@ -189,7 +183,7 @@ export async function startDevBrowserServer(
       .filter((l) => l.trim());
     for (const line of lines) {
       serverLogs.push(`[stderr] ${line}`);
-      console.log('[DevBrowser stderr]', line);
+      // console.log('[DevBrowser stderr]', line);
     }
   });
 
@@ -202,7 +196,7 @@ export async function startDevBrowserServer(
   child.on('exit', (code, signal) => {
     const exitMsg = `Process exited with code ${code}, signal ${signal}`;
     serverLogs.push(`[exit] ${exitMsg}`);
-    console.log('[Browser] Dev-browser', exitMsg);
+    // console.log('[Browser] Dev-browser', exitMsg);
     if (code !== 0 && code !== null) {
       console.error('[Browser] Dev-browser server failed. Logs:');
       for (const log of serverLogs) {
@@ -213,15 +207,15 @@ export async function startDevBrowserServer(
 
   child.unref();
 
-  console.log('[Browser] Dev-browser server spawn initiated (PID:', child.pid, ')');
+  // console.log('[Browser] Dev-browser server spawn initiated (PID:', child.pid, ')');
 
   // Windows needs longer timeout due to slower process startup
   const maxWaitMs = process.platform === 'win32' ? 30000 : 15000;
-  console.log(`[Browser] Waiting for dev-browser server to be ready (max ${maxWaitMs}ms)...`);
+  // console.log(`[Browser] Waiting for dev-browser server to be ready (max ${maxWaitMs}ms)...`);
 
   const serverReady = await waitForDevBrowserServer(config.devBrowserPort, maxWaitMs);
 
-  console.log('[Browser] ========== END DEV-BROWSER SERVER STARTUP ==========');
+  // console.log('[Browser] ========== END DEV-BROWSER SERVER STARTUP ==========');
 
   return {
     ready: serverReady,
@@ -237,10 +231,10 @@ export async function ensureDevBrowserServer(
   const hasChrome = isSystemChromeInstalled();
   const hasPlaywright = isPlaywrightInstalled();
 
-  console.log(`[Browser] Browser check: Chrome=${hasChrome}, Playwright=${hasPlaywright}`);
+  // console.log(`[Browser] Browser check: Chrome=${hasChrome}, Playwright=${hasPlaywright}`);
 
   if (!hasChrome && !hasPlaywright) {
-    console.log('[Browser] No browser available, installing Playwright Chromium...');
+    // console.log('[Browser] No browser available, installing Playwright Chromium...');
     onProgress?.({
       stage: 'setup',
       message: 'Chrome not found. Downloading browser (one-time setup, ~2 min)...',
@@ -259,7 +253,7 @@ export async function ensureDevBrowserServer(
   // Skip check on macOS to avoid triggering Local Network permission dialog
   if (process.platform !== 'darwin') {
     if (await isDevBrowserServerReady(config.devBrowserPort)) {
-      console.log('[Browser] Dev-browser server already running');
+      // console.log('[Browser] Dev-browser server already running');
       return { ready: true, logs: [] };
     }
   }

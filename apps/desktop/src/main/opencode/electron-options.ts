@@ -43,7 +43,7 @@ export function cleanupVertexServiceAccountKey(): void {
     const keyPath = path.join(app.getPath('userData'), VERTEX_SA_KEY_FILENAME);
     if (fs.existsSync(keyPath)) {
       fs.unlinkSync(keyPath);
-      console.log('[Vertex] Cleaned up service account key file');
+      // console.log('[Vertex] Cleaned up service account key file');
     }
   } catch (error) {
     console.warn('[Vertex] Failed to clean up service account key file:', error);
@@ -130,7 +130,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
       if (process.platform === 'win32') {
         env.Path = combinedPath;
       }
-      console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
+      // console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
     }
 
     if (process.platform === 'darwin') {
@@ -191,7 +191,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
   env = buildOpenCodeEnvironment(env, envConfig);
 
   if (taskId) {
-    console.log('[OpenCode CLI] Task ID in environment:', taskId);
+    // console.log('[OpenCode CLI] Task ID in environment:', taskId);
   }
 
   return env;

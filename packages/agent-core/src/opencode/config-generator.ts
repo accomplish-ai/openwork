@@ -293,12 +293,12 @@ function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platfor
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
-      console.log('[OpenCode Config] Using bundled tsx:', candidate);
+      // console.log('[OpenCode Config] Using bundled tsx:', candidate);
       return [candidate];
     }
   }
 
-  console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
+  // console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
   return ['npx', 'tsx'];
 }
 
@@ -319,11 +319,11 @@ function resolveMcpCommand(
   // (e.g. agent-core installed from npm where only dist/ is published)
   if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
     const nodeExe = nodePath || 'node';
-    console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
+    // console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodeExe, distPath];
   }
 
-  console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
+  // console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
   return [...tsxCommand, sourcePath];
 }
 
@@ -609,7 +609,7 @@ Example bad narration (too terse):
   const configJson = JSON.stringify(config, null, 2);
   fs.writeFileSync(configPath, configJson);
 
-  console.log('[OpenCode Config] Generated config at:', configPath);
+  // console.log('[OpenCode Config] Generated config at:', configPath);
 
   const environment: Record<string, string> = {
     OPENCODE_CONFIG: configPath,

@@ -138,7 +138,7 @@ export async function buildProviderConfigs(
   if (connectedIds.length > 0) {
     const mappedProviders = connectedIds.map((id) => PROVIDER_ID_TO_OPENCODE[id]);
     enabledProviders = [...new Set([...baseProviders, ...mappedProviders])];
-    console.log('[OpenCode Config Builder] Using connected providers:', mappedProviders);
+    // console.log('[OpenCode Config Builder] Using connected providers:', mappedProviders);
   } else {
     const ollamaConfig = getOllamaConfig();
     if (ollamaConfig?.enabled) {
@@ -173,9 +173,6 @@ export async function buildProviderConfigs(
           [`ollama/${modelId}`]: { name: modelId, tools: ollamaSupportsTools },
         },
       });
-      console.log(
-        `[OpenCode Config Builder] Ollama configured: ${modelId} (tools: ${ollamaSupportsTools})`,
-      );
     }
   } else {
     const ollamaConfig = getOllamaConfig();
@@ -196,7 +193,7 @@ export async function buildProviderConfigs(
         options: { baseURL: `${ollamaConfig.baseUrl}/v1` },
         models,
       });
-      console.log('[OpenCode Config Builder] Ollama (legacy) configured:', Object.keys(models));
+      // console.log('[OpenCode Config Builder] Ollama (legacy) configured:', Object.keys(models));
     }
   }
 
@@ -216,7 +213,7 @@ export async function buildProviderConfigs(
         [modelId]: { name: modelId, tools: true },
       },
     });
-    console.log('[OpenCode Config Builder] OpenRouter configured:', modelId);
+    // console.log('[OpenCode Config Builder] OpenRouter configured:', modelId);
   } else {
     const openrouterKey = getApiKey('openrouter');
     if (openrouterKey) {
@@ -232,7 +229,7 @@ export async function buildProviderConfigs(
             [modelId]: { name: modelId, tools: true },
           },
         });
-        console.log('[OpenCode Config Builder] OpenRouter (legacy) configured:', modelId);
+        // console.log('[OpenCode Config Builder] OpenRouter (legacy) configured:', modelId);
       }
     }
   }
@@ -255,7 +252,7 @@ export async function buildProviderConfigs(
         [modelId]: { name: modelId, tools: true },
       },
     });
-    console.log('[OpenCode Config Builder] Moonshot configured:', modelId);
+    // console.log('[OpenCode Config Builder] Moonshot configured:', modelId);
   }
 
   let modelOverride: { model: string; smallModel: string } | undefined;
@@ -288,12 +285,6 @@ export async function buildProviderConfigs(
       options: bedrockOptions,
       ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
     });
-    console.log(
-      '[OpenCode Config Builder] Bedrock configured:',
-      bedrockOptions,
-      'models:',
-      Object.keys(bedrockModels),
-    );
   } else {
     const bedrockCredsJson = getApiKey('bedrock');
     if (bedrockCredsJson) {
@@ -318,12 +309,6 @@ export async function buildProviderConfigs(
           options: bedrockOptions,
           ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
         });
-        console.log(
-          '[OpenCode Config Builder] Bedrock (legacy) configured:',
-          bedrockOptions,
-          'models:',
-          Object.keys(bedrockModels),
-        );
       } catch (e) {
         console.warn('[OpenCode Config Builder] Failed to parse Bedrock credentials:', e);
       }
@@ -335,7 +320,7 @@ export async function buildProviderConfigs(
       model: activeModel.model,
       smallModel: activeModel.model,
     };
-    console.log('[OpenCode Config Builder] Bedrock model override:', modelOverride);
+    // console.log('[OpenCode Config Builder] Bedrock model override:', modelOverride);
   }
 
   // Vertex AI provider
@@ -365,12 +350,6 @@ export async function buildProviderConfigs(
       options: vertexOptions,
       ...(Object.keys(vertexModels).length > 0 ? { models: vertexModels } : {}),
     });
-    console.log(
-      '[OpenCode Config Builder] Vertex AI configured:',
-      vertexOptions,
-      'models:',
-      Object.keys(vertexModels),
-    );
   }
 
   if (activeModel?.provider === 'vertex' && activeModel.model) {
@@ -380,7 +359,7 @@ export async function buildProviderConfigs(
       model: `vertex/${vertexModelId}`,
       smallModel: `vertex/${vertexModelId}`,
     };
-    console.log('[OpenCode Config Builder] Vertex model override:', modelOverride);
+    // console.log('[OpenCode Config Builder] Vertex model override:', modelOverride);
   }
 
   // LiteLLM provider
@@ -403,7 +382,7 @@ export async function buildProviderConfigs(
         [litellmProvider.selectedModelId]: { name: litellmProvider.selectedModelId, tools: true },
       },
     });
-    console.log('[OpenCode Config Builder] LiteLLM configured:', litellmProvider.selectedModelId);
+    // console.log('[OpenCode Config Builder] LiteLLM configured:', litellmProvider.selectedModelId);
   }
 
   // LM Studio provider
@@ -429,9 +408,6 @@ export async function buildProviderConfigs(
         [modelId]: { name: modelId, tools: supportsTools },
       },
     });
-    console.log(
-      `[OpenCode Config Builder] LM Studio configured: ${modelId} (tools: ${supportsTools})`,
-    );
   } else {
     const lmstudioConfig = getLMStudioConfig();
     const lmstudioModels = lmstudioConfig?.models;
@@ -447,7 +423,7 @@ export async function buildProviderConfigs(
         options: { baseURL: `${lmstudioConfig.baseUrl}/v1` },
         models,
       });
-      console.log('[OpenCode Config Builder] LM Studio (legacy) configured:', Object.keys(models));
+      // console.log('[OpenCode Config Builder] LM Studio (legacy) configured:', Object.keys(models));
     }
   }
 
@@ -470,10 +446,6 @@ export async function buildProviderConfigs(
       if (!enabledProviders.includes('azure-foundry')) {
         enabledProviders.push('azure-foundry');
       }
-      console.log('[OpenCode Config Builder] Azure Foundry configured:', {
-        deployment: creds.deploymentName,
-        authMethod: creds.authMethod,
-      });
     }
   } else {
     const azureFoundryConfig = getAzureFoundryConfig();
@@ -490,10 +462,6 @@ export async function buildProviderConfigs(
         if (!enabledProviders.includes('azure-foundry')) {
           enabledProviders.push('azure-foundry');
         }
-        console.log('[OpenCode Config Builder] Azure Foundry (legacy) configured:', {
-          deployment: azureFoundryConfig.deploymentName,
-          authType: azureFoundryConfig.authType,
-        });
       }
     }
   }
@@ -531,7 +499,7 @@ export async function buildProviderConfigs(
       options: { baseURL: zaiEndpoint },
       models: zaiModels,
     });
-    console.log('[OpenCode Config Builder] Z.AI Coding Plan configured, region:', zaiRegion);
+    // console.log('[OpenCode Config Builder] Z.AI Coding Plan configured, region:', zaiRegion);
   }
 
   return { providerConfigs, enabledProviders, modelOverride };
@@ -582,7 +550,7 @@ export async function syncApiKeysToOpenCodeAuth(
     if (!auth['deepseek'] || auth['deepseek'].key !== apiKeys.deepseek) {
       auth['deepseek'] = { type: 'api', key: apiKeys.deepseek };
       updated = true;
-      console.log('[OpenCode Auth] Synced DeepSeek API key');
+      // console.log('[OpenCode Auth] Synced DeepSeek API key');
     }
   }
 
@@ -590,7 +558,7 @@ export async function syncApiKeysToOpenCodeAuth(
     if (!auth['zai-coding-plan'] || auth['zai-coding-plan'].key !== apiKeys.zai) {
       auth['zai-coding-plan'] = { type: 'api', key: apiKeys.zai };
       updated = true;
-      console.log('[OpenCode Auth] Synced Z.AI Coding Plan API key');
+      // console.log('[OpenCode Auth] Synced Z.AI Coding Plan API key');
     }
   }
 
@@ -598,12 +566,12 @@ export async function syncApiKeysToOpenCodeAuth(
     if (!auth.minimax || auth.minimax.key !== apiKeys.minimax) {
       auth.minimax = { type: 'api', key: apiKeys.minimax };
       updated = true;
-      console.log('[OpenCode Auth] Synced MiniMax API key');
+      // console.log('[OpenCode Auth] Synced MiniMax API key');
     }
   }
 
   if (updated) {
     fs.writeFileSync(authPath, JSON.stringify(auth, null, 2));
-    console.log('[OpenCode Auth] Updated auth.json at:', authPath);
+    // console.log('[OpenCode Auth] Updated auth.json at:', authPath);
   }
 }

@@ -33,7 +33,7 @@ export class StreamParser extends EventEmitter<StreamParserEvents> {
       if (startIdx > 0) {
         const skipped = this.buffer.substring(0, startIdx).trim();
         if (skipped) {
-          console.log('[StreamParser] Skipping non-JSON content:', skipped.substring(0, 50));
+          // console.log('[StreamParser] Skipping non-JSON content:', skipped.substring(0, 50));
         }
         this.buffer = this.buffer.substring(startIdx);
       }
@@ -100,22 +100,16 @@ export class StreamParser extends EventEmitter<StreamParserEvents> {
 
     try {
       const message = JSON.parse(sanitized) as OpenCodeMessage;
-      console.log('[StreamParser] Parsed message type:', message.type);
+      // console.log('[StreamParser] Parsed message type:', message.type);
       this.emitMessage(message);
-    } catch (e) {
-      console.log('[StreamParser] Failed to parse JSON:', sanitized.substring(0, 100), e);
+    } catch (_e) {
+      // console.log('[StreamParser] Failed to parse JSON:', sanitized.substring(0, 100), e);
     }
   }
 
   private emitMessage(message: OpenCodeMessage): void {
     if (message.type === 'tool_call' || message.type === 'tool_result') {
       const part = message.part as Record<string, unknown>;
-      console.log('[StreamParser] Tool message details:', {
-        type: message.type,
-        tool: part?.tool,
-        hasInput: !!part?.input,
-        hasOutput: !!part?.output,
-      });
 
       const toolName = String(part?.tool || '').toLowerCase();
       const output = String(part?.output || '').toLowerCase();
@@ -126,8 +120,8 @@ export class StreamParser extends EventEmitter<StreamParserEvents> {
         output.includes('dev-browser') ||
         output.includes('browser')
       ) {
-        console.log('[StreamParser] >>> DEV-BROWSER MESSAGE <<<');
-        console.log('[StreamParser] Full message:', JSON.stringify(message, null, 2));
+        // console.log('[StreamParser] >>> DEV-BROWSER MESSAGE <<<');
+        // console.log('[StreamParser] Full message:', JSON.stringify(message, null, 2));
       }
     }
 

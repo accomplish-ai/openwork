@@ -110,7 +110,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
     if (!preferGlobal) {
       for (const exePath of localExeCandidates) {
         if (fs.existsSync(exePath)) {
-          console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
+          // console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
           return {
             cliPath: exePath,
             cliDir: path.dirname(exePath),
@@ -157,7 +157,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
 
     for (const exePath of globalExeCandidates) {
       if (fs.existsSync(exePath)) {
-        console.log('[CLI Resolver] Using global OpenCode CLI executable:', exePath);
+        // console.log('[CLI Resolver] Using global OpenCode CLI executable:', exePath);
         return {
           cliPath: exePath,
           cliDir: path.dirname(exePath),
@@ -168,7 +168,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
 
     for (const exePath of localExeCandidates) {
       if (fs.existsSync(exePath)) {
-        console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
+        // console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
         return {
           cliPath: exePath,
           cliDir: path.dirname(exePath),
@@ -179,7 +179,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
 
     const pathExe = resolveOpenCodeExeOnPath();
     if (pathExe) {
-      console.log('[CLI Resolver] Using OpenCode executable on PATH:', pathExe);
+      // console.log('[CLI Resolver] Using OpenCode executable on PATH:', pathExe);
       return {
         cliPath: pathExe,
         cliDir: path.dirname(pathExe),
@@ -194,7 +194,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
     const binName = 'opencode';
     const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
     if (fs.existsSync(devCliPath)) {
-      console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
+      // console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
       return {
         cliPath: devCliPath,
         cliDir: path.dirname(devCliPath),
@@ -205,7 +205,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
 
   const nvmPaths = getNvmOpenCodePaths();
   for (const opencodePath of nvmPaths) {
-    console.log('[CLI Resolver] Using nvm OpenCode CLI:', opencodePath);
+    // console.log('[CLI Resolver] Using nvm OpenCode CLI:', opencodePath);
     return {
       cliPath: opencodePath,
       cliDir: path.dirname(opencodePath),
@@ -217,7 +217,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
 
   for (const opencodePath of globalOpenCodePaths) {
     if (fs.existsSync(opencodePath)) {
-      console.log('[CLI Resolver] Using global OpenCode CLI:', opencodePath);
+      // console.log('[CLI Resolver] Using global OpenCode CLI:', opencodePath);
       return {
         cliPath: opencodePath,
         cliDir: path.dirname(opencodePath),
@@ -230,7 +230,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
     const binName = 'opencode';
     const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
     if (fs.existsSync(devCliPath)) {
-      console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
+      // console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
       return {
         cliPath: devCliPath,
         cliDir: path.dirname(devCliPath),
@@ -240,7 +240,7 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
   }
 
   if (isOpenCodeOnPath()) {
-    console.log('[CLI Resolver] Using opencode command on PATH');
+    // console.log('[CLI Resolver] Using opencode command on PATH');
     return {
       cliPath: 'opencode',
       cliDir: '',

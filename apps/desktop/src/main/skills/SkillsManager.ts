@@ -38,14 +38,14 @@ export class SkillsManager {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('[SkillsManager] Initializing...');
+    // console.log('[SkillsManager] Initializing...');
     await this.getCoreManager().initialize();
     this.initialized = true;
-    console.log('[SkillsManager] Initialized');
+    // console.log('[SkillsManager] Initialized');
   }
 
   async resync(): Promise<void> {
-    console.log('[SkillsManager] Resyncing skills...');
+    // console.log('[SkillsManager] Resyncing skills...');
     await this.getCoreManager().resync();
   }
 

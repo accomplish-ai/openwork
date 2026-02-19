@@ -179,7 +179,7 @@ export async function fetchProviderModels(
     const parser = PARSERS[endpointConfig.responseFormat];
     const models = parser(data, prefix, endpointConfig.modelFilter);
 
-    console.log(`[FetchModels] Fetched ${models.length} models from ${endpointConfig.url}`);
+    // console.log(`[FetchModels] Fetched ${models.length} models from ${endpointConfig.url}`);
     return { success: true, models };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch models';
