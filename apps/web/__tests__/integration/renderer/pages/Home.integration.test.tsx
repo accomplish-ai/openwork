@@ -5,6 +5,7 @@
  * @vitest-environment jsdom
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -64,6 +65,7 @@ const mockAccomplish = {
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   speechIsConfigured: vi.fn().mockResolvedValue(true),
+  fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
 };
 
 // Mock the accomplish module
@@ -111,8 +113,8 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Mock SettingsDialog
-vi.mock('@/components/layout/SettingsDialog', () => ({
-  default: ({
+vi.mock('@/components/layout/SettingsDialog', () => {
+  const MockSettingsDialog = ({
     open,
     onOpenChange,
     onApiKeySaved,
@@ -126,8 +128,12 @@ vi.mock('@/components/layout/SettingsDialog', () => ({
         <button onClick={() => onOpenChange(false)}>Close</button>
         {onApiKeySaved && <button onClick={onApiKeySaved}>Save API Key</button>}
       </div>
-    ) : null,
-}));
+    ) : null;
+  return {
+    SettingsDialog: MockSettingsDialog,
+    default: MockSettingsDialog,
+  };
+});
 
 // Import after mocks
 import HomePage from '@/pages/Home';

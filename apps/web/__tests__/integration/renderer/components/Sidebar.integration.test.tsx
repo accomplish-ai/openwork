@@ -5,6 +5,7 @@
  * @vitest-environment jsdom
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -61,6 +62,7 @@ const mockAccomplish = {
   validateApiKeyForProvider: vi.fn().mockResolvedValue({ valid: true }),
   validateBedrockCredentials: vi.fn().mockResolvedValue({ valid: true }),
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
+  fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
 };
 
 // Mock the accomplish module
@@ -69,11 +71,14 @@ vi.mock('@/lib/accomplish', () => ({
 }));
 
 // Create a store state holder for testing
+const mockOpenLauncher = vi.fn();
+
 let mockStoreState = {
   tasks: [] as Task[],
   loadTasks: mockLoadTasks,
   updateTaskStatus: mockUpdateTaskStatus,
   addTaskUpdate: mockAddTaskUpdate,
+  openLauncher: mockOpenLauncher,
 };
 
 // Mock the task store
@@ -82,8 +87,8 @@ vi.mock('@/stores/taskStore', () => ({
 }));
 
 // Mock the SettingsDialog to simplify testing
-vi.mock('@/components/layout/SettingsDialog', () => ({
-  SettingsDialog: ({
+vi.mock('@/components/layout/SettingsDialog', () => {
+  const MockSettingsDialog = ({
     open,
     onOpenChange,
   }: {
@@ -94,8 +99,12 @@ vi.mock('@/components/layout/SettingsDialog', () => ({
       <div data-testid="settings-dialog">
         <button onClick={() => onOpenChange(false)}>Close Settings</button>
       </div>
-    ) : null,
-}));
+    ) : null;
+  return {
+    SettingsDialog: MockSettingsDialog,
+    default: MockSettingsDialog,
+  };
+});
 
 // Mock framer-motion to simplify testing animations
 vi.mock('framer-motion', () => {
@@ -115,7 +124,7 @@ vi.mock('framer-motion', () => {
         layoutId: _layoutId,
         ...domProps
       } = props;
-      const Component = Element as keyof JSX.IntrinsicElements;
+      const Component = Element as React.ElementType;
       return <Component {...domProps}>{children}</Component>;
     };
   };
@@ -130,7 +139,7 @@ vi.mock('framer-motion', () => {
 });
 
 // Need to import after mocks are set up
-import { Sidebar } from '@/components/layout/Sidebar';
+import Sidebar from '@/components/layout/Sidebar';
 
 describe('Sidebar Integration', () => {
   beforeEach(() => {
@@ -141,6 +150,7 @@ describe('Sidebar Integration', () => {
       loadTasks: mockLoadTasks,
       updateTaskStatus: mockUpdateTaskStatus,
       addTaskUpdate: mockAddTaskUpdate,
+      openLauncher: mockOpenLauncher,
     };
   });
 

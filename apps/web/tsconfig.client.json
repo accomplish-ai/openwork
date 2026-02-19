@@ -21,6 +21,6 @@
       "@locales/*": ["locales/*"]
     }
   },
-  "include": ["src/client/**/*"],
+  "include": ["src/client/**/*", "__tests__/**/*"],
   "exclude": ["node_modules", "dist"]
 }
