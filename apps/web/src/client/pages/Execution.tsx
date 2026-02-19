@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
@@ -44,6 +45,8 @@ export function ExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
+  const { t } = useTranslation('execution');
+  const { t: tCommon } = useTranslation('common');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [followUp, setFollowUp] = useState('');
   const followUpInputRef = useRef<HTMLTextAreaElement>(null);
@@ -329,7 +332,7 @@ export function ExecutionPage() {
         <Card className="max-w-md w-full p-6 text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <p className="text-destructive mb-4">{error}</p>
-          <Button onClick={() => navigate('/')}>Go Home</Button>
+          <Button onClick={() => navigate('/')}>{tCommon('buttons.goHome')}</Button>
         </Card>
       </div>
     );
@@ -349,14 +352,14 @@ export function ExecutionPage() {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 shrink-0">
             <Clock className="h-3 w-3" />
-            Queued
+            {t('status.queued')}
           </span>
         );
       case 'running':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 shrink-0">
             <span className="animate-shimmer bg-gradient-to-r from-primary via-primary/50 to-primary bg-[length:200%_100%] bg-clip-text text-transparent">
-              Running
+              {t('status.running')}
             </span>
           </span>
         );
@@ -364,28 +367,28 @@ export function ExecutionPage() {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600 shrink-0">
             <CheckCircle2 className="h-3 w-3" />
-            Completed
+            {t('status.completed')}
           </span>
         );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive shrink-0">
             <XCircle className="h-3 w-3" />
-            Failed
+            {t('status.failed')}
           </span>
         );
       case 'cancelled':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground shrink-0">
             <XCircle className="h-3 w-3" />
-            Cancelled
+            {t('status.cancelled')}
           </span>
         );
       case 'interrupted':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 shrink-0">
             <Square className="h-3 w-3" />
-            Stopped
+            {t('status.stopped')}
           </span>
         );
       default:
@@ -459,10 +462,10 @@ export function ExecutionPage() {
                       </div>
                       <div className="w-full">
                         <h3 className="text-lg font-semibold text-foreground mb-1">
-                          Chrome not installed
+                          {t('browserInstall.title')}
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          Installing browser for automation...
+                          {t('browserInstall.description')}
                         </p>
                         {(() => {
                           const percentMatch = setupProgress?.match(/(\d+)%/);
@@ -478,7 +481,9 @@ export function ExecutionPage() {
                           return (
                             <div className="w-full">
                               <div className="flex justify-between text-sm mb-2">
-                                <span className="text-muted-foreground">Downloading...</span>
+                                <span className="text-muted-foreground">
+                                  {t('browserInstall.downloading')}
+                                </span>
                                 <span className="text-foreground font-medium">
                                   {overallPercent}%
                                 </span>
@@ -495,7 +500,7 @@ export function ExecutionPage() {
                           );
                         })()}
                         <p className="text-xs text-muted-foreground mt-4 text-center">
-                          One-time setup (~250 MB total)
+                          {t('browserInstall.oneTimeSetup')}
                         </p>
                       </div>
                     </div>
@@ -517,12 +522,8 @@ export function ExecutionPage() {
               <Clock className="h-8 w-8 text-amber-600" />
             </div>
             <div className="text-center max-w-md">
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                Waiting for another task
-              </h2>
-              <p className="text-muted-foreground">
-                Your task is queued and will start automatically when the current task completes.
-              </p>
+              <h2 className="text-xl font-semibold text-foreground mb-2">{t('waiting.title')}</h2>
+              <p className="text-muted-foreground">{t('waiting.description')}</p>
             </div>
           </motion.div>
         )}
@@ -547,9 +548,9 @@ export function ExecutionPage() {
                   <Clock className="h-6 w-6 text-amber-600" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Waiting for another task</p>
+                  <p className="text-sm font-medium text-foreground">{t('waiting.title')}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Your follow-up will continue automatically
+                    {t('waiting.followUpDescription')}
                   </p>
                 </div>
               </motion.div>
@@ -596,7 +597,9 @@ export function ExecutionPage() {
                         isRunning={currentTask.status === 'running'}
                         showContinueButton={showContinue}
                         continueLabel={
-                          currentTask.status === 'interrupted' ? 'Continue' : 'Done, Continue'
+                          currentTask.status === 'interrupted'
+                            ? tCommon('buttons.continue')
+                            : tCommon('buttons.doneContinue')
                         }
                         onContinue={handleContinue}
                         isLoading={isLoading}
@@ -629,7 +632,7 @@ export function ExecutionPage() {
                       <button
                         onClick={scrollToBottom}
                         className="h-8 w-8 rounded-full bg-muted hover:bg-muted/80 border border-border shadow-md flex items-center justify-center transition-colors pointer-events-auto"
-                        aria-label="Scroll to bottom"
+                        aria-label={tCommon('aria.scrollToBottom')}
                         data-testid="scroll-to-bottom-button"
                       >
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -662,7 +665,7 @@ export function ExecutionPage() {
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
                 <input
-                  placeholder="Agent is working..."
+                  placeholder={t('agentWorking')}
                   disabled
                   className="flex-1 bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed"
                 />
@@ -670,7 +673,7 @@ export function ExecutionPage() {
                 <div className="w-px h-6 bg-border flex-shrink-0" />
                 <button
                   onClick={interruptTask}
-                  title="Stop agent (Ctrl+C)"
+                  title={t('stopAgent')}
                   className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-white hover:bg-destructive/90 transition-colors shrink-0"
                   data-testid="execution-stop-button"
                 >
@@ -699,7 +702,7 @@ export function ExecutionPage() {
                         className="ml-2 underline hover:no-underline"
                         type="button"
                       >
-                        Retry
+                        {tCommon('buttons.retry')}
                       </button>
                     )}
                   </AlertDescription>
@@ -725,11 +728,11 @@ export function ExecutionPage() {
                     placeholder={
                       currentTask.status === 'interrupted'
                         ? hasSession
-                          ? 'Give new instructions...'
-                          : 'Send a new instruction to retry...'
+                          ? t('followUp.interruptedPlaceholder')
+                          : t('followUp.noSessionPlaceholder')
                         : currentTask.status === 'completed'
-                          ? 'Give new instructions...'
-                          : 'Ask for something...'
+                          ? t('followUp.completedPlaceholder')
+                          : t('followUp.defaultPlaceholder')
                     }
                     disabled={isLoading || speechInput.isRecording}
                     rows={1}
@@ -771,7 +774,7 @@ export function ExecutionPage() {
                       onClick={handleFollowUp}
                       disabled={!followUp.trim() || isLoading || speechInput.isRecording}
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Send"
+                      title={tCommon('buttons.send')}
                     >
                       <CornerDownLeft className="h-4 w-4" />
                     </button>
@@ -786,10 +789,15 @@ export function ExecutionPage() {
         {isComplete && !canFollowUp && (
           <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
             <p className="text-sm text-muted-foreground mb-3">
-              Task {currentTask.status === 'interrupted' ? 'stopped' : currentTask.status}
+              {t('taskStatus', {
+                status:
+                  currentTask.status === 'interrupted'
+                    ? t('status.stopped').toLowerCase()
+                    : currentTask.status,
+              })}
             </p>
             <div className="mt-3">
-              <Button onClick={() => navigate('/')}>Start New Task</Button>
+              <Button onClick={() => navigate('/')}>{tCommon('buttons.startNewTask')}</Button>
             </div>
           </div>
         )}

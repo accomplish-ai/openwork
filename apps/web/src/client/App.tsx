@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOutlet, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { isRunningInElectron, getAccomplish } from './lib/accomplish';
 import { springs, variants } from './lib/animations';
 import type { ProviderId } from '@accomplish_ai/agent-core/common';
@@ -47,6 +48,7 @@ function AnimatedOutletWrapper() {
 }
 
 export function App() {
+  const { t } = useTranslation('errors');
   const [status, setStatus] = useState<AppStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authSettingsOpen, setAuthSettingsOpen] = useState(false);
@@ -93,7 +95,7 @@ export function App() {
   useEffect(() => {
     const checkStatus = async () => {
       if (!isRunningInElectron()) {
-        setErrorMessage('This application must be run inside the Accomplish desktop app.');
+        setErrorMessage(t('app.mustRunInDesktop'));
         setStatus('error');
         return;
       }
@@ -109,7 +111,7 @@ export function App() {
     };
 
     checkStatus();
-  }, []);
+  }, [t]);
 
   // Loading state
   if (status === 'loading') {
@@ -130,7 +132,7 @@ export function App() {
               <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </div>
-          <h1 className="mb-2 text-xl font-semibold text-foreground">Unable to Start</h1>
+          <h1 className="mb-2 text-xl font-semibold text-foreground">{t('app.unableToStart')}</h1>
           <p className="text-muted-foreground">{errorMessage}</p>
         </div>
       </div>

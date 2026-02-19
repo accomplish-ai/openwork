@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '@/lib/accomplish';
 
 interface DebugSectionProps {
@@ -7,6 +8,7 @@ interface DebugSectionProps {
 }
 
 export function DebugSection({ debugMode, onDebugToggle }: DebugSectionProps) {
+  const { t } = useTranslation('settings');
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
     'idle',
   );
@@ -37,9 +39,9 @@ export function DebugSection({ debugMode, onDebugToggle }: DebugSectionProps) {
     <div className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <div className="font-medium text-foreground">Debug Mode</div>
+          <div className="font-medium text-foreground">{t('developer.debugMode')}</div>
           <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-            Show detailed backend logs in the task view.
+            {t('developer.debugDescription')}
           </p>
         </div>
         <div className="ml-4 flex items-center gap-3">
@@ -59,7 +61,7 @@ export function DebugSection({ debugMode, onDebugToggle }: DebugSectionProps) {
           <button
             onClick={handleExportLogs}
             disabled={exportStatus === 'exporting'}
-            title="Export Logs"
+            title={t('developer.exportLogs')}
             className={`rounded-md p-1.5 transition-colors ${
               exportStatus === 'success'
                 ? 'text-green-500'
@@ -108,9 +110,7 @@ export function DebugSection({ debugMode, onDebugToggle }: DebugSectionProps) {
       </div>
       {debugMode && (
         <div className="mt-4 rounded-xl bg-warning/10 p-3.5">
-          <p className="text-sm text-warning">
-            Debug mode is enabled. Backend logs will appear in the task view when running tasks.
-          </p>
+          <p className="text-sm text-warning">{t('developer.debugEnabled')}</p>
         </div>
       )}
     </div>

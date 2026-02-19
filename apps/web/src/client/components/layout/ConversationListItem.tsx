@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
 import { X, Loader2 } from 'lucide-react';
@@ -13,6 +14,7 @@ interface ConversationListItemProps {
 export function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation('sidebar');
   const isActive = location.pathname === `/execution/${task.id}`;
   const deleteTask = useTaskStore((state) => state.deleteTask);
   const domains = useMemo(() => extractDomains(task), [task]);
@@ -24,7 +26,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!window.confirm('Are you sure you want to delete this task?')) {
+    if (!window.confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -90,7 +92,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
         )}
         <button
           onClick={handleDelete}
-          title="Remove task"
+          title={t('deleteTask')}
           className={cn(
             'absolute right-0 top-1/2 -translate-y-1/2',
             'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto',
@@ -98,7 +100,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
             'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
             'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
           )}
-          aria-label="Remove task"
+          aria-label={t('deleteTask')}
         >
           <X className="h-3 w-3" />
         </button>
