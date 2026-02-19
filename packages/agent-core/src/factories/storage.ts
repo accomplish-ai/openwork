@@ -65,6 +65,13 @@ import {
   deleteConnector,
   clearAllConnectors,
 } from '../storage/repositories/connectors.js';
+import {
+  getAllCloudProviders,
+  getCloudProvider,
+  saveCloudProviderConfig,
+  setCloudProviderEnabled,
+} from '../storage/repositories/cloudProviders.js';
+import { setEncryptionAdapter } from '../storage/encryption.js';
 import { SecureStorage } from '../internal/classes/SecureStorage.js';
 import type { OAuthTokens } from '../common/types/connector.js';
 import type { StorageAPI, StorageOptions } from '../types/storage.js';
@@ -84,6 +91,10 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     appId: secureStorageAppId,
     ...(secureStorageFileName && { fileName: secureStorageFileName }),
   });
+
+  if (options.encryptionAdapter) {
+    setEncryptionAdapter(options.encryptionAdapter);
+  }
 
   let initialized = false;
 
@@ -162,6 +173,12 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
       }
     },
     deleteConnectorTokens: (connectorId) => secureStorage.delete(`connector-tokens:${connectorId}`),
+
+    // Cloud Providers
+    getAllCloudProviders: () => getAllCloudProviders(),
+    getCloudProvider: (providerId) => getCloudProvider(providerId),
+    saveCloudProviderConfig: (providerId, config) => saveCloudProviderConfig(providerId, config),
+    setCloudProviderEnabled: (providerId, enabled) => setCloudProviderEnabled(providerId, enabled),
 
     // Secure Storage
     storeApiKey: (provider, apiKey) => secureStorage.storeApiKey(provider, apiKey),

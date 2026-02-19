@@ -69,9 +69,42 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   const baseProfileDir = profileDir ?? join(process.cwd(), '.browser-data');
 
   let context: BrowserContext;
-  let usedSystemChrome = false;
 
-  if (useSystemChrome) {
+  // Cloud Browser Support (Browserbase)
+  if (process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID) {
+    try {
+      console.log(
+        '[Browser] Cloud configuration detected. Attempting to connect to Browserbase...',
+      );
+      const { Browserbase } = await import('@browserbasehq/sdk');
+      const bb = new Browserbase({
+        apiKey: process.env.BROWSERBASE_API_KEY,
+      });
+
+      console.log('[Browser] Creating Browserbase session...');
+      const session = await bb.sessions.create({
+        projectId: process.env.BROWSERBASE_PROJECT_ID,
+      });
+
+      console.log(`[Browser] Browserbase session created: ${session.id}`);
+      console.log(
+        `[Browser] \x1b[36mLive View: https://browserbase.com/sessions/${session.id}\x1b[0m`,
+      );
+
+      context = await chromium.connect({
+        wsEndpoint: session.connectUrl,
+      });
+
+      console.log('[Browser] Successfully connected to Browserbase cloud session');
+      // We don't need to define usedSystemChrome here as we have a context.
+      // However, we skip local launch blocks below.
+    } catch (error) {
+      console.error('[Browser] Failed to connect to Browserbase:', error);
+      console.log('[Browser] Falling back to local browser...');
+    }
+  }
+
+  if (!context! && useSystemChrome) {
     try {
       console.log('Trying to use system Chrome...');
       const chromeUserDataDir = join(baseProfileDir, 'chrome-profile');
@@ -86,14 +119,13 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
           '--disable-blink-features=AutomationControlled',
         ],
       });
-      usedSystemChrome = true;
       console.log('Using system Chrome (fast startup!)');
     } catch (_chromeError) {
       console.log('System Chrome not available, falling back to Playwright Chromium...');
     }
   }
 
-  if (!usedSystemChrome) {
+  if (!context!) {
     const playwrightUserDataDir = join(baseProfileDir, 'playwright-profile');
     mkdirSync(playwrightUserDataDir, { recursive: true });
 

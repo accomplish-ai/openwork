@@ -31,6 +31,11 @@ export default defineConfig(() => ({
           reload();
         },
         vite: {
+          resolve: {
+            alias: {
+              '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),
+            },
+          },
           define: {
             'process.env.npm_package_version': JSON.stringify(pkg.version),
           },

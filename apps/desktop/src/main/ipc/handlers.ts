@@ -50,6 +50,8 @@ import type {
   McpConnector,
   OAuthMetadata,
   OAuthClientRegistration,
+  CloudBrowserProviderId,
+  CloudBrowserConfig,
 } from '@accomplish_ai/agent-core';
 import {
   discoverOAuthMetadata,
@@ -57,6 +59,7 @@ import {
   generatePkceChallenge,
   buildAuthorizationUrl,
   exchangeCodeForTokens,
+  validateBrowserbaseConfig,
 } from '@accomplish_ai/agent-core';
 import {
   startPermissionApiServer,
@@ -493,8 +496,8 @@ export function registerIPCHandlers(): void {
       _event: IpcMainInvokeEvent,
       provider: string,
       key: string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      options?: Record<string, any>,
+
+      options?: Record<string, unknown>,
     ) => {
       if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
         return { valid: false, error: 'Unsupported provider' };
@@ -798,6 +801,40 @@ export function registerIPCHandlers(): void {
     const apiKey = getApiKey('openrouter');
     return fetchOpenRouterModels(apiKey || '', API_KEY_VALIDATION_TIMEOUT_MS);
   });
+
+  // Cloud Browser Providers
+  handle('cloud-provider:get-all', async (_event: IpcMainInvokeEvent) => {
+    return storage.getAllCloudProviders();
+  });
+
+  handle('cloud-provider:get', async (_event: IpcMainInvokeEvent, providerId: string) => {
+    // safe cast since we validate in the repo or it returns null
+    return storage.getCloudProvider(providerId as CloudBrowserProviderId);
+  });
+
+  handle(
+    'cloud-provider:save',
+    async (_event: IpcMainInvokeEvent, providerId: string, config: CloudBrowserConfig) => {
+      storage.saveCloudProviderConfig(providerId as CloudBrowserProviderId, config);
+    },
+  );
+
+  handle(
+    'cloud-provider:set-enabled',
+    async (_event: IpcMainInvokeEvent, providerId: string, enabled: boolean) => {
+      storage.setCloudProviderEnabled(providerId as CloudBrowserProviderId, enabled);
+    },
+  );
+
+  handle(
+    'cloud-provider:validate',
+    async (_event: IpcMainInvokeEvent, providerId: string, config: CloudBrowserConfig) => {
+      if (providerId === 'browserbase') {
+        return validateBrowserbaseConfig(config);
+      }
+      throw new Error(`Validation not implemented for provider: ${providerId}`);
+    },
+  );
 
   handle(
     'litellm:test-connection',

@@ -13,13 +13,15 @@ import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 import { AboutTab } from '@/components/settings/AboutTab';
 import { DebugSection } from '@/components/settings/DebugSection';
 import { ConnectorsPanel } from '@/components/settings/connectors';
-import { Key, Zap, Mic, Info, Cable } from 'lucide-react';
+import { CloudBrowserRegistry } from '@/components/settings/CloudBrowserRegistry';
+import { Key, Zap, Mic, Info, Cable, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { id: 'providers' as const, label: 'Providers', icon: Key },
   { id: 'skills' as const, label: 'Skills', icon: Zap },
   { id: 'connectors' as const, label: 'Connectors', icon: Cable },
+  { id: 'cloud-browsers' as const, label: 'Cloud Browsers', icon: Cloud },
   { id: 'voice' as const, label: 'Voice Input', icon: Mic },
   { id: 'about' as const, label: 'About', icon: Info },
 ];
@@ -35,7 +37,7 @@ interface SettingsDialogProps {
   /**
    * Initial tab to show when dialog opens ('providers' or 'voice')
    */
-  initialTab?: 'providers' | 'voice' | 'skills' | 'connectors' | 'about';
+  initialTab?: 'providers' | 'voice' | 'skills' | 'connectors' | 'cloud-browsers' | 'about';
 }
 
 export function SettingsDialog({
@@ -50,7 +52,7 @@ export function SettingsDialog({
   const [closeWarning, setCloseWarning] = useState(false);
   const [showModelError, setShowModelError] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'providers' | 'voice' | 'skills' | 'connectors' | 'about'
+    'providers' | 'voice' | 'skills' | 'connectors' | 'cloud-browsers' | 'about'
   >(initialTab);
   const [appVersion, setAppVersion] = useState<string>('');
   const [skillsRefreshTrigger, setSkillsRefreshTrigger] = useState(0);
@@ -429,6 +431,13 @@ export function SettingsDialog({
               {activeTab === 'connectors' && (
                 <div className="space-y-6">
                   <ConnectorsPanel />
+                </div>
+              )}
+
+              {/* Cloud Browsers Tab */}
+              {activeTab === 'cloud-browsers' && (
+                <div className="h-full">
+                  <CloudBrowserRegistry />
                 </div>
               )}
 
