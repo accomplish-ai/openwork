@@ -1,6 +1,7 @@
 // apps/desktop/src/renderer/components/skills/CreateSkillModal.tsx
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
 
   const { startTask } = useTaskStore();
   const navigate = useNavigate();
+  const { t } = useTranslation('settings');
 
   // Check if there's an active provider when modal opens
   useEffect(() => {
@@ -79,7 +81,7 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Skill</DialogTitle>
+          <DialogTitle>{t('skills.createTitle')}</DialogTitle>
         </DialogHeader>
 
         {hasProvider === false && (
@@ -94,7 +96,7 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
               >
                 <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span>Please configure an AI provider in Settings first.</span>
+              <span>{t('skills.noProviderWarning')}</span>
             </div>
           </div>
         )}
@@ -103,11 +105,11 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="skill-name" className="text-sm font-medium">
-                Skill Name
+                {t('skills.skillName')}
               </label>
               <Input
                 id="skill-name"
-                placeholder="e.g., code-formatter"
+                placeholder={t('skills.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isSubmitting || hasProvider === false}
@@ -116,11 +118,11 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
             </div>
             <div className="grid gap-2">
               <label htmlFor="skill-description" className="text-sm font-medium">
-                Description
+                {t('skills.description')}
               </label>
               <textarea
                 id="skill-description"
-                placeholder="Describe what this skill should do..."
+                placeholder={t('skills.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isSubmitting || hasProvider === false}
@@ -130,7 +132,7 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              {t('skills.cancel')}
             </Button>
             <Button
               type="submit"
@@ -138,7 +140,7 @@ export function CreateSkillModal({ open, onOpenChange, onSettingsClose }: Create
                 !name.trim() || !description.trim() || isSubmitting || hasProvider === false
               }
             >
-              {isSubmitting ? 'Creating...' : 'Create Skill'}
+              {isSubmitting ? t('skills.creating') : t('skills.createButton')}
             </Button>
           </DialogFooter>
         </form>
