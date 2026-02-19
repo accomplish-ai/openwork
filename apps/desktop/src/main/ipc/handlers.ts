@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
+import { ipcMain, BrowserWindow, shell, dialog, nativeTheme, app } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
@@ -136,6 +136,11 @@ function handle<Args extends unknown[], ReturnType = unknown>(
   });
 }
 
+function resolveTaskWorkingDirectory(workingDirectory?: string): string {
+  const trimmed = workingDirectory?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : app.getPath('home');
+}
+
 export function registerIPCHandlers(): void {
   const storage = getStorage();
   const taskManager = getTaskManager();
@@ -146,6 +151,7 @@ export function registerIPCHandlers(): void {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
+    validatedConfig.workingDirectory = resolveTaskWorkingDirectory(validatedConfig.workingDirectory);
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error(
@@ -291,7 +297,16 @@ export function registerIPCHandlers(): void {
     }
 
     if (decision === 'allow') {
-      const message = parsedResponse.selectedOptions?.join(', ') || parsedResponse.message || 'yes';
+      const selectedMessage = parsedResponse.selectedOptions
+        ?.map((option) => option.trim())
+        .filter((option) => option.length > 0)
+        .join(', ');
+      const message = parsedResponse.message?.trim() || parsedResponse.customText?.trim() || selectedMessage;
+      if (!message) {
+        throw new Error(
+          'Invalid permission response: allow decisions require explicit message content',
+        );
+      }
       const sanitizedMessage = sanitizeString(message, 'permissionResponse', 1024);
       await taskManager.sendResponse(taskId, sanitizedMessage);
     } else {
@@ -349,6 +364,7 @@ export function registerIPCHandlers(): void {
           sessionId: validatedSessionId,
           taskId,
           modelId: selectedModelForResume?.model,
+          workingDirectory: resolveTaskWorkingDirectory(),
         },
         callbacks,
       );

@@ -172,6 +172,10 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (this.isDisposed) {
       throw new Error('Adapter has been disposed and cannot start new tasks');
     }
+    const workingDirectory = config.workingDirectory?.trim();
+    if (!workingDirectory) {
+      throw new Error('Task working directory is required');
+    }
 
     const taskId = config.taskId || this.generateTaskId();
     this.currentTaskId = taskId;
@@ -182,7 +186,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     this.hasCompleted = false;
     this.wasInterrupted = false;
     this.completionEnforcer.reset();
-    this.lastWorkingDirectory = config.workingDirectory;
+    this.lastWorkingDirectory = workingDirectory;
     this.hasReceivedFirstTool = false;
     this.startTaskCalled = false;
     if (this.waitingTransitionTimer) {
@@ -210,7 +214,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const allArgs = [...baseArgs, ...cliArgs];
     const cmdMsg = `Command: ${command}`;
     const argsMsg = `Args: ${allArgs.join(' ')}`;
-    const safeCwd = config.workingDirectory || this.options.tempPath;
+    const safeCwd = workingDirectory;
     const cwdMsg = `Working directory: ${safeCwd}`;
 
     if (this.options.isPackaged && this.options.platform === 'win32') {
@@ -293,9 +297,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   }
 
   async resumeSession(sessionId: string, prompt: string): Promise<Task> {
+    const workingDirectory = this.lastWorkingDirectory?.trim();
+    if (!workingDirectory) {
+      throw new Error('No working directory available for session resumption');
+    }
     return this.startTask({
       prompt,
       sessionId,
+      workingDirectory,
     });
   }
 
@@ -708,6 +717,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     if (!sessionId) {
       throw new Error('No session ID available for session resumption');
     }
+    const taskId = this.currentTaskId;
+    if (!taskId) {
+      throw new Error('No task ID available for session resumption');
+    }
+    const workingDirectory = this.lastWorkingDirectory?.trim();
+    if (!workingDirectory) {
+      throw new Error('No working directory available for session resumption');
+    }
 
     console.log(`[OpenCode Adapter] Starting session resumption with session ${sessionId}`);
 
@@ -716,7 +733,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     const config: TaskConfig = {
       prompt,
       sessionId: sessionId,
-      workingDirectory: this.lastWorkingDirectory,
+      workingDirectory,
     };
 
     const cliArgs = await this.options.buildCliArgs(config);
@@ -728,10 +745,10 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       [...baseArgs, ...cliArgs].join(' '),
     );
 
-    const env = await this.options.buildEnvironment(this.currentTaskId || 'default');
+    const env = await this.options.buildEnvironment(taskId);
 
     const allArgs = [...baseArgs, ...cliArgs];
-    const safeCwd = config.workingDirectory || this.options.tempPath;
+    const safeCwd = workingDirectory;
 
     const { file: spawnFile, args: spawnArgs } = this.buildPtySpawnArgs(command, allArgs);
 

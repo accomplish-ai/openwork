@@ -57,6 +57,12 @@ export function BedrockProviderForm({
     setError(null);
 
     try {
+      if (authTab === 'profile' && !profileName.trim()) {
+        setError('Profile name is required');
+        setConnecting(false);
+        return;
+      }
+
       const accomplish = getAccomplish();
 
       const credentialsMap = {
@@ -74,7 +80,7 @@ export function BedrockProviderForm({
         },
         profile: {
           authType: 'profile' as const,
-          profileName: profileName.trim() || 'default',
+          profileName: profileName.trim(),
           region,
         },
       };
@@ -113,7 +119,7 @@ export function BedrockProviderForm({
             ? { apiKeyPrefix: bedrockApiKey.substring(0, 8) + '...' }
             : authTab === 'accessKey'
               ? { accessKeyIdPrefix: accessKeyId.substring(0, 8) + '...' }
-              : { profileName: profileName.trim() || 'default' }),
+              : { profileName: profileName.trim() }),
         } as BedrockProviderCredentials,
         lastConnectedAt: new Date().toISOString(),
         availableModels: fetchedModels,
@@ -316,7 +322,7 @@ export function BedrockProviderForm({
                       type="text"
                       value={
                         (connectedProvider?.credentials as BedrockProviderCredentials)
-                          ?.profileName || 'default'
+                          ?.profileName || 'N/A'
                       }
                       disabled
                       className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
@@ -330,8 +336,7 @@ export function BedrockProviderForm({
                   <input
                     type="text"
                     value={
-                      (connectedProvider?.credentials as BedrockProviderCredentials)?.region ||
-                      'us-east-1'
+                      (connectedProvider?.credentials as BedrockProviderCredentials)?.region || 'N/A'
                     }
                     disabled
                     className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"

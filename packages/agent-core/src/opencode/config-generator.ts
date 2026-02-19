@@ -282,7 +282,11 @@ The \`original_request_summary\` field forces you to re-read the request - use t
 </behavior>
 `;
 
-function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platform): string[] {
+function resolveBundledTsxCommand(
+  mcpToolsPath: string,
+  platform: NodeJS.Platform,
+  isPackaged: boolean,
+): string[] | null {
   const tsxBin = platform === 'win32' ? 'tsx.cmd' : 'tsx';
   const candidates = [
     path.join(mcpToolsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
@@ -298,12 +302,16 @@ function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platfor
     }
   }
 
+  if (isPackaged) {
+    return null;
+  }
+
   console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
   return ['npx', 'tsx'];
 }
 
 function resolveMcpCommand(
-  tsxCommand: string[],
+  tsxCommand: string[] | null,
   mcpToolsPath: string,
   mcpName: string,
   sourceRelPath: string,
@@ -318,9 +326,18 @@ function resolveMcpCommand(
   // Use compiled dist entry when packaged OR when source files don't exist
   // (e.g. agent-core installed from npm where only dist/ is published)
   if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
-    const nodeExe = nodePath || 'node';
+    if (isPackaged && !nodePath) {
+      throw new Error(
+        `[OpenCode Config] Missing bundled Node.js for packaged MCP "${mcpName}" execution`,
+      );
+    }
+    const nodeExe = nodePath ?? 'node';
     console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
     return [nodeExe, distPath];
+  }
+
+  if (!tsxCommand) {
+    throw new Error(`[OpenCode Config] Missing tsx runtime for MCP "${mcpName}" source execution`);
   }
 
   console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
@@ -377,7 +394,7 @@ Use empty array [] if no skills apply to your task.
     systemPrompt += skillsSection;
   }
 
-  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath, platform);
+  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath, platform, isPackaged);
 
   const nodePath = bundledNodeBinPath
     ? path.join(bundledNodeBinPath, platform === 'win32' ? 'node.exe' : 'node')

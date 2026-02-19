@@ -104,6 +104,15 @@ export class TaskManager {
       throw new OpenCodeCliNotFoundError();
     }
 
+    const workingDirectory = config.workingDirectory?.trim();
+    if (!workingDirectory) {
+      throw new Error('Task working directory is required');
+    }
+    const normalizedConfig: TaskConfig = {
+      ...config,
+      workingDirectory,
+    };
+
     if (this.activeTasks.has(taskId) || this.taskQueue.some((q) => q.taskId === taskId)) {
       throw new Error(`Task ${taskId} is already running or queued`);
     }
@@ -112,10 +121,10 @@ export class TaskManager {
       console.log(
         `[TaskManager] At max concurrent tasks (${this.maxConcurrentTasks}). Queueing task ${taskId}`,
       );
-      return this.queueTask(taskId, config, callbacks);
+      return this.queueTask(taskId, normalizedConfig, callbacks);
     }
 
-    return this.executeTask(taskId, config, callbacks);
+    return this.executeTask(taskId, normalizedConfig, callbacks);
   }
 
   private queueTask(taskId: string, config: TaskConfig, callbacks: TaskCallbacks): Task {
@@ -310,7 +319,7 @@ export class TaskManager {
         await adapter.startTask({
           ...config,
           taskId,
-          workingDirectory: config.workingDirectory || this.options.defaultWorkingDirectory,
+          workingDirectory: config.workingDirectory,
         });
       } catch (error) {
         console.error(`[TaskManager] Task startup failed for ${taskId}:`, error);

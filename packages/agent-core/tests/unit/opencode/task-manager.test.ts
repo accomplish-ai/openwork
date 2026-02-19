@@ -275,18 +275,16 @@ describe('TaskManager', () => {
   describe('Working directory handling', () => {
     it('should use task config working directory if provided', () => {
       const taskConfig = { prompt: 'test', workingDirectory: '/project/src' };
-      const defaultDir = '/home/user';
 
-      const workingDirectory = taskConfig.workingDirectory || defaultDir;
+      const workingDirectory = taskConfig.workingDirectory?.trim();
       expect(workingDirectory).toBe('/project/src');
     });
 
-    it('should fall back to default working directory', () => {
+    it('should require an explicit working directory', () => {
       const taskConfig = { prompt: 'test' };
-      const defaultDir = '/home/user';
 
-      const workingDirectory = taskConfig.workingDirectory || defaultDir;
-      expect(workingDirectory).toBe('/home/user');
+      const workingDirectory = taskConfig.workingDirectory?.trim();
+      expect(workingDirectory).toBeUndefined();
     });
   });
 

@@ -378,10 +378,16 @@ describe('ConfigGenerator', () => {
     });
 
     it('should use bundled MCP entry when packaged and dist exists', () => {
-      // Create dist file
-      const mcpDir = path.join(mcpToolsPath, 'file-permission', 'dist');
-      fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      const createBundledEntry = (mcpName: string) => {
+        const mcpDir = path.join(mcpToolsPath, mcpName, 'dist');
+        fs.mkdirSync(mcpDir, { recursive: true });
+        fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      };
+
+      createBundledEntry('file-permission');
+      createBundledEntry('ask-user-question');
+      createBundledEntry('complete-task');
+      createBundledEntry('start-task');
 
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
@@ -389,6 +395,7 @@ describe('ConfigGenerator', () => {
         userDataPath,
         isPackaged: true,
         bundledNodeBinPath: '/bundled/node/bin',
+        browser: { mode: 'none' },
       };
 
       const result = generateConfig(options);
@@ -397,6 +404,31 @@ describe('ConfigGenerator', () => {
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
       expect(command?.[1]).toContain('dist/index.mjs');
+    });
+
+    it('should fail fast in packaged mode when bundled node runtime is missing', () => {
+      const createBundledEntry = (mcpName: string) => {
+        const mcpDir = path.join(mcpToolsPath, mcpName, 'dist');
+        fs.mkdirSync(mcpDir, { recursive: true });
+        fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      };
+
+      createBundledEntry('file-permission');
+      createBundledEntry('ask-user-question');
+      createBundledEntry('complete-task');
+      createBundledEntry('start-task');
+
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: true,
+        browser: { mode: 'none' },
+      };
+
+      expect(() => generateConfig(options)).toThrow(
+        '[OpenCode Config] Missing bundled Node.js for packaged MCP "file-permission" execution',
+      );
     });
 
     it('should use tsx for MCP entry when not packaged', () => {

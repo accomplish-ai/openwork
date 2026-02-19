@@ -331,7 +331,7 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
         const callbacks = createMockCallbacks();
-        const config: TaskConfig = { prompt: 'Test task' };
+        const config: TaskConfig = { prompt: 'Test task', workingDirectory: '/mock/working-dir' };
 
         // Act
         const task = await manager.startTask('task-1', config, callbacks);
@@ -347,7 +347,7 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
         const callbacks = createMockCallbacks();
-        const config: TaskConfig = { prompt: 'Test task' };
+        const config: TaskConfig = { prompt: 'Test task', workingDirectory: '/mock/working-dir' };
 
         await manager.startTask('task-1', config, callbacks);
 
@@ -362,9 +362,9 @@ describe('Task Manager Module', () => {
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 3 }));
 
         // Act
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
-        await manager.startTask('task-3', { prompt: 'Task 3' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-3', { prompt: 'Task 3', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Assert
         expect(manager.getActiveTaskCount()).toBe(3);
@@ -379,11 +379,11 @@ describe('Task Manager Module', () => {
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 2 }));
 
         // Act
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
         const task3 = await manager.startTask(
           'task-3',
-          { prompt: 'Task 3' },
+          { prompt: 'Task 3', workingDirectory: '/mock/working-dir' },
           createMockCallbacks(),
         );
 
@@ -398,12 +398,12 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 1 }));
 
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act & Assert
         await expect(
-          manager.startTask('task-3', { prompt: 'Task 3' }, createMockCallbacks()),
+          manager.startTask('task-3', { prompt: 'Task 3', workingDirectory: '/mock/working-dir' }, createMockCallbacks()),
         ).rejects.toThrow('Maximum queued tasks');
       });
     });
@@ -413,7 +413,7 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
         const callbacks = createMockCallbacks();
-        await manager.startTask('task-1', { prompt: 'Test' }, callbacks);
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, callbacks);
 
         // Note: In real implementation, adapter events would be forwarded
         // This tests the callback wiring
@@ -424,7 +424,7 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
         const callbacks = createMockCallbacks();
-        await manager.startTask('task-1', { prompt: 'Test' }, callbacks);
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, callbacks);
 
         // Progress is emitted during browser setup
         // Wait a bit for async operations
@@ -441,8 +441,8 @@ describe('Task Manager Module', () => {
         const callbacks1 = createMockCallbacks();
         const callbacks2 = createMockCallbacks();
 
-        await manager.startTask('task-1', { prompt: 'Task 1' }, callbacks1);
-        await manager.startTask('task-2', { prompt: 'Task 2' }, callbacks2);
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, callbacks1);
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, callbacks2);
 
         expect(manager.getActiveTaskCount()).toBe(1);
         expect(manager.getQueueLength()).toBe(1);
@@ -459,8 +459,8 @@ describe('Task Manager Module', () => {
         const callbacks1 = createMockCallbacks();
         const callbacks2 = createMockCallbacks();
 
-        await manager.startTask('task-1', { prompt: 'Task 1' }, callbacks1);
-        await manager.startTask('task-2', { prompt: 'Task 2' }, callbacks2);
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, callbacks1);
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, callbacks2);
 
         // Assert initial state
         expect(manager.hasActiveTask('task-1')).toBe(true);
@@ -473,7 +473,7 @@ describe('Task Manager Module', () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
         const callbacks = createMockCallbacks();
-        await manager.startTask('task-1', { prompt: 'Test' }, callbacks);
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, callbacks);
 
         // Act
         await manager.cancelTask('task-1');
@@ -485,8 +485,8 @@ describe('Task Manager Module', () => {
       it('should cancel a queued task', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 1 }));
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         expect(manager.isTaskQueued('task-2')).toBe(true);
 
@@ -511,8 +511,8 @@ describe('Task Manager Module', () => {
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 1 }));
         const callbacks2 = createMockCallbacks();
 
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, callbacks2);
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, callbacks2);
 
         // Act
         await manager.cancelTask('task-1');
@@ -529,7 +529,7 @@ describe('Task Manager Module', () => {
       it('should interrupt a running task', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act & Assert - should not throw
         await manager.interruptTask('task-1');
@@ -548,8 +548,8 @@ describe('Task Manager Module', () => {
       it('should remove task from queue and return true', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 1 }));
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act
         const result = manager.cancelQueuedTask('task-2');
@@ -562,7 +562,7 @@ describe('Task Manager Module', () => {
       it('should return false for non-queued task', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act
         const result = manager.cancelQueuedTask('task-1');
@@ -576,7 +576,7 @@ describe('Task Manager Module', () => {
       it('should attempt to send response to active task', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act & Assert - The adapter throws "No active process" because there's no real PTY
         // in the test environment. This verifies that the task manager correctly delegates
@@ -601,7 +601,7 @@ describe('Task Manager Module', () => {
       it('should return session ID for active task after adapter starts', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Wait for async adapter initialization
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -635,7 +635,7 @@ describe('Task Manager Module', () => {
         expect(manager.hasRunningTask()).toBe(false);
 
         // Act
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Assert
         expect(manager.hasRunningTask()).toBe(true);
@@ -644,8 +644,8 @@ describe('Task Manager Module', () => {
       it('should return all active task IDs', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 3 }));
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act
         const activeIds = manager.getActiveTaskIds();
@@ -659,7 +659,7 @@ describe('Task Manager Module', () => {
       it('should return first active task ID', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Test' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Test', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act
         const activeId = manager.getActiveTaskId();
@@ -684,8 +684,8 @@ describe('Task Manager Module', () => {
       it('should dispose all active tasks', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions());
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         // Act
         manager.dispose();
@@ -698,8 +698,8 @@ describe('Task Manager Module', () => {
       it('should clear the task queue', async () => {
         // Arrange
         const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 1 }));
-        await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-        await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
+        await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+        await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
         expect(manager.getQueueLength()).toBe(1);
 
@@ -769,10 +769,10 @@ describe('Task Manager Module', () => {
       const callbacks4 = createMockCallbacks();
 
       // Start tasks - first 2 run, next 2 queue
-      await manager.startTask('task-1', { prompt: 'Task 1' }, callbacks1);
-      await manager.startTask('task-2', { prompt: 'Task 2' }, callbacks2);
-      await manager.startTask('task-3', { prompt: 'Task 3' }, callbacks3);
-      await manager.startTask('task-4', { prompt: 'Task 4' }, callbacks4);
+      await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, callbacks1);
+      await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, callbacks2);
+      await manager.startTask('task-3', { prompt: 'Task 3', workingDirectory: '/mock/working-dir' }, callbacks3);
+      await manager.startTask('task-4', { prompt: 'Task 4', workingDirectory: '/mock/working-dir' }, callbacks4);
 
       // Assert queue state
       expect(manager.getActiveTaskCount()).toBe(2);
@@ -784,10 +784,10 @@ describe('Task Manager Module', () => {
       const manager = createTaskManager(createMockTaskManagerOptions({ maxConcurrentTasks: 2 }));
 
       // Add multiple tasks
-      await manager.startTask('task-1', { prompt: 'Task 1' }, createMockCallbacks());
-      await manager.startTask('task-2', { prompt: 'Task 2' }, createMockCallbacks());
-      await manager.startTask('task-3', { prompt: 'Task 3' }, createMockCallbacks());
-      await manager.startTask('task-4', { prompt: 'Task 4' }, createMockCallbacks());
+      await manager.startTask('task-1', { prompt: 'Task 1', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+      await manager.startTask('task-2', { prompt: 'Task 2', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+      await manager.startTask('task-3', { prompt: 'Task 3', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
+      await manager.startTask('task-4', { prompt: 'Task 4', workingDirectory: '/mock/working-dir' }, createMockCallbacks());
 
       // Assert
       expect(manager.getActiveTaskCount()).toBe(2);

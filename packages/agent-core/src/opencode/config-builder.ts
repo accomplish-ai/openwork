@@ -259,6 +259,7 @@ export async function buildProviderConfigs(
   }
 
   let modelOverride: { model: string; smallModel: string } | undefined;
+  let isBedrockConfigured = false;
 
   // Bedrock provider
   const bedrockProvider = providerSettings.connectedProviders.bedrock;
@@ -267,70 +268,92 @@ export async function buildProviderConfigs(
     bedrockProvider.credentials.type === 'bedrock'
   ) {
     const creds = bedrockProvider.credentials;
-    const bedrockOptions: Record<string, string> = {
-      region: creds.region || 'us-east-1',
-    };
-    if (creds.authMethod === 'profile' && creds.profileName) {
-      bedrockOptions.profile = creds.profileName;
-    }
+    const region = creds.region?.trim();
+    if (!region) {
+      console.warn('[OpenCode Config Builder] Skipping Bedrock config: region is required');
+    } else if (creds.authMethod === 'profile' && !creds.profileName?.trim()) {
+      console.warn(
+        '[OpenCode Config Builder] Skipping Bedrock config: profile auth requires profileName',
+      );
+    } else {
+      const bedrockOptions: Record<string, string> = {
+        region,
+      };
+      if (creds.authMethod === 'profile' && creds.profileName) {
+        bedrockOptions.profile = creds.profileName.trim();
+      }
 
-    // For Bedrock, we need to register the selected model in the models field
-    // so OpenCode can find it (otherwise it looks in built-in models which have region prefixes)
-    const bedrockModels: Record<string, ProviderModelConfig> = {};
-    if (activeModel?.provider === 'bedrock' && activeModel.model) {
-      // Extract model ID without provider prefix (e.g., "anthropic.claude-opus..." from "amazon-bedrock/anthropic.claude-opus...")
-      const modelId = activeModel.model.replace(/^amazon-bedrock\//, '');
-      bedrockModels[modelId] = { name: modelId, tools: true };
-    }
+      // For Bedrock, we need to register the selected model in the models field
+      // so OpenCode can find it (otherwise it looks in built-in models which have region prefixes)
+      const bedrockModels: Record<string, ProviderModelConfig> = {};
+      if (activeModel?.provider === 'bedrock' && activeModel.model) {
+        // Extract model ID without provider prefix (e.g., "anthropic.claude-opus..." from "amazon-bedrock/anthropic.claude-opus...")
+        const modelId = activeModel.model.replace(/^amazon-bedrock\//, '');
+        bedrockModels[modelId] = { name: modelId, tools: true };
+      }
 
-    providerConfigs.push({
-      id: 'amazon-bedrock',
-      options: bedrockOptions,
-      ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
-    });
-    console.log(
-      '[OpenCode Config Builder] Bedrock configured:',
-      bedrockOptions,
-      'models:',
-      Object.keys(bedrockModels),
-    );
+      providerConfigs.push({
+        id: 'amazon-bedrock',
+        options: bedrockOptions,
+        ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
+      });
+      isBedrockConfigured = true;
+      console.log(
+        '[OpenCode Config Builder] Bedrock configured:',
+        bedrockOptions,
+        'models:',
+        Object.keys(bedrockModels),
+      );
+    }
   } else {
     const bedrockCredsJson = getApiKey('bedrock');
     if (bedrockCredsJson) {
       try {
         const creds = JSON.parse(bedrockCredsJson) as BedrockCredentials;
-        const bedrockOptions: Record<string, string> = {
-          region: creds.region || 'us-east-1',
-        };
-        if (creds.authType === 'profile' && creds.profileName) {
-          bedrockOptions.profile = creds.profileName;
-        }
+        const region = creds.region?.trim();
+        if (!region) {
+          console.warn(
+            '[OpenCode Config Builder] Skipping legacy Bedrock config: region is required',
+          );
+        } else if (creds.authType === 'profile' && !creds.profileName?.trim()) {
+          console.warn(
+            '[OpenCode Config Builder] Skipping legacy Bedrock config: profile auth requires profileName',
+          );
+        } else {
+          const bedrockOptions: Record<string, string> = {
+            region,
+          };
+          if (creds.authType === 'profile' && creds.profileName) {
+            bedrockOptions.profile = creds.profileName.trim();
+          }
 
-        // For Bedrock, register the selected model so OpenCode can find it
-        const bedrockModels: Record<string, ProviderModelConfig> = {};
-        if (activeModel?.provider === 'bedrock' && activeModel.model) {
-          const modelId = activeModel.model.replace(/^amazon-bedrock\//, '');
-          bedrockModels[modelId] = { name: modelId, tools: true };
-        }
+          // For Bedrock, register the selected model so OpenCode can find it
+          const bedrockModels: Record<string, ProviderModelConfig> = {};
+          if (activeModel?.provider === 'bedrock' && activeModel.model) {
+            const modelId = activeModel.model.replace(/^amazon-bedrock\//, '');
+            bedrockModels[modelId] = { name: modelId, tools: true };
+          }
 
-        providerConfigs.push({
-          id: 'amazon-bedrock',
-          options: bedrockOptions,
-          ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
-        });
-        console.log(
-          '[OpenCode Config Builder] Bedrock (legacy) configured:',
-          bedrockOptions,
-          'models:',
-          Object.keys(bedrockModels),
-        );
+          providerConfigs.push({
+            id: 'amazon-bedrock',
+            options: bedrockOptions,
+            ...(Object.keys(bedrockModels).length > 0 ? { models: bedrockModels } : {}),
+          });
+          isBedrockConfigured = true;
+          console.log(
+            '[OpenCode Config Builder] Bedrock (legacy) configured:',
+            bedrockOptions,
+            'models:',
+            Object.keys(bedrockModels),
+          );
+        }
       } catch (e) {
         console.warn('[OpenCode Config Builder] Failed to parse Bedrock credentials:', e);
       }
     }
   }
 
-  if (activeModel?.provider === 'bedrock' && activeModel.model) {
+  if (isBedrockConfigured && activeModel?.provider === 'bedrock' && activeModel.model) {
     modelOverride = {
       model: activeModel.model,
       smallModel: activeModel.model,
@@ -478,22 +501,29 @@ export async function buildProviderConfigs(
   } else {
     const azureFoundryConfig = getAzureFoundryConfig();
     if (azureFoundryConfig?.enabled && activeModel?.provider === 'azure-foundry') {
-      const config = await buildAzureFoundryProviderConfig(
-        azureFoundryConfig.baseUrl,
-        azureFoundryConfig.deploymentName || 'default',
-        azureFoundryConfig.authType,
-        getApiKey,
-        azureFoundryToken,
-      );
-      if (config) {
-        providerConfigs.push(config);
-        if (!enabledProviders.includes('azure-foundry')) {
-          enabledProviders.push('azure-foundry');
+      const deploymentName = azureFoundryConfig.deploymentName?.trim();
+      if (!deploymentName) {
+        console.warn(
+          '[OpenCode Config Builder] Skipping Azure Foundry legacy config: deploymentName is required',
+        );
+      } else {
+        const config = await buildAzureFoundryProviderConfig(
+          azureFoundryConfig.baseUrl,
+          deploymentName,
+          azureFoundryConfig.authType,
+          getApiKey,
+          azureFoundryToken,
+        );
+        if (config) {
+          providerConfigs.push(config);
+          if (!enabledProviders.includes('azure-foundry')) {
+            enabledProviders.push('azure-foundry');
+          }
+          console.log('[OpenCode Config Builder] Azure Foundry (legacy) configured:', {
+            deployment: azureFoundryConfig.deploymentName,
+            authType: azureFoundryConfig.authType,
+          });
         }
-        console.log('[OpenCode Config Builder] Azure Foundry (legacy) configured:', {
-          deployment: azureFoundryConfig.deploymentName,
-          authType: azureFoundryConfig.authType,
-        });
       }
     }
   }

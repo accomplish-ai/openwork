@@ -13,7 +13,7 @@ describe('connection', () => {
     delete process.env.CDP_ENDPOINT;
     delete process.env.CDP_SECRET;
     delete process.env.DEV_BROWSER_PORT;
-    delete process.env.ACCOMPLISH_TASK_ID;
+    process.env.ACCOMPLISH_TASK_ID = 'task-default';
   });
 
   describe('configureFromEnv', () => {
@@ -49,9 +49,11 @@ describe('connection', () => {
       expect(cfg.taskId).toBe('task-abc');
     });
 
-    it('defaults taskId to "default" when ACCOMPLISH_TASK_ID is not set', () => {
-      const cfg = configureFromEnv();
-      expect(cfg.taskId).toBe('default');
+    it('throws when ACCOMPLISH_TASK_ID is not set', () => {
+      delete process.env.ACCOMPLISH_TASK_ID;
+      expect(() => configureFromEnv()).toThrow(
+        'ACCOMPLISH_TASK_ID is required for browser task isolation',
+      );
     });
 
     it('does not include cdpHeaders when CDP_SECRET is not set', () => {

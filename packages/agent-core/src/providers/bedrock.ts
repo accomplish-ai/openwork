@@ -23,6 +23,10 @@ export async function validateBedrockCredentials(
   }
 
   const parsed = parseResult.data;
+  const region = parsed.region?.trim();
+  if (!region) {
+    return { valid: false, error: 'AWS region is required' };
+  }
   let client: BedrockClient;
   let cleanupEnv: (() => void) | null = null;
 
@@ -37,7 +41,7 @@ export async function validateBedrockCredentials(
       }
     };
     client = new BedrockClient({
-      region: parsed.region || 'us-east-1',
+      region,
     });
   } else if (parsed.authType === 'accessKeys') {
     if (!parsed.accessKeyId || !parsed.secretAccessKey) {
@@ -52,13 +56,17 @@ export async function validateBedrockCredentials(
       awsCredentials.sessionToken = parsed.sessionToken;
     }
     client = new BedrockClient({
-      region: parsed.region || 'us-east-1',
+      region,
       credentials: awsCredentials,
     });
   } else if (parsed.authType === 'profile') {
+    const profileName = parsed.profileName?.trim();
+    if (!profileName) {
+      return { valid: false, error: 'AWS profile name is required for profile authentication' };
+    }
     client = new BedrockClient({
-      region: parsed.region || 'us-east-1',
-      credentials: fromIni({ profile: parsed.profileName || 'default' }),
+      region,
+      credentials: fromIni({ profile: profileName }),
     });
   } else {
     return { valid: false, error: 'Invalid authentication type' };
@@ -129,17 +137,22 @@ export async function fetchBedrockModels(
 ): Promise<FetchBedrockModelsResult> {
   let bedrockClient: BedrockClient;
   let originalToken: string | undefined;
+  const region = credentials.region?.trim();
+
+  if (!region) {
+    return { success: false, error: 'AWS region is required', models: [] };
+  }
 
   try {
     if (credentials.authType === 'apiKey') {
       originalToken = process.env.AWS_BEARER_TOKEN_BEDROCK;
       process.env.AWS_BEARER_TOKEN_BEDROCK = credentials.apiKey;
       bedrockClient = new BedrockClient({
-        region: credentials.region || 'us-east-1',
+        region,
       });
     } else if (credentials.authType === 'accessKeys') {
       bedrockClient = new BedrockClient({
-        region: credentials.region || 'us-east-1',
+        region,
         credentials: {
           accessKeyId: credentials.accessKeyId,
           secretAccessKey: credentials.secretAccessKey,
@@ -147,9 +160,17 @@ export async function fetchBedrockModels(
         },
       });
     } else {
+      const profileName = credentials.profileName?.trim();
+      if (!profileName) {
+        return {
+          success: false,
+          error: 'AWS profile name is required for profile authentication',
+          models: [],
+        };
+      }
       bedrockClient = new BedrockClient({
-        region: credentials.region || 'us-east-1',
-        credentials: fromIni({ profile: credentials.profileName }),
+        region,
+        credentials: fromIni({ profile: profileName }),
       });
     }
 

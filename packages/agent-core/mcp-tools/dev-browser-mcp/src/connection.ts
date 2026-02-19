@@ -55,7 +55,10 @@ export function configure(cfg: ConnectionConfig): void {
  */
 export function configureFromEnv(): ConnectionConfig {
   const cdpEndpoint = process.env.CDP_ENDPOINT;
-  const taskId = process.env.ACCOMPLISH_TASK_ID || 'default';
+  const taskId = process.env.ACCOMPLISH_TASK_ID?.trim();
+  if (!taskId) {
+    throw new Error('ACCOMPLISH_TASK_ID is required for browser task isolation');
+  }
 
   if (cdpEndpoint) {
     const headers: Record<string, string> = {};

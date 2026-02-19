@@ -313,12 +313,24 @@ export function ExecutionPage() {
   ) => {
     if (!permissionRequest || !currentTask) return;
 
+    const normalizedCustomText = customText?.trim() || undefined;
+    const normalizedSelectedOptions = selectedOpts
+      ?.map((opt) => opt.trim())
+      .filter((opt): opt is string => opt.length > 0);
+    const message = allowed
+      ? permissionRequest.type === 'question'
+        ? normalizedCustomText ||
+          (normalizedSelectedOptions?.length ? normalizedSelectedOptions.join(', ') : undefined)
+        : 'yes'
+      : undefined;
+
     await respondToPermission({
       requestId: permissionRequest.id,
       taskId: permissionRequest.taskId,
       decision: allowed ? 'allow' : 'deny',
-      selectedOptions: selectedOpts,
-      customText: customText,
+      message,
+      selectedOptions: normalizedSelectedOptions,
+      customText: normalizedCustomText,
     });
 
     if (!allowed && permissionRequest.type === 'question') {

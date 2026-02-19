@@ -709,6 +709,27 @@ describe('IPC Handlers Integration', () => {
       );
     });
 
+    it('task:start should set home working directory when none is provided', async () => {
+      // Arrange
+      mockTaskManager.startTask.mockResolvedValue({
+        id: 'task_123',
+        prompt: 'Test task prompt',
+        status: 'running',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      // Act
+      await invokeHandler('task:start', { prompt: 'Test task prompt' });
+
+      // Assert
+      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ workingDirectory: '/tmp/test-app' }),
+        expect.any(Object),
+      );
+    });
+
     it('task:start should validate task config', async () => {
       // Arrange - empty prompt
 
@@ -947,6 +968,7 @@ describe('IPC Handlers Integration', () => {
         requestId: 'req_123',
         taskId,
         decision: 'allow',
+        message: 'yes',
       });
 
       // Assert
@@ -1234,6 +1256,7 @@ describe('IPC Handlers Integration', () => {
         expect.objectContaining({
           prompt,
           sessionId,
+          workingDirectory: '/tmp/test-app',
         }),
         expect.any(Object),
       );
@@ -1596,6 +1619,23 @@ describe('IPC Handlers Integration', () => {
       expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(
         taskId,
         'option1, option2, option3',
+      );
+    });
+
+    it('permission:respond should reject allow decisions without explicit content', async () => {
+      // Arrange
+      const taskId = 'task_empty_allow';
+      mockTaskManager.hasActiveTask.mockReturnValue(true);
+
+      // Act + Assert
+      await expect(
+        invokeHandler('permission:respond', {
+          requestId: 'req_789',
+          taskId,
+          decision: 'allow',
+        }),
+      ).rejects.toThrow(
+        'Invalid permission response: allow decisions require explicit message content',
       );
     });
 

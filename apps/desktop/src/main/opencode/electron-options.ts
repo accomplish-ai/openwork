@@ -284,7 +284,7 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       getModelDisplayName,
       buildCliArgs,
     },
-    defaultWorkingDirectory: app.getPath('temp'),
+    defaultWorkingDirectory: app.getPath('home'),
     maxConcurrentTasks: 10,
     isCliAvailable,
     onBeforeTaskStart,
