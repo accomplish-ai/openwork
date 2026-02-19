@@ -31,6 +31,8 @@ const mockAccomplish = {
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   getDebugMode: vi.fn().mockResolvedValue(false),
   getVersion: vi.fn().mockResolvedValue('0.1.0-test'),
+  validateApiKeyForProvider: vi.fn().mockResolvedValue({ valid: true }),
+  fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
 };
 
 // Mock the accomplish module
@@ -213,7 +215,7 @@ describe('SettingsDialog Integration', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         // Verify anthropic card has green background (is active)
         const anthropicCard = screen.getByTestId('provider-card-anthropic');
-        expect(anthropicCard.className).toContain('bg-[#e9f7e7]');
+        expect(anthropicCard.className).toContain('bg-provider-bg-active');
       });
 
       // Verify the initial state: anthropic is active

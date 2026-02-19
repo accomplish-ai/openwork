@@ -34,8 +34,13 @@ const accomplishAPI = {
     ipcRenderer.invoke('permission:respond', response),
 
   // Session management
-  resumeSession: (sessionId: string, prompt: string, taskId?: string): Promise<unknown> =>
-    ipcRenderer.invoke('session:resume', sessionId, prompt, taskId),
+  resumeSession: (
+    sessionId: string,
+    prompt: string,
+    taskId?: string,
+    attachments?: Array<{ type: 'screenshot' | 'json'; data: string; label?: string }>,
+  ): Promise<unknown> =>
+    ipcRenderer.invoke('session:resume', sessionId, prompt, taskId, attachments),
 
   // Settings
   getApiKeys: (): Promise<unknown[]> => ipcRenderer.invoke('settings:api-keys'),

@@ -91,6 +91,7 @@ const mockAccomplish = {
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   speechIsConfigured: vi.fn().mockResolvedValue(true),
   getTodosForTask: vi.fn().mockResolvedValue([]),
+  fetchProviderModels: vi.fn().mockResolvedValue({ success: true, models: [] }),
 };
 
 // Mock the accomplish module
@@ -1196,7 +1197,7 @@ describe('Execution Page Integration', () => {
   });
 
   describe('follow-up message length limit', () => {
-    it('should disable send button when follow-up exceeds max length', () => {
+    it('should not disable send button when follow-up exceeds max length (no client-side limit)', () => {
       const task = createMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
@@ -1208,7 +1209,7 @@ describe('Execution Page Integration', () => {
       fireEvent.change(input, { target: { value: oversizedValue } });
 
       const sendButton = screen.getByRole('button', { name: /send/i });
-      expect(sendButton).toBeDisabled();
+      expect(sendButton).not.toBeDisabled();
     });
 
     it('should not disable send button when follow-up is at max length', () => {
@@ -1245,47 +1246,15 @@ describe('Execution Page Integration', () => {
       });
     });
 
-    it('should show "Enter a message" tooltip when follow-up is empty', () => {
+    it('should show "Send" title attribute on send button', () => {
       const task = createMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
       renderWithRouter('task-123');
 
-      const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find((t) => t.textContent === 'Enter a message');
-      expect(sendTooltip).toBeDefined();
-    });
-
-    it('should show "Message is too long" tooltip when follow-up exceeds limit', () => {
-      const task = createMockTask('task-123', 'Done', 'completed');
-      task.sessionId = 'session-abc';
-      mockStoreState.currentTask = task;
-
-      renderWithRouter('task-123');
-
-      const input = screen.getByTestId('execution-follow-up-input');
-      const oversizedValue = 'a'.repeat(PROMPT_DEFAULT_MAX_LENGTH + 1);
-      fireEvent.change(input, { target: { value: oversizedValue } });
-
-      const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find((t) => t.textContent === 'Message is too long');
-      expect(sendTooltip).toBeDefined();
-    });
-
-    it('should show "Send" tooltip when follow-up is valid', () => {
-      const task = createMockTask('task-123', 'Done', 'completed');
-      task.sessionId = 'session-abc';
-      mockStoreState.currentTask = task;
-
-      renderWithRouter('task-123');
-
-      const input = screen.getByTestId('execution-follow-up-input');
-      fireEvent.change(input, { target: { value: 'Normal follow-up' } });
-
-      const tooltips = screen.getAllByRole('tooltip');
-      const sendTooltip = tooltips.find((t) => t.textContent === 'Send');
-      expect(sendTooltip).toBeDefined();
+      const sendButton = screen.getByRole('button', { name: /send/i });
+      expect(sendButton.getAttribute('title')).toBe('Send');
     });
   });
 });
