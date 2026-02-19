@@ -362,6 +362,14 @@ export type {
   McpConnector,
 } from './common/types/connector.js';
 
+// Cloud browser types
+export { BROWSERBASE_REGIONS, BROWSERBASE_VALID_REGION_IDS } from './common/types/cloudBrowser.js';
+export type {
+  CloudBrowserProviderId,
+  BrowserbaseConfig,
+  CloudBrowserConfig,
+} from './common/types/cloudBrowser.js';
+
 // MCP OAuth
 export {
   discoverOAuthMetadata,

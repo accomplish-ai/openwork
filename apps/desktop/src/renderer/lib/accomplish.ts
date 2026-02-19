@@ -236,6 +236,16 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // Cloud Browsers
+  getBrowserbaseConfig(): Promise<{
+    config: { region: string; projectId: string; enabled: boolean; lastValidated?: number } | null;
+    hasCredentials: boolean;
+    credentialPrefix: string | null;
+  }>;
+  validateBrowserbase(apiKey: string, projectId: string): Promise<{ valid: boolean; error?: string }>;
+  connectBrowserbase(apiKey: string, projectId: string, region: string): Promise<void>;
+  disconnectBrowserbase(): Promise<void>;
 }
 
 interface AccomplishShell {

@@ -115,3 +115,10 @@ export type {
 export type { ThoughtEvent, CheckpointEvent } from './thought-stream.js';
 
 export type { TodoItem } from './todo.js';
+
+export { BROWSERBASE_REGIONS, BROWSERBASE_VALID_REGION_IDS } from './cloudBrowser.js';
+export type {
+  CloudBrowserProviderId,
+  BrowserbaseConfig,
+  CloudBrowserConfig,
+} from './cloudBrowser.js';

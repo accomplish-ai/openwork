@@ -305,4 +305,52 @@ export class SettingsPage {
   async enterLiteLLMApiKey(key: string) {
     await this.litellmApiKeyInput.fill(key);
   }
+
+  // ===== Browserbase Cloud Browser =====
+
+  get cloudBrowsersTab() {
+    return this.page.getByRole('button', { name: 'Cloud Browsers' });
+  }
+
+  get cloudBrowsersPanel() {
+    return this.page.getByTestId('cloud-browsers-panel');
+  }
+
+  get browserbaseCard() {
+    return this.page.getByTestId('browserbase-card');
+  }
+
+  get browserbaseApiKeyInput() {
+    return this.page.getByTestId('browserbase-api-key-input');
+  }
+
+  get browserbaseProjectIdInput() {
+    return this.page.getByTestId('browserbase-project-id-input');
+  }
+
+  get browserbaseRegionSelect() {
+    return this.page.getByTestId('browserbase-region-select');
+  }
+
+  get browserbaseConnectButton() {
+    return this.page.getByTestId('browserbase-connect-button');
+  }
+
+  get browserbaseDisconnectButton() {
+    return this.page.getByTestId('browserbase-disconnect-button');
+  }
+
+  get browserbaseConnectionStatus() {
+    return this.page.getByTestId('browserbase-connection-status');
+  }
+
+  async navigateToCloudBrowsers() {
+    await this.cloudBrowsersTab.click();
+    await this.cloudBrowsersPanel.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.NAVIGATION });
+  }
+
+  async enterBrowserbaseCredentials(apiKey: string, projectId: string) {
+    await this.browserbaseApiKeyInput.fill(apiKey);
+    await this.browserbaseProjectIdInput.fill(projectId);
+  }
 }

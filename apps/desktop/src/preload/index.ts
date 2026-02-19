@@ -367,6 +367,19 @@ const accomplishAPI = {
     ipcRenderer.on('auth:mcp-callback', listener);
     return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
   },
+
+  // Cloud Browsers
+  getBrowserbaseConfig: (): Promise<{
+    config: { region: string; projectId: string; enabled: boolean; lastValidated?: number } | null;
+    hasCredentials: boolean;
+    credentialPrefix: string | null;
+  }> => ipcRenderer.invoke('cloud-browsers:get-browserbase-config'),
+  validateBrowserbase: (apiKey: string, projectId: string): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke('cloud-browsers:validate-browserbase', apiKey, projectId),
+  connectBrowserbase: (apiKey: string, projectId: string, region: string): Promise<void> =>
+    ipcRenderer.invoke('cloud-browsers:connect-browserbase', apiKey, projectId, region),
+  disconnectBrowserbase: (): Promise<void> =>
+    ipcRenderer.invoke('cloud-browsers:disconnect-browserbase'),
 };
 
 // Expose the API to the renderer

@@ -43,7 +43,7 @@ import {
   validateLMStudioConfig,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
-import { safeParseJson } from '@accomplish_ai/agent-core';
+import { safeParseJson, BROWSERBASE_VALID_REGION_IDS } from '@accomplish_ai/agent-core';
 import {
   getOpenAiOauthStatus,
 } from '@accomplish_ai/agent-core';
@@ -1260,6 +1260,94 @@ export function registerIPCHandlers(): void {
   handle('connectors:disconnect', async (_event, connectorId: string) => {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+
+  // ── Cloud Browsers ───────────────────────────────────────────────────────
+
+  handle('cloud-browsers:get-browserbase-config', async () => {
+    const config = storage.getCloudBrowserConfig('browserbase');
+    const storedCreds = getApiKey('cloud-browser-browserbase');
+    let credentialPrefix: string | null = null;
+    if (storedCreds) {
+      const parsed = safeParseJson<{ apiKey?: string }>(storedCreds);
+      if (parsed.success && parsed.data.apiKey) {
+        credentialPrefix = `${parsed.data.apiKey.substring(0, 8)}...`;
+      }
+    }
+    const parsedConfig = config
+      ? safeParseJson<{ region?: string; projectId?: string }>(config.config)
+      : null;
+    return {
+      config: config ? {
+        region: parsedConfig?.success ? parsedConfig.data.region || 'us-west-2' : 'us-west-2',
+        projectId: parsedConfig?.success ? parsedConfig.data.projectId || '' : '',
+        enabled: config.enabled,
+        lastValidated: config.lastValidated,
+      } : null,
+      hasCredentials: !!storedCreds,
+      credentialPrefix,
+    };
+  });
+
+  async function validateBrowserbaseCredentials(apiKey: string, projectId: string): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const response = await fetch(`https://api.browserbase.com/v1/projects/${encodeURIComponent(projectId)}/usage`, {
+        headers: { 'X-BB-API-Key': apiKey },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (response.ok) {
+        return { valid: true };
+      }
+      if (response.status === 401) {
+        return { valid: false, error: 'Invalid API key' };
+      }
+      if (response.status === 404) {
+        return { valid: false, error: 'Invalid project ID' };
+      }
+      return { valid: false, error: `Browserbase API returned status ${response.status}` };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        return { valid: false, error: 'Connection timed out' };
+      }
+      return { valid: false, error: err instanceof Error ? err.message : 'Failed to validate credentials' };
+    }
+  }
+
+  handle('cloud-browsers:validate-browserbase', async (_event: IpcMainInvokeEvent, apiKey: string, projectId: string) => {
+    if (typeof apiKey !== 'string' || typeof projectId !== 'string') {
+      throw new Error('Invalid credentials: expected strings');
+    }
+    const sanitizedKey = sanitizeString(apiKey, 'apiKey', 256);
+    const sanitizedProject = sanitizeString(projectId, 'projectId', 256);
+    return validateBrowserbaseCredentials(sanitizedKey, sanitizedProject);
+  });
+
+  handle('cloud-browsers:connect-browserbase', async (_event: IpcMainInvokeEvent, apiKey: string, projectId: string, region: string) => {
+    if (typeof apiKey !== 'string' || typeof projectId !== 'string' || typeof region !== 'string') {
+      throw new Error('Invalid credentials: expected strings');
+    }
+    const sanitizedKey = sanitizeString(apiKey, 'apiKey', 256);
+    const sanitizedProject = sanitizeString(projectId, 'projectId', 256);
+    const sanitizedRegion = sanitizeString(region, 'region', 50);
+
+    if (!(BROWSERBASE_VALID_REGION_IDS as readonly string[]).includes(sanitizedRegion)) {
+      throw new Error('Invalid Browserbase region');
+    }
+
+    const validation = await validateBrowserbaseCredentials(sanitizedKey, sanitizedProject);
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Failed to validate Browserbase credentials');
+    }
+
+    storeApiKey('cloud-browser-browserbase', JSON.stringify({ apiKey: sanitizedKey, projectId: sanitizedProject }));
+    storage.setCloudBrowserConfig('browserbase', JSON.stringify({ region: sanitizedRegion, projectId: sanitizedProject }), true);
+    storage.setCloudBrowserLastValidated('browserbase', Date.now());
+  });
+
+  handle('cloud-browsers:disconnect-browserbase', async () => {
+    deleteApiKey('cloud-browser-browserbase');
+    storage.deleteCloudBrowserConfig('browserbase');
   });
 }
 
