@@ -25,6 +25,7 @@ import { FutureSchemaError } from '@accomplish_ai/agent-core';
 import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
 import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
+import { warmUpCliExecutable } from './opencode/warm-up';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import {
@@ -313,6 +314,7 @@ if (!gotTheLock) {
     console.log('[Main] IPC handlers registered');
 
     createWindow();
+    warmUpCliExecutable();
 
     if (mainWindow) {
       initThoughtStreamApi(mainWindow);
