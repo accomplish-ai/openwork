@@ -108,7 +108,9 @@ export function ExecutionPage() {
 
   const attachmentInput = useAttachments();
 
-  const hasFollowUpContent = !!followUp.trim() || attachmentInput.attachments.length > 0;
+  const isProcessingAttachments = attachmentInput.isProcessing;
+  const hasFollowUpContent =
+    (!!followUp.trim() || attachmentInput.attachments.length > 0) && !isProcessingAttachments;
 
   const scrollToBottom = useMemo(
     () =>
@@ -250,6 +252,9 @@ export function ExecutionPage() {
   }, [canFollowUp]);
 
   const handleFollowUp = useCallback(async () => {
+    if (attachmentInput.isProcessing) {
+      return;
+    }
     const hasAttachments = attachmentInput.attachments.length > 0;
     if (!followUp.trim() && !hasAttachments) {
       return;
@@ -323,11 +328,11 @@ export function ExecutionPage() {
 
   useEffect(() => {
     if (!pendingSpeechFollowUpRef.current) return;
-    if (!canFollowUp || isLoading) return;
+    if (!canFollowUp || isLoading || isProcessingAttachments) return;
     if (followUp !== pendingSpeechFollowUpRef.current) return;
     pendingSpeechFollowUpRef.current = null;
     void handleFollowUp();
-  }, [canFollowUp, followUp, handleFollowUp, isLoading]);
+  }, [canFollowUp, followUp, handleFollowUp, isLoading, isProcessingAttachments]);
 
   const handlePermissionResponse = async (
     allowed: boolean,

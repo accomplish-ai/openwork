@@ -55,17 +55,23 @@ export default function TaskInputBar({
 
   const attachmentInput = useAttachments();
 
+  const isProcessing = attachmentInput.isProcessing;
   const hasContent = !!value.trim() || attachmentInput.attachments.length > 0;
-  const canSubmit = hasContent && !isDisabled && !isOverLimit;
+  const canSubmit = hasContent && !isDisabled && !isOverLimit && !isProcessing;
 
   let submitTooltipLabel = 'Submit';
   if (isOverLimit) {
     submitTooltipLabel = 'Message is too long';
+  } else if (isProcessing) {
+    submitTooltipLabel = 'Processing attachments';
   } else if (!hasContent) {
     submitTooltipLabel = 'Enter a message';
   }
 
   const handleSubmit = useCallback(() => {
+    if (attachmentInput.isProcessing) {
+      return;
+    }
     const atts = attachmentInput.attachments.length > 0 ? attachmentInput.attachments : undefined;
     onSubmit(atts);
     attachmentInput.clearAttachments();
@@ -97,14 +103,14 @@ export default function TaskInputBar({
   }, [autoFocus]);
 
   useEffect(() => {
-    if (!autoSubmitOnTranscription || isDisabled || isOverLimit) {
+    if (!autoSubmitOnTranscription || isDisabled || isOverLimit || isProcessing) {
       return;
     }
     if (pendingAutoSubmitRef.current && value === pendingAutoSubmitRef.current) {
       pendingAutoSubmitRef.current = null;
       handleSubmit();
     }
-  }, [autoSubmitOnTranscription, isDisabled, isOverLimit, value, handleSubmit]);
+  }, [autoSubmitOnTranscription, isDisabled, isOverLimit, isProcessing, value, handleSubmit]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
