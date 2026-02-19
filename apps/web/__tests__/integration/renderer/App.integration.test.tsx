@@ -14,6 +14,7 @@
  * @vitest-environment jsdom
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider, Navigate } from 'react-router';

@@ -4,6 +4,7 @@
  * @vitest-environment jsdom
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
@@ -58,7 +59,7 @@ vi.mock('framer-motion', () => {
         layoutId: _layoutId,
         ...domProps
       } = props;
-      const Component = Element as keyof JSX.IntrinsicElements;
+      const Component = Element as React.ElementType;
       return <Component {...domProps}>{children}</Component>;
     };
   };

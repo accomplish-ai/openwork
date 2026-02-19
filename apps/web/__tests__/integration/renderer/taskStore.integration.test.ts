@@ -738,7 +738,12 @@ describe('taskStore Integration', () => {
         isLoading: true,
         error: 'Some error',
         tasks,
-        permissionRequest: { id: 'perm-1', taskId: 'task-1', type: 'file', message: 'Allow?' },
+        permissionRequest: {
+          id: 'perm-1',
+          taskId: 'task-1',
+          type: 'file',
+          createdAt: new Date().toISOString(),
+        },
         setupProgress: 'Downloading...',
         setupProgressTaskId: 'task-1',
         setupDownloadStep: 2,
@@ -766,11 +771,16 @@ describe('taskStore Integration', () => {
       // Arrange
       const { useTaskStore } = await import('@/stores/taskStore');
       useTaskStore.setState({
-        permissionRequest: { id: 'perm-1', taskId: 'task-1', type: 'file', message: 'Allow?' },
+        permissionRequest: {
+          id: 'perm-1',
+          taskId: 'task-1',
+          type: 'file',
+          createdAt: new Date().toISOString(),
+        },
       });
       mockAccomplish.respondToPermission.mockResolvedValueOnce(undefined);
 
-      const response = { permissionId: 'perm-1', granted: true };
+      const response = { requestId: 'perm-1', taskId: 'task-1', decision: 'allow' as const };
 
       // Act
       await useTaskStore.getState().respondToPermission(response);
@@ -899,7 +909,7 @@ describe('taskStore Integration', () => {
       useTaskStore.setState({
         currentTask: task,
         tasks: [task],
-        todos: [{ id: 'todo-1', content: 'First task', status: 'in_progress' }],
+        todos: [{ id: 'todo-1', content: 'First task', status: 'in_progress', priority: 'medium' }],
         todosTaskId: 'task-123',
       });
 
@@ -923,7 +933,7 @@ describe('taskStore Integration', () => {
       useTaskStore.setState({
         currentTask: task,
         tasks: [task],
-        todos: [{ id: 'todo-1', content: 'First task', status: 'completed' }],
+        todos: [{ id: 'todo-1', content: 'First task', status: 'completed', priority: 'medium' }],
         todosTaskId: 'task-123',
       });
 
@@ -947,7 +957,7 @@ describe('taskStore Integration', () => {
       useTaskStore.setState({
         currentTask: task,
         tasks: [task],
-        todos: [{ id: 'todo-1', content: 'First task', status: 'in_progress' }],
+        todos: [{ id: 'todo-1', content: 'First task', status: 'in_progress', priority: 'medium' }],
         todosTaskId: 'task-123',
       });
 
