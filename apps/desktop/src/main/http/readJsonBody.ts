@@ -53,14 +53,18 @@ export async function readJsonBody<T = unknown>(
     };
 
     const settleReject = (err: unknown): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       reject(err);
     };
 
     const settleResolve = (value: T): void => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       resolve(value);
