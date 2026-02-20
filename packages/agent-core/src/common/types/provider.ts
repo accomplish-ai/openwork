@@ -5,7 +5,23 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex';
+export type ProviderType =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'xai'
+  | 'ollama'
+  | 'deepseek'
+  | 'moonshot'
+  | 'zai'
+  | 'azure-foundry'
+  | 'custom'
+  | 'bedrock'
+  | 'litellm'
+  | 'minimax'
+  | 'lmstudio'
+  | 'vertex';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -173,7 +189,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
       extraHeaders: { 'anthropic-version': '2023-06-01' },
       responseFormat: 'anthropic',
       modelIdPrefix: 'anthropic/',
-      modelFilter: /^claude-(?!opus-4-6)/,
+      modelFilter: /^claude-/,
     },
     models: [],
   },

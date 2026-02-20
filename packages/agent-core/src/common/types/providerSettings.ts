@@ -27,21 +27,109 @@ export interface ProviderMeta {
 }
 
 export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
-  anthropic: { id: 'anthropic', name: 'Anthropic', category: 'classic', label: 'Service', logoKey: 'claude', helpUrl: 'https://console.anthropic.com/settings/keys' },
-  openai: { id: 'openai', name: 'OpenAI', category: 'classic', label: 'Service', logoKey: 'open-ai', helpUrl: 'https://platform.openai.com/api-keys' },
-  google: { id: 'google', name: 'Gemini', category: 'classic', label: 'Service', logoKey: 'google-gen-ai', helpUrl: 'https://aistudio.google.com/app/apikey' },
-  xai: { id: 'xai', name: 'XAI', category: 'classic', label: 'Service', logoKey: 'Xai', helpUrl: 'https://x.ai/api' },
-  deepseek: { id: 'deepseek', name: 'DeepSeek', category: 'classic', label: 'Service', logoKey: 'Deepseek', helpUrl: 'https://platform.deepseek.com/api_keys' },
-  moonshot: { id: 'moonshot', name: 'Moonshot AI', category: 'classic', label: 'Service', logoKey: 'moonshot', helpUrl: 'https://platform.moonshot.ai/docs/guide/start-using-kimi-api' },
+  anthropic: {
+    id: 'anthropic',
+    name: 'Anthropic',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'claude',
+    helpUrl: 'https://console.anthropic.com/settings/keys',
+  },
+  openai: {
+    id: 'openai',
+    name: 'OpenAI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'open-ai',
+    helpUrl: 'https://platform.openai.com/api-keys',
+  },
+  google: {
+    id: 'google',
+    name: 'Gemini',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'google-gen-ai',
+    helpUrl: 'https://aistudio.google.com/app/apikey',
+  },
+  xai: {
+    id: 'xai',
+    name: 'XAI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'Xai',
+    helpUrl: 'https://x.ai/api',
+  },
+  deepseek: {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'Deepseek',
+    helpUrl: 'https://platform.deepseek.com/api_keys',
+  },
+  moonshot: {
+    id: 'moonshot',
+    name: 'Moonshot AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'moonshot',
+    helpUrl: 'https://platform.moonshot.ai/docs/guide/start-using-kimi-api',
+  },
   zai: { id: 'zai', name: 'Z-AI', category: 'classic', label: 'Service', logoKey: 'z-ai' },
-  bedrock: { id: 'bedrock', name: 'AWS Bedrock', category: 'aws', label: 'Service', logoKey: 'aws-bedrock' },
+  bedrock: {
+    id: 'bedrock',
+    name: 'AWS Bedrock',
+    category: 'aws',
+    label: 'Service',
+    logoKey: 'aws-bedrock',
+  },
   vertex: { id: 'vertex', name: 'Vertex AI', category: 'gcp', label: 'Service', logoKey: 'vertex' },
-  'azure-foundry': { id: 'azure-foundry', name: 'Azure AI Foundry', category: 'azure', label: 'Service', logoKey: 'azure', helpUrl: 'https://ai.azure.com' },
-  ollama: { id: 'ollama', name: 'Ollama', category: 'local', label: 'Local Models', logoKey: 'olama' },
-  openrouter: { id: 'openrouter', name: 'OpenRouter', category: 'proxy', label: 'Service', logoKey: 'open-router', helpUrl: 'https://openrouter.ai/keys' },
-  litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
-  minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
-  lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  'azure-foundry': {
+    id: 'azure-foundry',
+    name: 'Azure AI Foundry',
+    category: 'azure',
+    label: 'Service',
+    logoKey: 'azure',
+    helpUrl: 'https://ai.azure.com',
+  },
+  ollama: {
+    id: 'ollama',
+    name: 'Ollama',
+    category: 'local',
+    label: 'Local Models',
+    logoKey: 'olama',
+  },
+  openrouter: {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    category: 'proxy',
+    label: 'Service',
+    logoKey: 'open-router',
+    helpUrl: 'https://openrouter.ai/keys',
+  },
+  litellm: {
+    id: 'litellm',
+    name: 'LiteLLM',
+    category: 'hybrid',
+    label: 'Service',
+    logoKey: 'liteLLM',
+  },
+  minimax: {
+    id: 'minimax',
+    name: 'MiniMax',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'minimax',
+    helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key',
+  },
+  lmstudio: {
+    id: 'lmstudio',
+    name: 'LM Studio',
+    category: 'local',
+    label: 'Local Models',
+    logoKey: 'lmstudio',
+    helpUrl: 'https://lmstudio.ai/',
+  },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -150,7 +238,9 @@ export function hasAnyReadyProvider(settings: ProviderSettings | null | undefine
   return Object.values(settings.connectedProviders).some(isProviderReady);
 }
 
-export function getActiveProvider(settings: ProviderSettings | null | undefined): ConnectedProvider | null {
+export function getActiveProvider(
+  settings: ProviderSettings | null | undefined,
+): ConnectedProvider | null {
   if (!settings?.activeProviderId) return null;
   return settings.connectedProviders?.[settings.activeProviderId] ?? null;
 }

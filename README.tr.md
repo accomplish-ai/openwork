@@ -12,6 +12,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Son Commit" /></a>
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
+  <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 # Accomplish™ - Açık Kaynaklı AI Masaüstü Ajanı
@@ -111,13 +112,13 @@ Accomplish, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve
 
 ## Gerçekte ne yapıyor
 
-| | | |
-|:--|:--|:--|
-| **📁 Dosya Yönetimi** | **✍️ Belge Yazma** | **🔗 Araç Bağlantıları** |
-| İçeriğe veya belirlediğiniz kurallara göre dosyaları sıralar, yeniden adlandırır ve taşır | Belge yazmasını, özetlemesini veya yeniden yazmasını isteyin | Notion, Google Drive, Dropbox ve daha fazlasıyla çalışır (yerel API'ler aracılığıyla) |
-| | | |
-| **⚙️ Özel Beceriler** | **🛡️ Tam Kontrol** | |
-| Tekrarlanabilir iş akışları tanımlayın, beceri olarak kaydedin | Her eylemi onaylarsınız. Günlükleri görebilirsiniz. İstediğiniz zaman durdurabilirsiniz. | |
+|                                                                                           |                                                                                          |                                                                                       |
+| :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------ |
+| **📁 Dosya Yönetimi**                                                                     | **✍️ Belge Yazma**                                                                       | **🔗 Araç Bağlantıları**                                                              |
+| İçeriğe veya belirlediğiniz kurallara göre dosyaları sıralar, yeniden adlandırır ve taşır | Belge yazmasını, özetlemesini veya yeniden yazmasını isteyin                             | Notion, Google Drive, Dropbox ve daha fazlasıyla çalışır (yerel API'ler aracılığıyla) |
+|                                                                                           |                                                                                          |                                                                                       |
+| **⚙️ Özel Beceriler**                                                                     | **🛡️ Tam Kontrol**                                                                       |                                                                                       |
+| Tekrarlanabilir iş akışları tanımlayın, beceri olarak kaydedin                            | Her eylemi onaylarsınız. Günlükleri görebilirsiniz. İstediğiniz zaman durdurabilirsiniz. |                                                                                       |
 
 <br />
 
@@ -171,15 +172,14 @@ Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazın�
 
 > **Kurulum 2 dakika sürer.**
 
-| Adım | Eylem | Detaylar |
-|:----:|--------|---------|
-| **1** | **Uygulamayı Kurun** | DMG'yi indirin ve Uygulamalar'a sürükleyin |
-| **2** | **AI'ınızı Bağlayın** | Kendi Google, OpenAI, Anthropic (veya diğer) API anahtarınızı kullanın — veya ChatGPT (Plus/Pro) ile giriş yapın. Abonelik yok. |
-| **3** | **Erişim Verin** | Hangi klasörleri görebileceğini seçin. Kontrol sizde. |
-| **4** | **Çalışmaya Başlayın** | Bir belgeyi özetlemesini, klasör düzenlemesini veya rapor oluşturmasını isteyin. Her şeyi onaylarsınız. |
+| Adım  | Eylem                  | Detaylar                                                                                                                        |
+| :---: | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Uygulamayı Kurun**   | DMG'yi indirin ve Uygulamalar'a sürükleyin                                                                                      |
+| **2** | **AI'ınızı Bağlayın**  | Kendi Google, OpenAI, Anthropic (veya diğer) API anahtarınızı kullanın — veya ChatGPT (Plus/Pro) ile giriş yapın. Abonelik yok. |
+| **3** | **Erişim Verin**       | Hangi klasörleri görebileceğini seçin. Kontrol sizde.                                                                           |
+| **4** | **Çalışmaya Başlayın** | Bir belgeyi özetlemesini, klasör düzenlemesini veya rapor oluşturmasını isteyin. Her şeyi onaylarsınız.                         |
 
 <br />
-
 
 <br />
 
@@ -251,25 +251,25 @@ Hepsi bu kadar.
 <details>
 <summary><strong>Tüm komutlar</strong></summary>
 
-| Komut | Açıklama |
-|---------|-------------|
-| `pnpm dev` | Masaüstü uygulamasını geliştirme modunda çalıştır |
-| `pnpm dev:clean` | Temiz başlangıçla geliştirme modu |
-| `pnpm build` | Tüm workspace'leri derle |
-| `pnpm build:desktop` | Sadece masaüstü uygulamasını derle |
-| `pnpm lint` | TypeScript kontrolleri |
-| `pnpm typecheck` | Tip doğrulama |
-| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E testleri |
+| Komut                                  | Açıklama                                          |
+| -------------------------------------- | ------------------------------------------------- |
+| `pnpm dev`                             | Masaüstü uygulamasını geliştirme modunda çalıştır |
+| `pnpm dev:clean`                       | Temiz başlangıçla geliştirme modu                 |
+| `pnpm build`                           | Tüm workspace'leri derle                          |
+| `pnpm build:desktop`                   | Sadece masaüstü uygulamasını derle                |
+| `pnpm lint`                            | TypeScript kontrolleri                            |
+| `pnpm typecheck`                       | Tip doğrulama                                     |
+| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E testleri                           |
 
 </details>
 
 <details>
 <summary><strong>Ortam değişkenleri</strong></summary>
 
-| Değişken | Açıklama |
-|----------|-------------|
-| `CLEAN_START=1` | Uygulama başlangıcında tüm kayıtlı verileri temizle |
-| `E2E_SKIP_AUTH=1` | Onboarding akışını atla (test için) |
+| Değişken          | Açıklama                                            |
+| ----------------- | --------------------------------------------------- |
+| `CLEAN_START=1`   | Uygulama başlangıcında tüm kayıtlı verileri temizle |
+| `E2E_SKIP_AUTH=1` | Onboarding akışını atla (test için)                 |
 
 </details>
 

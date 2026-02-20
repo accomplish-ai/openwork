@@ -12,6 +12,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最終コミット" /></a>
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
+  <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 # Accomplish™ - オープンソースAIデスクトップエージェント
@@ -111,13 +112,13 @@ Accomplishは、お使いのマシン上でローカルにファイル管理、�
 
 ## 実際にできること
 
-| | | |
-|:--|:--|:--|
-| **📁 ファイル管理** | **✍️ ドキュメント作成** | **🔗 ツール連携** |
-| コンテンツやルールに基づいてファイルを整理、リネーム、移動 | ドキュメントの作成、要約、書き換えを指示 | Notion、Google Drive、Dropboxなどと連携（ローカルAPI経由） |
-| | | |
-| **⚙️ カスタムスキル** | **🛡️ 完全なコントロール** | |
-| 繰り返しワークフローを定義してスキルとして保存 | すべてのアクションを承認。ログを確認可能。いつでも停止可能。 | |
+|                                                            |                                                              |                                                            |
+| :--------------------------------------------------------- | :----------------------------------------------------------- | :--------------------------------------------------------- |
+| **📁 ファイル管理**                                        | **✍️ ドキュメント作成**                                      | **🔗 ツール連携**                                          |
+| コンテンツやルールに基づいてファイルを整理、リネーム、移動 | ドキュメントの作成、要約、書き換えを指示                     | Notion、Google Drive、Dropboxなどと連携（ローカルAPI経由） |
+|                                                            |                                                              |                                                            |
+| **⚙️ カスタムスキル**                                      | **🛡️ 完全なコントロール**                                    |                                                            |
+| 繰り返しワークフローを定義してスキルとして保存             | すべてのアクションを承認。ログを確認可能。いつでも停止可能。 |                                                            |
 
 <br />
 
@@ -171,15 +172,14 @@ Accomplishはお使いのマシン上でローカルに実行されます。フ�
 
 > **セットアップは2分で完了。**
 
-| ステップ | アクション | 詳細 |
-|:----:|--------|---------|
-| **1** | **アプリをインストール** | DMGをダウンロードしてアプリケーションフォルダにドラッグ |
-| **2** | **AIを接続** | Google、OpenAI、Anthropic（またはその他）のAPIキーを使用、またはChatGPT（Plus/Pro）でサインイン。サブスクリプションなし。 |
-| **3** | **アクセス権を付与** | アクセス可能なフォルダを選択。あなたがコントロール。 |
-| **4** | **作業開始** | ドキュメントの要約、フォルダの整理、レポートの作成を依頼。すべてを承認。 |
+| ステップ | アクション               | 詳細                                                                                                                      |
+| :------: | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+|  **1**   | **アプリをインストール** | DMGをダウンロードしてアプリケーションフォルダにドラッグ                                                                   |
+|  **2**   | **AIを接続**             | Google、OpenAI、Anthropic（またはその他）のAPIキーを使用、またはChatGPT（Plus/Pro）でサインイン。サブスクリプションなし。 |
+|  **3**   | **アクセス権を付与**     | アクセス可能なフォルダを選択。あなたがコントロール。                                                                      |
+|  **4**   | **作業開始**             | ドキュメントの要約、フォルダの整理、レポートの作成を依頼。すべてを承認。                                                  |
 
 <br />
-
 
 <br />
 
@@ -251,24 +251,24 @@ pnpm dev
 <details>
 <summary><strong>すべてのコマンド</strong></summary>
 
-| コマンド | 説明 |
-|---------|-------------|
-| `pnpm dev` | 開発モードでデスクトップアプリを実行 |
-| `pnpm dev:clean` | クリーンスタートで開発モード |
-| `pnpm build` | すべてのワークスペースをビルド |
-| `pnpm build:desktop` | デスクトップアプリのみビルド |
-| `pnpm lint` | TypeScriptチェック |
-| `pnpm typecheck` | 型検証 |
-| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2Eテスト |
+| コマンド                               | 説明                                 |
+| -------------------------------------- | ------------------------------------ |
+| `pnpm dev`                             | 開発モードでデスクトップアプリを実行 |
+| `pnpm dev:clean`                       | クリーンスタートで開発モード         |
+| `pnpm build`                           | すべてのワークスペースをビルド       |
+| `pnpm build:desktop`                   | デスクトップアプリのみビルド         |
+| `pnpm lint`                            | TypeScriptチェック                   |
+| `pnpm typecheck`                       | 型検証                               |
+| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2Eテスト                 |
 
 </details>
 
 <details>
 <summary><strong>環境変数</strong></summary>
 
-| 変数 | 説明 |
-|----------|-------------|
-| `CLEAN_START=1` | アプリ起動時にすべての保存データをクリア |
+| 変数              | 説明                                         |
+| ----------------- | -------------------------------------------- |
+| `CLEAN_START=1`   | アプリ起動時にすべての保存データをクリア     |
 | `E2E_SKIP_AUTH=1` | オンボーディングフローをスキップ（テスト用） |
 
 </details>

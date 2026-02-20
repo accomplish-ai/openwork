@@ -79,7 +79,7 @@ export class SkillsManager {
     for (const existingSkill of existingSkills) {
       if (!processedPaths.has(existingSkill.filePath)) {
         console.log(
-          `[SkillsManager] Removing stale skill: ${existingSkill.name} (${existingSkill.filePath})`
+          `[SkillsManager] Removing stale skill: ${existingSkill.name} (${existingSkill.filePath})`,
         );
         dbDeleteSkill(existingSkill.id);
       }
@@ -277,16 +277,12 @@ export class SkillsManager {
 
     let fetchUrl = rawUrl;
     if (rawUrl.includes('/tree/')) {
-      fetchUrl = rawUrl
-        .replace('github.com', 'raw.githubusercontent.com')
-        .replace('/tree/', '/');
+      fetchUrl = rawUrl.replace('github.com', 'raw.githubusercontent.com').replace('/tree/', '/');
       if (!fetchUrl.endsWith('SKILL.md')) {
         fetchUrl = fetchUrl.replace(/\/?$/, '/SKILL.md');
       }
     } else if (rawUrl.includes('/blob/')) {
-      fetchUrl = rawUrl
-        .replace('github.com', 'raw.githubusercontent.com')
-        .replace('/blob/', '/');
+      fetchUrl = rawUrl.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
     } else {
       fetchUrl = rawUrl.replace('github.com', 'raw.githubusercontent.com');
       if (!fetchUrl.endsWith('SKILL.md')) {
