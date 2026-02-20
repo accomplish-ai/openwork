@@ -6,7 +6,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import type { ProviderType, Skill, TodoItem, McpConnector, MessagingConnectionStatus } from '@accomplish_ai/agent-core';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -366,6 +366,26 @@ const accomplishAPI = {
     const listener = (_: unknown, url: string) => callback(url);
     ipcRenderer.on('auth:mcp-callback', listener);
     return () => { ipcRenderer.removeListener('auth:mcp-callback', listener); };
+  },
+
+  // WhatsApp Integration
+  getWhatsAppConfig: (): Promise<{ providerId: string; enabled: boolean; status: MessagingConnectionStatus; phoneNumber?: string; lastConnectedAt?: number } | null> =>
+    ipcRenderer.invoke('integrations:whatsapp:get-config'),
+  connectWhatsApp: (): Promise<void> =>
+    ipcRenderer.invoke('integrations:whatsapp:connect'),
+  disconnectWhatsApp: (): Promise<void> =>
+    ipcRenderer.invoke('integrations:whatsapp:disconnect'),
+  setWhatsAppEnabled: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('integrations:whatsapp:set-enabled', enabled),
+  onWhatsAppQR: (callback: (qr: string) => void) => {
+    const listener = (_: unknown, qr: string) => callback(qr);
+    ipcRenderer.on('integrations:whatsapp:qr', listener);
+    return () => { ipcRenderer.removeListener('integrations:whatsapp:qr', listener); };
+  },
+  onWhatsAppStatus: (callback: (status: MessagingConnectionStatus) => void) => {
+    const listener = (_: unknown, status: MessagingConnectionStatus) => callback(status);
+    ipcRenderer.on('integrations:whatsapp:status', listener);
+    return () => { ipcRenderer.removeListener('integrations:whatsapp:status', listener); };
   },
 };
 

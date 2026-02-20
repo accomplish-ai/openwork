@@ -17,6 +17,11 @@ import type {
   ConnectorStatus,
   OAuthTokens,
 } from '../common/types/connector.js';
+import type {
+  MessagingProviderId,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
+} from '../common/types/messaging.js';
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -218,6 +223,14 @@ export interface ConnectorStorageAPI {
   deleteConnectorTokens(connectorId: string): void;
 }
 
+/** API for messaging integration management */
+export interface MessagingStorageAPI {
+  getMessagingConfig(providerId: MessagingProviderId): MessagingIntegrationConfig | null;
+  upsertMessagingConfig(providerId: MessagingProviderId, config: Omit<MessagingIntegrationConfig, 'providerId'>): void;
+  setMessagingStatus(providerId: MessagingProviderId, status: MessagingConnectionStatus): void;
+  deleteMessagingConfig(providerId: MessagingProviderId): void;
+}
+
 /** API for database initialization and lifecycle management */
 export interface DatabaseLifecycleAPI {
   /** Initialize the database, creating it if needed and running migrations */
@@ -230,13 +243,14 @@ export interface DatabaseLifecycleAPI {
   getDatabasePath(): string | null;
 }
 
-/** Unified storage API combining task, settings, provider, secure storage, connector, and database lifecycle operations */
+/** Unified storage API combining task, settings, provider, secure storage, connector, messaging, and database lifecycle operations */
 export interface StorageAPI
   extends TaskStorageAPI,
     AppSettingsAPI,
     ProviderSettingsAPI,
     SecureStorageAPI,
     ConnectorStorageAPI,
+    MessagingStorageAPI,
     DatabaseLifecycleAPI {}
 
 export type {
@@ -255,4 +269,7 @@ export type {
   McpConnector,
   ConnectorStatus,
   OAuthTokens,
+  MessagingProviderId,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
 };

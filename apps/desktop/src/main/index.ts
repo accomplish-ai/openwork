@@ -255,6 +255,29 @@ if (!gotTheLock) {
     registerIPCHandlers();
     console.log('[Main] IPC handlers registered');
 
+    try {
+      const whatsAppConfig = getStorage().getMessagingConfig('whatsapp');
+      if (whatsAppConfig?.enabled && whatsAppConfig.status === 'connected') {
+        console.log('[Main] Reconnecting WhatsApp from previous session');
+        import('./services/whatsapp/singleton.js').then(async ({ getOrCreateWhatsAppService, setActiveWhatsAppBridge }) => {
+          const { wireTaskBridge, wireStatusListeners } = await import('./services/whatsapp/wireTaskBridge.js');
+          const service = getOrCreateWhatsAppService();
+
+          const { bridge } = wireTaskBridge(service);
+          setActiveWhatsAppBridge(bridge);
+          wireStatusListeners(service, bridge);
+
+          service.connect().catch((err: unknown) => {
+            console.error('[Main] WhatsApp auto-reconnect failed:', err);
+          });
+        }).catch((err) => {
+          console.error('[Main] Failed to load WhatsApp module:', err);
+        });
+      }
+    } catch (err) {
+      console.error('[Main] WhatsApp reconnect check failed:', err);
+    }
+
     createWindow();
 
     if (mainWindow) {
@@ -277,7 +300,14 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', async () => {
+  // Dispose WhatsApp service if active
+  try {
+    const { disposeWhatsAppService } = await import('./services/whatsapp/singleton.js');
+    disposeWhatsAppService();
+  } catch {
+    // Module not loaded — nothing to dispose
+  }
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();

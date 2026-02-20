@@ -45,6 +45,7 @@ export type {
   AppSettingsAPI,
   ProviderSettingsAPI,
   SecureStorageAPI,
+  MessagingStorageAPI,
   DatabaseLifecycleAPI,
   // Permission Handler API
   PermissionHandlerAPI,
@@ -372,6 +373,15 @@ export {
   refreshAccessToken,
   isTokenExpired,
 } from './connectors/mcp-oauth.js';
+
+// Messaging types
+export type {
+  MessagingProviderId,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
+  IncomingMessage,
+  OutgoingMessage,
+} from './common/types/messaging.js';
 
 // Other types
 export type { TodoItem } from './common/types/todo.js';

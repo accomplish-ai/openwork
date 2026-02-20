@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  MessagingConnectionStatus,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -236,6 +237,14 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // WhatsApp Integration
+  getWhatsAppConfig(): Promise<{ providerId: string; enabled: boolean; status: MessagingConnectionStatus; phoneNumber?: string; lastConnectedAt?: number } | null>;
+  connectWhatsApp(): Promise<void>;
+  disconnectWhatsApp(): Promise<void>;
+  setWhatsAppEnabled(enabled: boolean): Promise<void>;
+  onWhatsAppQR(callback: (qr: string) => void): () => void;
+  onWhatsAppStatus(callback: (status: MessagingConnectionStatus) => void): () => void;
 }
 
 interface AccomplishShell {

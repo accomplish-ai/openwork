@@ -34,7 +34,7 @@ export default defineConfig({
   projects: [
     {
       name: 'electron-fast',
-      testMatch: /.*(home|execution|settings|settings-bedrock)\.spec\.ts/,
+      testMatch: /.*(home|execution|settings|settings-bedrock|settings-integrations)\.spec\.ts/,
       timeout: 60000,
     },
     {

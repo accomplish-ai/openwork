@@ -65,6 +65,12 @@ import {
   deleteConnector,
   clearAllConnectors,
 } from '../storage/repositories/connectors.js';
+import {
+  getMessagingConfig,
+  upsertMessagingConfig,
+  setMessagingStatus,
+  deleteMessagingConfig,
+} from '../storage/repositories/messagingIntegrations.js';
 import { SecureStorage } from '../internal/classes/SecureStorage.js';
 import type { OAuthTokens } from '../common/types/connector.js';
 import type { StorageAPI, StorageOptions } from '../types/storage.js';
@@ -162,6 +168,12 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     },
     deleteConnectorTokens: (connectorId) =>
       secureStorage.delete(`connector-tokens:${connectorId}`),
+
+    // Messaging Integrations
+    getMessagingConfig: (providerId) => getMessagingConfig(providerId),
+    upsertMessagingConfig: (providerId, config) => upsertMessagingConfig(providerId, config),
+    setMessagingStatus: (providerId, status) => setMessagingStatus(providerId, status),
+    deleteMessagingConfig: (providerId) => deleteMessagingConfig(providerId),
 
     // Secure Storage
     storeApiKey: (provider, apiKey) => secureStorage.storeApiKey(provider, apiKey),

@@ -115,3 +115,11 @@ export type {
 export type { ThoughtEvent, CheckpointEvent } from './thought-stream.js';
 
 export type { TodoItem } from './todo.js';
+
+export type {
+  MessagingProviderId,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
+  IncomingMessage,
+  OutgoingMessage,
+} from './messaging.js';

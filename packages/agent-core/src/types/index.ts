@@ -25,6 +25,7 @@ export type {
   AppSettingsAPI,
   ProviderSettingsAPI,
   SecureStorageAPI,
+  MessagingStorageAPI,
   DatabaseLifecycleAPI,
 } from './storage.js';
 

@@ -124,6 +124,20 @@ export type {
   McpConnector,
 } from './common/types/connector.js';
 
+// Messaging types
+export type {
+  MessagingProviderId,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
+  IncomingMessage,
+  OutgoingMessage,
+  InboundChannelMessage,
+  ChannelAttachment,
+  ProgressPhase,
+  OutboundProgressEvent,
+  ChannelAdapter,
+} from './common/types/messaging.js';
+
 // Other types
 export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';

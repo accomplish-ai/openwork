@@ -128,6 +128,32 @@ export class SettingsPage {
     return this.page.getByRole('button', { name: /Fetch Models|Refresh/ });
   }
 
+  // ===== WhatsApp Integration =====
+
+  get integrationsTab() {
+    return this.page.getByRole('button', { name: 'Integrations' });
+  }
+
+  get integrationsPanel() {
+    return this.page.getByTestId('integrations-panel');
+  }
+
+  get whatsappCard() {
+    return this.page.getByTestId('whatsapp-card');
+  }
+
+  get whatsappConnectButton() {
+    return this.page.getByTestId('whatsapp-connect-button');
+  }
+
+  get whatsappDisconnectButton() {
+    return this.page.getByTestId('whatsapp-disconnect-button');
+  }
+
+  get whatsappConnectionStatus() {
+    return this.page.getByTestId('whatsapp-connection-status');
+  }
+
   // ===== Debug Mode =====
 
   get debugModeToggle() {
@@ -257,6 +283,20 @@ export class SettingsPage {
 
   async pressEscapeToClose() {
     await this.page.keyboard.press('Escape');
+  }
+
+  // Integrations tab actions
+  async navigateToIntegrations() {
+    await this.integrationsTab.click();
+    await this.integrationsPanel.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.NAVIGATION });
+  }
+
+  async clickWhatsAppConnect() {
+    await this.whatsappConnectButton.click();
+  }
+
+  async clickWhatsAppDisconnect() {
+    await this.whatsappDisconnectButton.click();
   }
 
   // Bedrock specific actions

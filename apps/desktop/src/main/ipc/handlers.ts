@@ -1261,6 +1261,73 @@ export function registerIPCHandlers(): void {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
   });
+
+  // ---------------------------------------------------------------------------
+  // WhatsApp Integration
+  // ---------------------------------------------------------------------------
+
+  handle('integrations:whatsapp:get-config', async () => {
+    return storage.getMessagingConfig('whatsapp');
+  });
+
+  handle('integrations:whatsapp:connect', async (event) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const { getOrCreateWhatsAppService, setActiveWhatsAppBridge } = await import('../services/whatsapp/singleton.js');
+    const { wireTaskBridge, wireStatusListeners } = await import('../services/whatsapp/wireTaskBridge.js');
+    const service = getOrCreateWhatsAppService();
+    const sender = event.sender;
+
+    service.removeAllListeners();
+
+    const { bridge } = wireTaskBridge(service);
+    setActiveWhatsAppBridge(bridge);
+
+    service.on('qr', (qr: string) => {
+      if (!sender.isDestroyed()) {
+        sender.send('integrations:whatsapp:qr', qr);
+      }
+    });
+
+    service.on('status', (status) => {
+      if (!sender.isDestroyed()) {
+        sender.send('integrations:whatsapp:status', status);
+      }
+    });
+
+    wireStatusListeners(service, bridge);
+
+    await service.connect();
+  });
+
+  handle('integrations:whatsapp:disconnect', async (event) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const { getWhatsAppService, disposeWhatsAppService } = await import('../services/whatsapp/singleton.js');
+    const service = getWhatsAppService();
+    if (service) {
+      await service.disconnect();
+    }
+    disposeWhatsAppService();
+    storage.deleteMessagingConfig('whatsapp');
+  });
+
+  handle('integrations:whatsapp:set-enabled', async (event: IpcMainInvokeEvent, enabled: unknown) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid enabled flag');
+    }
+    const existing = storage.getMessagingConfig('whatsapp');
+    if (existing) {
+      storage.upsertMessagingConfig('whatsapp', {
+        ...existing,
+        enabled,
+      });
+    }
+    const { getActiveWhatsAppBridge } = await import('../services/whatsapp/singleton.js');
+    const bridge = getActiveWhatsAppBridge();
+    if (bridge) {
+      bridge.setEnabled(enabled);
+    }
+  });
 }
 
 // In-memory store for pending OAuth flows (keyed by state parameter)
