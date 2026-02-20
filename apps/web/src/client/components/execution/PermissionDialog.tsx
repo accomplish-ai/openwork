@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { springs } from '../../lib/animations';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { AlertTriangle, AlertCircle, File, Brain } from 'lucide-react';
+import { AlertTriangle, AlertCircle, File, Brain, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function getOperationBadgeClasses(operation?: string): string {
@@ -86,7 +86,9 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                     ? 'bg-amber-500/10'
                     : permissionRequest.type === 'question'
                       ? 'bg-primary/10'
-                      : 'bg-warning/10',
+                      : permissionRequest.type === 'desktop'
+                        ? 'bg-violet-500/10'
+                        : 'bg-warning/10',
               )}
             >
               {isDeleteOperation(permissionRequest) ? (
@@ -95,6 +97,8 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                 <File className="h-5 w-5 text-amber-600" />
               ) : permissionRequest.type === 'question' ? (
                 <Brain className="h-5 w-5 text-primary" />
+              ) : permissionRequest.type === 'desktop' ? (
+                <Monitor className="h-5 w-5 text-violet-600" />
               ) : (
                 <AlertCircle className="h-5 w-5 text-warning" />
               )}
@@ -111,7 +115,9 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                   ? 'File Permission Required'
                   : permissionRequest.type === 'question'
                     ? permissionRequest.header || 'Question'
-                    : 'Permission Required'}
+                    : permissionRequest.type === 'desktop'
+                      ? 'Desktop Action Approval'
+                      : 'Permission Required'}
             </h3>
           </div>
 
@@ -280,6 +286,49 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
                     }}
                   />
                 </div>
+              </>
+            )}
+
+            {permissionRequest.type === 'desktop' && (
+              <>
+                <div className="mb-3">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-violet-500/10 text-violet-600">
+                    {permissionRequest.desktopAction?.toUpperCase()}
+                  </span>
+                </div>
+
+                <p className="text-sm text-foreground mb-4">
+                  {permissionRequest.toolName
+                    ? `Allow ${permissionRequest.toolName}?`
+                    : 'Allow this desktop action?'}
+                </p>
+
+                {permissionRequest.targetWindow && (
+                  <div className="mb-3 p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground mb-1">Target Window</p>
+                    <p className="text-sm font-mono text-foreground">
+                      {permissionRequest.targetWindow}
+                    </p>
+                  </div>
+                )}
+
+                {permissionRequest.coordinates && (
+                  <div className="mb-3 p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground mb-1">Coordinates</p>
+                    <p className="text-sm font-mono text-foreground">
+                      ({permissionRequest.coordinates.x}, {permissionRequest.coordinates.y})
+                    </p>
+                  </div>
+                )}
+
+                {permissionRequest.toolInput && typeof permissionRequest.toolInput === 'object' && (
+                  <div className="mb-4 p-3 rounded-lg bg-muted text-xs font-mono overflow-x-auto">
+                    <p className="text-muted-foreground mb-1">Details</p>
+                    <pre className="text-foreground">
+                      {JSON.stringify(permissionRequest.toolInput, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </>
             )}
 

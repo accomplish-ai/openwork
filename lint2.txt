@@ -1,0 +1,18 @@
+
+> accomplish@0.1.0 lint C:\Users\david\Documents\GitHub\accomplish
+> pnpm -r --parallel run typecheck && eslint .
+
+Scope: 3 of 4 workspace projects
+apps/web typecheck$ tsc -p tsconfig.client.json --noEmit
+apps/desktop typecheck$ tsc --noEmit
+packages/agent-core typecheck$ tsc --noEmit
+packages/agent-core typecheck: Done
+apps/desktop typecheck: Done
+apps/web typecheck: Done
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core\mcp-tools\desktop-control\src\index.ts
+  27:10  error  'DEFAULT_BLOCKLIST' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (1 error, 0 warnings)
+
+ ELIFECYCLE  Command failed with exit code 1.

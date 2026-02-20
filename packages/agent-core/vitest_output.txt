@@ -1,0 +1,408 @@
+
+ RUN  v2.1.9 C:/Users/david/Documents/GitHub/accomplish/packages/agent-core
+
+ ✓ tests/unit/opencode/completion/completion-enforcer.test.ts (49 tests) 47ms
+ ✓ tests/unit/providers/vertex.test.ts (28 tests) 49ms
+ ✓ tests/unit/providers/validation.test.ts (25 tests) 42ms
+ ✓ tests/unit/opencode/adapter.test.ts (32 tests) 24ms
+ ✓ tests/unit/opencode/config-generator.test.ts (55 tests) 624ms
+ ✓ tests/integration/full-flow.test.ts (18 tests) 1286ms
+ ✓ tests/unit/opencode/log-watcher.test.ts (23 tests) 184ms
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > initialize > should initialize and create user skills directory
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > initialize > should only initialize once
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > scanDirectory / resync > should discover skills from directory
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > scanDirectory / resync > should discover multiple skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > scanDirectory / resync > should differentiate between bundled and user skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > parse skill frontmatter > should parse skill frontmatter correctly
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > parse skill frontmatter > should handle missing frontmatter fields
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > parse skill frontmatter > should handle hidden skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > sync skills to database > should sync skills to database
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > sync skills to database > should update existing skills on resync
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > sync skills to database > should remove stale skills that no longer exist on disk
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > enable/disable skills > should enable and disable skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > enable/disable skills > should get only enabled skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > enable/disable skills > should preserve enabled state on resync
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > get skill content > should get skill content
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > get skill content > should return null for non-existent skill
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > getSkillById > should get skill by ID
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > getSkillById > should return null for non-existent ID
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > addSkill from file > should add skill from local file
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > addSkill from file > should throw error for skill without name
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > deleteSkill > should delete custom skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > deleteSkill > should not delete official skills
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > deleteSkill > should return false for non-existent skill
+[DB] Opening database at: :memory:
+
+stdout | tests/unit/skills/skills-manager.test.ts > SkillsManager > path traversal protection > should sanitize skill names to prevent path traversal
+[DB] Opening database at: :memory:
+
+ ❯ tests/unit/skills/skills-manager.test.ts (24 tests | 24 failed) 1881ms
+   × SkillsManager > initialize > should initialize and create user skills directory 46ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > initialize > should only initialize once 7ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > scanDirectory / resync > should discover skills from directory 7ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > scanDirectory / resync > should discover multiple skills 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > scanDirectory / resync > should differentiate between bundled and user skills 8ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > parse skill frontmatter > should parse skill frontmatter correctly 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > parse skill frontmatter > should handle missing frontmatter fields 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > parse skill frontmatter > should handle hidden skills 16ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > sync skills to database > should sync skills to database 31ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > sync skills to database > should update existing skills on resync 12ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > sync skills to database > should remove stale skills that no longer exist on disk 31ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > enable/disable skills > should enable and disable skills 7ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > enable/disable skills > should get only enabled skills 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > enable/disable skills > should preserve enabled state on resync 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > get skill content > should get skill content 21ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > get skill content > should return null for non-existent skill 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > getSkillById > should get skill by ID 15ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > getSkillById > should return null for non-existent ID 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > addSkill from file > should add skill from local file 22ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > addSkill from file > should throw error for skill without name 15ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > deleteSkill > should delete custom skills 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > deleteSkill > should not delete official skills 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > deleteSkill > should return false for non-existent skill 8ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × SkillsManager > path traversal protection > should sanitize skill names to prevent path traversal 14ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+ ✓ tests/unit/opencode/task-manager.test.ts (23 tests) 39ms
+ ✓ tests/unit/opencode/stream-parser.test.ts (18 tests) 133ms
+ ✓ tests/unit/opencode/completion/completion-state.test.ts (29 tests) 20ms
+ ❯ tests/unit/storage/database.test.ts (20 tests | 16 failed) 231ms
+   × Database > initializeDatabase > should initialize database with migrations 23ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > initializeDatabase > should create database file 7ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > initializeDatabase > should return existing connection when called with same path 5ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > initializeDatabase > should close and reinitialize with different path 8ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > initializeDatabase > should skip migrations when runMigrations is false 5ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > WAL mode > should run WAL mode 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > foreign keys > should enforce foreign keys 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > getDatabase > should return database after initialization 6ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > closeDatabase > should close database properly 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > resetDatabaseInstance > should reset database instance 9ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > databaseExists > should return true for existing database 5ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > resetDatabase > should backup and remove corrupt database 4ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > resetDatabase > should remove WAL and SHM files 4ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > migration schema > should create schema_meta table 4ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > migration schema > should set version in schema_meta 8ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+   × Database > migration schema > should create expected tables from migrations 7ms
+     → The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+stdout | tests/unit/opencode/proxies/moonshot-proxy.test.ts > Moonshot Proxy > ensureMoonshotProxy > should start proxy server and return proxy info
+[Moonshot Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/moonshot-proxy.test.ts > Moonshot Proxy > ensureMoonshotProxy > should reuse existing proxy server
+[Moonshot Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/moonshot-proxy.test.ts > Moonshot Proxy > ensureMoonshotProxy > should normalize URL by removing trailing slash
+[Moonshot Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/moonshot-proxy.test.ts > Moonshot Proxy > isMoonshotProxyRunning > should return true after starting proxy
+[Moonshot Proxy] Server stopped
+
+ ✓ tests/unit/opencode/proxies/moonshot-proxy.test.ts (21 tests) 135ms
+ ✓ tests/unit/opencode/completion/prompts.test.ts (12 tests) 12ms
+stdout | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts > Azure Foundry Proxy > ensureAzureFoundryProxy > should start proxy server and return proxy info
+[Azure Foundry Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts > Azure Foundry Proxy > ensureAzureFoundryProxy > should reuse existing proxy server
+[Azure Foundry Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts > Azure Foundry Proxy > ensureAzureFoundryProxy > should normalize URL by removing trailing slash
+[Azure Foundry Proxy] Server stopped
+
+stdout | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts > Azure Foundry Proxy > isAzureFoundryProxyRunning > should return true after starting proxy
+[Azure Foundry Proxy] Server stopped
+
+ ✓ tests/unit/opencode/proxies/azure-foundry-proxy.test.ts (16 tests) 109ms
+ ✓ tests/unit/providers/ollama.test.ts (6 tests) 79ms
+ ✓ tests/unit/opencode/cli-resolver.test.ts (11 tests) 422ms
+stdout | tests/unit/providers/tool-support-testing.test.ts > testOllamaModelToolSupport > should return "supported" when capabilities include "tools"
+[Ollama] Model llama3:latest supports tools (capabilities)
+
+stdout | tests/unit/providers/tool-support-testing.test.ts > testOllamaModelToolSupport > should return "unsupported" when capabilities exist but do not include "tools"
+[Ollama] Model llama3:latest does not support tools (capabilities: completion)
+
+stdout | tests/unit/providers/tool-support-testing.test.ts > testOllamaModelToolSupport > should return "unsupported" when capabilities is an empty array
+[Ollama] Model llama3:latest does not support tools (capabilities: )
+
+stdout | tests/unit/providers/tool-support-testing.test.ts > testOllamaModelToolSupport > should return "unknown" when response has no capabilities field
+[Ollama] Model llama3:latest has no capabilities field
+
+ ✓ tests/unit/opencode/message-processor.test.ts (23 tests) 17ms
+stdout | tests/unit/providers/tool-support-testing.test.ts > testOllamaModelToolSupport > should call the correct URL with POST and model in the body
+[Ollama] Model llama3:latest supports tools (capabilities)
+
+ ✓ tests/unit/providers/tool-support-testing.test.ts (8 tests) 27ms
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > clearAzureTokenCache > should clear the token cache
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > hasValidToken > should return false when no token cached
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > getTokenExpiry > should return null when no token cached
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > getAzureEntraToken > should return error when Azure Identity not available
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > getAzureEntraToken > should return cached token if valid
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > getAzureEntraToken > should provide helpful hints for common errors
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > token caching > should not have valid token initially
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > token caching > should not have expiry initially
+[Azure Token Manager] Token cache cleared
+
+stdout | tests/unit/opencode/proxies/azure-token-manager.test.ts > Azure Token Manager > token caching > should clear expiry after clearing cache
+[Azure Token Manager] Token cache cleared
+
+ ✓ tests/unit/opencode/proxies/azure-token-manager.test.ts (9 tests) 28ms
+ ✓ tests/unit/storage/secure-storage.test.ts (21 tests) 1487ms
+
+ Test Files  2 failed | 19 passed (21)
+      Tests  40 failed | 431 passed (471)
+   Start at  16:44:44
+   Duration  5.61s (transform 3.66s, setup 0ms, collect 6.58s, tests 6.88s, environment 8ms, prepare 8.27s)
+

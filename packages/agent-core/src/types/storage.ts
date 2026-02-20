@@ -13,6 +13,7 @@ import type {
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
 import type { McpConnector, ConnectorStatus, OAuthTokens } from '../common/types/connector.js';
+import type { BlocklistEntry } from '../common/types/desktop.js';
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -226,7 +227,19 @@ export interface DatabaseLifecycleAPI {
   getDatabasePath(): string | null;
 }
 
-/** Unified storage API combining task, settings, provider, secure storage, connector, and database lifecycle operations */
+/** API for managing the desktop-control sensitive app blocklist */
+export interface DesktopControlStorageAPI {
+  /** Get the user's custom blocklist entries */
+  getDesktopBlocklist(): BlocklistEntry[];
+  /** Set the user's custom blocklist entries */
+  setDesktopBlocklist(entries: BlocklistEntry[]): void;
+  /** Add a single entry to the blocklist (deduplicates by appName) */
+  addDesktopBlocklistEntry(entry: BlocklistEntry): void;
+  /** Remove an entry from the blocklist by appName */
+  removeDesktopBlocklistEntry(appName: string): void;
+}
+
+/** Unified storage API combining task, settings, provider, secure storage, connector, desktop control, and database lifecycle operations */
 export interface StorageAPI
   extends
     TaskStorageAPI,
@@ -234,6 +247,7 @@ export interface StorageAPI
     ProviderSettingsAPI,
     SecureStorageAPI,
     ConnectorStorageAPI,
+    DesktopControlStorageAPI,
     DatabaseLifecycleAPI {}
 
 export type {

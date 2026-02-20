@@ -46,6 +46,11 @@ export interface ConfigGeneratorOptions {
     url: string;
     accessToken: string;
   }>;
+  /** Desktop control configuration. Omit or set to null to disable. */
+  desktopControl?: {
+    enabled: boolean;
+    port?: number;
+  } | null;
 }
 
 export interface ProviderConfig {
@@ -135,7 +140,16 @@ You MUST call start_task before any other tool. This is enforced - other tools w
 
 **Decide: Does this request need planning?**
 
-Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
+Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands, desktop automation).
+
+## Desktop Automation Safety
+- ALL desktop.* tools require per-action user approval — the user will see each action before it executes.
+- NEVER automate password managers (1Password, Bitwarden, etc.), banking apps, or system security tools.
+- ALWAYS use desktop.screenshot() to verify screen state before and after actions.
+- ALWAYS use desktop.listWindows() before interacting with a window to confirm it exists.
+- Use desktop.type() only after focusing the target input with desktop.click().
+- **CRITICAL:** Any task that involves desktop.* tools MUST use \`needs_planning: true\` in the start_task call. Desktop automation is inherently destructive — plan your steps before executing.
+
 Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → stop. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
 
 **When needs_planning is TRUE** — provide goal, steps, verification:
@@ -224,7 +238,7 @@ Returns: "allowed" or "denied" - proceed only if allowed
 <example>
 request_file_permission({
   operation: "create",
-  filePath: "/Users/john/Desktop/report.txt"
+  filePath: "${path.join(path.parse(process.cwd()).root, 'Users', 'john', 'Desktop', 'report.txt').replace(/\\/g, '\\\\')}"
 })
 // Wait for response, then proceed only if "allowed"
 </example>
@@ -480,6 +494,30 @@ Use empty array [] if no skills apply to your task.
       ),
       enabled: true,
       ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
+      timeout: 30000,
+    };
+  }
+
+  // Conditionally register desktop-control MCP server
+  const desktopConfig = options.desktopControl;
+  if (desktopConfig && desktopConfig.enabled) {
+    const desktopControlPort = desktopConfig.port ?? 7400;
+    mcpServers['desktop-control'] = {
+      type: 'local',
+      command: resolveMcpCommand(
+        tsxCommand,
+        mcpToolsPath,
+        'desktop-control',
+        'src/index.ts',
+        'dist/index.mjs',
+        isPackaged,
+        nodePath,
+      ),
+      enabled: true,
+      environment: {
+        PERMISSION_API_PORT: String(permissionApiPort),
+        DESKTOP_CONTROL_PORT: String(desktopControlPort),
+      },
       timeout: 30000,
     };
   }
