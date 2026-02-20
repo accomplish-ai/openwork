@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
 import { RegionSelector, ConnectButton, FormError } from '../shared';
-import awsLogo from '/assets/ai-logos/aws.svg';
-import awsLogoDark from '/assets/ai-logos/aws-dark.svg';
+import awsLogo from '/assets/cloud-browsers/aws.svg';
+import awsLogoDark from '/assets/cloud-browsers/aws-dark.svg';
 
 interface CloudBrowserState {
   region: string;
