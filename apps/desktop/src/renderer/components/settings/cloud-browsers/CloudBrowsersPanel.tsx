@@ -7,8 +7,7 @@ import { settingsVariants, settingsTransitions } from '@/lib/animations';
 import { getAccomplish } from '@/lib/accomplish';
 import { ConnectButton, FormError } from '../shared';
 import { BROWSERBASE_REGIONS } from '@accomplish_ai/agent-core/common';
-import browserbaseLogo from '/assets/ai-logos/browserbase.svg';
-import browserbaseLogoLight from '/assets/ai-logos/browserbase-light.svg';
+import browserbaseLogo from '/assets/cloud-browsers/browserbase.svg';
 
 interface BrowserbaseState {
   region: string;
@@ -120,8 +119,7 @@ export function CloudBrowsersPanel() {
       <div className="rounded-lg border border-border bg-muted/30 p-4" data-testid="browserbase-card">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F03603]/10">
-            <img src={browserbaseLogoLight} alt="Browserbase" className="h-6 w-6 dark:hidden" />
-            <img src={browserbaseLogo} alt="Browserbase" className="hidden h-6 w-6 dark:block" />
+            <img src={browserbaseLogo} alt="Browserbase" className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-sm font-medium text-foreground">Browserbase</h3>
