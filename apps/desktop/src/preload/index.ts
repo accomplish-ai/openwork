@@ -468,6 +468,59 @@ const accomplishAPI = {
       ipcRenderer.removeListener('auth:mcp-callback', listener);
     };
   },
+
+  // Messaging Integrations (WhatsApp / Slack / Teams / Telegram)
+  connectWhatsApp: (): Promise<void> => ipcRenderer.invoke('integration:whatsapp:connect'),
+  disconnectWhatsApp: (): Promise<void> => ipcRenderer.invoke('integration:whatsapp:disconnect'),
+  getWhatsAppStatus: (): Promise<{
+    status: string;
+    qrCode: string | null;
+    config: { channelType: string; enabled: boolean; tunnelEnabled: boolean } | null;
+  }> => ipcRenderer.invoke('integration:whatsapp:status'),
+  setIntegrationTunnelEnabled: (channelType: string, enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('integration:set-tunnel-enabled', channelType, enabled),
+  getIntegrationSettings: (): Promise<Record<string, unknown>> =>
+    ipcRenderer.invoke('integration:settings'),
+  onWhatsAppQr: (callback: (data: { qr: string }) => void) => {
+    const listener = (_: unknown, data: { qr: string }) => callback(data);
+    ipcRenderer.on('integration:whatsapp:qr', listener);
+    return () => {
+      ipcRenderer.removeListener('integration:whatsapp:qr', listener);
+    };
+  },
+  onWhatsAppStatusChange: (callback: (data: { status: string }) => void) => {
+    const listener = (_: unknown, data: { status: string }) => callback(data);
+    ipcRenderer.on('integration:whatsapp:status-change', listener);
+    return () => {
+      ipcRenderer.removeListener('integration:whatsapp:status-change', listener);
+    };
+  },
+  onIntegrationTaskCreated: (
+    callback: (data: {
+      taskId: string;
+      channelType: string;
+      channelId: string;
+      senderId: string;
+      senderName?: string;
+      prompt: string;
+    }) => void,
+  ) => {
+    const listener = (
+      _: unknown,
+      data: {
+        taskId: string;
+        channelType: string;
+        channelId: string;
+        senderId: string;
+        senderName?: string;
+        prompt: string;
+      },
+    ) => callback(data);
+    ipcRenderer.on('integration:task-created', listener);
+    return () => {
+      ipcRenderer.removeListener('integration:task-created', listener);
+    };
+  },
 };
 
 // Expose the API to the renderer

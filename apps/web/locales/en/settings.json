@@ -238,6 +238,7 @@
     "providers": "Providers",
     "connectors": "Connectors",
     "skills": "Skills",
+    "integrations": "Integrations",
     "voiceInput": "Voice Input",
     "appearance": "Appearance",
     "about": "About"
@@ -394,5 +395,28 @@
     "tooltipError": "Error during transcription - Click to retry",
     "tooltipDefault": "Click to record or hold Alt to record voice input",
     "processing": "Processing..."
+  },
+  "integrations": {
+    "description": "Connect messaging platforms to trigger and monitor Accomplish tasks remotely.",
+    "comingSoon": "More integrations coming soon — Slack, Microsoft Teams, Telegram",
+    "whatsapp": {
+      "title": "WhatsApp",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "disconnect": "Disconnect",
+      "scanQr": "Scan this QR code with WhatsApp to link your account",
+      "scanQrHelp": "Open WhatsApp on your phone → Settings → Linked Devices → Link a Device, then scan the code above.",
+      "connectedHelp": "Send a message to this WhatsApp account to start a task in Accomplish. Progress updates will be sent back in real-time.",
+      "tunnelLabel": "Enable connecting from WhatsApp",
+      "tunnelDescription": "Opens a secure tunnel so WhatsApp messages can reach this machine remotely.",
+      "enableTunnel": "Enable tunnel",
+      "disableTunnel": "Disable tunnel",
+      "status": {
+        "disconnected": "Disconnected",
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "error": "Error"
+      }
+    }
   }
 }

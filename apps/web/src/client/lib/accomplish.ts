@@ -367,6 +367,29 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // Messaging Integrations (WhatsApp / Slack / Teams / Telegram)
+  connectWhatsApp(): Promise<void>;
+  disconnectWhatsApp(): Promise<void>;
+  getWhatsAppStatus(): Promise<{
+    status: string;
+    qrCode: string | null;
+    config: { channelType: string; enabled: boolean; tunnelEnabled: boolean } | null;
+  }>;
+  setIntegrationTunnelEnabled(channelType: string, enabled: boolean): Promise<void>;
+  getIntegrationSettings(): Promise<Record<string, unknown>>;
+  onWhatsAppQr?(callback: (data: { qr: string }) => void): () => void;
+  onWhatsAppStatusChange?(callback: (data: { status: string }) => void): () => void;
+  onIntegrationTaskCreated?(
+    callback: (data: {
+      taskId: string;
+      channelType: string;
+      channelId: string;
+      senderId: string;
+      senderName?: string;
+      prompt: string;
+    }) => void,
+  ): () => void;
 }
 
 interface AccomplishShell {
