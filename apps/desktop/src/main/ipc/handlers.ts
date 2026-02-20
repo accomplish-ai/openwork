@@ -243,6 +243,7 @@ export function registerIPCHandlers(): void {
 
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.interruptTask(taskId);
+      await stopBrowserPreviewStream(taskId);
     }
   });
 
@@ -547,7 +548,7 @@ export function registerIPCHandlers(): void {
             zaiRegion:
               provider === 'zai'
                 ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) ||
-                  'international'
+                'international'
                 : undefined,
           },
         );

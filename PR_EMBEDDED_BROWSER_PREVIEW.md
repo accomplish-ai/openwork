@@ -43,11 +43,11 @@
 - File: `apps/desktop/src/preload/index.ts`
 
 - Added renderer typings:
-  - File: `apps/desktop/src/renderer/lib/accomplish.ts`
+  - File: `apps/web/src/client/lib/accomplish.ts`
 
 ### Execution UI
 - Added inline browser preview component:
-  - `apps/desktop/src/renderer/components/execution/BrowserPreview.tsx`
+  - `apps/web/src/client/components/execution/BrowserPreview.tsx`
   - Shows URL/status header + live frame image.
   - Supports collapse/expand.
   - Supports pop-out via external browser open.
@@ -57,7 +57,8 @@
   - Resolves `page_name` from tool input (default `main`).
   - Starts stream when task is running and preview is expanded.
   - Stops stream when collapsed, task stops, or page unmounts.
-  - File: `apps/desktop/src/renderer/pages/Execution.tsx`
+  - File: `apps/web/src/client/pages/Execution.tsx`
+
 
 ## Validation Run
 - `pnpm --filter @accomplish/desktop typecheck` ✅
