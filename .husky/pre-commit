@@ -1,1 +1,11 @@
-pnpm lint-staged
+if ! command -v node >/dev/null 2>&1; then
+	echo "node is required for pre-commit hook"
+	exit 1
+fi
+
+if [ ! -f "./node_modules/lint-staged/bin/lint-staged.js" ]; then
+	echo "lint-staged is not installed. Run pnpm install"
+	exit 1
+fi
+
+node ./node_modules/lint-staged/bin/lint-staged.js

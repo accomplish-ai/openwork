@@ -95,6 +95,14 @@ export type {
 } from './types.js';
 
 // -----------------------------------------------------------------------------
+// Messaging Channel Adapters
+// -----------------------------------------------------------------------------
+
+export { WhatsAppAdapter } from './connectors/messaging/index.js';
+
+export type { WhatsAppAdapterOptions } from './connectors/messaging/whatsapp-adapter.js';
+
+// -----------------------------------------------------------------------------
 // OpenCode Module (from ./opencode/)
 // -----------------------------------------------------------------------------
 

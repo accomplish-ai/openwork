@@ -98,6 +98,7 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import { getIntegrationManager } from '../integrations';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -1353,6 +1354,50 @@ export function registerIPCHandlers(): void {
   handle('connectors:disconnect', async (_event, connectorId: string) => {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Integration handlers (WhatsApp / future Slack / Teams / Telegram)
+  // ---------------------------------------------------------------------------
+
+  handle('integration:whatsapp:connect', async (event) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const mgr = getIntegrationManager();
+    mgr.init(window);
+
+    // Forward QR codes & status changes to the renderer
+    mgr.subscribeQrCode((qr: string) => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('integration:whatsapp:qr', { qr });
+      }
+    });
+    mgr.subscribeStatusChange((status: string) => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('integration:whatsapp:status-change', { status });
+      }
+    });
+
+    await mgr.connectWhatsApp();
+  });
+
+  handle('integration:whatsapp:disconnect', async () => {
+    const mgr = getIntegrationManager();
+    await mgr.disconnectWhatsApp();
+  });
+
+  handle('integration:whatsapp:status', async () => {
+    const mgr = getIntegrationManager();
+    return mgr.getWhatsAppStatus();
+  });
+
+  handle('integration:set-tunnel-enabled', async (_event, channelType: string, enabled: boolean) => {
+    const mgr = getIntegrationManager();
+    mgr.setTunnelEnabled(channelType as 'whatsapp' | 'slack' | 'telegram' | 'teams', enabled);
+  });
+
+  handle('integration:settings', async () => {
+    const mgr = getIntegrationManager();
+    return mgr.getIntegrationSettings();
   });
 }
 
