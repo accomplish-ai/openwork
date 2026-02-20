@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
 import { Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
 
@@ -21,6 +22,8 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
     clearHistory,
   } = useTaskStore();
   const favoritesList = Array.isArray(favorites) ? favorites : [];
+  const { t } = useTranslation('history');
+  const { t: tCommon } = useTranslation('common');
 
   useEffect(() => {
     loadTasks();
@@ -37,9 +40,7 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
   if (displayedTasks.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-text-muted">
-          No tasks yet. Start by describing what you want to accomplish.
-        </p>
+        <p className="text-text-muted">{t('noTasks')}</p>
       </div>
     );
   }
@@ -48,17 +49,17 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
     <div>
       {showTitle && (
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-text">Recent Tasks</h2>
+          <h2 className="text-lg font-medium text-text">{t('recentTasks')}</h2>
           {tasks.length > 0 && !limit && (
             <button
               onClick={() => {
-                if (confirm('Are you sure you want to clear all task history?')) {
+                if (confirm(t('confirmClear'))) {
                   clearHistory();
                 }
               }}
               className="text-sm text-text-muted hover:text-danger transition-colors"
             >
-              Clear all
+              {tCommon('buttons.clearAll')}
             </button>
           )}
         </div>
@@ -90,7 +91,7 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
           to="/history"
           className="block mt-4 text-center text-sm text-text-muted hover:text-text transition-colors"
         >
-          View all {tasks.length} tasks
+          {t('viewAll', { count: tasks.length })}
         </Link>
       )}
     </div>
@@ -110,18 +111,21 @@ function TaskHistoryItem({
   onToggleFavorite: () => Promise<void>;
   onDelete: () => void;
 }) {
-  const statusConfig: Record<string, { color: string; label: string }> = {
-    completed: { color: 'bg-success', label: 'Completed' },
-    running: { color: 'bg-primary', label: 'Running' },
-    failed: { color: 'bg-danger', label: 'Failed' },
-    cancelled: { color: 'bg-text-muted', label: 'Cancelled' },
-    pending: { color: 'bg-warning', label: 'Pending' },
-    waiting_permission: { color: 'bg-warning', label: 'Waiting' },
-    interrupted: { color: 'bg-text-muted', label: 'Stopped' },
+  const { t: tCommon } = useTranslation('common');
+  const { t } = useTranslation('history');
+
+  const statusConfig: Record<string, { color: string; labelKey: string }> = {
+    completed: { color: 'bg-success', labelKey: 'status.completed' },
+    running: { color: 'bg-primary', labelKey: 'status.running' },
+    failed: { color: 'bg-danger', labelKey: 'status.failed' },
+    cancelled: { color: 'bg-text-muted', labelKey: 'status.cancelled' },
+    pending: { color: 'bg-warning', labelKey: 'status.pending' },
+    waiting_permission: { color: 'bg-warning', labelKey: 'status.waiting' },
+    interrupted: { color: 'bg-text-muted', labelKey: 'status.stopped' },
   };
 
   const config = statusConfig[task.status] || statusConfig.pending;
-  const timeAgo = getTimeAgo(task.createdAt);
+  const timeAgo = getTimeAgo(task.createdAt, tCommon);
   const canFavorite = COMPLETED_OR_INTERRUPTED.includes(task.status);
 
   return (
@@ -135,7 +139,8 @@ function TaskHistoryItem({
           {task.summary || task.prompt}
         </p>
         <p className="text-xs text-text-muted mt-1">
-          {config.label} · {timeAgo} · {task.messages.length} messages
+          {tCommon(config.labelKey)} · {timeAgo} ·{' '}
+          {tCommon('messages', { count: task.messages.length })}
         </p>
       </div>
       {canFavorite && (
@@ -157,7 +162,7 @@ function TaskHistoryItem({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (confirm('Delete this task?')) {
+          if (confirm(t('confirmDelete'))) {
             onDelete();
           }
         }}
@@ -176,7 +181,10 @@ function TaskHistoryItem({
   );
 }
 
-function getTimeAgo(dateString: string): string {
+function getTimeAgo(
+  dateString: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -184,8 +192,8 @@ function getTimeAgo(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${diffDays}d ago`;
+  if (diffMins < 1) return t('time.justNow');
+  if (diffMins < 60) return t('time.minutesAgo', { count: diffMins });
+  if (diffHours < 24) return t('time.hoursAgo', { count: diffHours });
+  return t('time.daysAgo', { count: diffDays });
 }

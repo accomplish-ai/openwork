@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
 import { X, Loader2, Star } from 'lucide-react';
@@ -15,6 +16,7 @@ interface ConversationListItemProps {
 export function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation('sidebar');
   const isActive = location.pathname === `/execution/${task.id}`;
   const deleteTask = useTaskStore((state) => state.deleteTask);
   const domains = useMemo(() => extractDomains(task), [task]);
@@ -36,7 +38,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!window.confirm('Are you sure you want to delete this task?')) {
+    if (!window.confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -63,9 +65,9 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
       title={task.summary || task.prompt}
       className={cn(
         'w-full text-left p-2 rounded-lg text-xs font-medium transition-colors duration-200',
-        'text-foreground hover:bg-[#E8E8E8] hover:text-foreground',
+        'text-foreground hover:bg-accent hover:text-foreground',
         'flex items-center gap-3 group relative cursor-pointer',
-        isActive && 'bg-[#EDEBE7] text-foreground',
+        isActive && 'bg-accent text-foreground',
       )}
     >
       <span className="flex items-center justify-center shrink-0 w-3 h-3">
@@ -83,7 +85,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
               <span
                 key={domain}
                 className={cn(
-                  'flex items-center p-0.5 rounded-full bg-white shrink-0 relative',
+                  'flex items-center p-0.5 rounded-full bg-card shrink-0 relative',
                   i > 0 && '-ml-1',
                   i === 0 && 'z-30',
                   i === 1 && 'z-20',
@@ -125,7 +127,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
         )}
         <button
           onClick={handleDelete}
-          title="Remove task"
+          title={t('deleteTask')}
           className={cn(
             'absolute right-0 top-1/2 -translate-y-1/2',
             'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto',
@@ -133,7 +135,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
             'p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20',
             'text-zinc-400 hover:text-red-600 dark:hover:text-red-400',
           )}
-          aria-label="Remove task"
+          aria-label={t('deleteTask')}
         >
           <X className="h-3 w-3" />
         </button>
