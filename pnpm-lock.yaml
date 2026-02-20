@@ -56,6 +56,9 @@ importers:
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
+      tree-kill:
+        specifier: ^1.2.2
+        version: 1.2.2
       typescript-eslint:
         specifier: ^8.55.0
         version: 8.56.0(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)
