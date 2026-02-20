@@ -58,6 +58,12 @@ const config: Config = {
         success: {
           DEFAULT: '#019E55',
         },
+        'provider-bg': 'hsl(var(--provider-bg))',
+        'provider-bg-active': 'hsl(var(--provider-bg-active))',
+        'provider-bg-hover': 'hsl(var(--provider-bg-hover))',
+        'provider-border-active': 'hsl(var(--provider-border-active))',
+        'provider-accent': 'hsl(var(--provider-accent))',
+        'provider-accent-text': 'hsl(var(--provider-accent-text))',
       },
       boxShadow: {
         sm: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10)',
