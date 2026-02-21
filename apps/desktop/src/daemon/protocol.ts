@@ -242,7 +242,15 @@ import os from 'os';
  */
 function getAppDataDir(): string {
   if (process.env.ACCOMPLISH_DATA_DIR) {
-    return process.env.ACCOMPLISH_DATA_DIR;
+    const custom = process.env.ACCOMPLISH_DATA_DIR;
+    // Validate and resolve to canonical form to prevent path traversal (CWE-22)
+    if (custom.includes('\0')) {
+      throw new Error('ACCOMPLISH_DATA_DIR contains null bytes');
+    }
+    if (!path.isAbsolute(custom)) {
+      throw new Error(`ACCOMPLISH_DATA_DIR must be an absolute path, got: ${custom}`);
+    }
+    return path.resolve(custom);
   }
 
   switch (process.platform) {

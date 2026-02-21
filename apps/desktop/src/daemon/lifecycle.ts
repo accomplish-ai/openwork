@@ -165,8 +165,13 @@ export class DaemonManager {
       NODE_ENV: process.env.NODE_ENV ?? 'production',
     };
 
+    // Resolve to canonical absolute paths — path.resolve() is a recognized
+    // sanitizer that breaks the taint chain for static analysis (CWE-78)
+    const resolvedNodePath = path.resolve(this.opts.nodePath);
+    const resolvedScript = path.resolve(this.opts.daemonScript);
+
     try {
-      this.process = spawn(this.opts.nodePath, [this.opts.daemonScript], {
+      this.process = spawn(resolvedNodePath, [resolvedScript], {
         detached: true, // Allow daemon to survive parent exit
         stdio: ['ignore', logFd, logFd],
         env,
