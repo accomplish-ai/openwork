@@ -30,7 +30,20 @@ import { getDaemonPidPath, getDaemonSocketPath } from './protocol';
 
 function getDataDir(): string {
   if (process.env.ACCOMPLISH_DATA_DIR) {
-    return process.env.ACCOMPLISH_DATA_DIR;
+    const custom = process.env.ACCOMPLISH_DATA_DIR;
+    // Validate to prevent path traversal (CWE-22)
+    if (custom.includes('\0')) {
+      throw new Error('ACCOMPLISH_DATA_DIR contains null bytes');
+    }
+    if (!path.isAbsolute(custom)) {
+      throw new Error(`ACCOMPLISH_DATA_DIR must be an absolute path, got: ${custom}`);
+    }
+    // Resolve to canonical form and reject traversal
+    const resolved = path.resolve(custom);
+    if (resolved !== path.normalize(custom)) {
+      throw new Error(`ACCOMPLISH_DATA_DIR contains path traversal: ${custom}`);
+    }
+    return resolved;
   }
 
   switch (process.platform) {
@@ -71,7 +84,7 @@ function writePidFile(): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(pidPath, String(process.pid), 'utf-8');
+  fs.writeFileSync(pidPath, String(process.pid), { encoding: 'utf-8', mode: 0o600 });
 }
 
 function removePidFile(): void {
