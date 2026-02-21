@@ -7,7 +7,7 @@
   "main": "dist-electron/main/index.js",
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
-    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
+    "dev": "node scripts/patch-electron-name.cjs && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && node scripts/dev-vite.cjs",
     "dev:clean": "CLEAN_START=1 ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
     "build": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/bundle-skills.cjs",
     "build:electron": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs",

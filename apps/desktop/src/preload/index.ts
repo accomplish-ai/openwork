@@ -5,11 +5,104 @@
  * for communicating with the Electron main process via IPC.
  */
 
+console.log('[Preload] Script starting...');
+
 import { contextBridge, ipcRenderer } from 'electron';
 import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
 
+console.log('[Preload] Imports complete');
+
+import type {
+  IntegrationPlatform,
+  QRCodeData as IntegrationQRCodeData,
+} from '@accomplish_ai/agent-core';
+
+// Interface definition for the Accomplish API
+interface IAccomplishAPI {
+  // App info
+  getVersion(): Promise<string>;
+  getPlatform(): Promise<string>;
+  openExternal(url: string): Promise<void>;
+  startTask(config: { description: string }): Promise<unknown>;
+  cancelTask(taskId: string): Promise<void>;
+  interruptTask(taskId: string): Promise<void>;
+  getTask(taskId: string): Promise<unknown>;
+  listTasks(): Promise<unknown[]>;
+  deleteTask(taskId: string): Promise<void>;
+  clearTaskHistory(): Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getTodosForTask(taskId: string): Promise<any>;
+  respondToPermission(response: { taskId: string; allowed: boolean }): Promise<void>;
+  resumeSession(sessionId: string, prompt: string, taskId?: string): Promise<unknown>;
+  getApiKeys(): Promise<unknown[]>;
+  addApiKey(provider: ProviderType, key: string, label?: string): Promise<unknown>;
+  removeApiKey(id: string): Promise<void>;
+  getDebugMode(): Promise<boolean>;
+  setDebugMode(enabled: boolean): Promise<void>;
+  getTheme(): Promise<string>;
+  setTheme(theme: string): Promise<void>;
+  onThemeChange(callback: (data: { theme: string; resolved: string }) => void): () => void;
+  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }>;
+  getOpenAiBaseUrl(): Promise<string>;
+  setOpenAiBaseUrl(baseUrl: string): Promise<void>;
+  getOpenAiOauthStatus(): Promise<{ connected: boolean; expires?: number }>;
+  loginOpenAiWithChatGpt(): Promise<{ ok: boolean; openedUrl?: string }>;
+  hasApiKey(): Promise<boolean>;
+  setApiKey(key: string): Promise<void>;
+  getApiKey(): Promise<string | null>;
+  validateApiKey(key: string): Promise<{ valid: boolean; error?: string }>;
+  validateApiKeyForProvider(
+    provider: string,
+    key: string,
+    options?: Record<string, unknown>,
+  ): Promise<{ valid: boolean; error?: string }>;
+  clearApiKey(): Promise<void>;
+  // Onboarding
+  getOnboardingComplete(): Promise<boolean>;
+  setOnboardingComplete(complete: boolean): Promise<void>;
+  // Skills
+  listSkills(): Promise<Skill[]>;
+  getSkill(skillId: string): Promise<Skill>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createSkill(config: any): Promise<Skill>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateSkill(skillId: string, config: any): Promise<Skill>;
+  deleteSkill(skillId: string): Promise<void>;
+  // Settings/workspace directory
+  getWorkspaceDir(): Promise<string>;
+  isInitialized(): Promise<boolean>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getModelCodeConfig(): Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setModelCodeConfig(config: any): Promise<void>;
+  // MCP
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerMcpConnector(config: any): Promise<any>;
+  getMcpConnectorStatus(name: string): Promise<string>;
+  getMcpConnectors(): Promise<McpConnector[]>;
+  requestMcpResource(name: string, uri: string, mimeType?: string): Promise<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  callMcpTool(name: string, toolName: string, args: Record<string, any>): Promise<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onAuthMcpCallback(callback: (data: any) => void): () => void;
+  // Platform integrations
+  integrations: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    list(): Promise<any[]>;
+    connect(platform: IntegrationPlatform | string): Promise<IntegrationQRCodeData>;
+    disconnect(platform: IntegrationPlatform | string): Promise<void>;
+    status(platform: IntegrationPlatform | string): Promise<string>;
+    setupTunnel(platform: IntegrationPlatform | string): Promise<unknown>;
+    toggleTunnel(platform: IntegrationPlatform | string, enabled: boolean): Promise<void>;
+    onQRUpdate(
+      callback: (event: { platform: string; data: IntegrationQRCodeData }) => void,
+    ): () => void;
+  };
+}
+
 // Expose the accomplish API to the renderer
-const accomplishAPI = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const accomplishAPI: any = {
   // App info
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   getPlatform: (): Promise<string> => ipcRenderer.invoke('app:platform'),
@@ -468,21 +561,130 @@ const accomplishAPI = {
       ipcRenderer.removeListener('auth:mcp-callback', listener);
     };
   },
+
+  // Platform integrations (WhatsApp, Slack, Teams, Telegram)
+  integrations: {
+    list: async (): Promise<unknown[]> => {
+      try {
+        console.log('[Preload IPC] Calling integrations:list');
+        const result = await ipcRenderer.invoke('integrations:list');
+        console.log('[Preload IPC] integrations:list result:', result);
+        return result;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:list error:', err);
+        throw err;
+      }
+    },
+    connect: async (platform: string): Promise<IntegrationQRCodeData> => {
+      try {
+        console.log('[Preload IPC] Calling integrations:connect with platform:', platform);
+        const result = await ipcRenderer.invoke('integrations:connect', platform);
+        console.log('[Preload IPC] integrations:connect result:', result);
+        return result as IntegrationQRCodeData;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:connect error:', err);
+        throw err;
+      }
+    },
+    disconnect: async (platform: string): Promise<void> => {
+      try {
+        console.log('[Preload IPC] Calling integrations:disconnect with platform:', platform);
+        const result = await ipcRenderer.invoke('integrations:disconnect', platform);
+        console.log('[Preload IPC] integrations:disconnect result:', result);
+        return result;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:disconnect error:', err);
+        throw err;
+      }
+    },
+    status: async (platform: string): Promise<string> => {
+      try {
+        console.log('[Preload IPC] Calling integrations:status with platform:', platform);
+        const result = await ipcRenderer.invoke('integrations:status', platform);
+        console.log('[Preload IPC] integrations:status result:', result);
+        return result;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:status error:', err);
+        throw err;
+      }
+    },
+    setupTunnel: async (platform: string): Promise<unknown> => {
+      try {
+        console.log('[Preload IPC] Calling integrations:setupTunnel with platform:', platform);
+        const result = await ipcRenderer.invoke('integrations:setupTunnel', platform);
+        console.log('[Preload IPC] integrations:setupTunnel result:', result);
+        return result;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:setupTunnel error:', err);
+        throw err;
+      }
+    },
+    toggleTunnel: async (platform: string, enabled: boolean): Promise<void> => {
+      try {
+        console.log(
+          '[Preload IPC] Calling integrations:toggleTunnel with platform:',
+          platform,
+          'enabled:',
+          enabled,
+        );
+        const result = await ipcRenderer.invoke('integrations:toggleTunnel', platform, enabled);
+        console.log('[Preload IPC] integrations:toggleTunnel result:', result);
+        return result;
+      } catch (err) {
+        console.error('[Preload IPC] integrations:toggleTunnel error:', err);
+        throw err;
+      }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onQRUpdate: (callback: (event: { platform: string; data: any }) => void): (() => void) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const listener = (_event: any, qrEvent: { platform: string; data: any }) => {
+        callback(qrEvent);
+      };
+      ipcRenderer.on('integration:qr', listener);
+      return () => {
+        ipcRenderer.removeListener('integration:qr', listener);
+      };
+    },
+  },
 };
 
 // Expose the API to the renderer
-contextBridge.exposeInMainWorld('accomplish', accomplishAPI);
+try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contextBridge.exposeInMainWorld('accomplish', accomplishAPI as any);
+} catch (err) {
+  console.error('[Preload] Failed to expose window.accomplish:', err);
+  // Fallback: expose stub object so renderer code fails with clear messages
+  try {
+    const unavailable = () => Promise.reject(new Error('Accomplish API unavailable'));
+    contextBridge.exposeInMainWorld('accomplish', {
+      integrations: {
+        list: unavailable,
+        connect: unavailable,
+        disconnect: unavailable,
+        status: unavailable,
+        setupTunnel: unavailable,
+        toggleTunnel: unavailable,
+        onQRUpdate: () => () => {},
+      },
+    });
+  } catch (err2) {
+    console.error('[Preload] Failed to expose fallback window.accomplish:', err2);
+  }
+}
 
 // Also expose shell info for compatibility checks
-const packageVersion = process.env.npm_package_version;
-if (!packageVersion) {
-  throw new Error('Package version is not defined. Build is misconfigured.');
+try {
+  const packageVersion = process.env.npm_package_version || '0.0.0-dev';
+  contextBridge.exposeInMainWorld('accomplishShell', {
+    version: packageVersion,
+    platform: process.platform,
+    isElectron: true,
+  });
+} catch (err) {
+  console.error('[Preload] Failed to expose window.accomplishShell:', err);
 }
-contextBridge.exposeInMainWorld('accomplishShell', {
-  version: packageVersion,
-  platform: process.platform,
-  isElectron: true,
-});
 
 // Type declarations
-export type AccomplishAPI = typeof accomplishAPI;
+export type AccomplishAPI = IAccomplishAPI;

@@ -9,5 +9,8 @@
     "express": "^4.21.0",
     "hono": "^4.11.1",
     "playwright": "npm:rebrowser-playwright@^1.52.0"
+  },
+  "devDependencies": {
+    "@accomplish/desktop": "workspace:*"
   }
 }
