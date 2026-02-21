@@ -50,6 +50,7 @@ export function HomePage() {
   // Build use case examples from translations
   const useCaseExamples = useMemo(() => {
     return USE_CASE_KEYS.map(({ key, image }) => ({
+      key,
       title: t(`useCases.${key}.title`),
       description: t(`useCases.${key}.description`),
       prompt: t(`useCases.${key}.prompt`),
@@ -218,7 +219,7 @@ export function HomePage() {
                         >
                           {useCaseExamples.map((example, index) => (
                             <motion.button
-                              key={index}
+                              key={example.key}
                               data-testid={`home-example-${index}`}
                               variants={staggerItem}
                               transition={springs.gentle}

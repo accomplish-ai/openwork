@@ -92,11 +92,11 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
     const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts.map((part, i) =>
       part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-500/40 text-yellow-200 rounded px-0.5">
+        <mark key={`${i}-${part}`} className="bg-yellow-500/40 text-yellow-200 rounded px-0.5">
           {part}
         </mark>
       ) : (
-        part
+        <span key={`${i}-${part}`}>{part}</span>
       ),
     );
   }, []);
@@ -265,7 +265,7 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs }: DebugPanelProps) 
                   <div className="space-y-1">
                     {filteredDebugLogs.map((log, index) => (
                       <div
-                        key={index}
+                        key={`${log.timestamp}-${log.type}-${log.message}`}
                         ref={(el) => {
                           if (el) debugLogRefs.current.set(index, el);
                           else debugLogRefs.current.delete(index);
