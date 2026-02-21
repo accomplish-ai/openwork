@@ -24,6 +24,9 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  CloudProviderAccount,
+  CloudBrowserProviderId,
+  CloudBrowserConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -367,6 +370,20 @@ interface AccomplishAPI {
   completeConnectorOAuth(state: string, code: string): Promise<McpConnector>;
   disconnectConnector(connectorId: string): Promise<void>;
   onMcpAuthCallback?(callback: (url: string) => void): () => void;
+  onMcpAuthCallback?(callback: (url: string) => void): () => void;
+
+  // Cloud Providers
+  getAllCloudProviders(): Promise<CloudProviderAccount[]>;
+  getCloudProvider(providerId: CloudBrowserProviderId): Promise<CloudProviderAccount | null>;
+  saveCloudProviderConfig(
+    providerId: CloudBrowserProviderId,
+    config: CloudBrowserConfig['config'],
+  ): Promise<void>;
+  setCloudProviderEnabled(providerId: CloudBrowserProviderId, enabled: boolean): Promise<void>;
+  validateCloudProvider(
+    providerId: CloudBrowserProviderId,
+    config: CloudBrowserConfig['config'],
+  ): Promise<boolean>;
 }
 
 interface AccomplishShell {
@@ -429,6 +446,21 @@ export function getAccomplish() {
     detectVertexProject: () => window.accomplish!.detectVertexProject(),
 
     listVertexProjects: () => window.accomplish!.listVertexProjects(),
+
+    // Cloud Providers
+    getAllCloudProviders: () => window.accomplish!.getAllCloudProviders(),
+    getCloudProvider: (providerId: CloudBrowserProviderId) =>
+      window.accomplish!.getCloudProvider(providerId),
+    saveCloudProviderConfig: (
+      providerId: CloudBrowserProviderId,
+      config: CloudBrowserConfig['config'],
+    ) => window.accomplish!.saveCloudProviderConfig(providerId, config),
+    setCloudProviderEnabled: (providerId: CloudBrowserProviderId, enabled: boolean) =>
+      window.accomplish!.setCloudProviderEnabled(providerId, enabled),
+    validateCloudProvider: (
+      providerId: CloudBrowserProviderId,
+      config: CloudBrowserConfig['config'],
+    ) => window.accomplish!.validateCloudProvider(providerId, config),
   };
 }
 

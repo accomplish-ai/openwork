@@ -61,6 +61,7 @@
     "@aws-sdk/client-bedrock": "^3.971.0",
     "@aws-sdk/credential-providers": "^3.971.0",
     "@azure/identity": "^4.13.0",
+    "@browserbasehq/sdk": "^2.6.0",
     "better-sqlite3": "catalog:",
     "gray-matter": "^4.0.3",
     "node-pty": "catalog:",

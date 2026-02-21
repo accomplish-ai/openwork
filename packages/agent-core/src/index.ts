@@ -168,6 +168,9 @@ export {
 export { fetchProviderModels } from './providers/fetch-models.js';
 export type { FetchProviderModelsResult } from './providers/fetch-models.js';
 
+// Cloud Browser Validation
+export { validateBrowserbaseConfig } from './providers/browserbase.js';
+
 // -----------------------------------------------------------------------------
 // Utils Module (from ./utils/)
 // -----------------------------------------------------------------------------
@@ -315,6 +318,14 @@ export {
   getActiveProvider,
   getDefaultModelForProvider,
 } from './common/types/providerSettings.js';
+
+// Cloud Provider types
+export type {
+  CloudBrowserProviderId,
+  BrowserbaseConfig,
+  CloudBrowserConfig,
+  CloudProviderAccount,
+} from './common/types/cloudProviders.js';
 
 // Auth types
 export type {

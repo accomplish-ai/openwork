@@ -9,8 +9,13 @@ export interface BrowserServerConfig {
   devBrowserPort: number;
 }
 
+import { BrowserFactory } from '../factories/BrowserFactory.js';
+
 function buildNodeEnvironment(bundledNodeBinPath?: string): NodeJS.ProcessEnv {
   const spawnEnv: NodeJS.ProcessEnv = { ...process.env };
+
+  const browserEnv = BrowserFactory.getBrowserConnectionEnv();
+  Object.assign(spawnEnv, browserEnv);
 
   if (bundledNodeBinPath) {
     const delimiter = process.platform === 'win32' ? ';' : ':';

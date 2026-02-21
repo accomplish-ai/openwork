@@ -22,7 +22,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
-  base: './',
+  base: '/',
   build: {
     outDir: 'dist/client',
     emptyOutDir: true,

@@ -6,7 +6,15 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import type {
+  ProviderType,
+  Skill,
+  TodoItem,
+  McpConnector,
+  CloudProviderAccount,
+  CloudBrowserProviderId,
+  CloudBrowserConfig,
+} from '@accomplish_ai/agent-core';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -468,6 +476,22 @@ const accomplishAPI = {
       ipcRenderer.removeListener('auth:mcp-callback', listener);
     };
   },
+
+  // Cloud Providers
+  getAllCloudProviders: (): Promise<CloudProviderAccount[]> =>
+    ipcRenderer.invoke('cloud-provider:get-all'),
+  getCloudProvider: (providerId: string): Promise<CloudProviderAccount | null> =>
+    ipcRenderer.invoke('cloud-provider:get', providerId),
+  saveCloudProviderConfig: (
+    providerId: CloudBrowserProviderId,
+    config: CloudBrowserConfig,
+  ): Promise<void> => ipcRenderer.invoke('cloud-provider:save', providerId, config),
+  setCloudProviderEnabled: (providerId: CloudBrowserProviderId, enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('cloud-provider:set-enabled', providerId, enabled),
+  validateCloudProvider: (
+    providerId: CloudBrowserProviderId,
+    config: CloudBrowserConfig,
+  ): Promise<boolean> => ipcRenderer.invoke('cloud-provider:validate', providerId, config),
 };
 
 // Expose the API to the renderer
