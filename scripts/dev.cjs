@@ -1,5 +1,27 @@
 const { spawn, execSync } = require('child_process');
 const path = require('path');
+const pnpmCmd = process.platform === 'win32'
+  ? path.join(process.env.APPDATA, 'npm', 'pnpm.cmd')
+  : 'pnpm';
+const isWin = process.platform === 'win32';
+
+function runPnpm(args, options = {}) {
+  if (isWin) {
+    
+   return spawn('cmd.exe', ['/d', '/s', '/c', `"${pnpmCmd}" ${args.join(' ')}`], {
+      stdio: 'inherit',
+      env: options.env || process.env,
+      windowsVerbatimArguments: true,
+      detached: true,
+    });
+  }
+
+  return spawn('pnpm', args, {
+    stdio: 'inherit',
+    env: options.env || process.env,
+    detached: true,
+  });
+}
 
 try {
   execSync('lsof -ti:5173 | xargs kill -9', { stdio: 'ignore' });
@@ -11,11 +33,8 @@ try {
 const env = { ...process.env };
 const isClean = process.env.CLEAN_START === '1';
 
-const web = spawn('pnpm', ['-F', '@accomplish/web', 'dev'], {
-  stdio: 'inherit',
-  env,
-  detached: true,
-});
+const web = runPnpm(['-F', '@accomplish/web', 'dev'], { env });
+
 
 const waitOn = require(path.join(__dirname, '..', 'node_modules', 'wait-on'));
 let electron;
@@ -23,11 +42,7 @@ let electron;
 waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
   .then(() => {
     const electronCmd = isClean ? 'dev:clean' : 'dev';
-    electron = spawn('pnpm', ['-F', '@accomplish/desktop', electronCmd], {
-      stdio: 'inherit',
-      env,
-      detached: true,
-    });
+    electron = runPnpm(['-F', '@accomplish/desktop', electronCmd], { env });
     electron.on('exit', cleanup);
   })
   .catch((err) => {
