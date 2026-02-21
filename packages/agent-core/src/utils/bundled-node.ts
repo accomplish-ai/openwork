@@ -45,7 +45,10 @@ export function getNodePath(config: PlatformConfig): string {
     return bundled.nodePath;
   }
   if (config.isPackaged) {
-    console.warn('[Bundled Node] WARNING: Bundled Node.js not found, falling back to system node');
+    throw new Error(
+      `[Bundled Node] Bundled Node.js not found at ${bundled?.nodePath ?? '(unknown path)'}. ` +
+        'Rebuild the packaged app to restore runtime binaries.',
+    );
   }
   return 'node';
 }
@@ -56,7 +59,10 @@ export function getNpmPath(config: PlatformConfig): string {
     return bundled.npmPath;
   }
   if (config.isPackaged) {
-    console.warn('[Bundled Node] WARNING: Bundled npm not found, falling back to system npm');
+    throw new Error(
+      `[Bundled Node] Bundled npm not found at ${bundled?.npmPath ?? '(unknown path)'}. ` +
+        'Rebuild the packaged app to restore runtime binaries.',
+    );
   }
   return 'npm';
 }
@@ -67,7 +73,10 @@ export function getNpxPath(config: PlatformConfig): string {
     return bundled.npxPath;
   }
   if (config.isPackaged) {
-    console.warn('[Bundled Node] WARNING: Bundled npx not found, falling back to system npx');
+    throw new Error(
+      `[Bundled Node] Bundled npx not found at ${bundled?.npxPath ?? '(unknown path)'}. ` +
+        'Rebuild the packaged app to restore runtime binaries.',
+    );
   }
   return 'npx';
 }

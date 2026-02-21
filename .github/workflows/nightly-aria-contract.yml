@@ -1,0 +1,51 @@
+name: ARIA Contract Test
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  aria-contract:
+    name: ARIA MCP Snapshot Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm -F @accomplish/desktop exec playwright install chromium --with-deps
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Build MCP dist artifacts
+        run: pnpm -F @accomplish/desktop build:mcp-tools:dev
+
+      - name: Run ARIA MCP contract test
+        run: pnpm -F @accomplish/desktop exec vitest run __tests__/integration/telemetry/aria-mcp-snapshot.integration.test.ts --config vitest.integration.config.ts
+
+      - name: Run ARIA snapshot direct invocation contract test
+        run: pnpm -F @accomplish/desktop exec vitest run __tests__/integration/telemetry/aria-snapshot-contract.integration.test.ts --config vitest.integration.config.ts

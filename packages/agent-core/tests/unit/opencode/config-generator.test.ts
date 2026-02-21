@@ -15,6 +15,13 @@ describe('ConfigGenerator', () => {
   let testDir: string;
   let mcpToolsPath: string;
   let userDataPath: string;
+  const requiredMcpDistEntries = [
+    ['file-permission', 'dist/index.mjs'],
+    ['ask-user-question', 'dist/index.mjs'],
+    ['complete-task', 'dist/index.mjs'],
+    ['start-task', 'dist/index.mjs'],
+    ['dev-browser-mcp', 'dist/index.mjs'],
+  ] as const;
 
   beforeEach(() => {
     testDir = path.join(
@@ -27,6 +34,12 @@ describe('ConfigGenerator', () => {
     // Create directories
     fs.mkdirSync(mcpToolsPath, { recursive: true });
     fs.mkdirSync(userDataPath, { recursive: true });
+
+    for (const [toolName, relEntry] of requiredMcpDistEntries) {
+      const entryPath = path.join(mcpToolsPath, toolName, relEntry);
+      fs.mkdirSync(path.dirname(entryPath), { recursive: true });
+      fs.writeFileSync(entryPath, `// ${toolName} bundled entry`);
+    }
 
     // Suppress console output
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -378,17 +391,16 @@ describe('ConfigGenerator', () => {
     });
 
     it('should use bundled MCP entry when packaged and dist exists', () => {
-      // Create dist file
-      const mcpDir = path.join(mcpToolsPath, 'file-permission', 'dist');
-      fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      const bundledNodeBinPath = path.join(testDir, 'bundled-node', 'bin');
+      fs.mkdirSync(bundledNodeBinPath, { recursive: true });
+      fs.writeFileSync(path.join(bundledNodeBinPath, 'node'), '');
 
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
         userDataPath,
         isPackaged: true,
-        bundledNodeBinPath: '/bundled/node/bin',
+        bundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -399,7 +411,19 @@ describe('ConfigGenerator', () => {
       expect(command?.[1]).toContain('dist/index.mjs');
     });
 
-    it('should use tsx for MCP entry when not packaged', () => {
+    it('should throw when bundled node is missing in packaged mode', () => {
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: true,
+        bundledNodeBinPath: path.join(testDir, 'missing-bundled-node'),
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing bundled Node\.js executable/);
+    });
+
+    it('should use node and dist MCP entry when not packaged', () => {
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
@@ -410,8 +434,21 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       const command = result.mcpServers['file-permission'].command;
-      // Should use npx tsx or bundled tsx
-      expect(command?.some((arg) => arg.includes('tsx') || arg.includes('npx'))).toBe(true);
+      expect(command?.[0]).toBe('node');
+      expect(command?.[1]).toContain('dist/index.mjs');
+    });
+
+    it('should throw when MCP dist entry is missing', () => {
+      fs.rmSync(path.join(mcpToolsPath, 'file-permission', 'dist', 'index.mjs'));
+
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing MCP dist entry/);
     });
   });
 

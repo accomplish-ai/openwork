@@ -117,9 +117,8 @@ Use AskUserQuestion tool for user interaction.`,
               type: 'local',
               enabled: true,
               command: [
-                'npx',
-                'tsx',
-                actualPath.join(options.mcpToolsPath, 'file-permission', 'src', 'index.ts'),
+                'node',
+                actualPath.join(options.mcpToolsPath, 'file-permission', 'dist', 'index.mjs'),
               ],
               environment: {
                 PERMISSION_API_PORT: String(options.permissionApiPort),
@@ -272,8 +271,11 @@ describe('OpenCode Config Generator Integration', () => {
     // path.join(tempAppDir, '..', '..', 'packages', 'agent-core', 'mcp-tools') now resolves correctly
     const mcpToolsDir = path.join(tempMonorepoRoot, 'packages', 'agent-core', 'mcp-tools');
     fs.mkdirSync(mcpToolsDir, { recursive: true });
-    fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'src'), { recursive: true });
-    fs.writeFileSync(path.join(mcpToolsDir, 'file-permission', 'src', 'index.ts'), '// mock file');
+    fs.mkdirSync(path.join(mcpToolsDir, 'file-permission', 'dist'), { recursive: true });
+    fs.writeFileSync(
+      path.join(mcpToolsDir, 'file-permission', 'dist', 'index.mjs'),
+      '// mock file',
+    );
 
     // Update mock to use temp directories
     mockApp.getAppPath.mockReturnValue(tempAppDir);
@@ -404,8 +406,8 @@ describe('OpenCode Config Generator Integration', () => {
       expect(filePermission).toBeDefined();
       expect(filePermission.type).toBe('local');
       expect(filePermission.enabled).toBe(true);
-      expect(filePermission.command[0]).toBe('npx');
-      expect(filePermission.command[1]).toBe('tsx');
+      expect(filePermission.command[0]).toBe('node');
+      expect(filePermission.command[1]).toContain('dist/index.mjs');
       expect(filePermission.environment.PERMISSION_API_PORT).toBe('9226');
     });
 

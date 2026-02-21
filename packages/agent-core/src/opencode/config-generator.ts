@@ -27,7 +27,6 @@ export interface ConfigGeneratorOptions {
   apiKey?: string;
   skills?: Skill[];
   bundledNodeBinPath?: string;
-  bundledTsxPath?: string;
   isPackaged: boolean;
   providerConfigs?: ProviderConfig[];
   azureFoundryToken?: string;
@@ -282,49 +281,24 @@ The \`original_request_summary\` field forces you to re-read the request - use t
 </behavior>
 `;
 
-function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platform): string[] {
-  const tsxBin = platform === 'win32' ? 'tsx.cmd' : 'tsx';
-  const candidates = [
-    path.join(mcpToolsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      console.log('[OpenCode Config] Using bundled tsx:', candidate);
-      return [candidate];
-    }
-  }
-
-  console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
-  return ['npx', 'tsx'];
-}
-
 function resolveMcpCommand(
-  tsxCommand: string[],
   mcpToolsPath: string,
   mcpName: string,
-  sourceRelPath: string,
   distRelPath: string,
-  isPackaged: boolean,
-  nodePath?: string,
+  nodePath: string,
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
-  const sourcePath = path.join(mcpDir, sourceRelPath);
   const distPath = path.join(mcpDir, distRelPath);
 
-  // Use compiled dist entry when packaged OR when source files don't exist
-  // (e.g. agent-core installed from npm where only dist/ is published)
-  if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
-    const nodeExe = nodePath || 'node';
-    console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
-    return [nodeExe, distPath];
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `[OpenCode Config] Missing MCP dist entry: ${distPath}. ` +
+        'Run "pnpm -F @accomplish/desktop build:mcp-tools:dev" before launching.',
+    );
   }
 
-  console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
-  return [...tsxCommand, sourcePath];
+  console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
+  return [nodePath, distPath];
 }
 
 export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig {
@@ -377,23 +351,31 @@ Use empty array [] if no skills apply to your task.
     systemPrompt += skillsSection;
   }
 
-  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath, platform);
-
   const nodePath = bundledNodeBinPath
     ? path.join(bundledNodeBinPath, platform === 'win32' ? 'node.exe' : 'node')
     : undefined;
+  if (isPackaged) {
+    if (!nodePath) {
+      throw new Error(
+        '[OpenCode Config] Missing bundled Node.js path in packaged mode; cannot launch MCP tools.',
+      );
+    }
+    if (!fs.existsSync(nodePath)) {
+      throw new Error(
+        `[OpenCode Config] Missing bundled Node.js executable in packaged mode: ${nodePath}`,
+      );
+    }
+  }
+  const nodeExe = nodePath || 'node';
 
   const mcpServers: Record<string, McpServerConfig> = {
     'file-permission': {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand,
         mcpToolsPath,
         'file-permission',
-        'src/index.ts',
         'dist/index.mjs',
-        isPackaged,
-        nodePath,
+        nodeExe,
       ),
       enabled: true,
       environment: {
@@ -404,13 +386,10 @@ Use empty array [] if no skills apply to your task.
     'ask-user-question': {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand,
         mcpToolsPath,
         'ask-user-question',
-        'src/index.ts',
         'dist/index.mjs',
-        isPackaged,
-        nodePath,
+        nodeExe,
       ),
       enabled: true,
       environment: {
@@ -421,13 +400,10 @@ Use empty array [] if no skills apply to your task.
     'complete-task': {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand,
         mcpToolsPath,
         'complete-task',
-        'src/index.ts',
         'dist/index.mjs',
-        isPackaged,
-        nodePath,
+        nodeExe,
       ),
       enabled: true,
       timeout: 30000,
@@ -435,13 +411,10 @@ Use empty array [] if no skills apply to your task.
     'start-task': {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand,
         mcpToolsPath,
         'start-task',
-        'src/index.ts',
         'dist/index.mjs',
-        isPackaged,
-        nodePath,
+        nodeExe,
       ),
       enabled: true,
       timeout: 30000,
@@ -470,13 +443,10 @@ Use empty array [] if no skills apply to your task.
     mcpServers['dev-browser-mcp'] = {
       type: 'local',
       command: resolveMcpCommand(
-        tsxCommand,
         mcpToolsPath,
         'dev-browser-mcp',
-        'src/index.ts',
         'dist/index.mjs',
-        isPackaged,
-        nodePath,
+        nodeExe,
       ),
       enabled: true,
       ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),

@@ -238,7 +238,7 @@ describe('Bundled Node.js Utilities', () => {
       expect(result).not.toBe('node'); // Should be full path
     });
 
-    it('should fallback to "node" when bundled not found in packaged app', async () => {
+    it('should throw when bundled node is missing in packaged mode', async () => {
       // Arrange
       mockApp.isPackaged = true;
       const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
@@ -250,19 +250,8 @@ describe('Bundled Node.js Utilities', () => {
       vi.resetModules();
       const module = await import('@main/utils/bundled-node');
 
-      // Spy on console.warn
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Act
-      const result = module.getNodePath();
-
       // Assert
-      expect(result).toBe('node');
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('WARNING: Bundled Node.js not found'),
-      );
-
-      warnSpy.mockRestore();
+      expect(() => module.getNodePath()).toThrow(/Bundled Node\.js not found/);
     });
   });
 
@@ -298,7 +287,7 @@ describe('Bundled Node.js Utilities', () => {
       expect(result).not.toBe('npm'); // Should be full path
     });
 
-    it('should fallback to "npm" when bundled not found', async () => {
+    it('should throw when bundled npm is missing in packaged mode', async () => {
       // Arrange
       mockApp.isPackaged = true;
       const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
@@ -310,14 +299,8 @@ describe('Bundled Node.js Utilities', () => {
       vi.resetModules();
       const module = await import('@main/utils/bundled-node');
 
-      // Suppress console.warn
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Act
-      const result = module.getNpmPath();
-
       // Assert
-      expect(result).toBe('npm');
+      expect(() => module.getNpmPath()).toThrow(/Bundled npm not found/);
     });
   });
 
@@ -353,7 +336,7 @@ describe('Bundled Node.js Utilities', () => {
       expect(result).not.toBe('npx'); // Should be full path
     });
 
-    it('should fallback to "npx" when bundled not found', async () => {
+    it('should throw when bundled npx is missing in packaged mode', async () => {
       // Arrange
       mockApp.isPackaged = true;
       const resourcesPath = '/Applications/Accomplish.app/Contents/Resources';
@@ -365,14 +348,8 @@ describe('Bundled Node.js Utilities', () => {
       vi.resetModules();
       const module = await import('@main/utils/bundled-node');
 
-      // Suppress console.warn
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Act
-      const result = module.getNpxPath();
-
       // Assert
-      expect(result).toBe('npx');
+      expect(() => module.getNpxPath()).toThrow(/Bundled npx not found/);
     });
   });
 
