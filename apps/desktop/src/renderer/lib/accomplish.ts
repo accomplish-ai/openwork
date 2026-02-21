@@ -198,14 +198,6 @@ interface AccomplishAPI {
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
 
-  // Browser preview
-  onBrowserFrame?(callback: (frame: { data: string; timestamp?: number }) => void): () => void;
-  onBrowserNavigate?(callback: (event: { url: string }) => void): () => void;
-  onBrowserStatus?(callback: (event: { loading: boolean }) => void): () => void;
-  startScreencast?(pageName?: string): Promise<{ success: boolean; error?: string }>;
-  stopScreencast?(): Promise<{ stopped: boolean }>;
-  getScreencastStatus?(): Promise<{ active: boolean }>;
-
   // Speech-to-Text
   speechIsConfigured(): Promise<boolean>;
   speechGetConfig(): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }>;

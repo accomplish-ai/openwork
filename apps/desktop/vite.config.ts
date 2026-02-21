@@ -32,6 +32,23 @@ export default defineConfig(() => ({
         },
       },
       {
+        // Daemon process entry (always-on background service)
+        entry: 'src/daemon/index.ts',
+        vite: {
+          resolve: {
+            alias: {
+              '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),
+            },
+          },
+          build: {
+            outDir: 'dist-electron/daemon',
+            rollupOptions: {
+              external: ['electron', 'electron-store', 'keytar', 'node-pty', 'better-sqlite3'],
+            },
+          },
+        },
+      },
+      {
         // Preload script for local renderer
         entry: 'src/preload/index.ts',
         onstart({ reload }) {

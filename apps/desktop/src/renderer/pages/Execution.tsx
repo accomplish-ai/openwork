@@ -15,8 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag, Video } from 'lucide-react';
-import { BrowserPreview } from '../components/BrowserPreview';
+import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Bug, ChevronUp, ChevronDown, Trash2, Check, Copy, Globe, MousePointer2, Type, Image, Keyboard, ArrowUpDown, ListChecks, Layers, Highlighter, ListOrdered, Upload, Move, Frame, ShieldCheck, MessageCircleQuestion, CheckCircle, Lightbulb, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { StreamingText } from '../components/ui/streaming-text';
@@ -96,7 +95,6 @@ const TOOL_PROGRESS_MAP: Record<string, { label: string; icon: typeof FileText }
   browser_is_enabled: { label: 'Checking state', icon: Search },
   browser_is_checked: { label: 'Checking state', icon: Search },
   browser_iframe: { label: 'Switching frame', icon: Frame },
-  browser_screencast: { label: 'Streaming', icon: Video },
   browser_canvas_type: { label: 'Typing in canvas', icon: Type },
   browser_script: { label: 'Browser Actions', icon: Globe },
   // Utility MCP tools
@@ -962,9 +960,6 @@ export default function ExecutionPage() {
                 )
               )}
             </AnimatePresence>
-
-            {/* Live browser preview — inline in chat flow */}
-            <BrowserPreview currentTool={currentTool} />
 
             <div ref={messagesEndRef} />
 

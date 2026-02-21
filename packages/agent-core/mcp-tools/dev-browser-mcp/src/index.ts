@@ -1456,13 +1456,6 @@ interface ScriptAction {
   skipIfNotFound?: boolean;
 }
 
-interface BrowserScreencastInput {
-  action: 'start' | 'stop';
-  page_name?: string;
-  quality?: number;
-  everyNthFrame?: number;
-}
-
 interface BrowserScriptInput {
   actions: ScriptAction[];
   page_name?: string;
@@ -1601,33 +1594,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
         },
         required: ['url'],
-      },
-    },
-    {
-      name: 'browser_screencast',
-      description: 'Stream live browser frames via IPC (for UI preview). Action: "start" or "stop".',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          action: {
-            type: 'string',
-            enum: ['start', 'stop'],
-            description: 'Start or stop screencasting.',
-          },
-          page_name: {
-            type: 'string',
-            description: 'Optional name for the page.',
-          },
-          quality: {
-            type: 'number',
-            description: 'JPEG quality (0-100). Default 50.',
-          },
-          everyNthFrame: {
-            type: 'number',
-            description: 'Send every Nth frame. Default 1.',
-          },
-        },
-        required: ['action'],
       },
     },
     {
@@ -2419,64 +2385,6 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         };
         console.error(`[MCP] browser_navigate result:`, JSON.stringify(result, null, 2));
         return result;
-      }
-
-      case 'browser_screencast': {
-        const { action, page_name, quality, everyNthFrame } = args as BrowserScreencastInput;
-
-        // Delegate to the dev-browser HTTP server which owns the Playwright context
-        // and can stream frames via SSE to the Electron main process.
-        const devBrowserPort = parseInt(process.env.DEV_BROWSER_PORT || '9224', 10);
-        const devBrowserUrl = `http://localhost:${devBrowserPort}`;
-        const pageName = page_name || 'main';
-
-        if (action === 'start') {
-          try {
-            const response = await fetch(`${devBrowserUrl}/screencast/start`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: getFullPageName(pageName),
-                quality: quality ?? 50,
-                everyNthFrame: everyNthFrame ?? 2,
-                maxWidth: 800,
-                maxHeight: 600,
-              }),
-            });
-            const result = await response.json() as { started?: boolean; error?: string };
-            if (!response.ok) {
-              return {
-                content: [{ type: 'text', text: `Failed to start screencast: ${result.error || 'unknown error'}` }],
-                isError: true,
-              };
-            }
-            return {
-              content: [{ type: 'text', text: 'Screencast started. Live preview is now visible in the chat.' }],
-            };
-          } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            return {
-              content: [{ type: 'text', text: `Failed to start screencast: ${errorMessage}` }],
-              isError: true,
-            };
-          }
-        } else if (action === 'stop') {
-          try {
-            await fetch(`${devBrowserUrl}/screencast/stop`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: getFullPageName(pageName) }),
-            });
-          } catch { /* ignore */ }
-          return {
-            content: [{ type: 'text', text: 'Screencast stopped.' }],
-          };
-        }
-        
-        return {
-           content: [{ type: 'text', text: `Unknown action: ${action}` }],
-           isError: true
-        };
       }
 
       case 'browser_snapshot': {
