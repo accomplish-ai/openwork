@@ -66,7 +66,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   // with project-scoped keys (sk-proj-...) that lack /v1/chat/completions storage permission
   const openAiApiKey = getApiKey('openai');
   if (openAiApiKey) {
-    const existingOpenAi = providerConfigs.find(p => p.id === 'openai');
+    const existingOpenAi = providerConfigs.find((p) => p.id === 'openai');
     if (existingOpenAi) {
       existingOpenAi.options.store = false;
     } else {
@@ -111,7 +111,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
           continue;
         }
       } else {
-        console.warn(`[Connectors] Access token expired for ${connector.name} and cannot be refreshed`);
+        console.warn(
+          `[Connectors] Access token expired for ${connector.name} and cannot be refreshed`,
+        );
         storage.setConnectorStatus(connector.id, 'error');
         continue;
       }

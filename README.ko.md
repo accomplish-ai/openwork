@@ -12,6 +12,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="최근 커밋" /></a>
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS 다운로드" /></a>
+  <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 # Accomplish™ - 오픈소스 AI 데스크톱 에이전트
@@ -111,13 +112,13 @@ Accomplish는 로컬 머신에서 파일 관리, 문서 작성, 브라우저 작
 
 ## 실제 기능
 
-| | | |
-|:--|:--|:--|
-| **📁 파일 관리** | **✍️ 문서 작성** | **🔗 도구 연결** |
-| 콘텐츠나 규칙에 따라 파일 정리, 이름 변경, 이동 | 문서 작성, 요약, 재작성 지시 | Notion, Google Drive, Dropbox 등과 연동 (로컬 API 통해) |
-| | | |
-| **⚙️ 커스텀 스킬** | **🛡️ 완전한 제어** | |
-| 반복 워크플로우를 정의하고 스킬로 저장 | 모든 작업을 승인. 로그 확인 가능. 언제든 중지 가능. | |
+|                                                 |                                                     |                                                         |
+| :---------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------------ |
+| **📁 파일 관리**                                | **✍️ 문서 작성**                                    | **🔗 도구 연결**                                        |
+| 콘텐츠나 규칙에 따라 파일 정리, 이름 변경, 이동 | 문서 작성, 요약, 재작성 지시                        | Notion, Google Drive, Dropbox 등과 연동 (로컬 API 통해) |
+|                                                 |                                                     |                                                         |
+| **⚙️ 커스텀 스킬**                              | **🛡️ 완전한 제어**                                  |                                                         |
+| 반복 워크플로우를 정의하고 스킬로 저장          | 모든 작업을 승인. 로그 확인 가능. 언제든 중지 가능. |                                                         |
 
 <br />
 
@@ -171,15 +172,14 @@ Accomplish는 로컬 머신에서 실행됩니다. 파일은 기기에 저장되
 
 > **설정은 2분이면 완료.**
 
-| 단계 | 작업 | 세부사항 |
-|:----:|--------|---------|
-| **1** | **앱 설치** | DMG 다운로드 후 응용 프로그램 폴더로 드래그 |
-| **2** | **AI 연결** | Google, OpenAI, Anthropic (또는 기타) API 키 사용 또는 ChatGPT (Plus/Pro)로 로그인. 구독 없음. |
-| **3** | **접근 권한 부여** | 접근 가능한 폴더 선택. 사용자가 제어. |
-| **4** | **작업 시작** | 문서 요약, 폴더 정리, 보고서 생성 요청. 모든 작업 승인. |
+| 단계  | 작업               | 세부사항                                                                                       |
+| :---: | ------------------ | ---------------------------------------------------------------------------------------------- |
+| **1** | **앱 설치**        | DMG 다운로드 후 응용 프로그램 폴더로 드래그                                                    |
+| **2** | **AI 연결**        | Google, OpenAI, Anthropic (또는 기타) API 키 사용 또는 ChatGPT (Plus/Pro)로 로그인. 구독 없음. |
+| **3** | **접근 권한 부여** | 접근 가능한 폴더 선택. 사용자가 제어.                                                          |
+| **4** | **작업 시작**      | 문서 요약, 폴더 정리, 보고서 생성 요청. 모든 작업 승인.                                        |
 
 <br />
-
 
 <br />
 
@@ -251,24 +251,24 @@ pnpm dev
 <details>
 <summary><strong>모든 명령어</strong></summary>
 
-| 명령어 | 설명 |
-|---------|-------------|
-| `pnpm dev` | 개발 모드로 데스크톱 앱 실행 |
-| `pnpm dev:clean` | 클린 스타트로 개발 모드 |
-| `pnpm build` | 모든 워크스페이스 빌드 |
-| `pnpm build:desktop` | 데스크톱 앱만 빌드 |
-| `pnpm lint` | TypeScript 검사 |
-| `pnpm typecheck` | 타입 검증 |
-| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E 테스트 |
+| 명령어                                 | 설명                         |
+| -------------------------------------- | ---------------------------- |
+| `pnpm dev`                             | 개발 모드로 데스크톱 앱 실행 |
+| `pnpm dev:clean`                       | 클린 스타트로 개발 모드      |
+| `pnpm build`                           | 모든 워크스페이스 빌드       |
+| `pnpm build:desktop`                   | 데스크톱 앱만 빌드           |
+| `pnpm lint`                            | TypeScript 검사              |
+| `pnpm typecheck`                       | 타입 검증                    |
+| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E 테스트        |
 
 </details>
 
 <details>
 <summary><strong>환경 변수</strong></summary>
 
-| 변수 | 설명 |
-|----------|-------------|
-| `CLEAN_START=1` | 앱 시작 시 모든 저장 데이터 삭제 |
+| 변수              | 설명                              |
+| ----------------- | --------------------------------- |
+| `CLEAN_START=1`   | 앱 시작 시 모든 저장 데이터 삭제  |
 | `E2E_SKIP_AUTH=1` | 온보딩 플로우 건너뛰기 (테스트용) |
 
 </details>
