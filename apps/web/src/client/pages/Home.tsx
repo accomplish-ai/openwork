@@ -86,18 +86,21 @@ export function HomePage() {
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
 
-    // Check if any provider is ready before sending (skip in E2E mode)
-    const isE2EMode = await accomplish.isE2EMode();
-    if (!isE2EMode) {
-      const settings = await accomplish.getProviderSettings();
-      if (!hasAnyReadyProvider(settings)) {
-        setSettingsInitialTab('providers');
-        setShowSettingsDialog(true);
-        return;
+    try {
+      const isE2EMode = await accomplish.isE2EMode();
+      if (!isE2EMode) {
+        const settings = await accomplish.getProviderSettings();
+        if (!hasAnyReadyProvider(settings)) {
+          setSettingsInitialTab('providers');
+          setShowSettingsDialog(true);
+          return;
+        }
       }
-    }
 
-    await executeTask();
+      await executeTask();
+    } catch (err) {
+      console.error('Failed to submit task:', err);
+    }
   };
 
   const handleSettingsDialogChange = (open: boolean) => {
