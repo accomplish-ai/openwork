@@ -152,10 +152,26 @@ export default function TaskInputBar({
   };
 
   // Handle files dropped or selected
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
   const handleFiles = useCallback(
     (files: FileList) => {
       const newFiles: AttachedFile[] = [];
+      const errors: string[] = [];
+
       for (const file of Array.from(files)) {
+        // Check file size limit
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          errors.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB limit`);
+          continue;
+        }
+        // Check total file count limit
+        if (attachedFiles.length + newFiles.length >= MAX_FILES) {
+          errors.push(`Maximum ${MAX_FILES} files allowed per task`);
+          break;
+        }
         // Avoid duplicates
         const alreadyAttached = attachedFiles.some(
           (f) => f.name === file.name && f.size === file.size,
@@ -163,16 +179,19 @@ export default function TaskInputBar({
         if (!alreadyAttached) {
           newFiles.push({
             name: file.name,
-            // In Electron, File objects may have a path property
             path: (file as File & { path?: string }).path || file.name,
             size: file.size,
             type: file.type || 'unknown',
           });
         }
       }
+
+      if (errors.length > 0) {
+        console.warn('[FileAttach]', errors.join(', '));
+      }
+
       if (newFiles.length > 0) {
         setAttachedFiles((prev) => [...prev, ...newFiles]);
-        // Append file context to the text input
         const fileContext = newFiles.map((f) => `[File: ${f.path || f.name}]`).join(' ');
         const newValue = value.trim() ? `${value} ${fileContext}` : fileContext;
         onChange(newValue);
@@ -181,7 +200,6 @@ export default function TaskInputBar({
     },
     [attachedFiles, value, onChange],
   );
-
   // Remove an attached file chip
   const removeFile = useCallback(
     (fileToRemove: AttachedFile) => {
