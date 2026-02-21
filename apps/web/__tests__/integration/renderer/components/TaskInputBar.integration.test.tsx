@@ -287,7 +287,7 @@ describe('TaskInputBar Integration', () => {
       expect(textarea).toBeDisabled();
     });
 
-    it('should disable submit button when loading', () => {
+    it('should keep stop button enabled when loading', () => {
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
@@ -302,7 +302,7 @@ describe('TaskInputBar Integration', () => {
 
       // Assert
       const submitButton = screen.getByRole('button', { name: /stop/i });
-      expect(submitButton).toBeDisabled();
+      expect(submitButton).not.toBeDisabled();
     });
 
     it('should show stop indicator in submit button when loading', () => {

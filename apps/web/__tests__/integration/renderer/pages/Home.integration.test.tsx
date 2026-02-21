@@ -12,6 +12,7 @@ import type { Task, TaskStatus } from '@accomplish_ai/agent-core';
 
 // Create mock functions
 const mockStartTask = vi.fn();
+const mockInterruptTask = vi.fn();
 const mockAddTaskUpdate = vi.fn();
 const mockSetPermissionRequest = vi.fn();
 const mockHasAnyApiKey = vi.fn();
@@ -74,6 +75,8 @@ vi.mock('@/lib/accomplish', () => ({
 // Mock store state holder
 let mockStoreState = {
   startTask: mockStartTask,
+  interruptTask: mockInterruptTask,
+  currentTask: createMockTask('current-task', 'Current task', 'running'),
   isLoading: false,
   addTaskUpdate: mockAddTaskUpdate,
   setPermissionRequest: mockSetPermissionRequest,
@@ -149,6 +152,8 @@ describe('Home Page Integration', () => {
     // Reset store state
     mockStoreState = {
       startTask: mockStartTask,
+      interruptTask: mockInterruptTask,
+      currentTask: createMockTask('current-task', 'Current task', 'running'),
       isLoading: false,
       addTaskUpdate: mockAddTaskUpdate,
       setPermissionRequest: mockSetPermissionRequest,
@@ -439,7 +444,7 @@ describe('Home Page Integration', () => {
       expect(textarea).toBeDisabled();
     });
 
-    it('should disable submit button when loading', () => {
+    it('should keep stop button enabled when loading', () => {
       // Arrange
       mockStoreState.isLoading = true;
 
@@ -452,10 +457,10 @@ describe('Home Page Integration', () => {
 
       // Assert
       const submitButton = screen.getByTitle('Stop');
-      expect(submitButton).toBeDisabled();
+      expect(submitButton).not.toBeDisabled();
     });
 
-    it('should not submit when already loading', async () => {
+    it('should interrupt instead of submitting when already loading', async () => {
       // Arrange
       mockStoreState.isLoading = true;
 
@@ -472,6 +477,7 @@ describe('Home Page Integration', () => {
       // Assert
       await waitFor(() => {
         expect(mockStartTask).not.toHaveBeenCalled();
+        expect(mockInterruptTask).toHaveBeenCalledTimes(1);
       });
     });
   });
