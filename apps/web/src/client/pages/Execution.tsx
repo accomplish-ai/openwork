@@ -32,6 +32,8 @@ import { MessageBubble } from '../components/execution/MessageList';
 import { ToolProgress } from '../components/execution/ToolProgress';
 import { PermissionDialog } from '../components/execution/PermissionDialog';
 import { DebugPanel, type DebugLogEntry } from '../components/execution/DebugPanel';
+import type { TaskFileAttachment } from '@accomplish_ai/agent-core/common';
+import { getAttachmentIcon } from '../lib/attachments';
 
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -60,6 +62,9 @@ export function ExecutionPage() {
   >('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
+  const [attachments, setAttachments] = useState<TaskFileAttachment[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [_dragCounter, setDragCounter] = useState(0);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -242,7 +247,7 @@ export function ExecutionPage() {
   }, [canFollowUp]);
 
   const handleFollowUp = useCallback(async () => {
-    if (!followUp.trim()) return;
+    if (!followUp.trim() && attachments.length === 0) return;
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
       const settings = await accomplish.getProviderSettings();
@@ -253,9 +258,10 @@ export function ExecutionPage() {
         return;
       }
     }
-    await sendFollowUp(followUp);
+    await sendFollowUp(followUp, attachments);
     setFollowUp('');
-  }, [followUp, accomplish, sendFollowUp]);
+    setAttachments([]);
+  }, [followUp, attachments, accomplish, sendFollowUp]);
 
   const handleSettingsDialogClose = (open: boolean) => {
     setShowSettingsDialog(open);
@@ -268,9 +274,10 @@ export function ExecutionPage() {
   const handleApiKeySaved = async () => {
     setShowSettingsDialog(false);
     if (pendingFollowUp) {
-      await sendFollowUp(pendingFollowUp);
+      await sendFollowUp(pendingFollowUp, attachments);
       setFollowUp('');
       setPendingFollowUp(null);
+      setAttachments([]);
     }
   };
 
@@ -285,7 +292,7 @@ export function ExecutionPage() {
         return;
       }
     }
-    await sendFollowUp('continue');
+    await sendFollowUp('continue', []);
   };
 
   const handleOpenSpeechSettings = useCallback(() => {
@@ -323,6 +330,78 @@ export function ExecutionPage() {
 
     if (!allowed && permissionRequest.type === 'question') {
       interruptTask();
+    }
+  };
+
+  const handlePickFiles = async () => {
+    if (!accomplish.pickFiles) return;
+    try {
+      const newFiles = await accomplish.pickFiles();
+      if (newFiles.length > 0) {
+        setAttachments((prev) => [...prev, ...newFiles].slice(0, 5));
+      }
+    } catch (error) {
+      console.error('Failed to pick files:', error);
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(0);
+    setIsDragging(false);
+
+    if (!accomplish.processDroppedFiles) {
+      console.warn('Direct file drop is not supported in this environment yet.');
+      return;
+    }
+
+    const extractedFiles: File[] = [];
+    if (e.dataTransfer.items) {
+      for (let i = 0; i < e.dataTransfer.items.length; i++) {
+        if (e.dataTransfer.items[i].kind === 'file') {
+          const file = e.dataTransfer.items[i].getAsFile();
+          if (file) extractedFiles.push(file);
+        }
+      }
+    } else if (e.dataTransfer.files) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        extractedFiles.push(e.dataTransfer.files[i]);
+      }
+    }
+
+    if (extractedFiles.length === 0) return;
+
+    const filePaths: string[] = [];
+    for (const file of extractedFiles) {
+      let filePath = 'path' in file ? (file as File & { path: string }).path : undefined;
+
+      if (accomplish.getFilePath) {
+        try {
+          filePath = accomplish.getFilePath(file);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      if (filePath && typeof filePath === 'string') {
+        filePaths.push(filePath);
+      }
+    }
+
+    if (filePaths.length === 0) return;
+
+    try {
+      const newAttachments = await accomplish.processDroppedFiles(filePaths);
+      if (newAttachments.length > 0) {
+        setAttachments((prev) => [...prev, ...newAttachments].slice(0, 5));
+      }
+    } catch (err) {
+      console.error('Failed to process dropped files:', err);
     }
   };
 
@@ -686,7 +765,53 @@ export function ExecutionPage() {
 
         {/* Follow-up input */}
         {canFollowUp && (
-          <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
+          <div
+            className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 relative"
+            onDragEnter={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = 'copy';
+              setDragCounter((prev) => prev + 1);
+              if (!isDragging) setIsDragging(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = 'copy';
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragCounter((prev) => {
+                const next = prev - 1;
+                if (next === 0) setIsDragging(false);
+                return next;
+              });
+            }}
+            onDrop={handleDrop}
+          >
+            {/* Drop overlay */}
+            {isDragging && (
+              <div
+                className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.dataTransfer.dropEffect = 'copy';
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDragging(false);
+                }}
+                onDrop={handleDrop}
+              >
+                <div className="text-primary font-medium flex items-center gap-2 pointer-events-none">
+                  Drop files to attach
+                </div>
+              </div>
+            )}
+
             <div className="max-w-4xl mx-auto space-y-2">
               {speechInput.error && (
                 <Alert
@@ -709,6 +834,29 @@ export function ExecutionPage() {
                 </Alert>
               )}
               <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+                {/* Attachments UI Bar */}
+                {attachments.length > 0 && (
+                  <div className="px-4 pt-4 pb-1 flex gap-2 overflow-x-auto items-center">
+                    {attachments.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center gap-2 px-2.5 py-1.5 bg-muted/50 border border-border rounded-md shrink-0 max-w-[200px]"
+                        title={file.name}
+                      >
+                        {getAttachmentIcon(file.type)}
+                        <span className="text-xs font-medium truncate">{file.name}</span>
+                        <button
+                          onClick={() => removeAttachment(file.id)}
+                          aria-label={`Remove attachment ${file.name}`}
+                          className="text-muted-foreground hover:text-foreground shrink-0 ml-1 rounded-full p-0.5 hover:bg-muted"
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="px-4 pt-3 pb-2">
                   <textarea
                     ref={followUpInputRef}
@@ -747,6 +895,7 @@ export function ExecutionPage() {
                       setFollowUp(newValue);
                       setTimeout(() => followUpInputRef.current?.focus(), 0);
                     }}
+                    onPickFiles={handlePickFiles}
                     onOpenSettings={(tab) => {
                       setSettingsInitialTab(tab);
                       setShowSettingsDialog(true);
@@ -772,7 +921,11 @@ export function ExecutionPage() {
                     <button
                       type="button"
                       onClick={handleFollowUp}
-                      disabled={!followUp.trim() || isLoading || speechInput.isRecording}
+                      disabled={
+                        (!followUp.trim() && attachments.length === 0) ||
+                        isLoading ||
+                        speechInput.isRecording
+                      }
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       title={tCommon('buttons.send')}
                     >

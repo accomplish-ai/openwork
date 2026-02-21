@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  TaskFileAttachment,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -43,12 +44,20 @@ interface AccomplishAPI {
   listTasks(): Promise<Task[]>;
   deleteTask(taskId: string): Promise<void>;
   clearTaskHistory(): Promise<void>;
+  pickFiles(): Promise<TaskFileAttachment[]>;
+  getFilePath(file: File): string;
+  processDroppedFiles(paths: string[]): Promise<TaskFileAttachment[]>;
 
   // Permission responses
   respondToPermission(response: PermissionResponse): Promise<void>;
 
   // Session management
-  resumeSession(sessionId: string, prompt: string, taskId?: string): Promise<Task>;
+  resumeSession(
+    sessionId: string,
+    prompt: string,
+    taskId?: string,
+    attachments?: TaskFileAttachment[],
+  ): Promise<Task>;
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;

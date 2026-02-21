@@ -68,7 +68,10 @@ interface TaskState {
     isFirstTask?: boolean,
   ) => void;
   clearStartupStage: (taskId: string) => void;
-  sendFollowUp: (message: string) => Promise<void>;
+  sendFollowUp: (
+    message: string,
+    attachments?: import('@accomplish_ai/agent-core/common').TaskFileAttachment[],
+  ) => Promise<void>;
   cancelTask: () => Promise<void>;
   interruptTask: () => Promise<void>;
   setPermissionRequest: (request: PermissionRequest | null) => void;
@@ -164,7 +167,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       void accomplish.logEvent({
         level: 'info',
         message: 'UI start task',
-        context: { prompt: config.prompt, taskId: config.taskId },
+        context: {
+          prompt: config.prompt,
+          taskId: config.taskId,
+          attachments: config.attachments?.length,
+        },
       });
       const task = await accomplish.startTask(config);
       const currentTasks = get().tasks;
@@ -193,7 +200,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  sendFollowUp: async (message: string) => {
+  sendFollowUp: async (
+    message: string,
+    attachments?: import('@accomplish_ai/agent-core/common').TaskFileAttachment[],
+  ) => {
     const accomplish = getAccomplish();
     const { currentTask, startTask } = get();
     if (!currentTask) {
@@ -213,7 +223,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         message: 'UI follow-up: starting fresh task (no session from interrupted task)',
         context: { taskId: currentTask.id },
       });
-      await startTask({ prompt: message });
+      await startTask({ prompt: message, attachments });
       return;
     }
 
@@ -232,6 +242,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       type: 'user',
       content: message,
       timestamp: new Date().toISOString(),
+      // Add attachments visually to the local store history prior to response
+      attachments: attachments
+        ? attachments.map((a) => ({ type: 'json', data: 'placeholder', label: a.name }))
+        : undefined,
     };
 
     const taskId = currentTask.id;
@@ -255,9 +269,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       void accomplish.logEvent({
         level: 'info',
         message: 'UI follow-up sent',
-        context: { taskId: currentTask.id, message },
+        context: { taskId: currentTask.id, message, attachments: attachments?.length },
       });
-      const task = await accomplish.resumeSession(sessionId, message, currentTask.id);
+
+      const task = await accomplish.resumeSession(sessionId, message, currentTask.id, attachments);
 
       set((state) => ({
         currentTask: state.currentTask ? { ...state.currentTask, status: task.status } : null,

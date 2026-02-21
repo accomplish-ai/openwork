@@ -486,6 +486,26 @@ describe('Execution Page Integration', () => {
       });
     });
 
+    it('should call sendFollowUp with continue when Continue button is clicked', async () => {
+      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'waiting_permission');
+      mockStoreState.permissionRequest = {
+        id: 'perm-1',
+        taskId: 'task-123',
+        type: 'question',
+        question: 'How should I proceed?',
+        createdAt: new Date().toISOString(),
+      };
+
+      renderWithRouter('task-123');
+
+      const continueButton = screen.getByRole('button', { name: /continue task/i });
+      fireEvent.click(continueButton);
+
+      await waitFor(() => {
+        expect(mockSendFollowUp).toHaveBeenCalledWith('continue', []);
+      });
+    });
+
     it('should call respondToPermission with deny when Deny is clicked', async () => {
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
@@ -605,7 +625,7 @@ describe('Execution Page Integration', () => {
       fireEvent.click(sendButton);
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Continue with the next step');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('Continue with the next step', []);
       });
     });
 
@@ -621,7 +641,7 @@ describe('Execution Page Integration', () => {
       fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Do more work');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('Do more work', []);
       });
     });
 
@@ -988,7 +1008,7 @@ describe('Execution Page Integration', () => {
       fireEvent.click(continueButton);
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('continue');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('continue', []);
       });
     });
   });

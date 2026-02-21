@@ -249,6 +249,7 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     validateApiKey: actual.validateApiKey,
     validateHttpUrl: actual.validateHttpUrl,
     validateTaskConfig: actual.validateTaskConfig,
+    buildEnhancedPrompt: actual.buildEnhancedPrompt,
     ALLOWED_API_KEY_PROVIDERS: actual.ALLOWED_API_KEY_PROVIDERS,
     STANDARD_VALIDATION_PROVIDERS: actual.STANDARD_VALIDATION_PROVIDERS,
     validate: actual.validate,
