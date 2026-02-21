@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ConversationListItem from './ConversationListItem';
 import SettingsDialog from './SettingsDialog';
-import { Settings, MessageSquarePlus, Search } from 'lucide-react';
+import { Gear, ChatText, MagnifyingGlass } from '@phosphor-icons/react';
 import logoImage from '/assets/logo-1.png';
 
 export default function Sidebar() {
@@ -59,7 +59,7 @@ export default function Sidebar() {
             className="flex-1 justify-center gap-2"
             title={t('newTask')}
           >
-            <MessageSquarePlus className="h-4 w-4" />
+            <ChatText className="h-4 w-4" />
             {t('newTask')}
           </Button>
           <Button
@@ -69,7 +69,7 @@ export default function Sidebar() {
             className="px-2"
             title={t('searchTasks')}
           >
-            <Search className="h-4 w-4" />
+            <MagnifyingGlass className="h-4 w-4" />
           </Button>
         </div>
 
@@ -124,7 +124,7 @@ export default function Sidebar() {
             onClick={() => setShowSettings(true)}
             title={t('settings')}
           >
-            <Settings className="h-4 w-4" />
+            <Gear className="h-4 w-4" />
           </Button>
         </div>
       </div>

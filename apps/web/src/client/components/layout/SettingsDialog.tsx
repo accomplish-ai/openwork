@@ -14,15 +14,15 @@ import { SkillsPanel, AddSkillDropdown } from '@/components/settings/skills';
 import { AboutTab } from '@/components/settings/AboutTab';
 import { DebugSection } from '@/components/settings/DebugSection';
 import { ConnectorsPanel } from '@/components/settings/connectors';
-import { Key, Zap, Mic, Info, Cable } from 'lucide-react';
+import { Key, Lightning, Microphone, Info, Plugs } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import logoImage from '/assets/logo-1.png';
 
 const TABS = [
   { id: 'providers' as const, labelKey: 'tabs.providers', icon: Key },
-  { id: 'skills' as const, labelKey: 'tabs.skills', icon: Zap },
-  { id: 'connectors' as const, labelKey: 'tabs.connectors', icon: Cable },
-  { id: 'voice' as const, labelKey: 'tabs.voiceInput', icon: Mic },
+  { id: 'skills' as const, labelKey: 'tabs.skills', icon: Lightning },
+  { id: 'connectors' as const, labelKey: 'tabs.connectors', icon: Plugs },
+  { id: 'voice' as const, labelKey: 'tabs.voiceInput', icon: Microphone },
   { id: 'about' as const, labelKey: 'tabs.about', icon: Info },
 ];
 

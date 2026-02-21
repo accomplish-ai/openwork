@@ -64,6 +64,9 @@ const config: Config = {
         'provider-border-active': 'hsl(var(--provider-border-active))',
         'provider-accent': 'hsl(var(--provider-accent))',
         'provider-accent-text': 'hsl(var(--provider-accent-text))',
+        'todo-progress-pending': 'hsl(var(--todo-progress-pending))',
+        'todo-item-completed': 'hsl(var(--todo-item-completed))',
+        'todo-item-in-progress': 'hsl(var(--todo-item-in-progress))',
       },
       boxShadow: {
         sm: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10)',

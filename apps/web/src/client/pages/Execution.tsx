@@ -11,15 +11,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import {
   XCircle,
-  CornerDownLeft,
+  ArrowBendDownLeft,
   ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
+  CheckCircle,
+  WarningCircle,
   Clock,
   Square,
   Download,
-  ChevronDown,
-} from 'lucide-react';
+  CaretDown,
+} from '@phosphor-icons/react';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
@@ -330,7 +330,7 @@ export function ExecutionPage() {
     return (
       <div className="h-full flex items-center justify-center p-6">
         <Card className="max-w-md w-full p-6 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <WarningCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <p className="text-destructive mb-4">{error}</p>
           <Button onClick={() => navigate('/')}>{tCommon('buttons.goHome')}</Button>
         </Card>
@@ -366,7 +366,7 @@ export function ExecutionPage() {
       case 'completed':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600 shrink-0">
-            <CheckCircle2 className="h-3 w-3" />
+            <CheckCircle className="h-3 w-3" />
             {t('status.completed')}
           </span>
         );
@@ -635,7 +635,7 @@ export function ExecutionPage() {
                         aria-label={tCommon('aria.scrollToBottom')}
                         data-testid="scroll-to-bottom-button"
                       >
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        <CaretDown className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </motion.div>
                   )}
@@ -674,7 +674,7 @@ export function ExecutionPage() {
                 <button
                   onClick={interruptTask}
                   title={t('stopAgent')}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-white hover:bg-destructive/90 transition-colors shrink-0"
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e54d2e] text-white hover:bg-[#d4442a] transition-colors shrink-0"
                   data-testid="execution-stop-button"
                 >
                   <span className="block h-2.5 w-2.5 rounded-[2px] bg-white" />
@@ -693,7 +693,7 @@ export function ExecutionPage() {
                   variant="destructive"
                   className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
                 >
-                  <AlertCircle className="h-4 w-4" />
+                  <WarningCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs leading-tight">
                     {speechInput.error.message}
                     {speechInput.error.code === 'EMPTY_RESULT' && (
@@ -776,7 +776,7 @@ export function ExecutionPage() {
                       className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       title={tCommon('buttons.send')}
                     >
-                      <CornerDownLeft className="h-4 w-4" />
+                      <ArrowBendDownLeft className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

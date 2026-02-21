@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Settings, AlertTriangle } from 'lucide-react';
+import { CaretDown, Gear, Warning } from '@phosphor-icons/react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,7 +115,7 @@ export function ModelIndicator({
           data-testid="model-indicator-trigger"
         >
           {/* Warning icon when no model */}
-          {isWarning && <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
+          {isWarning && <Warning className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
 
           {/* Model name */}
           <span
@@ -128,7 +128,7 @@ export function ModelIndicator({
           </span>
 
           {/* Chevron */}
-          <ChevronDown
+          <CaretDown
             className={cn(
               'w-3 h-3 flex-shrink-0 transition-transform duration-150',
               isWarning ? 'text-warning/60' : 'text-muted-foreground/60',
@@ -158,7 +158,7 @@ export function ModelIndicator({
           disabled={isRunning}
           className="gap-2 px-3 py-2 cursor-pointer"
         >
-          <Settings className="w-4 h-4 text-muted-foreground" />
+          <Gear className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm">
             {isWarning ? t('model.configureModel') : t('model.changeModel')}
           </span>

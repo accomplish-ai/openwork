@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, ChevronDown } from 'lucide-react';
+import { Globe, CaretDown } from '@phosphor-icons/react';
 import { changeLanguage, getLanguagePreference } from '@/i18n';
 import {
   DropdownMenu,
@@ -76,7 +76,7 @@ export function LanguageSelector() {
                 )}
               >
                 <span>{currentLabel}</span>
-                <ChevronDown
+                <CaretDown
                   className={cn(
                     'w-3.5 h-3.5 text-muted-foreground/60 transition-transform duration-150',
                     open && 'rotate-180',
