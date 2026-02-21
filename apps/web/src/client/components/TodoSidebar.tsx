@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Circle, SpinnerGap, XCircle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { TodoItem } from '@accomplish_ai/agent-core/common';
 
@@ -91,9 +91,9 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
 function StatusIcon({ status }: { status: TodoItem['status'] }) {
   switch (status) {
     case 'completed':
-      return <CheckCircle2 className="h-4 w-4 text-foreground shrink-0 mt-px" />;
+      return <CheckCircle className="h-4 w-4 text-foreground shrink-0 mt-px" />;
     case 'in_progress':
-      return <Loader2 className="h-4 w-4 text-muted-foreground shrink-0 mt-px animate-spin" />;
+      return <SpinnerGap className="h-4 w-4 text-muted-foreground shrink-0 mt-px animate-spin" />;
     case 'cancelled':
       return <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-px" />;
     case 'pending':

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { SpinnerGap } from '@phosphor-icons/react';
 import { STATUS_COLORS, extractDomains } from '@/lib/task-utils';
 
 interface TaskLauncherItemProps {
@@ -25,7 +25,7 @@ export function TaskLauncherItem({ task, isSelected, onClick }: TaskLauncherItem
     >
       <span className="flex items-center justify-center shrink-0 w-3 h-3">
         {task.status === 'running' || task.status === 'waiting_permission' ? (
-          <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+          <SpinnerGap className="w-3 h-3 animate-spin text-muted-foreground" />
         ) : (
           <span className={cn('w-2 h-2 rounded-full', statusColor)} />
         )}

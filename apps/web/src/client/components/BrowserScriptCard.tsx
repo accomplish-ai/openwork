@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
   Globe,
-  TextCursor,
-  MousePointer2,
+  CursorText,
+  Cursor,
   Keyboard,
   Camera,
   Image,
   Clock,
   Code,
-  ChevronRight,
-} from 'lucide-react';
+  CaretRight,
+} from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { springs } from '../lib/animations';
 import loadingSymbol from '/assets/loading-symbol.svg';
@@ -40,10 +40,10 @@ interface BrowserScriptCardProps {
 // Action type to icon mapping
 const ACTION_ICONS: Record<string, typeof Globe> = {
   goto: Globe,
-  findAndFill: TextCursor,
-  findAndClick: MousePointer2,
-  fillByRef: TextCursor,
-  clickByRef: MousePointer2,
+  findAndFill: CursorText,
+  findAndClick: Cursor,
+  fillByRef: CursorText,
+  clickByRef: Cursor,
   keyboard: Keyboard,
   snapshot: Camera,
   screenshot: Image,
@@ -140,7 +140,7 @@ function ActionChip({
 
 // Arrow separator
 function Arrow() {
-  return <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />;
+  return <CaretRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />;
 }
 
 // Generate stable key for action based on content, not index
