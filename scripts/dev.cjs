@@ -8,7 +8,7 @@ const isWin = process.platform === 'win32';
 function runPnpm(args, options = {}) {
   if (isWin) {
     
-    return spawn('cmd.exe', ['/d', '/s', '/c', 'pnpm', ...args], {
+    return spawn('cmd.exe', ['/d', '/s', '/c', `"${pnpmCmd}" ${args.join(' ')}`], {
       stdio: 'inherit',
       env: options.env || process.env,
       windowsVerbatimArguments: true,
