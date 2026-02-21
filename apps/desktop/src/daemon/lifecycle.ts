@@ -17,6 +17,32 @@ import os from 'os';
 import { DaemonClient } from './client';
 import { getDaemonPidPath, getDaemonSocketPath, getDaemonLogPath } from './protocol';
 
+/**
+ * Validate that a value is a safe absolute filesystem path.
+ * Rejects null bytes, relative paths, path traversal, and shell metacharacters.
+ * Throws on invalid input — call at construction / entry boundaries.
+ */
+function assertSafePath(value: string, label: string): void {
+  if (!value || typeof value !== 'string') {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+  if (value.includes('\0')) {
+    throw new Error(`${label} contains null bytes`);
+  }
+  if (!path.isAbsolute(value)) {
+    throw new Error(`${label} must be an absolute path, got: ${value}`);
+  }
+  // Detect traversal: resolved path must equal the normalised input
+  const normalised = path.normalize(value);
+  if (path.resolve(value) !== normalised) {
+    throw new Error(`${label} contains path traversal: ${value}`);
+  }
+  // Reject characters that are dangerous in shells / config interpolation
+  if (/[;|&$`\\!#~{}\r\n]/.test(value)) {
+    throw new Error(`${label} contains disallowed characters: ${value}`);
+  }
+}
+
 export interface DaemonManagerOptions {
   /** Path to the daemon entry script (compiled JS) */
   daemonScript: string;
@@ -49,6 +75,10 @@ export class DaemonManager {
       autoRestart: true,
       ...opts,
     };
+
+    // Validate paths eagerly so we fail before they ever reach spawn()
+    assertSafePath(this.opts.nodePath, 'nodePath');
+    assertSafePath(this.opts.daemonScript, 'daemonScript');
   }
 
   /**
@@ -304,6 +334,13 @@ export class DaemonManager {
       throw new Error('LaunchAgent installation is only supported on macOS');
     }
 
+    // Validate inputs before writing them into the plist
+    assertSafePath(opts.nodePath, 'nodePath');
+    assertSafePath(opts.daemonScript, 'daemonScript');
+    if (!/^[\w.\-+]+$/.test(opts.appVersion)) {
+      throw new Error(`appVersion contains invalid characters: ${opts.appVersion}`);
+    }
+
     const escapeXml = (str: string): string =>
       str
         .replace(/&/g, '&amp;')
@@ -366,7 +403,7 @@ export class DaemonManager {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    fs.writeFileSync(plistPath, plistContent, 'utf-8');
+    fs.writeFileSync(plistPath, plistContent, { encoding: 'utf-8', mode: 0o600 });
     console.log(`[DaemonManager] LaunchAgent installed at ${plistPath}`);
     console.log('[DaemonManager] Run: launchctl load ' + plistPath);
   }
