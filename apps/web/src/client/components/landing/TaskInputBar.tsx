@@ -3,7 +3,7 @@
 import { useRef, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '@/lib/accomplish';
-import { ArrowUp, WarningCircle } from '@phosphor-icons/react';
+import { ArrowUp, AlertCircle } from 'lucide-react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import { useSpeechInput } from '@/hooks/useSpeechInput';
 import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
@@ -119,7 +119,7 @@ export function TaskInputBar({
           variant="destructive"
           className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
         >
-          <WarningCircle className="h-4 w-4" />
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs leading-tight">
             {speechInput.error.message}
             {speechInput.error.code === 'EMPTY_RESULT' && (
@@ -207,7 +207,7 @@ export function TaskInputBar({
                   {isLoading ? (
                     <span className="block h-[10px] w-[10px] rounded-[1.5px] bg-destructive-foreground" />
                   ) : (
-                    <ArrowUp className="h-4 w-4" weight="bold" />
+                    <ArrowUp className="h-4 w-4" />
                   )}
                 </button>
               </TooltipTrigger>

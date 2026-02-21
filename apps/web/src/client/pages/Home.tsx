@@ -7,7 +7,7 @@ import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
 import { springs } from '@/lib/animations';
-import { ArrowUpLeft } from '@phosphor-icons/react';
+import { ArrowUpLeft } from 'lucide-react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 import { PlusMenu } from '@/components/landing/PlusMenu';
 import { IntegrationIcon } from '@/components/landing/IntegrationIcons';
@@ -214,7 +214,7 @@ export function HomePage() {
                           {example.title}
                         </span>
                         <span className="shrink-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-active:translate-y-0 -scale-y-100 rotate-180">
-                          <ArrowUpLeft className="w-4 h-4 text-foreground" weight="regular" />
+                          <ArrowUpLeft className="w-4 h-4 text-foreground" />
                         </span>
                       </div>
 

@@ -101,7 +101,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
             className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             title={t('plusMenu.addContent')}
           >
-            <Plus className="h-4 w-4" weight="light" />
+            <Plus className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
