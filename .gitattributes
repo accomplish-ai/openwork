@@ -1,0 +1,14 @@
+# Enforce standard cross-platform line endings
+* text=auto eol=lf
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.js text
+*.ts text
+*.tsx text
+*.json text
+*.md text
+*.html text
+*.css text
+*.yml text
+*.yaml text
