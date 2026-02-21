@@ -46,7 +46,7 @@ export function TodoSidebar({ todos }: TodoSidebarProps) {
                 i === total - 1 && 'rounded-r-full',
                 todo.status === 'completed' || todo.status === 'cancelled'
                   ? 'bg-foreground'
-                  : 'bg-border',
+                  : 'bg-todo-progress-pending',
               )}
             />
           ))}
@@ -70,8 +70,8 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
     <li
       className={cn(
         'flex items-start gap-2 rounded-lg pl-2 pr-1 py-3',
-        todo.status === 'completed' && 'bg-muted',
-        todo.status === 'in_progress' && 'bg-muted/50',
+        todo.status === 'completed' && 'bg-todo-item-completed',
+        todo.status === 'in_progress' && 'bg-todo-item-in-progress',
         todo.status === 'cancelled' && 'opacity-50',
       )}
     >
