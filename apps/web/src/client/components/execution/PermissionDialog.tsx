@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { springs } from '../../lib/animations';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { AlertTriangle, AlertCircle, File, Brain } from 'lucide-react';
+import { Warning, WarningCircle, File, Brain } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 function getOperationBadgeClasses(operation?: string): string {
@@ -90,13 +90,13 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
               )}
             >
               {isDeleteOperation(permissionRequest) ? (
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <Warning className="h-5 w-5 text-red-600" />
               ) : permissionRequest.type === 'file' ? (
                 <File className="h-5 w-5 text-amber-600" />
               ) : permissionRequest.type === 'question' ? (
                 <Brain className="h-5 w-5 text-primary" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-warning" />
+                <WarningCircle className="h-5 w-5 text-warning" />
               )}
             </div>
             <h3

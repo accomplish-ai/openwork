@@ -12,12 +12,9 @@
     "build": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/bundle-skills.cjs",
     "build:electron": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs",
     "build:unpack": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs --dir",
-    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "release": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
-    "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
+    "package": "pnpm download:nodejs && ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package:mac": "pnpm download:nodejs && ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
-    "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -41,7 +38,6 @@
     "test:local-agent": "npx tsx scripts/test-local-agent-cli.ts"
   },
   "dependencies": {
-    "@accomplish/web": "workspace:*",
     "@accomplish_ai/agent-core": "workspace:*",
     "@aws-sdk/client-bedrock": "^3.971.0",
     "@aws-sdk/credential-providers": "^3.971.0",
@@ -73,6 +69,11 @@
     "vite-plugin-electron": "^0.29.0",
     "vitest": "^4.0.17"
   },
+  "optionalDependencies": {
+    "opencode-darwin-arm64": "1.2.6",
+    "opencode-darwin-x64": "1.2.6",
+    "opencode-darwin-x64-baseline": "1.2.6"
+  },
   "build": {
     "npmRebuild": false,
     "compression": "normal",
@@ -86,6 +87,9 @@
     "files": [
       "dist-electron/**/*",
       "node_modules/opencode-ai/**",
+      "node_modules/opencode-darwin-arm64/**",
+      "node_modules/opencode-darwin-x64/**",
+      "node_modules/opencode-darwin-x64-baseline/**",
       "node_modules/node-pty/**",
       "node_modules/electron-store/**",
       "node_modules/conf/**",
@@ -94,7 +98,6 @@
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
       "!node_modules/@accomplish_ai/**",
-      "!node_modules/opencode-darwin-*/**",
       "!node_modules/opencode-linux-*/**"
     ],
     "extraResources": [
@@ -134,6 +137,12 @@
       "node_modules/opencode-ai/bin/opencode",
       "node_modules/opencode-ai/bin/opencode.exe",
       "node_modules/opencode-ai/package.json",
+      "node_modules/opencode-darwin-arm64/bin/opencode",
+      "node_modules/opencode-darwin-arm64/package.json",
+      "node_modules/opencode-darwin-x64/bin/opencode",
+      "node_modules/opencode-darwin-x64/package.json",
+      "node_modules/opencode-darwin-x64-baseline/bin/opencode",
+      "node_modules/opencode-darwin-x64-baseline/package.json",
       "node_modules/opencode-windows-x64/bin/opencode.exe",
       "node_modules/opencode-windows-x64/package.json",
       "node_modules/opencode-windows-x64-baseline/bin/opencode.exe",

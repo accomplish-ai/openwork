@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
 import { X, Loader2, Star } from 'lucide-react';
@@ -13,6 +14,7 @@ interface ConversationListItemProps {
 export function ConversationListItem({ task }: ConversationListItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation('sidebar');
   const isActive = location.pathname === `/execution/${task.id}`;
   const { deleteTask, toggleTaskFavorite } = useTaskStore();
   const domains = useMemo(() => extractDomains(task), [task]);
@@ -24,7 +26,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!window.confirm('Are you sure you want to delete this task?')) {
+    if (!window.confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -51,14 +53,14 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
       title={task.summary || task.prompt}
       className={cn(
         'w-full text-left p-2 rounded-lg text-xs font-medium transition-colors duration-200',
-        'text-foreground hover:bg-[#E8E8E8] hover:text-foreground',
+        'text-foreground hover:bg-accent hover:text-foreground',
         'flex items-center gap-3 group relative cursor-pointer',
-        isActive && 'bg-[#EDEBE7] text-foreground',
+        isActive && 'bg-accent text-foreground',
       )}
     >
       <span className="flex items-center justify-center shrink-0 w-3 h-3">
         {task.status === 'running' || task.status === 'waiting_permission' ? (
-          <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+          <SpinnerGap className="w-3 h-3 animate-spin text-muted-foreground" />
         ) : (
           <span className={cn('w-2 h-2 rounded-full', statusColor)} />
         )}
@@ -71,7 +73,7 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
               <span
                 key={domain}
                 className={cn(
-                  'flex items-center p-0.5 rounded-full bg-white shrink-0 relative',
+                  'flex items-center p-0.5 rounded-full bg-card shrink-0 relative',
                   i > 0 && '-ml-1',
                   i === 0 && 'z-30',
                   i === 1 && 'z-20',
