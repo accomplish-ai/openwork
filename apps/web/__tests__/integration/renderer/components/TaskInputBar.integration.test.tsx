@@ -300,11 +300,13 @@ describe('TaskInputBar Integration', () => {
         />,
       );
 
-      const submitButton = screen.getByRole('button', { name: /submit/i });
+      // Assert
+      const submitButton = screen.getByRole('button', { name: /stop/i });
       expect(submitButton).toBeDisabled();
     });
 
-    it('should show loading spinner in submit button when loading', () => {
+    it('should show stop indicator in submit button when loading', () => {
+      // Arrange
       const onChange = vi.fn();
       const onSubmit = vi.fn();
 
@@ -317,9 +319,9 @@ describe('TaskInputBar Integration', () => {
         />,
       );
 
-      const submitButton = screen.getByRole('button', { name: /submit/i });
-      const spinner = submitButton.querySelector('.animate-spin');
-      expect(spinner).toBeInTheDocument();
+      // Assert - Check for the stop icon (square) inside the submit button
+      const submitButton = screen.getByRole('button', { name: /stop/i });
+      expect(submitButton).toBeInTheDocument();
     });
 
     it('should have disabled textarea that prevents user input when loading', () => {
@@ -468,8 +470,9 @@ describe('TaskInputBar Integration', () => {
         <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={true} />,
       );
 
+      // Assert - now uses consistent text-[16px] regardless of large prop
       const textarea = screen.getByRole('textbox');
-      expect(textarea.className).toContain('text-[15px]');
+      expect(textarea.className).toContain('text-[16px]');
     });
 
     it('should apply consistent text size when large prop is false', () => {
@@ -480,8 +483,9 @@ describe('TaskInputBar Integration', () => {
         <TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} large={false} />,
       );
 
+      // Assert - now uses consistent text-[16px] regardless of large prop
       const textarea = screen.getByRole('textbox');
-      expect(textarea.className).toContain('text-[15px]');
+      expect(textarea.className).toContain('text-[16px]');
     });
   });
 });

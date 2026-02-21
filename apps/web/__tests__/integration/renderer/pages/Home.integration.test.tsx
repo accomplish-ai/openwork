@@ -451,7 +451,7 @@ describe('Home Page Integration', () => {
       );
 
       // Assert
-      const submitButton = screen.getByTestId('task-input-submit');
+      const submitButton = screen.getByTitle('Stop');
       expect(submitButton).toBeDisabled();
     });
 
@@ -466,7 +466,7 @@ describe('Home Page Integration', () => {
       );
 
       // The textarea is disabled, so we can't really type, but test submit
-      const submitButton = screen.getByTestId('task-input-submit');
+      const submitButton = screen.getByTitle('Stop');
       fireEvent.click(submitButton);
 
       // Assert
@@ -501,7 +501,7 @@ describe('Home Page Integration', () => {
       });
     });
 
-    it('should be able to toggle example prompts visibility', async () => {
+    it('should always show example prompts section', async () => {
       // Arrange
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -509,25 +509,9 @@ describe('Home Page Integration', () => {
         </MemoryRouter>,
       );
 
-      // Assert - Examples should be visible initially (expanded by default)
+      // Assert - Examples section heading and cards are always visible
       await waitFor(() => {
-        expect(screen.getByText('Calendar Prep Notes')).toBeInTheDocument();
-      });
-
-      // Act - Toggle examples off
-      const toggleButton = screen.getByText(/example prompts/i).closest('button');
-      fireEvent.click(toggleButton!);
-
-      // Assert - Examples should be hidden now
-      await waitFor(() => {
-        expect(screen.queryByText('Calendar Prep Notes')).not.toBeInTheDocument();
-      });
-
-      // Act - Toggle examples on again
-      fireEvent.click(toggleButton!);
-
-      // Assert - Examples should be visible again
-      await waitFor(() => {
+        expect(screen.getByText('Example Prompts')).toBeInTheDocument();
         expect(screen.getByText('Calendar Prep Notes')).toBeInTheDocument();
       });
     });
