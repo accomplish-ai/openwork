@@ -63,42 +63,53 @@ async function buildAzureFoundryProviderConfig(
   getApiKey: (provider: string) => string | undefined | null,
   azureFoundryToken?: string,
 ): Promise<ProviderConfig | null> {
-  const baseUrl = endpoint.replace(/\/$/, '');
-  const targetBaseUrl = `${baseUrl}/openai/v1`;
-  const proxyInfo = await ensureAzureFoundryProxy(targetBaseUrl);
+  try {
+    const baseUrl = endpoint.replace(/\/$/, '');
+    const targetBaseUrl = `${baseUrl}/openai/v1`;
+    const proxyInfo = await ensureAzureFoundryProxy(targetBaseUrl);
 
-  const azureOptions: ProviderConfig['options'] = {
-    baseURL: proxyInfo.baseURL,
-  };
-
-  if (authMethod === 'api-key') {
-    const azureApiKey = getApiKey('azure-foundry');
-    if (azureApiKey) {
-      azureOptions.apiKey = azureApiKey;
-    }
-  } else if (authMethod === 'entra-id' && azureFoundryToken) {
-    azureOptions.apiKey = '';
-    azureOptions.headers = {
-      Authorization: `Bearer ${azureFoundryToken}`,
+    const azureOptions: ProviderConfig['options'] = {
+      baseURL: proxyInfo.baseURL,
     };
-  }
 
-  return {
-    id: 'azure-foundry',
-    npm: '@ai-sdk/openai-compatible',
-    name: 'Azure AI Foundry',
-    options: azureOptions,
-    models: {
-      [deploymentName]: {
-        name: `Azure Foundry (${deploymentName})`,
-        tools: true,
-        limit: {
-          context: 128000,
-          output: 16384,
+    if (authMethod === 'api-key') {
+      const azureApiKey = getApiKey('azure-foundry');
+      if (!azureApiKey) {
+        console.warn('[OpenCode Config Builder] Azure Foundry API key missing');
+        return null;
+      }
+      azureOptions.apiKey = azureApiKey;
+    } else if (authMethod === 'entra-id') {
+      if (!azureFoundryToken) {
+        console.warn('[OpenCode Config Builder] Azure Foundry Entra token missing');
+        return null;
+      }
+      azureOptions.apiKey = '';
+      azureOptions.headers = {
+        Authorization: `Bearer ${azureFoundryToken}`,
+      };
+    }
+
+    return {
+      id: 'azure-foundry',
+      npm: '@ai-sdk/openai-compatible',
+      name: 'Azure AI Foundry',
+      options: azureOptions,
+      models: {
+        [deploymentName]: {
+          name: `Azure Foundry (${deploymentName})`,
+          tools: true,
+          limit: {
+            context: 128000,
+            output: 16384,
+          },
         },
       },
-    },
-  };
+    };
+  } catch (error) {
+    console.warn('[OpenCode Config Builder] Failed to configure Azure Foundry provider:', error);
+    return null;
+  }
 }
 
 /**
