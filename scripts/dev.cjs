@@ -8,16 +8,18 @@ const isWin = process.platform === 'win32';
 function runPnpm(args, options = {}) {
   if (isWin) {
     
-    return spawn('cmd.exe', ['/d', '/s', '/c', `"${pnpmCmd}" ${args.join(' ')}`], {
+   return spawn('cmd.exe', ['/d', '/s', '/c', `"${pnpmCmd}" ${args.join(' ')}`], {
       stdio: 'inherit',
       env: options.env || process.env,
       windowsVerbatimArguments: true,
+      detached: true,
     });
   }
 
   return spawn('pnpm', args, {
     stdio: 'inherit',
     env: options.env || process.env,
+    detached: true,
   });
 }
 
