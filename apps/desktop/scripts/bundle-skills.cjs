@@ -5,7 +5,30 @@ const fs = require('fs');
 const esbuild = require('esbuild');
 const { execSync } = require('child_process');
 
-const skillsDir = path.join(__dirname, '..', '..', '..', 'packages', 'agent-core', 'mcp-tools');
+const VALID_MODES = new Set(['dev', 'package']);
+
+function getBuildMode() {
+  const cliMode = process.argv.find((arg) => arg.startsWith('--mode='))?.slice('--mode='.length);
+  const envMode = process.env.BUNDLE_SKILLS_MODE;
+  const mode = cliMode || envMode || 'dev';
+
+  if (!VALID_MODES.has(mode)) {
+    throw new Error(`[bundle-skills] Invalid mode "${mode}". Use --mode=dev or --mode=package.`);
+  }
+
+  return mode;
+}
+
+const buildMode = getBuildMode();
+
+const skillsDir = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  '@accomplish_ai',
+  'agent-core',
+  'mcp-tools',
+);
 
 // Skills that have runtime dependencies (playwright) that cannot be bundled
 const SKILLS_WITH_RUNTIME_DEPS = ['dev-browser', 'dev-browser-mcp'];
@@ -67,6 +90,22 @@ function ensureDir(dirPath) {
   }
 }
 
+function verifyBundleOutputs() {
+  const missing = [];
+  for (const { name, outfile } of bundles) {
+    const outputPath = path.join(skillsDir, name, outfile);
+    if (!fs.existsSync(outputPath)) {
+      missing.push(outputPath);
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `[bundle-skills] Missing bundled outputs:\n${missing.map((p) => `  - ${p}`).join('\n')}`,
+    );
+  }
+}
+
 async function bundleSkill({ name, entry, outfile, external = [], banner: needsBanner }) {
   const skillDir = path.join(skillsDir, name);
   const absEntry = path.join(skillDir, entry);
@@ -76,6 +115,13 @@ async function bundleSkill({ name, entry, outfile, external = [], banner: needsB
   ensureDir(path.dirname(absOutfile));
 
   if (!fs.existsSync(absEntry)) {
+    // Source not available (e.g. using pre-built npm package) — skip if dist already exists
+    if (fs.existsSync(absOutfile)) {
+      console.log(
+        `[bundle-skills] Skipping ${name}: source not found but dist exists at ${absOutfile}`,
+      );
+      return;
+    }
     throw new Error(`Entry not found for ${name}: ${absEntry}`);
   }
 
@@ -153,16 +199,18 @@ function reinstallProductionDepsForBundledBuild() {
 }
 
 async function main() {
-  console.log('[bundle-skills] Starting skill bundling...');
+  if (!fs.existsSync(skillsDir)) {
+    throw new Error(`[bundle-skills] MCP tools directory not found: ${skillsDir}`);
+  }
+
+  console.log(`[bundle-skills] Starting skill bundling (mode=${buildMode})...`);
   for (const bundle of bundles) {
     await bundleSkill(bundle);
   }
+  verifyBundleOutputs();
 
-  const shouldOptimize = process.env.CI === 'true' || process.env.ACCOMPLISH_BUNDLED_MCP === '1';
-  if (shouldOptimize) {
-    console.log('[bundle-skills] Optimizing skill dependencies for packaged build...');
-    reinstallProductionDepsForBundledBuild();
-  }
+  console.log('[bundle-skills] Optimizing skill dependencies for deterministic runtime parity...');
+  reinstallProductionDepsForBundledBuild();
 
   console.log('[bundle-skills] Done');
 }
