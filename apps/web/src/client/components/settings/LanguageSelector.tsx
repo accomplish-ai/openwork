@@ -1,7 +1,15 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
+import { Globe, ChevronDown } from 'lucide-react';
 import { changeLanguage, getLanguagePreference } from '@/i18n';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 // Auto label in each supported system language so it's always recognizable
 const AUTO_LABELS: Record<string, string> = {
@@ -24,15 +32,26 @@ const LANGUAGE_OPTIONS = [
 ];
 
 type LanguageValue = (typeof LANGUAGE_OPTIONS)[number]['value'];
+const LANGUAGE_VALUES = new Set<LanguageValue>(LANGUAGE_OPTIONS.map((option) => option.value));
+
+function isLanguageValue(value: string): value is LanguageValue {
+  return LANGUAGE_VALUES.has(value as LanguageValue);
+}
 
 export function LanguageSelector() {
   const { t } = useTranslation('settings');
   const [currentLanguage, setCurrentLanguage] = useState<LanguageValue>(getLanguagePreference);
+  const [open, setOpen] = useState(false);
 
-  const handleChange = useCallback(async (value: LanguageValue) => {
+  const handleChange = useCallback(async (value: string) => {
+    if (!isLanguageValue(value)) {
+      return;
+    }
     setCurrentLanguage(value);
     await changeLanguage(value);
   }, []);
+
+  const currentLabel = LANGUAGE_OPTIONS.find((opt) => opt.value === currentLanguage)?.label;
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -47,17 +66,34 @@ export function LanguageSelector() {
           </p>
         </div>
         <div className="ml-4">
-          <select
-            value={currentLanguage}
-            onChange={(e) => handleChange(e.target.value as LanguageValue)}
-            className="h-8 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'flex items-center gap-2 h-8 rounded-md border border-border px-3 text-sm text-foreground transition-all duration-150',
+                  'hover:bg-black/[0.04] dark:hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-ring',
+                )}
+              >
+                <span>{currentLabel}</span>
+                <ChevronDown
+                  className={cn(
+                    'w-3.5 h-3.5 text-muted-foreground/60 transition-transform duration-150',
+                    open && 'rotate-180',
+                  )}
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8}>
+              <DropdownMenuRadioGroup value={currentLanguage} onValueChange={handleChange}>
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
