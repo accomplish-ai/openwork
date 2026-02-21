@@ -5,6 +5,7 @@ type Theme = 'light' | 'dark';
 const THEME_KEY = 'accomplish-theme';
 
 function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
   const saved = localStorage.getItem(THEME_KEY) as Theme | null;
   if (saved === 'light' || saved === 'dark') return saved;
   if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
@@ -12,6 +13,7 @@ function getInitialTheme(): Theme {
 }
 
 function applyTheme(theme: Theme) {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
   if (theme === 'dark') {
     root.classList.add('dark');
@@ -25,7 +27,9 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme);
-    localStorage.setItem(THEME_KEY, theme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(THEME_KEY, theme);
+    }
   }, [theme]);
 
   const toggleTheme = () => {

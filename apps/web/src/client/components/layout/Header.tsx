@@ -43,7 +43,7 @@ export default function Header() {
             {t('nav.settings')}
           </NavLink>
         </nav>
-        {/* Theme toggle */}
+
         <div className="no-drag flex items-center justify-end w-24">
           <ThemeToggle />
         </div>
