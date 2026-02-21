@@ -1,8 +1,9 @@
 import crypto from 'crypto';
-import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
+import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
@@ -24,8 +25,24 @@ import {
   sanitizeString,
   generateTaskSummary,
   validateTaskConfig,
+  testOllamaConnection,
+  testLMStudioConnection,
+  fetchLMStudioModels,
+  validateLMStudioConfig,
+  getOpenAiOauthStatus,
+  discoverOAuthMetadata,
+  registerOAuthClient,
+  generatePkceChallenge,
+  buildAuthorizationUrl,
+  exchangeCodeForTokens,
+  createTaskId,
+  createMessageId,
+  DEFAULT_PROVIDERS,
+  ALLOWED_API_KEY_PROVIDERS,
+  STANDARD_VALIDATION_PROVIDERS,
+  ZAI_ENDPOINTS,
 } from '@accomplish_ai/agent-core';
-import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
+import { getStorage } from '../store/storage';
 import {
   storeApiKey,
   getApiKey,
@@ -34,14 +51,6 @@ import {
   hasAnyApiKey,
   getBedrockCredentials,
 } from '../store/secureStorage';
-import {
-  testOllamaConnection,
-  testLMStudioConnection,
-  fetchLMStudioModels,
-  validateLMStudioConfig,
-} from '@accomplish_ai/agent-core';
-import { getStorage } from '../store/storage';
-import { getOpenAiOauthStatus } from '@accomplish_ai/agent-core';
 import { loginOpenAiWithChatGpt } from '../opencode/auth-browser';
 import type {
   ProviderId,
@@ -50,14 +59,16 @@ import type {
   McpConnector,
   OAuthMetadata,
   OAuthClientRegistration,
+  TaskConfig,
+  PermissionResponse,
+  TaskMessage,
+  SelectedModel,
+  OllamaConfig,
+  AzureFoundryConfig,
+  LiteLLMConfig,
+  LMStudioConfig,
 } from '@accomplish_ai/agent-core';
-import {
-  discoverOAuthMetadata,
-  registerOAuthClient,
-  generatePkceChallenge,
-  buildAuthorizationUrl,
-  exchangeCodeForTokens,
-} from '@accomplish_ai/agent-core';
+import { normalizeIpcError, permissionResponseSchema, validate } from './validation';
 import {
   startPermissionApiServer,
   startQuestionApiServer,
@@ -72,23 +83,6 @@ import {
   transcribeAudio,
   isElevenLabsConfigured,
 } from '../services/speechToText';
-import type {
-  TaskConfig,
-  PermissionResponse,
-  TaskMessage,
-  SelectedModel,
-  OllamaConfig,
-  AzureFoundryConfig,
-  LiteLLMConfig,
-  LMStudioConfig,
-} from '@accomplish_ai/agent-core';
-import {
-  DEFAULT_PROVIDERS,
-  ALLOWED_API_KEY_PROVIDERS,
-  STANDARD_VALIDATION_PROVIDERS,
-  ZAI_ENDPOINTS,
-} from '@accomplish_ai/agent-core';
-import { normalizeIpcError, permissionResponseSchema, validate } from './validation';
 import { createTaskCallbacks } from './task-callbacks';
 import {
   isMockTaskEventsEnabled,
@@ -323,16 +317,6 @@ export function registerIPCHandlers(): void {
 
       const taskId = validatedExistingTaskId || createTaskId();
 
-      if (validatedExistingTaskId) {
-        const userMessage: TaskMessage = {
-          id: createMessageId(),
-          type: 'user',
-          content: validatedPrompt,
-          timestamp: new Date().toISOString(),
-        };
-        storage.addTaskMessage(validatedExistingTaskId, userMessage);
-      }
-
       const activeModelForResume = storage.getActiveProviderModel();
       const selectedModelForResume = activeModelForResume || storage.getSelectedModel();
 
@@ -354,7 +338,24 @@ export function registerIPCHandlers(): void {
       );
 
       if (validatedExistingTaskId) {
+        const userMessage: TaskMessage = {
+          id: createMessageId(),
+          type: 'user',
+          content: validatedPrompt,
+          timestamp: new Date().toISOString(),
+        };
+        storage.addTaskMessage(validatedExistingTaskId, userMessage);
         storage.updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
+      } else {
+        const initialUserMessage: TaskMessage = {
+          id: createMessageId(),
+          type: 'user',
+          content: validatedPrompt,
+          timestamp: new Date().toISOString(),
+        };
+        task.messages = [initialUserMessage];
+        storage.saveTask(task);
+        storage.updateTaskStatus(taskId, task.status, new Date().toISOString());
       }
 
       return task;
@@ -493,8 +494,12 @@ export function registerIPCHandlers(): void {
       _event: IpcMainInvokeEvent,
       provider: string,
       key: string,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      options?: Record<string, any>,
+      options?: {
+        baseUrl?: string;
+        region?: import('@accomplish_ai/agent-core').ZaiRegion;
+        deploymentName?: string;
+        authType?: 'api-key' | 'entra-id';
+      },
     ) => {
       if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
         return { valid: false, error: 'Unsupported provider' };
@@ -517,11 +522,7 @@ export function registerIPCHandlers(): void {
             timeout: API_KEY_VALIDATION_TIMEOUT_MS,
             baseUrl:
               provider === 'openai' ? storage.getOpenAiBaseUrl().trim() || undefined : undefined,
-            zaiRegion:
-              provider === 'zai'
-                ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) ||
-                  'international'
-                : undefined,
+            zaiRegion: provider === 'zai' ? options?.region || 'international' : undefined,
           },
         );
 
@@ -772,13 +773,29 @@ export function registerIPCHandlers(): void {
     ) => {
       const { endpoint, deploymentName, authType, apiKey } = config;
 
+      const sanitizedEndpoint = endpoint.trim();
+      const sanitizedDeploymentName = deploymentName.trim();
+
+      if (!sanitizedEndpoint) {
+        throw new Error('Invalid Azure Foundry configuration: endpoint is required');
+      }
+      if (!sanitizedDeploymentName) {
+        throw new Error('Invalid Azure Foundry configuration: deploymentName is required');
+      }
+      if (authType !== 'api-key' && authType !== 'entra-id') {
+        throw new Error(
+          'Invalid Azure Foundry configuration: authType must be api-key or entra-id',
+        );
+      }
+      validateHttpUrl(sanitizedEndpoint, 'Azure Foundry base URL');
+
       if (authType === 'api-key' && apiKey) {
         storeApiKey('azure-foundry', apiKey);
       }
 
       const azureConfig: AzureFoundryConfig = {
-        baseUrl: endpoint,
-        deploymentName,
+        baseUrl: sanitizedEndpoint,
+        deploymentName: sanitizedDeploymentName,
         authType,
         enabled: true,
         lastValidated: Date.now(),
@@ -786,8 +803,8 @@ export function registerIPCHandlers(): void {
       storage.setAzureFoundryConfig(azureConfig);
 
       console.log('[Azure Foundry] Config saved for new provider settings:', {
-        endpoint,
-        deploymentName,
+        endpoint: sanitizedEndpoint,
+        deploymentName: sanitizedDeploymentName,
         authType,
         hasApiKey: !!apiKey,
       });
@@ -1153,6 +1170,173 @@ export function registerIPCHandlers(): void {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, error: message };
     }
+  });
+
+  // Bug Report Generation
+  handle(
+    'bug-report:generate',
+    async (
+      event: IpcMainInvokeEvent,
+      taskId: string,
+      reportLogs?: Array<{ timestamp: string; type: string; message: string; data?: unknown }>,
+    ) => {
+      const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+      const sanitizedTaskId = sanitizeString(taskId, 'taskId', 128);
+
+      try {
+        const screenshot = await window.capturePage();
+        const screenshotBase64 = screenshot.toDataURL();
+
+        const axtree = await window.webContents.executeJavaScript(`
+        (function() {
+          function serializeNode(node) {
+            if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+              return null;
+            }
+            const element = node;
+            const result = {
+              tag: element.tagName.toLowerCase(),
+              role: element.getAttribute('role') || '',
+              ariaLabel: element.getAttribute('aria-label') || '',
+              testId: element.getAttribute('data-testid') || '',
+              text: element.textContent ? element.textContent.slice(0, 100) : '',
+              id: element.id || '',
+              children: []
+            };
+            for (let i = 0; i < Math.min(element.children.length, 20); i++) {
+              const child = serializeNode(element.children[i]);
+              if (child) {
+                result.children.push(child);
+              }
+            }
+            return result;
+          }
+          if (!document.body) { return null; }
+          return serializeNode(document.body);
+        })()
+      `);
+
+        const task = storage.getTask(sanitizedTaskId);
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const debugLogs = reportLogs ?? [];
+
+        const report = {
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          appVersion: app.getVersion(),
+          platform: {
+            os: process.platform,
+            arch: process.arch,
+            nodeVersion: process.version,
+            electronVersion: process.versions.electron,
+          },
+          task: {
+            id: task.id,
+            prompt: task.prompt,
+            status: task.status,
+            createdAt: task.createdAt,
+            completedAt: task.completedAt,
+            messageCount: task.messages?.length || 0,
+            lastMessage: task.messages?.[task.messages.length - 1],
+          },
+          screenshot: screenshotBase64,
+          accessibilityTree: axtree,
+          debugLogs: debugLogs.map((log) => ({
+            timestamp: log.timestamp,
+            type: log.type,
+            message: log.message,
+            data: log.data,
+          })),
+          provider: {
+            active: storage.getActiveProviderModel(),
+            selected: storage.getSelectedModel(),
+          },
+        };
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const defaultFilename = `bug-report-${sanitizedTaskId}-${timestamp}.json`;
+
+        const result = await dialog.showSaveDialog(window, {
+          title: 'Save Bug Report',
+          defaultPath: defaultFilename,
+          filters: [
+            { name: 'JSON Files', extensions: ['json'] },
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        });
+
+        if (result.canceled || !result.filePath) {
+          return { success: false, reason: 'cancelled' };
+        }
+
+        const parsed = path.parse(result.filePath);
+        const reportPath = path.join(parsed.dir, `${parsed.name}.json`);
+        fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+        return { success: true, path: reportPath };
+      } catch (error) {
+        console.error('[Bug Report] Generation failed:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: message };
+      }
+    },
+  );
+
+  handle('task:repeat', async (event: IpcMainInvokeEvent, taskId: string) => {
+    const sanitizedTaskId = sanitizeString(taskId, 'taskId', 128);
+    const task = storage.getTask(sanitizedTaskId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    const sender = event.sender;
+
+    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
+      throw new Error(
+        'No provider is ready. Please connect a provider and select a model in Settings.',
+      );
+    }
+
+    const newTaskId = createTaskId();
+    const config: TaskConfig = {
+      prompt: task.prompt,
+      taskId: newTaskId,
+      ...(task.sessionId ? { sessionId: task.sessionId } : {}),
+    };
+
+    const activeModel = storage.getActiveProviderModel();
+    const selectedModel = activeModel || storage.getSelectedModel();
+    if (selectedModel?.model) {
+      config.modelId = selectedModel.model;
+    }
+
+    const callbacks = createTaskCallbacks({ taskId: newTaskId, window, sender });
+    const newTask = await taskManager.startTask(newTaskId, config, callbacks);
+
+    const initialUserMessage: TaskMessage = {
+      id: createMessageId(),
+      type: 'user',
+      content: config.prompt,
+      timestamp: new Date().toISOString(),
+    };
+    newTask.messages = [initialUserMessage];
+    storage.saveTask(newTask);
+
+    generateTaskSummary(config.prompt, getApiKey)
+      .then((summary) => {
+        storage.updateTaskSummary(newTaskId, summary);
+        if (!window.isDestroyed() && !sender.isDestroyed()) {
+          sender.send('task:summary', { taskId: newTaskId, summary });
+        }
+      })
+      .catch((err) => {
+        console.warn('[IPC] Failed to generate task summary:', err);
+      });
+
+    return newTask;
   });
 
   handle('skills:list', async () => {

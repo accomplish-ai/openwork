@@ -804,7 +804,12 @@ export function ExecutionPage() {
 
         {/* Debug Panel */}
         {debugModeEnabled && (
-          <DebugPanel debugLogs={debugLogs} taskId={id} onClearLogs={() => setDebugLogs([])} />
+          <DebugPanel
+            debugLogs={debugLogs}
+            taskId={id}
+            onClearLogs={() => setDebugLogs([])}
+            isTaskComplete={isComplete}
+          />
         )}
       </div>
     </>
