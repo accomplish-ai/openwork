@@ -13,10 +13,13 @@ const path = require('path');
 const isWindows = process.platform === 'win32';
 const nodeModulesPath = path.join(__dirname, '..', 'node_modules');
 const accomplishPath = path.join(nodeModulesPath, '@accomplish_ai');
+const accomplishWebPath = path.join(nodeModulesPath, '@accomplish');
 
 // Save symlink targets for restoration
 const workspacePackages = ['agent-core'];
+const workspaceWebPackages = ['web'];
 const symlinkTargets = {};
+const webSymlinkTargets = {};
 
 try {
   // Check and remove workspace symlinks
@@ -32,10 +35,29 @@ try {
     }
   }
 
-  // Remove empty @accomplish_ai directory if it exists
+  for (const pkg of workspaceWebPackages) {
+    const pkgPath = path.join(accomplishWebPath, pkg);
+    if (fs.existsSync(pkgPath)) {
+      const stats = fs.lstatSync(pkgPath);
+      if (stats.isSymbolicLink()) {
+        webSymlinkTargets[pkg] = fs.readlinkSync(pkgPath);
+        console.log('Temporarily removing workspace symlink:', pkgPath);
+        fs.unlinkSync(pkgPath);
+      }
+    }
+  }
+
+  // Remove empty directories if they exist
   if (Object.keys(symlinkTargets).length > 0) {
     try {
       fs.rmdirSync(accomplishPath);
+    } catch {
+      // Directory not empty or doesn't exist, ignore
+    }
+  }
+  if (Object.keys(webSymlinkTargets).length > 0) {
+    try {
+      fs.rmdirSync(accomplishWebPath);
     } catch {
       // Directory not empty or doesn't exist, ignore
     }
@@ -59,30 +81,37 @@ try {
 } finally {
   // Restore the symlinks
   const packagesToRestore = Object.keys(symlinkTargets);
-  if (packagesToRestore.length > 0) {
+  const webPackagesToRestore = Object.keys(webSymlinkTargets);
+
+  if (packagesToRestore.length > 0 || webPackagesToRestore.length > 0) {
     console.log('Restoring workspace symlinks');
 
-    // Recreate @accomplish_ai directory if needed
-    if (!fs.existsSync(accomplishPath)) {
-      fs.mkdirSync(accomplishPath, { recursive: true });
+    if (packagesToRestore.length > 0) {
+      if (!fs.existsSync(accomplishPath)) {
+        fs.mkdirSync(accomplishPath, { recursive: true });
+      }
+      for (const pkg of packagesToRestore) {
+        const pkgPath = path.join(accomplishPath, pkg);
+        const target = symlinkTargets[pkg];
+        const absoluteTarget = path.isAbsolute(target) ? target : path.resolve(path.dirname(pkgPath), target);
+        if (isWindows) fs.symlinkSync(absoluteTarget, pkgPath, 'junction');
+        else fs.symlinkSync(target, pkgPath);
+        console.log('  Restored:', pkgPath);
+      }
     }
 
-    for (const pkg of packagesToRestore) {
-      const pkgPath = path.join(accomplishPath, pkg);
-      const target = symlinkTargets[pkg];
-
-      // On Windows, use junction instead of symlink (doesn't require admin privileges)
-      // The target needs to be an absolute path for junctions
-      const absoluteTarget = path.isAbsolute(target)
-        ? target
-        : path.resolve(path.dirname(pkgPath), target);
-
-      if (isWindows) {
-        fs.symlinkSync(absoluteTarget, pkgPath, 'junction');
-      } else {
-        fs.symlinkSync(target, pkgPath);
+    if (webPackagesToRestore.length > 0) {
+      if (!fs.existsSync(accomplishWebPath)) {
+        fs.mkdirSync(accomplishWebPath, { recursive: true });
       }
-      console.log('  Restored:', pkgPath);
+      for (const pkg of webPackagesToRestore) {
+        const pkgPath = path.join(accomplishWebPath, pkg);
+        const target = webSymlinkTargets[pkg];
+        const absoluteTarget = path.isAbsolute(target) ? target : path.resolve(path.dirname(pkgPath), target);
+        if (isWindows) fs.symlinkSync(absoluteTarget, pkgPath, 'junction');
+        else fs.symlinkSync(target, pkgPath);
+        console.log('  Restored:', pkgPath);
+      }
     }
   }
 }

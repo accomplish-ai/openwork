@@ -66,10 +66,13 @@ app.setName('Accomplish');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const envPath = app.isPackaged
-  ? path.join(process.resourcesPath, '.env')
-  : path.join(__dirname, '../../.env');
-config({ path: envPath });
+// Only load .env in development mode - not needed in production
+if (!app.isPackaged) {
+  const envPath = path.join(__dirname, '../../.env');
+  if (fs.existsSync(envPath)) {
+    config({ path: envPath });
+  }
+}
 
 process.env.APP_ROOT = path.join(__dirname, '../..');
 

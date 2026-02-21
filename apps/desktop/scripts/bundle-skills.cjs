@@ -18,45 +18,60 @@ const SKILLS_FULLY_BUNDLED = [
   'start-task',
 ];
 
+const MCP_EXTERNAL = [
+  '@modelcontextprotocol/sdk',
+  '@modelcontextprotocol/sdk/server/index.js',
+  '@modelcontextprotocol/sdk/server/stdio.js',
+  '@modelcontextprotocol/sdk/types.js',
+  'express',
+  'hono',
+  '@hono/node-server',
+  '@hono/node-ws',
+];
+
 const bundles = [
   {
     name: 'ask-user-question',
     entry: 'src/index.ts',
     outfile: 'dist/index.mjs',
+    external: MCP_EXTERNAL,
   },
   {
     name: 'file-permission',
     entry: 'src/index.ts',
     outfile: 'dist/index.mjs',
+    external: MCP_EXTERNAL,
   },
   {
     name: 'complete-task',
     entry: 'src/index.ts',
     outfile: 'dist/index.mjs',
+    external: MCP_EXTERNAL,
   },
   {
     name: 'start-task',
     entry: 'src/index.ts',
     outfile: 'dist/index.mjs',
+    external: MCP_EXTERNAL,
   },
   {
     name: 'dev-browser-mcp',
     entry: 'src/index.ts',
     outfile: 'dist/index.mjs',
-    external: ['playwright'],
+    external: [...MCP_EXTERNAL, 'playwright'],
   },
   {
     name: 'dev-browser',
     entry: 'scripts/start-server.ts',
     outfile: 'dist/start-server.mjs',
-    external: ['playwright'],
+    external: [...MCP_EXTERNAL, 'playwright'],
     banner: true,
   },
   {
     name: 'dev-browser',
     entry: 'scripts/start-relay.ts',
     outfile: 'dist/start-relay.mjs',
-    external: ['playwright'],
+    external: [...MCP_EXTERNAL, 'playwright'],
     banner: true,
   },
 ];

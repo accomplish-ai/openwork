@@ -84,6 +84,7 @@ exports.default = async function afterPack(context) {
 
   // For single-arch builds, just copy the target architecture
   await copyNodeBinary(context, nodePlatform, archName);
+  await copyOpenCodeCli(context);
 
   // On Windows, copy node-pty prebuilds to build/Release (required for packaged app)
   if (platformName === 'windows') {
@@ -361,3 +362,47 @@ async function resignMacApp(context) {
     // and users can remove quarantine manually
   }
 }
+
+/**
+ * Copy opencode-ai package to app bundle.
+ *
+ * This is necessary because electron-builder may not follow symlinks correctly
+ * when using pnpm's node_modules structure. We need to manually copy the
+ * opencode-ai package from the pnpm store to the app bundle.
+ */
+async function copyOpenCodeCli(context) {
+  const { appOutDir } = context;
+
+  // Resolve the actual opencode-ai package location
+  // In pnpm workspaces, it's a symlink to node_modules/.pnpm/opencode-ai@version/node_modules/opencode-ai
+  const desktopDir = path.join(__dirname, '..');
+  const openCodeAiSymlink = path.join(desktopDir, 'node_modules', 'opencode-ai');
+
+  if (!fs.existsSync(openCodeAiSymlink)) {
+    console.error('[after-pack] ERROR: opencode-ai not found in node_modules');
+    throw new Error('opencode-ai package not found. Run "pnpm install" first.');
+  }
+
+  // Resolve the symlink to get the actual path
+  const openCodeAiSource = fs.realpathSync(openCodeAiSymlink);
+
+  // Destination path in the app bundle
+  const destDir = path.join(appOutDir, 'resources', 'app.asar.unpacked', 'node_modules', 'opencode-ai');
+
+  console.log(`[after-pack] Copying opencode-ai: ${openCodeAiSource} -> ${destDir}`);
+
+  // Create destination directory if it doesn't exist
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+
+  // Copy the entire opencode-ai directory
+  try {
+    copyDirRecursive(openCodeAiSource, destDir);
+    console.log(`[after-pack] Successfully copied opencode-ai to ${destDir}`);
+  } catch (err) {
+    console.error(`[after-pack] ERROR copying opencode-ai:`, err.message);
+    throw err;
+  }
+}
+

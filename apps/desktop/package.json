@@ -4,20 +4,27 @@
   "private": true,
   "type": "module",
   "description": "Accomplish Desktop App",
+  "homepage": "https://github.com/accomplish-ai/accomplish",
+  "author": {
+    "name": "Accomplish Inc",
+    "email": "hello@accomplish.ai"
+  },
   "main": "dist-electron/main/index.js",
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
-    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
+    "dev": "node scripts/patch-electron-name.cjs && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
     "dev:clean": "CLEAN_START=1 ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
-    "build": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/bundle-skills.cjs",
+    "build": "pnpm -F @accomplish/web build && node -e \"const fs=require('fs'); if(fs.existsSync('dist-web')) fs.rmSync('dist-web', {recursive:true, force:true}); fs.mkdirSync('dist-web');\" && cp -r ../web/dist/client/* dist-web/ && tsc && vite build && node scripts/bundle-skills.cjs",
     "build:electron": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs",
     "build:unpack": "pnpm -F @accomplish/web build && tsc && vite build && node scripts/package.cjs --dir",
-    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
-    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
+    "package": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
+    "package:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish never",
     "release": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
     "release:mac": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --mac --publish always",
     "package:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish never",
     "release:win": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --win --x64 --publish always",
+    "package:linux": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && DEBUG=electron-builder node scripts/package.cjs --linux --publish never",
+    "release:linux": "ACCOMPLISH_BUNDLED_MCP=1 pnpm build && node scripts/package.cjs --linux --publish always",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -57,7 +64,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.2",
     "@playwright/test": "^1.57.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
@@ -77,7 +83,8 @@
     "npmRebuild": false,
     "compression": "normal",
     "appId": "ai.accomplish.desktop",
-    "productName": "Accomplish (formerly Openwork)",
+    "productName": "Accomplish",
+    "executableName": "accomplish",
     "artifactName": "Accomplish-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release",
@@ -86,6 +93,12 @@
     "files": [
       "dist-electron/**/*",
       "node_modules/opencode-ai/**",
+      "node_modules/opencode-linux-x64/**",
+      "node_modules/opencode-linux-arm64/**",
+      "node_modules/opencode-windows-x64/**",
+      "node_modules/opencode-windows-x64-baseline/**",
+      "node_modules/opencode-darwin-x64/**",
+      "node_modules/opencode-darwin-arm64/**",
       "node_modules/node-pty/**",
       "node_modules/electron-store/**",
       "node_modules/conf/**",
@@ -94,8 +107,7 @@
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
       "!node_modules/@accomplish_ai/**",
-      "!node_modules/opencode-darwin-*/**",
-      "!node_modules/opencode-linux-*/**"
+      "!node_modules/@accomplish/**"
     ],
     "extraResources": [
       {
@@ -118,7 +130,7 @@
         ]
       },
       {
-        "from": "../web/dist/client",
+        "from": "dist-web",
         "to": "web-ui"
       },
       {
@@ -131,13 +143,13 @@
     ],
     "asar": true,
     "asarUnpack": [
-      "node_modules/opencode-ai/bin/opencode",
-      "node_modules/opencode-ai/bin/opencode.exe",
-      "node_modules/opencode-ai/package.json",
-      "node_modules/opencode-windows-x64/bin/opencode.exe",
-      "node_modules/opencode-windows-x64/package.json",
-      "node_modules/opencode-windows-x64-baseline/bin/opencode.exe",
-      "node_modules/opencode-windows-x64-baseline/package.json",
+      "node_modules/opencode-ai/**/*",
+      "node_modules/opencode-windows-x64/**/*",
+      "node_modules/opencode-windows-x64-baseline/**/*",
+      "node_modules/opencode-linux-x64/**/*",
+      "node_modules/opencode-linux-arm64/**/*",
+      "node_modules/opencode-darwin-x64/**/*",
+      "node_modules/opencode-darwin-arm64/**/*",
       "node_modules/node-pty/build/**/*.node",
       "node_modules/node-pty/package.json",
       "node_modules/better-sqlite3/build/**/*.node",
@@ -193,6 +205,27 @@
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "maintainer": "Accomplish Inc <hello@accomplish.ai>",
+      "category": "Office",
+      "icon": "resources/icon.png",
+      "desktop": {
+        "Name": "Accomplish",
+        "GenericName": "AI Desktop Assistant",
+        "Comment": "Open source AI coworker that lives on your desktop",
+        "Categories": "Office;Development;Utility;",
+        "Keywords": "AI;Assistant;Productivity;",
+        "StartupWMClass": "Accomplish",
+        "StartupNotify": "true"
+      }
+    },
+    "deb": {
+      "afterInstall": "build/linux-postinstall.sh"
     }
   }
 }
