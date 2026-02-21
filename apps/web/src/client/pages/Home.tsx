@@ -30,7 +30,8 @@ export function HomePage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, interruptTask, currentTask, isLoading, addTaskUpdate, setPermissionRequest } =
+    useTaskStore();
   const navigate = useNavigate();
   const accomplish = useMemo(() => getAccomplish(), []);
   const { t } = useTranslation('home');
@@ -70,7 +71,17 @@ export function HomePage() {
   }, [prompt, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (isLoading) {
+      if (currentTask) {
+        void accomplish.analytics?.trackStopAgent(
+          currentTask.id,
+          currentTask.sessionId || currentTask.result?.sessionId || '',
+        );
+      }
+      void interruptTask();
+      return;
+    }
+    if (!prompt.trim()) return;
 
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {

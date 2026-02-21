@@ -49,7 +49,7 @@ export function TaskInputBar({
   const isInputDisabled = disabled || isLoading;
   const isOverLimit = value.length > PROMPT_DEFAULT_MAX_LENGTH;
   const canSubmit = !!value.trim() && !disabled && !isOverLimit;
-  const isSubmitDisabled = isLoading || !canSubmit || isInputDisabled;
+  const isSubmitDisabled = !isLoading && (!canSubmit || isInputDisabled);
   const submitLabel = isLoading ? t('buttons.stop') : t('buttons.submit');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const animatedPlaceholder = useTypingPlaceholder({
