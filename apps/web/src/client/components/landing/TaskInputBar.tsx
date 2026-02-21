@@ -3,7 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '../../lib/accomplish';
-import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowBendDownLeft, SpinnerGap, WarningCircle } from '@phosphor-icons/react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
@@ -145,7 +145,7 @@ export default function TaskInputBar({
           variant="destructive"
           className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
         >
-          <AlertCircle className="h-4 w-4" />
+          <WarningCircle className="h-4 w-4" />
           <AlertDescription className="text-xs leading-tight">
             {speechInput.error.message}
             {speechInput.error.code === 'EMPTY_RESULT' && (
@@ -236,9 +236,9 @@ export default function TaskInputBar({
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinnerGap className="h-4 w-4 animate-spin" />
                   ) : (
-                    <CornerDownLeft className="h-4 w-4" />
+                    <ArrowBendDownLeft className="h-4 w-4" />
                   )}
                 </button>
               </TooltipTrigger>

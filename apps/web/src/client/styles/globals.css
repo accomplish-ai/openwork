@@ -73,6 +73,9 @@
   --provider-border-active: 40 30% 25%;
   --provider-accent: 123 30% 30%;
   --provider-accent-text: 123 30% 15%;
+  --todo-progress-pending: 0 0% 85%;
+  --todo-item-completed: 36 11% 95%;
+  --todo-item-in-progress: 0 0% 98%;
 }
 
 .dark {
@@ -103,6 +106,9 @@
   --provider-border-active: 40 30% 50%;
   --provider-accent: 123 30% 45%;
   --provider-accent-text: 123 30% 75%;
+  --todo-progress-pending: 0 0% 24%;
+  --todo-item-completed: 0 0% 14%;
+  --todo-item-in-progress: 0 0% 11%;
 }
 
 /* Custom scrollbar */

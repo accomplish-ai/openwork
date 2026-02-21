@@ -8,7 +8,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs, staggerContainer, staggerItem } from '../lib/animations';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronDown } from 'lucide-react';
+import { CaretDown } from '@phosphor-icons/react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 
 // Import use case images for proper bundling in production
@@ -189,7 +189,7 @@ export function HomePage() {
                     animate={{ rotate: showExamples ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <ChevronDown className="h-4 w-4" />
+                    <CaretDown className="h-4 w-4" />
                   </motion.div>
                 </button>
 
