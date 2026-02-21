@@ -5,6 +5,7 @@
   "buttons": {
     "send": "发送",
     "submit": "提交",
+    "stop": "停止",
     "cancel": "取消",
     "close": "关闭",
     "save": "保存",
