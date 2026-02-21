@@ -9,6 +9,7 @@ import {
   ConfigGeneratorOptions,
   ProviderConfig,
   BrowserConfig,
+  buildCliArgs,
 } from '../../../src/opencode/config-generator.js';
 
 describe('ConfigGenerator', () => {
@@ -412,6 +413,21 @@ describe('ConfigGenerator', () => {
       const command = result.mcpServers['file-permission'].command;
       // Should use npx tsx or bundled tsx
       expect(command?.some((arg) => arg.includes('tsx') || arg.includes('npx'))).toBe(true);
+    });
+  });
+
+  describe('buildCliArgs', () => {
+    it('should normalize Z.AI models for API requests', () => {
+      const args = buildCliArgs({
+        prompt: 'test prompt',
+        selectedModel: {
+          provider: 'zai',
+          model: 'zai/glm-5',
+        },
+      });
+
+      expect(args).toContain('--model');
+      expect(args).toContain('zai-coding-plan/glm-5');
     });
   });
 
