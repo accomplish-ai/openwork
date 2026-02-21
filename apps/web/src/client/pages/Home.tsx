@@ -42,7 +42,8 @@ export function HomePage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest, tasks, toggleTaskFavorite } =
+    useTaskStore();
   const navigate = useNavigate();
   const accomplish = getAccomplish();
   const { t } = useTranslation('home');
@@ -56,6 +57,10 @@ export function HomePage() {
       image,
     }));
   }, [t]);
+
+  const favoriteTasks = tasks
+    .filter((t) => t.isFavorite)
+    .map((t) => ({ id: t.id, prompt: t.prompt, summary: t.summary }));
 
   // Subscribe to task events
   useEffect(() => {
@@ -177,6 +182,65 @@ export function HomePage() {
                   hideModelWhenNoModel={true}
                 />
               </CardContent>
+
+              {/* Favorites Section */}
+              {favoriteTasks.length > 0 && (
+                <div className="border-t border-border p-4">
+                  <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                    Favorites
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {favoriteTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="group/item relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 text-left transition-colors cursor-pointer"
+                        onClick={() => setPrompt(task.prompt)}
+                      >
+                        <div className="p-1.5 rounded-md bg-yellow-500/10 text-yellow-500">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="w-4 h-4"
+                          >
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0 pr-6">
+                          <div className="font-medium text-sm text-foreground truncate">
+                            {task.summary || task.prompt}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate opacity-0 group-hover/item:opacity-100 transition-opacity">
+                            Click to reuse prompt
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTaskFavorite(task.id, false);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/80 opacity-0 group-hover/item:opacity-100 transition-all"
+                          title="Remove from favorites"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-4 h-4"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Examples Toggle */}
               <div className="border-t border-border">

@@ -67,16 +67,14 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
 }
 
 function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void }) {
-  const { t: tCommon } = useTranslation('common');
-  const { t } = useTranslation('history');
-
-  const statusConfig: Record<string, { color: string; labelKey: string }> = {
-    completed: { color: 'bg-success', labelKey: 'status.completed' },
-    running: { color: 'bg-primary', labelKey: 'status.running' },
-    failed: { color: 'bg-danger', labelKey: 'status.failed' },
-    cancelled: { color: 'bg-text-muted', labelKey: 'status.cancelled' },
-    pending: { color: 'bg-warning', labelKey: 'status.pending' },
-    waiting_permission: { color: 'bg-warning', labelKey: 'status.waiting' },
+  const { toggleTaskFavorite } = useTaskStore();
+  const statusConfig: Record<string, { color: string; label: string }> = {
+    completed: { color: 'bg-success', label: 'Completed' },
+    running: { color: 'bg-primary', label: 'Running' },
+    failed: { color: 'bg-danger', label: 'Failed' },
+    cancelled: { color: 'bg-text-muted', label: 'Cancelled' },
+    pending: { color: 'bg-warning', label: 'Pending' },
+    waiting_permission: { color: 'bg-warning', label: 'Waiting' },
   };
 
   const config = statusConfig[task.status] || statusConfig.pending;
@@ -97,25 +95,49 @@ function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void 
           {tCommon('messages', { count: task.messages.length })}
         </p>
       </div>
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (confirm(t('confirmDelete'))) {
-            onDelete();
-          }
-        }}
-        className="p-2 text-text-muted hover:text-danger transition-colors"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleTaskFavorite(task.id, !task.isFavorite);
+          }}
+          className={`p-1 hover:bg-slate-200 rounded ${task.isFavorite ? 'text-yellow-400' : 'text-slate-300'}`}
+          title={task.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={task.isFavorite ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          />
-        </svg>
-      </button>
+            className="w-4 h-4"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </button>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm('Delete this task?')) {
+              onDelete();
+            }
+          }}
+          className="p-1 text-text-muted hover:text-danger transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      </div>
     </Link>
   );
 }

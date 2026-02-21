@@ -39,6 +39,7 @@ export interface StoredTask {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  isFavorite?: boolean;
 }
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -70,6 +71,8 @@ export interface TaskStorageAPI {
   saveTask(task: Task): void;
   /** Update a task's status and optional completion timestamp */
   updateTaskStatus(taskId: string, status: TaskStatus, completedAt?: string): void;
+  /** Toggle the favorite status of a task */
+  toggleTaskFavorite(taskId: string, isFavorite: boolean): void;
   /** Append a message to a task's message history */
   addTaskMessage(taskId: string, message: TaskMessage): void;
   /** Update the CLI session ID for a task */
