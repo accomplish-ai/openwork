@@ -40,19 +40,33 @@ function applyTheme(theme: Theme) {
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [hasUserPreference, setHasUserPreference] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      return saved === 'light' || saved === 'dark';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     applyTheme(theme);
+    // Only persist if user explicitly toggled
+    if (!hasUserPreference || typeof window === 'undefined') {
+      return;
+    }
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(THEME_KEY, theme);
-      }
+      localStorage.setItem(THEME_KEY, theme);
     } catch {
       // localStorage may be blocked in privacy mode
     }
-  }, [theme]);
+  }, [theme, hasUserPreference]);
 
   const toggleTheme = () => {
+    setHasUserPreference(true);
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
