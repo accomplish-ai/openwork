@@ -29,7 +29,7 @@ interface TaskInputBarProps {
   toolbarLeft?: ReactNode;
 }
 
-export default function TaskInputBar({
+export function TaskInputBar({
   value,
   onChange,
   onSubmit,

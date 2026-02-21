@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
-import TaskInputBar from '@/components/landing/TaskInputBar';
+import { TaskInputBar } from '@/components/landing/TaskInputBar';
 
 // Helper to render with Router context (required for PlusMenu -> CreateSkillModal -> useNavigate)
 const renderWithRouter = (ui: React.ReactElement) => {

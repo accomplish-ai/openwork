@@ -130,7 +130,7 @@ vi.mock('@/components/layout/SettingsDialog', () => ({
 }));
 
 // Import after mocks
-import HomePage from '@/pages/Home';
+import { HomePage } from '@/pages/Home';
 
 // Mock images
 vi.mock('/assets/usecases/calendar-prep-notes.png', () => ({ default: 'calendar.png' }));

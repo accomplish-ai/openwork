@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import TaskInputBar from '@/components/landing/TaskInputBar';
+import { TaskInputBar } from '@/components/landing/TaskInputBar';
 import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
@@ -240,5 +240,3 @@ export function HomePage() {
     </>
   );
 }
-
-export default HomePage;
