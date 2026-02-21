@@ -136,7 +136,7 @@ export function TaskInputBar({
       )}
 
       <div
-        className="rounded-[12px] border border-[#e9e9e9] bg-white/70 transition-all duration-200 ease-accomplish cursor-text focus-within:border-[#B5B7B4]"
+        className="rounded-[12px] border border-border bg-popover/70 transition-all duration-200 ease-accomplish cursor-text focus-within:border-muted-foreground/40"
         onClick={() => textareaRef.current?.focus()}
       >
         <div className="px-4 pt-3 pb-1">
@@ -149,7 +149,7 @@ export function TaskInputBar({
             placeholder={effectivePlaceholder}
             disabled={isInputDisabled || speechInput.isRecording}
             rows={3}
-            className="w-full min-h-[60px] max-h-[200px] resize-none overflow-y-auto bg-transparent text-[16px] leading-relaxed tracking-[-0.015em] text-foreground placeholder:text-[#b4b4b4] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full min-h-[60px] max-h-[200px] resize-none overflow-y-auto bg-transparent text-[16px] leading-relaxed tracking-[-0.015em] text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
 
@@ -198,14 +198,14 @@ export function TaskInputBar({
                   disabled={isSubmitDisabled || speechInput.isRecording}
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 ease-accomplish ${
                     isLoading
-                      ? 'bg-[#e54d2e] text-white hover:bg-[#d4412a]'
+                      ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                       : isSubmitDisabled || speechInput.isRecording
-                        ? 'bg-[#f2f3f3] text-[#B4B4B4]'
-                        : 'bg-[#244325] text-white hover:bg-[#1d371e]'
+                        ? 'bg-muted text-muted-foreground/60'
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   }`}
                 >
                   {isLoading ? (
-                    <span className="block h-[10px] w-[10px] rounded-[1.5px] bg-white" />
+                    <span className="block h-[10px] w-[10px] rounded-[1.5px] bg-destructive-foreground" />
                   ) : (
                     <ArrowUp className="h-4 w-4" weight="bold" />
                   )}

@@ -98,7 +98,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
         <DropdownMenuTrigger asChild>
           <button
             disabled={disabled}
-            className="flex h-5 w-5 shrink-0 items-center justify-center text-[#747774] transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             title={t('plusMenu.addContent')}
           >
             <Plus className="h-4 w-4" weight="light" />

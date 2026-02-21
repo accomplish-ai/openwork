@@ -145,7 +145,7 @@ export function HomePage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={springs.gentle}
-              className="font-apparat text-[32px] tracking-[-0.015em] text-[#26251d] w-full text-center pt-[250px]"
+              className="font-apparat text-[32px] tracking-[-0.015em] text-foreground w-full text-center pt-[250px]"
             >
               {t('title')}
             </motion.h1>
@@ -202,18 +202,18 @@ export function HomePage() {
                       transition={{ duration: 0.2, delay: index * 0.05 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleExampleClick(example.prompt)}
-                      className="group flex flex-col justify-between rounded-[4px] border border-[#e9e9e9] hover:border-[#B5B7B4] active:border-[#B5B7B4] bg-[#f7f7f4] pl-3 pr-4 py-3 text-left h-[164px] transition-colors"
+                      className="group flex flex-col justify-between rounded-[4px] border border-border hover:border-muted-foreground/40 active:border-muted-foreground/40 bg-accent pl-3 pr-4 py-3 text-left h-[164px] transition-colors"
                     >
                       <div className="flex items-start justify-between w-full">
-                        <span className="font-sans text-[14px] leading-[18px] tracking-[-0.28px] text-[#26251d] whitespace-pre-line w-[120px]">
+                        <span className="font-sans text-[14px] leading-[18px] tracking-[-0.28px] text-foreground whitespace-pre-line w-[120px]">
                           {example.title}
                         </span>
                         <span className="shrink-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-active:translate-y-0 -scale-y-100 rotate-180">
-                          <ArrowUpLeft className="w-4 h-4 text-[#26251d]" weight="regular" />
+                          <ArrowUpLeft className="w-4 h-4 text-foreground" weight="regular" />
                         </span>
                       </div>
 
-                      <p className="text-[13px] leading-[15px] tracking-[-0.13px] text-[#5e5e5b]">
+                      <p className="text-[13px] leading-[15px] tracking-[-0.13px] text-muted-foreground">
                         {example.description}
                       </p>
 
@@ -221,7 +221,7 @@ export function HomePage() {
                         {example.icons.map((domain) => (
                           <div
                             key={domain}
-                            className="flex items-center rounded-[5.778px] bg-white p-[3.25px] shrink-0"
+                            className="flex items-center rounded-[5.778px] bg-popover p-[3.25px] shrink-0"
                           >
                             <IntegrationIcon domain={domain} className="w-[22px] h-[22px]" />
                           </div>
