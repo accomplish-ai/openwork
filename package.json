@@ -13,7 +13,7 @@
     "predev": "node scripts/check-deps.cjs",
     "dev": "node scripts/dev.cjs",
     "predev:clean": "node scripts/check-deps.cjs",
-    "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
+    "dev:clean": "cross-env CLEAN_START=1 node scripts/dev.cjs",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
@@ -59,6 +60,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
+    "tree-kill": "^1.2.2",
     "typescript-eslint": "^8.55.0",
     "wait-on": "^9.0.4"
   }
