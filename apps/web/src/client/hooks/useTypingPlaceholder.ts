@@ -14,27 +14,28 @@ export function useTypingPlaceholder({
   enabled = true,
   text = DEFAULT_PLACEHOLDER,
 }: UseTypingPlaceholderOptions = {}): string {
-  const [charCount, setCharCount] = useState(0);
-  const [completed, setCompleted] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset typing state when source text changes
-    setCharCount(0);
-
-    setCompleted(false);
-  }, [text]);
+  const [state, setState] = useState({
+    text,
+    charCount: 0,
+    completed: false,
+  });
+  const isCurrentText = state.text === text;
+  const charCount = isCurrentText ? state.charCount : 0;
+  const completed = isCurrentText ? state.completed : false;
 
   useEffect(() => {
     if (!enabled || completed) return;
 
     const id = setTimeout(
       () => {
-        setCharCount((prev) => {
-          const next = prev + 1;
-          if (next >= text.length) {
-            setCompleted(true);
-          }
-          return next;
+        setState((prev) => {
+          const baseline = prev.text === text ? prev : { text, charCount: 0, completed: false };
+          const nextCharCount = baseline.charCount + 1;
+          return {
+            text,
+            charCount: nextCharCount,
+            completed: nextCharCount >= text.length,
+          };
         });
       },
       charCount === 0 ? 400 : typingSpeed,
@@ -43,7 +44,7 @@ export function useTypingPlaceholder({
     return () => clearTimeout(id);
   }, [enabled, charCount, typingSpeed, completed, text]);
 
-  if (completed || (!enabled && charCount > 0)) {
+  if (!enabled || completed) {
     return text;
   }
 

@@ -2,13 +2,13 @@
 
 import { useRef, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getAccomplish } from '../../lib/accomplish';
+import { getAccomplish } from '@/lib/accomplish';
 import { ArrowUp, WarningCircle } from '@phosphor-icons/react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
-import { useSpeechInput } from '../../hooks/useSpeechInput';
-import { useTypingPlaceholder } from '../../hooks/useTypingPlaceholder';
-import { SpeechInputButton } from '../ui/SpeechInputButton';
-import { ModelIndicator } from '../ui/ModelIndicator';
+import { useSpeechInput } from '@/hooks/useSpeechInput';
+import { useTypingPlaceholder } from '@/hooks/useTypingPlaceholder';
+import { SpeechInputButton } from '@/components/ui/SpeechInputButton';
+import { ModelIndicator } from '@/components/ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -56,8 +56,7 @@ export default function TaskInputBar({
     enabled: typingPlaceholder && !value,
     text: placeholder,
   });
-  const effectivePlaceholder =
-    typingPlaceholder && !value && animatedPlaceholder ? animatedPlaceholder : placeholder;
+  const effectivePlaceholder = typingPlaceholder && !value ? animatedPlaceholder : placeholder;
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
 

@@ -43,7 +43,7 @@
 @font-face {
   font-family: 'KMR Apparat';
   src: url('/fonts/KMR-Apparat-Light.ttf') format('truetype');
-  font-weight: 100 300;
+  font-weight: 100;
   font-style: normal;
   font-display: swap;
 }
@@ -264,17 +264,6 @@ textarea::placeholder {
     'Helvetica Neue',
     Arial,
     sans-serif !important;
-}
-
-@keyframes ticker {
-  0%,
-  10% {
-    transform: translateX(0);
-  }
-  90%,
-  100% {
-    transform: translateX(var(--ticker-distance));
-  }
 }
 
 /* Component utilities - removed as we're using shadcn components now */

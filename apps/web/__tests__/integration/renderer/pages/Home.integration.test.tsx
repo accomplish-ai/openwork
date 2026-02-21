@@ -194,7 +194,7 @@ describe('Home Page Integration', () => {
       );
 
       // Assert
-      const textarea = screen.getByPlaceholderText(/describe a task and let ai handle the rest/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       expect(textarea).toBeInTheDocument();
     });
 
@@ -262,7 +262,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'Check my calendar' } });
 
       // Assert
@@ -278,7 +278,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'Submit this task' } });
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -305,7 +305,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'Submit without provider' } });
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -330,7 +330,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'My task' } });
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -370,7 +370,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: '   ' } });
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -400,7 +400,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act - Submit to open settings
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'My task' } });
 
       const submitButton = screen.getByTestId('task-input-submit');
@@ -435,7 +435,7 @@ describe('Home Page Integration', () => {
       );
 
       // Assert
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       expect(textarea).toBeDisabled();
     });
 
@@ -495,7 +495,7 @@ describe('Home Page Integration', () => {
 
       // Assert - The textarea should now contain text related to the example
       await waitFor(() => {
-        const textarea = screen.getByPlaceholderText(/describe a task/i) as HTMLTextAreaElement;
+        const textarea = screen.getByTestId('task-input-textarea') as HTMLTextAreaElement;
         expect(textarea.value.length).toBeGreaterThan(0);
         expect(textarea.value.toLowerCase()).toContain('calendar');
       });
@@ -561,7 +561,7 @@ describe('Home Page Integration', () => {
       );
 
       // Act - Open settings via submit
-      const textarea = screen.getByPlaceholderText(/describe a task/i);
+      const textarea = screen.getByTestId('task-input-textarea');
       fireEvent.change(textarea, { target: { value: 'My task' } });
 
       const submitButton = screen.getByTestId('task-input-submit');

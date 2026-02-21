@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import TaskInputBar from '../components/landing/TaskInputBar';
-import { SettingsDialog } from '../components/layout/SettingsDialog';
-import { useTaskStore } from '../stores/taskStore';
-import { getAccomplish } from '../lib/accomplish';
-import { springs } from '../lib/animations';
+import TaskInputBar from '@/components/landing/TaskInputBar';
+import { SettingsDialog } from '@/components/layout/SettingsDialog';
+import { useTaskStore } from '@/stores/taskStore';
+import { getAccomplish } from '@/lib/accomplish';
+import { springs } from '@/lib/animations';
 import { ArrowUpLeft } from '@phosphor-icons/react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
-import { PlusMenu } from '../components/landing/PlusMenu';
-import { IntegrationIcon } from '../components/landing/IntegrationIcons';
+import { PlusMenu } from '@/components/landing/PlusMenu';
+import { IntegrationIcon } from '@/components/landing/IntegrationIcons';
 
 const USE_CASE_KEYS = [
   { key: 'calendarPrepNotes', icons: ['calendar.google.com', 'docs.google.com'] },
@@ -109,17 +109,23 @@ export function HomePage() {
     }
   };
 
+  const focusPromptTextarea = () => {
+    setTimeout(() => {
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        '[data-testid="task-input-textarea"]',
+      );
+      textarea?.focus();
+    }, 0);
+  };
+
   const handleExampleClick = (examplePrompt: string) => {
     setPrompt(examplePrompt);
-    const textarea = document.querySelector<HTMLTextAreaElement>(
-      '[data-testid="task-input-textarea"]',
-    );
-    textarea?.focus();
+    focusPromptTextarea();
   };
 
   const handleSkillSelect = (command: string) => {
-    const newValue = `${command} ${prompt}`.trim();
-    setPrompt(newValue);
+    setPrompt((prev) => `${command} ${prev}`.trim());
+    focusPromptTextarea();
   };
 
   return (
