@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Paperclip } from 'lucide-react';
+import { Plus, Paperclip } from '@phosphor-icons/react';
 import type { Skill, McpConnector } from '@accomplish_ai/agent-core/common';
 import {
   DropdownMenu,
