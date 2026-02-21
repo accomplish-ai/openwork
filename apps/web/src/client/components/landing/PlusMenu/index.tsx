@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Paperclip } from 'lucide-react';
+import { Plus, Paperclip } from '@phosphor-icons/react';
 import type { Skill, McpConnector } from '@accomplish_ai/agent-core/common';
 import {
   DropdownMenu,
@@ -101,7 +101,7 @@ export function PlusMenu({ onSkillSelect, onOpenSettings, disabled }: PlusMenuPr
             className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             title={t('plusMenu.addContent')}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4" weight="light" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
