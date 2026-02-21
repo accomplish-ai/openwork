@@ -18,6 +18,7 @@ import {
   Clock,
   Square,
   Download,
+  Star,
   CaretDown,
 } from '@phosphor-icons/react';
 import { isWaitingForUser } from '../lib/waiting-detection';
@@ -39,6 +40,57 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T 
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), ms);
   }) as T;
+}
+
+function ExecutionCompleteFooter({
+  taskId,
+  onStartNewTask,
+}: {
+  taskId: string;
+  onStartNewTask: () => void;
+}) {
+  const { currentTask, favorites, loadFavorites, addFavorite, removeFavorite } = useTaskStore();
+  const favoritesList = Array.isArray(favorites) ? favorites : [];
+  const isFavorited = favoritesList.some((f) => f.taskId === taskId);
+
+  useEffect(() => {
+    if (typeof loadFavorites === 'function') {
+      loadFavorites();
+    }
+  }, [loadFavorites]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (isFavorited) {
+      await removeFavorite(taskId);
+    } else {
+      await addFavorite(taskId);
+    }
+  }, [taskId, isFavorited, addFavorite, removeFavorite]);
+
+  const statusLabel =
+    currentTask?.status === 'interrupted' ? 'stopped' : (currentTask?.status ?? '');
+  const canFavorite = currentTask?.status === 'completed' || currentTask?.status === 'interrupted';
+
+  return (
+    <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 flex flex-col items-center gap-3">
+      <p className="text-sm text-muted-foreground">Task {statusLabel}</p>
+      <div className="flex items-center gap-2">
+        {canFavorite && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void handleToggleFavorite()}
+            className="gap-2"
+            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+            {isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          </Button>
+        )}
+        <Button onClick={onStartNewTask}>Start New Task</Button>
+      </div>
+    </div>
+  );
 }
 
 export function ExecutionPage() {
@@ -785,21 +837,10 @@ export function ExecutionPage() {
           </div>
         )}
 
-        {/* Completed/Failed state (no session to continue) */}
-        {isComplete && !canFollowUp && (
-          <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 text-center">
-            <p className="text-sm text-muted-foreground mb-3">
-              {t('taskStatus', {
-                status:
-                  currentTask.status === 'interrupted'
-                    ? t('status.stopped').toLowerCase()
-                    : currentTask.status,
-              })}
-            </p>
-            <div className="mt-3">
-              <Button onClick={() => navigate('/')}>{tCommon('buttons.startNewTask')}</Button>
-            </div>
-          </div>
+        {['completed', 'interrupted', 'failed', 'cancelled'].includes(
+          currentTask?.status ?? '',
+        ) && (
+          <ExecutionCompleteFooter taskId={currentTask.id} onStartNewTask={() => navigate('/')} />
         )}
 
         {/* Debug Panel */}
