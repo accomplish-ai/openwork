@@ -41,16 +41,24 @@ waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
       detached: !isWin,
       shell: isWin,
     });
-    electron.on('exit', cleanup);
+    electron.on('exit', (code, signal) =>
+      cleanup(signal ? new Error(`Electron exited with ${signal}`) : code),
+    );
   })
   .catch((err) => {
     console.error('Failed waiting for web dev server:', err.message);
-    cleanup();
+    cleanup(err);
   });
 
 function killTree(pid, signal = 'SIGTERM') {
+  if (!pid) return Promise.resolve();
+  if (!isWin) {
+    try {
+      process.kill(-pid, signal);
+    } catch {}
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
-    if (!pid) return resolve();
     treeKill(pid, signal, () => resolve());
   });
 }
