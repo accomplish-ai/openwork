@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validateApiKey } from '../../../src/providers/validation.js';
+import { validateApiKey, type ValidationResult } from '../../../src/providers/validation.js';
 
 describe('API Key Validation', () => {
   beforeEach(() => {
@@ -17,21 +17,21 @@ describe('API Key Validation', () => {
       it('should validate Anthropic key successfully', async () => {
         vi.mocked(fetch).mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ id: 'msg_123' }),
+          json: async () => ({ data: [] }),
         } as Response);
 
         const result = await validateApiKey('anthropic', 'sk-ant-test-key');
 
         expect(result.valid).toBe(true);
         expect(fetch).toHaveBeenCalledWith(
-          'https://api.anthropic.com/v1/messages',
+          'https://api.anthropic.com/v1/models',
           expect.objectContaining({
-            method: 'POST',
+            method: 'GET',
             headers: expect.objectContaining({
               'x-api-key': 'sk-ant-test-key',
               'anthropic-version': '2023-06-01',
             }),
-          }),
+          })
         );
       });
 
@@ -66,7 +66,7 @@ describe('API Key Validation', () => {
             headers: expect.objectContaining({
               Authorization: 'Bearer sk-test-key',
             }),
-          }),
+          })
         );
       });
 
@@ -95,7 +95,7 @@ describe('API Key Validation', () => {
 
         expect(fetch).toHaveBeenCalledWith(
           'https://custom.openai.com/v1/models',
-          expect.anything(),
+          expect.anything()
         );
       });
     });
@@ -114,7 +114,7 @@ describe('API Key Validation', () => {
           'https://generativelanguage.googleapis.com/v1beta/models?key=AIza-test-key',
           expect.objectContaining({
             method: 'GET',
-          }),
+          })
         );
       });
     });
@@ -136,7 +136,7 @@ describe('API Key Validation', () => {
             headers: expect.objectContaining({
               Authorization: 'Bearer xai-test-key',
             }),
-          }),
+          })
         );
       });
     });
@@ -151,7 +151,10 @@ describe('API Key Validation', () => {
         const result = await validateApiKey('deepseek', 'sk-deepseek-key');
 
         expect(result.valid).toBe(true);
-        expect(fetch).toHaveBeenCalledWith('https://api.deepseek.com/models', expect.anything());
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.deepseek.com/models',
+          expect.anything()
+        );
       });
     });
 
@@ -167,7 +170,7 @@ describe('API Key Validation', () => {
         expect(result.valid).toBe(true);
         expect(fetch).toHaveBeenCalledWith(
           'https://openrouter.ai/api/v1/auth/key',
-          expect.anything(),
+          expect.anything()
         );
       });
     });
@@ -176,17 +179,20 @@ describe('API Key Validation', () => {
       it('should validate Moonshot key successfully', async () => {
         vi.mocked(fetch).mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ id: 'chat-123' }),
+          json: async () => ({ data: [] }),
         } as Response);
 
         const result = await validateApiKey('moonshot', 'sk-moonshot-key');
 
         expect(result.valid).toBe(true);
         expect(fetch).toHaveBeenCalledWith(
-          'https://api.moonshot.ai/v1/chat/completions',
+          'https://api.moonshot.ai/v1/models',
           expect.objectContaining({
-            method: 'POST',
-          }),
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer sk-moonshot-key',
+            }),
+          })
         );
       });
     });
@@ -201,8 +207,15 @@ describe('API Key Validation', () => {
         const result = await validateApiKey('zai', 'zai-test-key');
 
         expect(result.valid).toBe(true);
-        // Should use international endpoint by default
-        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('models'), expect.anything());
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.z.ai/api/coding/paas/v4/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer zai-test-key',
+            }),
+          })
+        );
       });
 
       it('should use china region when specified', async () => {
@@ -213,7 +226,15 @@ describe('API Key Validation', () => {
 
         await validateApiKey('zai', 'zai-test-key', { zaiRegion: 'china' });
 
-        expect(fetch).toHaveBeenCalled();
+        expect(fetch).toHaveBeenCalledWith(
+          'https://open.bigmodel.cn/api/paas/v4/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer zai-test-key',
+            }),
+          })
+        );
       });
     });
 
@@ -235,7 +256,95 @@ describe('API Key Validation', () => {
               Authorization: 'Bearer minimax-key',
               'anthropic-version': '2023-06-01',
             }),
-          }),
+          })
+        );
+      });
+    });
+
+    describe('Nebius AI', () => {
+      it('should validate Nebius key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('nebius', 'nebius-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.tokenfactory.nebius.com/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer nebius-key',
+            }),
+          })
+        );
+      });
+    });
+
+    describe('Together AI', () => {
+      it('should validate Together key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('together', 'together-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.together.xyz/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer together-key',
+            }),
+          })
+        );
+      });
+    });
+
+    describe('Fireworks AI', () => {
+      it('should validate Fireworks key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('fireworks', 'fireworks-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.fireworks.ai/inference/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer fireworks-key',
+            }),
+          })
+        );
+      });
+    });
+
+    describe('Groq', () => {
+      it('should validate Groq key successfully', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+
+        const result = await validateApiKey('groq', 'groq-key');
+
+        expect(result.valid).toBe(true);
+        expect(fetch).toHaveBeenCalledWith(
+          'https://api.groq.com/openai/v1/models',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer groq-key',
+            }),
+          })
         );
       });
     });
@@ -361,7 +470,7 @@ describe('API Key Validation', () => {
           expect.any(String),
           expect.objectContaining({
             signal: expect.any(AbortSignal),
-          }),
+          })
         );
       });
     });

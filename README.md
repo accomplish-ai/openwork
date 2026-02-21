@@ -141,6 +141,10 @@ Accomplish is an open source AI desktop agent that automates file management, do
 - DeepSeek
 - Moonshot AI (Kimi)
 - Z.AI (GLM)
+- Nebius AI
+- Together AI
+- Fireworks AI
+- Groq
 - MiniMax
 - Amazon Bedrock
 - Azure Foundry
@@ -217,7 +221,7 @@ A quick look at Accomplish on macOS, plus a short demo video.
 Yes. Accomplish runs locally on your machine and you control which folders it can access.
 
 **Do I need an API key?**  
-You can use your own API keys (OpenAI, Anthropic, Google, xAI, etc.) or run local models via Ollama.
+You can use your own API keys (OpenAI, Anthropic, Google, xAI, Groq etc.) or run local models via Ollama.
 
 **Is Accomplish free?**  
 Yes. Accomplish is open source and MIT licensed.

@@ -13,7 +13,11 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'nebius'
+  | 'together'
+  | 'fireworks'
+  | 'groq';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -27,109 +31,25 @@ export interface ProviderMeta {
 }
 
 export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
-  anthropic: {
-    id: 'anthropic',
-    name: 'Anthropic',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'claude',
-    helpUrl: 'https://console.anthropic.com/settings/keys',
-  },
-  openai: {
-    id: 'openai',
-    name: 'OpenAI',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'open-ai',
-    helpUrl: 'https://platform.openai.com/api-keys',
-  },
-  google: {
-    id: 'google',
-    name: 'Gemini',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'google-gen-ai',
-    helpUrl: 'https://aistudio.google.com/app/apikey',
-  },
-  xai: {
-    id: 'xai',
-    name: 'XAI',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'Xai',
-    helpUrl: 'https://x.ai/api',
-  },
-  deepseek: {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'Deepseek',
-    helpUrl: 'https://platform.deepseek.com/api_keys',
-  },
-  moonshot: {
-    id: 'moonshot',
-    name: 'Moonshot AI',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'moonshot',
-    helpUrl: 'https://platform.moonshot.ai/docs/guide/start-using-kimi-api',
-  },
+  anthropic: { id: 'anthropic', name: 'Anthropic', category: 'classic', label: 'Service', logoKey: 'claude', helpUrl: 'https://console.anthropic.com/settings/keys' },
+  openai: { id: 'openai', name: 'OpenAI', category: 'classic', label: 'Service', logoKey: 'open-ai', helpUrl: 'https://platform.openai.com/api-keys' },
+  google: { id: 'google', name: 'Gemini', category: 'classic', label: 'Service', logoKey: 'google-gen-ai', helpUrl: 'https://aistudio.google.com/app/apikey' },
+  xai: { id: 'xai', name: 'XAI', category: 'classic', label: 'Service', logoKey: 'Xai', helpUrl: 'https://x.ai/api' },
+  deepseek: { id: 'deepseek', name: 'DeepSeek', category: 'classic', label: 'Service', logoKey: 'Deepseek', helpUrl: 'https://platform.deepseek.com/api_keys' },
+  moonshot: { id: 'moonshot', name: 'Moonshot AI', category: 'classic', label: 'Service', logoKey: 'moonshot', helpUrl: 'https://platform.moonshot.ai/docs/guide/start-using-kimi-api' },
   zai: { id: 'zai', name: 'Z-AI', category: 'classic', label: 'Service', logoKey: 'z-ai' },
-  bedrock: {
-    id: 'bedrock',
-    name: 'AWS Bedrock',
-    category: 'aws',
-    label: 'Service',
-    logoKey: 'aws-bedrock',
-  },
+  bedrock: { id: 'bedrock', name: 'AWS Bedrock', category: 'aws', label: 'Service', logoKey: 'aws-bedrock' },
   vertex: { id: 'vertex', name: 'Vertex AI', category: 'gcp', label: 'Service', logoKey: 'vertex' },
-  'azure-foundry': {
-    id: 'azure-foundry',
-    name: 'Azure AI Foundry',
-    category: 'azure',
-    label: 'Service',
-    logoKey: 'azure',
-    helpUrl: 'https://ai.azure.com',
-  },
-  ollama: {
-    id: 'ollama',
-    name: 'Ollama',
-    category: 'local',
-    label: 'Local Models',
-    logoKey: 'olama',
-  },
-  openrouter: {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    category: 'proxy',
-    label: 'Service',
-    logoKey: 'open-router',
-    helpUrl: 'https://openrouter.ai/keys',
-  },
-  litellm: {
-    id: 'litellm',
-    name: 'LiteLLM',
-    category: 'hybrid',
-    label: 'Service',
-    logoKey: 'liteLLM',
-  },
-  minimax: {
-    id: 'minimax',
-    name: 'MiniMax',
-    category: 'classic',
-    label: 'Service',
-    logoKey: 'minimax',
-    helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key',
-  },
-  lmstudio: {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    category: 'local',
-    label: 'Local Models',
-    logoKey: 'lmstudio',
-    helpUrl: 'https://lmstudio.ai/',
-  },
+  'azure-foundry': { id: 'azure-foundry', name: 'Azure AI Foundry', category: 'azure', label: 'Service', logoKey: 'azure', helpUrl: 'https://ai.azure.com' },
+  ollama: { id: 'ollama', name: 'Ollama', category: 'local', label: 'Local Models', logoKey: 'olama' },
+  openrouter: { id: 'openrouter', name: 'OpenRouter', category: 'proxy', label: 'Service', logoKey: 'open-router', helpUrl: 'https://openrouter.ai/keys' },
+  litellm: { id: 'litellm', name: 'LiteLLM', category: 'hybrid', label: 'Service', logoKey: 'liteLLM' },
+  minimax: { id: 'minimax', name: 'MiniMax', category: 'classic', label: 'Service', logoKey: 'minimax', helpUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key' },
+  lmstudio: { id: 'lmstudio', name: 'LM Studio', category: 'local', label: 'Local Models', logoKey: 'lmstudio', helpUrl: 'https://lmstudio.ai/' },
+  nebius: { id: 'nebius', name: 'Nebius AI', category: 'classic', label: 'Service', logoKey: 'nebius', helpUrl: 'https://studio.nebius.com/' },
+  together: { id: 'together', name: 'Together AI', category: 'classic', label: 'Service', logoKey: 'together', helpUrl: 'https://api.together.xyz/settings/api-keys' },
+  fireworks: { id: 'fireworks', name: 'Fireworks AI', category: 'classic', label: 'Service', logoKey: 'fireworks', helpUrl: 'https://fireworks.ai/account/api-keys' },
+  groq: { id: 'groq', name: 'Groq', category: 'classic', label: 'Service', logoKey: 'groq', helpUrl: 'https://console.groq.com/keys' },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -238,9 +158,7 @@ export function hasAnyReadyProvider(settings: ProviderSettings | null | undefine
   return Object.values(settings.connectedProviders).some(isProviderReady);
 }
 
-export function getActiveProvider(
-  settings: ProviderSettings | null | undefined,
-): ConnectedProvider | null {
+export function getActiveProvider(settings: ProviderSettings | null | undefined): ConnectedProvider | null {
   if (!settings?.activeProviderId) return null;
   return settings.connectedProviders?.[settings.activeProviderId] ?? null;
 }
@@ -251,7 +169,7 @@ export function getActiveProvider(
  * This map covers providers that don't have modelsEndpoint (bedrock) or as fallback.
  */
 export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
-  anthropic: 'anthropic/claude-opus-4-5',
+  anthropic: 'anthropic/claude-opus-4-6',
   openai: 'openai/gpt-5.2',
   google: 'google/gemini-3-pro-preview',
   xai: 'xai/grok-4',
@@ -259,6 +177,10 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   moonshot: 'moonshot/kimi-k2.5',
   zai: 'zai/glm-4.7-flashx',
   minimax: 'minimax/MiniMax-M2',
+  nebius: 'nebius/meta-llama/Meta-Llama-3.1-70B-Instruct',
+  together: 'together/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+  fireworks: 'fireworks/llama-v3p1-70b-instruct',
+  groq: 'groq/llama-3.3-70b-versatile',
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
 };
 
@@ -286,4 +208,8 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };
