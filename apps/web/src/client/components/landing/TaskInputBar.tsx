@@ -1,21 +1,25 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '../../lib/accomplish';
-import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
+import { CornerDownLeft, Loader2, AlertCircle, File, X, Plus } from 'lucide-react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
+import type { TaskFileAttachment } from '@accomplish_ai/agent-core';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
 import { ModelIndicator } from '../ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusMenu } from './PlusMenu';
+import { getAttachmentIcon } from '../../lib/attachments';
 
 interface TaskInputBarProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  attachments?: TaskFileAttachment[];
+  onAttachmentsChange?: (attachments: TaskFileAttachment[]) => void;
   placeholder?: string;
   isLoading?: boolean;
   disabled?: boolean;
@@ -47,6 +51,8 @@ interface TaskInputBarProps {
 export default function TaskInputBar({
   value,
   onChange,
+  attachments = [],
+  onAttachmentsChange,
   onSubmit,
   placeholder = 'Assign a task or ask anything',
   isLoading = false,
@@ -66,6 +72,8 @@ export default function TaskInputBar({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
+  const [isDragging, setIsDragging] = useState(false);
+  const [_dragCounter, setDragCounter] = useState(0);
 
   // Speech input hook
   const speechInput = useSpeechInput({
@@ -137,9 +145,145 @@ export default function TaskInputBar({
     }, 0);
   };
 
+  const handlePickFiles = async () => {
+    if (!window.accomplish?.pickFiles || !onAttachmentsChange) return;
+    try {
+      const newFiles = await window.accomplish.pickFiles();
+      if (newFiles.length > 0) {
+        // Enforce max 5 limit and combine
+        const combined = [...attachments, ...newFiles].slice(0, 5);
+        onAttachmentsChange(combined);
+      }
+    } catch (error) {
+      console.error('Failed to pick files:', error);
+      // NOTE: Errors shown via alerts later if needed, but Dialog handles limits
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    if (!onAttachmentsChange) return;
+    onAttachmentsChange(attachments.filter((a) => a.id !== id));
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (!window.accomplish?.processDroppedFiles || !onAttachmentsChange) {
+      console.warn('Direct file drop is not supported in this environment yet.');
+      return;
+    }
+
+    // 1. Extract valid DOM File objects robustly
+    const extractedFiles: File[] = [];
+    if (e.dataTransfer.items) {
+      for (let i = 0; i < e.dataTransfer.items.length; i++) {
+        if (e.dataTransfer.items[i].kind === 'file') {
+          const file = e.dataTransfer.items[i].getAsFile();
+          if (file) extractedFiles.push(file);
+        }
+      }
+    } else if (e.dataTransfer.files) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        extractedFiles.push(e.dataTransfer.files[i]);
+      }
+    }
+
+    if (extractedFiles.length === 0) {
+      console.warn(
+        'No files extracted from the drop payload. Check if the dragged item is a valid OS file.',
+      );
+      return;
+    }
+
+    // 2. Safely map File objects to absolute native OS paths for the Electron IPC
+    const filePaths: string[] = [];
+    for (const file of extractedFiles) {
+      // Fallback to the Chromium non-standard prop
+      let filePath = 'path' in file ? (file as File & { path: string }).path : undefined;
+
+      if (window.accomplish?.getFilePath) {
+        try {
+          // Extract via the native WebContents webUtils bridge
+          filePath = window.accomplish.getFilePath(file);
+        } catch (err) {
+          console.warn('webUtils extraction failed, falling back', err);
+        }
+      }
+
+      if (filePath && typeof filePath === 'string') {
+        filePaths.push(filePath);
+      }
+    }
+
+    if (filePaths.length === 0) {
+      console.error(
+        'Files were dropped but no native disk paths could be resolved. IPC transfer will fail.',
+      );
+      return;
+    }
+
+    try {
+      const newAttachments = await window.accomplish.processDroppedFiles(filePaths);
+      if (newAttachments.length > 0) {
+        const combined = [...attachments, ...newAttachments].slice(0, 5);
+        onAttachmentsChange(combined);
+      }
+    } catch (err) {
+      console.error('Failed to process dropped files:', err);
+    }
+  };
+
   return (
-    <div className="w-full space-y-2">
-      {/* Error message */}
+    <div
+      className="w-full space-y-2 relative"
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragCounter((prev) => prev + 1);
+        if (!isDragging) setIsDragging(true);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragCounter((prev) => {
+          const next = prev - 1;
+          if (next === 0) setIsDragging(false);
+          return next;
+        });
+      }}
+      onDrop={(e) => {
+        setDragCounter(0);
+        handleDrop(e);
+      }}
+    >
+      {isDragging && (
+        <div
+          className="absolute inset-0 z-50 flex items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+          }}
+          onDrop={handleDrop}
+        >
+          <div className="text-primary font-medium flex items-center gap-2 pointer-events-none">
+            <Plus className="h-5 w-5 pointer-events-none" /> Drop files here to attach
+          </div>
+        </div>
+      )}
+
       {speechInput.error && (
         <Alert
           variant="destructive"
@@ -161,9 +305,31 @@ export default function TaskInputBar({
         </Alert>
       )}
 
-      {/* Input container - two rows: textarea top, toolbar bottom */}
-      <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-        {/* Textarea area */}
+      <div
+        className={`rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring ${isDragging ? 'pointer-events-none' : ''}`}
+      >
+        {attachments.length > 0 && (
+          <div className="px-4 pt-4 pb-1 flex gap-2 overflow-x-auto items-center">
+            {attachments.map((file) => (
+              <div
+                key={file.id}
+                className="flex items-center gap-2 px-2.5 py-1.5 bg-muted/50 border border-border rounded-md shrink-0 max-w-[200px]"
+                title={file.name}
+              >
+                {getAttachmentIcon(file.type)}
+                <span className="text-xs font-medium truncate">{file.name}</span>
+                <button
+                  onClick={() => removeAttachment(file.id)}
+                  aria-label={`Remove attachment ${file.name}`}
+                  className="text-muted-foreground hover:text-foreground shrink-0 ml-1 rounded-full p-0.5 hover:bg-muted"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="px-4 pt-3 pb-2">
           <textarea
             data-testid="task-input-textarea"
@@ -178,18 +344,15 @@ export default function TaskInputBar({
           />
         </div>
 
-        {/* Toolbar - fixed at bottom */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
-          {/* Plus Menu on left */}
           <PlusMenu
             onSkillSelect={handleSkillSelect}
             onOpenSettings={(tab) => onOpenSettings?.(tab)}
+            onPickFiles={handlePickFiles}
             disabled={isDisabled || speechInput.isRecording}
           />
 
-          {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {/* Model Indicator */}
             {onOpenModelSettings && (
               <ModelIndicator
                 isRunning={false}
@@ -198,10 +361,8 @@ export default function TaskInputBar({
               />
             )}
 
-            {/* Divider */}
             <div className="w-px h-6 bg-border" />
 
-            {/* Speech Input Button */}
             <SpeechInputButton
               isRecording={speechInput.isRecording}
               isTranscribing={speechInput.isTranscribing}
@@ -217,7 +378,6 @@ export default function TaskInputBar({
               size="md"
             />
 
-            {/* Submit button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button

@@ -13,6 +13,7 @@ export type {
   TaskConfig,
   Task,
   TaskAttachment,
+  TaskFileAttachment,
   TaskMessage,
   TaskResult,
   TaskProgress,

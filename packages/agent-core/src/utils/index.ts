@@ -43,3 +43,5 @@ export { mapResultToStatus } from './task-status.js';
 export { validateTaskConfig } from './task-validation.js';
 
 export { serializeError } from './error.js';
+
+export { buildEnhancedPrompt } from './prompt.js';
