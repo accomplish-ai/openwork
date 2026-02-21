@@ -17,6 +17,23 @@ export interface ValidationOptions {
 
 const DEFAULT_TIMEOUT_MS = 10000;
 
+export async function validateOpenAICompatible(
+  apiKey: string,
+  baseUrl: string,
+  timeout: number = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
+  return fetchWithTimeout(
+    `${baseUrl.replace(/\/+$/, '')}/models`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    },
+    timeout,
+  );
+}
+
 export async function validateApiKey(
   provider: ProviderType,
   apiKey: string,
@@ -49,17 +66,8 @@ export async function validateApiKey(
         break;
 
       case 'openai': {
-        const baseUrl = (options?.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
-        response = await fetchWithTimeout(
-          `${baseUrl}/models`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-          },
-          timeout,
-        );
+        const baseUrl = options?.baseUrl || 'https://api.openai.com/v1';
+        response = await validateOpenAICompatible(apiKey, baseUrl, timeout);
         break;
       }
 
@@ -74,29 +82,11 @@ export async function validateApiKey(
         break;
 
       case 'xai':
-        response = await fetchWithTimeout(
-          'https://api.x.ai/v1/models',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-          },
-          timeout,
-        );
+        response = await validateOpenAICompatible(apiKey, 'https://api.x.ai/v1', timeout);
         break;
 
       case 'deepseek':
-        response = await fetchWithTimeout(
-          'https://api.deepseek.com/models',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-          },
-          timeout,
-        );
+        response = await validateOpenAICompatible(apiKey, 'https://api.deepseek.com', timeout);
         break;
 
       case 'openrouter':
@@ -134,18 +124,37 @@ export async function validateApiKey(
       case 'zai': {
         const zaiRegion = options?.zaiRegion ?? 'international';
         const zaiEndpoint = ZAI_ENDPOINTS[zaiRegion];
-        response = await fetchWithTimeout(
-          `${zaiEndpoint}/models`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-          },
+        response = await validateOpenAICompatible(apiKey, zaiEndpoint, timeout);
+        break;
+      }
+
+      case 'nebius':
+        response = await validateOpenAICompatible(
+          apiKey,
+          'https://api.studio.nebius.ai/v1',
           timeout,
         );
         break;
-      }
+
+      case 'together':
+        response = await validateOpenAICompatible(apiKey, 'https://api.together.xyz/v1', timeout);
+        break;
+
+      case 'fireworks':
+        response = await validateOpenAICompatible(
+          apiKey,
+          'https://api.fireworks.ai/inference/v1',
+          timeout,
+        );
+        break;
+
+      case 'groq':
+        response = await validateOpenAICompatible(
+          apiKey,
+          'https://api.groq.com/openai/v1',
+          timeout,
+        );
+        break;
 
       case 'minimax':
         response = await fetchWithTimeout(
