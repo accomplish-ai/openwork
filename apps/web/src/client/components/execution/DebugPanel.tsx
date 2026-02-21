@@ -2,17 +2,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
-import {
-  Bug,
-  ChevronUp,
-  ChevronDown,
-  Download,
-  Trash2,
-  Check,
-  Search,
-  Play,
-  RefreshCw,
-} from 'lucide-react';
+import { Bug, Download, Check, Play, RefreshCw } from 'lucide-react';
+import { CaretUp, CaretDown, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { getAccomplish } from '@/lib/accomplish';
 
@@ -329,15 +320,15 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
                   onClearLogs();
                 }}
               >
-                <Trash2 className="h-3 w-3 mr-1" />
+                <Trash className="h-3 w-3 mr-1" />
                 Clear
               </Button>
             </>
           )}
           {debugPanelOpen ? (
-            <ChevronDown className="h-4 w-4 text-zinc-500" />
+            <CaretDown className="h-4 w-4 text-zinc-500" />
           ) : (
-            <ChevronUp className="h-4 w-4 text-zinc-500" />
+            <CaretUp className="h-4 w-4 text-zinc-500" />
           )}
         </div>
       </div>
@@ -365,19 +356,19 @@ export function DebugPanel({ debugLogs, taskId, onClearLogs, isTaskComplete }: D
                       className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-l border border-zinc-700 border-r-0"
                       title="Previous match (Shift+Enter)"
                     >
-                      <ChevronUp className="h-3.5 w-3.5" />
+                      <CaretUp className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={goToNextMatch}
                       className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded-r border border-zinc-700"
                       title="Next match (Enter)"
                     >
-                      <ChevronDown className="h-3.5 w-3.5" />
+                      <CaretDown className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-500" />
+                  <MagnifyingGlass className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-500" />
                   <input
                     ref={debugSearchInputRef}
                     type="text"
