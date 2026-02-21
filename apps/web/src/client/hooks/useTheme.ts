@@ -8,12 +8,20 @@ function getInitialTheme(): Theme {
   if (typeof window === 'undefined') {
     return 'light';
   }
-  const saved = localStorage.getItem(THEME_KEY) as Theme | null;
-  if (saved === 'light' || saved === 'dark') {
-    return saved;
+  try {
+    const saved = localStorage.getItem(THEME_KEY) as Theme | null;
+    if (saved === 'light' || saved === 'dark') {
+      return saved;
+    }
+  } catch {
+    // localStorage may be blocked in privacy mode
   }
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
+  try {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+  } catch {
+    // matchMedia may be unavailable in some environments
   }
   return 'light';
 }
@@ -35,8 +43,12 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(THEME_KEY, theme);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(THEME_KEY, theme);
+      }
+    } catch {
+      // localStorage may be blocked in privacy mode
     }
   }, [theme]);
 
