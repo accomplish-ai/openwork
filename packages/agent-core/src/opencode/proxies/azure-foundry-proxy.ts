@@ -44,14 +44,14 @@ export function transformRequestBody(body: Buffer): Buffer {
     let modified = false;
 
     if ('reasoning_effort' in parsed) {
-      console.log('[Azure Foundry Proxy] Stripping unsupported reasoning_effort parameter');
+      // console.log('[Azure Foundry Proxy] Stripping unsupported reasoning_effort parameter');
       delete parsed.reasoning_effort;
       modified = true;
     }
 
     if ('max_tokens' in parsed) {
       if (!('max_completion_tokens' in parsed)) {
-        console.log('[Azure Foundry Proxy] Converting max_tokens to max_completion_tokens');
+        // console.log('[Azure Foundry Proxy] Converting max_tokens to max_completion_tokens');
         parsed.max_completion_tokens = parsed.max_tokens;
       }
       delete parsed.max_tokens;
@@ -219,7 +219,7 @@ export async function ensureAzureFoundryProxy(baseURL: string): Promise<AzureFou
 
       server!.listen(AZURE_FOUNDRY_PROXY_PORT, '127.0.0.1', () => {
         clearTimeout(timeout);
-        console.log(`[Azure Foundry Proxy] Listening on port ${AZURE_FOUNDRY_PROXY_PORT}`);
+        // console.log(`[Azure Foundry Proxy] Listening on port ${AZURE_FOUNDRY_PROXY_PORT}`);
         resolve();
       });
     });
@@ -251,7 +251,7 @@ export async function stopAzureFoundryProxy(): Promise<void> {
         console.error('[Azure Foundry Proxy] Error during shutdown:', err);
         reject(err);
       } else {
-        console.log('[Azure Foundry Proxy] Server stopped');
+        // console.log('[Azure Foundry Proxy] Server stopped');
         resolve();
       }
     });

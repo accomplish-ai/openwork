@@ -197,7 +197,7 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
       const stat = await this.fileHandle.stat();
       this.readPosition = stat.size;
 
-      console.log('[LogWatcher] Watching log file:', latestLog);
+      // console.log('[LogWatcher] Watching log file:', latestLog);
     } catch (err) {
       console.warn('[LogWatcher] Error finding latest log:', err);
     }
@@ -270,7 +270,7 @@ export class OpenCodeLogWatcher extends EventEmitter<LogWatcherEvents> {
           raw: line,
         };
 
-        console.log('[LogWatcher] Detected error:', error.errorName, error.message);
+        // console.log('[LogWatcher] Detected error:', error.errorName, error.message);
         this.emit('error', error);
         return;
       }

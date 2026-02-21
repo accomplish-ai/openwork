@@ -1,0 +1,70 @@
+﻿node.exe : 
+(node:7224) [MODULE_TY
+PELESS_PACKAGE_JSON] 
+Warning: Module type 
+of file:///C:/Users/da
+vid/Documents/GitHub/a
+ccomplish/eslint.confi
+g.js?mtime=17714641248
+97 is not specified 
+and it doesn't parse 
+as CommonJS.
+En línea: 1 Carácter: 
+1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ((node:7224   
+ ) [MO...se as Com    
+monJS.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+Reparsing as ES 
+module because module 
+syntax was detected. 
+This incurs a 
+performance overhead.
+To eliminate this 
+warning, add "type": 
+"module" to C:\Users\d
+avid\Documents\GitHub\
+accomplish\package.jso
+n.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core\src\browser\server.ts
+  127:5  error  'attempts' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core\src\internal\classes\OpenCodeAdapter.ts
+  267:17  error  'truncated' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+  578:15  error  'unknownMessage' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  749:15  error  'truncated' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core\src\internal\classes\StreamParser.ts
+  105:14  error  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core\src\opencode\proxies\moonshot-proxy.ts
+  109:16  error  Empty block statement                                                                       no-empty
+  158:39  error  'i' is defined but never used. Allowed unused args must match /^_/u                         @typescript-eslint/no-unused-vars
+  159:17  error  'm' is assigned a value but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+  201:24  error  Empty block statement                                                                       no-empty
+  234:39  error  'i' is defined but never used. Allowed unused args must match /^_/u                         @typescript-eslint/no-unused-vars
+  235:17  error  'm' is assigned a value but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+  316:11  error  'contentEncoding' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+Ô£û 12 problems (12 errors, 0 warnings)
+

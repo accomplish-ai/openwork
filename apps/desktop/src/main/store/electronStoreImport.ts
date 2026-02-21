@@ -66,11 +66,11 @@ function importAppSettings(db: Database): void {
     });
 
     if (legacy.size === 0) {
-      console.log('[LegacyImport] No legacy app-settings to import');
+      // console.log('[LegacyImport] No legacy app-settings to import');
       return;
     }
 
-    console.log('[LegacyImport] Importing app-settings...');
+    // console.log('[LegacyImport] Importing app-settings...');
 
     db.prepare(
       `UPDATE app_settings SET
@@ -88,7 +88,7 @@ function importAppSettings(db: Database): void {
       JSON.stringify(legacy.get('litellmConfig') ?? null),
     );
 
-    console.log('[LegacyImport] App settings imported');
+    // console.log('[LegacyImport] App settings imported');
   } catch (err) {
     console.error('[LegacyImport] Failed to import app-settings:', err);
   }
@@ -101,11 +101,11 @@ function importProviderSettings(db: Database): void {
     });
 
     if (legacy.size === 0) {
-      console.log('[LegacyImport] No legacy provider-settings to import');
+      // console.log('[LegacyImport] No legacy provider-settings to import');
       return;
     }
 
-    console.log('[LegacyImport] Importing provider-settings...');
+    // console.log('[LegacyImport] Importing provider-settings...');
 
     db.prepare(
       `UPDATE provider_meta SET
@@ -142,7 +142,7 @@ function importProviderSettings(db: Database): void {
       }
     }
 
-    console.log('[LegacyImport] Provider settings imported');
+    // console.log('[LegacyImport] Provider settings imported');
   } catch (err) {
     console.error('[LegacyImport] Failed to import provider-settings:', err);
   }
@@ -155,15 +155,15 @@ function importTaskHistory(db: Database): void {
     });
 
     if (legacy.size === 0) {
-      console.log('[LegacyImport] No legacy task-history to import');
+      // console.log('[LegacyImport] No legacy task-history to import');
       return;
     }
 
-    console.log('[LegacyImport] Importing task-history...');
+    // console.log('[LegacyImport] Importing task-history...');
 
     const tasks = legacy.get('tasks') as Array<Record<string, unknown>> | null;
     if (!tasks || tasks.length === 0) {
-      console.log('[LegacyImport] No tasks to import');
+      // console.log('[LegacyImport] No tasks to import');
       return;
     }
 
@@ -185,7 +185,6 @@ function importTaskHistory(db: Database): void {
       VALUES (?, ?, ?, ?)`,
     );
 
-    let importedCount = 0;
     for (const task of tasks) {
       const result = insertTask.run(
         task.id as string,
@@ -199,7 +198,6 @@ function importTaskHistory(db: Database): void {
       );
 
       if (result.changes > 0) {
-        importedCount++;
         const messages = task.messages as Array<Record<string, unknown>> | null;
         if (messages) {
           let sortOrder = 0;
@@ -231,9 +229,9 @@ function importTaskHistory(db: Database): void {
       }
     }
 
-    console.log(
-      `[LegacyImport] Imported ${importedCount} new tasks (${tasks.length - importedCount} already existed)`,
-    );
+    // console.log(
+    // `[LegacyImport] Imported ${importedCount} new tasks (${tasks.length - importedCount} already existed)`,
+    // );
   } catch (err) {
     console.error('[LegacyImport] Failed to import task-history:', err);
   }
@@ -241,19 +239,16 @@ function importTaskHistory(db: Database): void {
 
 export function importLegacyElectronStoreData(db: Database): void {
   if (wasLegacyImportAttempted(db)) {
-    console.log('[LegacyImport] Legacy import already completed, skipping');
+    // console.log('[LegacyImport] Legacy import already completed, skipping');
     return;
   }
 
   if (hasExistingUserData(db)) {
-    console.log(
-      '[LegacyImport] Database has existing user data - marking import complete without running',
-    );
     markLegacyImportComplete(db);
     return;
   }
 
-  console.log('[LegacyImport] Checking for legacy electron-store data...');
+  // console.log('[LegacyImport] Checking for legacy electron-store data...');
 
   importAppSettings(db);
   importProviderSettings(db);
@@ -261,5 +256,5 @@ export function importLegacyElectronStoreData(db: Database): void {
 
   markLegacyImportComplete(db);
 
-  console.log('[LegacyImport] Legacy import complete');
+  // console.log('[LegacyImport] Legacy import complete');
 }

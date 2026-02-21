@@ -63,7 +63,7 @@ export async function fetchOpenRouterModels(
       };
     });
 
-    console.log(`[OpenRouter] Fetched ${models.length} models`);
+    // console.log(`[OpenRouter] Fetched ${models.length} models`);
     return { success: true, models };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch models';

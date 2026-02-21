@@ -20,7 +20,7 @@ function execAsync(command: string, args: string[], timeoutMs = 5000): Promise<s
 
 export function registerVertexHandlers(handle: IpcHandler): void {
   handle('vertex:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
-    console.log('[Vertex] Validation requested');
+    // console.log('[Vertex] Validation requested');
     return validateVertexCredentials(credentials);
   });
 

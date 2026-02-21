@@ -107,7 +107,7 @@ export function startThoughtStreamServer(): http.Server {
   });
 
   server.listen(THOUGHT_STREAM_PORT, '127.0.0.1', () => {
-    console.log(`[Thought Stream API] Server listening on port ${THOUGHT_STREAM_PORT}`);
+    // console.log(`[Thought Stream API] Server listening on port ${THOUGHT_STREAM_PORT}`);
   });
 
   server.on('error', (error: NodeJS.ErrnoException) => {

@@ -29,7 +29,7 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
     closeDatabase();
   }
 
-  console.log('[DB] Opening database at:', databasePath);
+  // console.log('[DB] Opening database at:', databasePath);
 
   _db = new Database(databasePath);
   _currentPath = databasePath;
@@ -46,7 +46,7 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
     }
 
     runMigrations(_db);
-    console.log('[DB] Database initialized and migrations complete');
+    // console.log('[DB] Database initialized and migrations complete');
   }
 
   return _db;
@@ -54,7 +54,7 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
 
 export function closeDatabase(): void {
   if (_db) {
-    console.log('[DB] Closing database connection');
+    // console.log('[DB] Closing database connection');
     _db.close();
     _db = null;
     _currentPath = null;
@@ -78,7 +78,7 @@ export function resetDatabase(databasePath: string): void {
 
   if (fs.existsSync(databasePath)) {
     const backupPath = `${databasePath}.corrupt.${Date.now()}`;
-    console.log('[DB] Backing up corrupt database to:', backupPath);
+    // console.log('[DB] Backing up corrupt database to:', backupPath);
     fs.renameSync(databasePath, backupPath);
   }
 
