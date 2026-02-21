@@ -30,7 +30,7 @@ export function HomePage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, interruptTask, currentTask, isLoading, addTaskUpdate, setPermissionRequest } =
+  const { startTask, interruptTask, isLoading, addTaskUpdate, setPermissionRequest } =
     useTaskStore();
   const navigate = useNavigate();
   const accomplish = useMemo(() => getAccomplish(), []);
@@ -72,12 +72,6 @@ export function HomePage() {
 
   const handleSubmit = async () => {
     if (isLoading) {
-      if (currentTask) {
-        void accomplish.analytics?.trackStopAgent(
-          currentTask.id,
-          currentTask.sessionId || currentTask.result?.sessionId || '',
-        );
-      }
       void interruptTask();
       return;
     }
