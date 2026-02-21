@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAccomplish } from '../../lib/accomplish';
-import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
+import { CornerDownLeft, Loader2, AlertCircle, X, Paperclip } from 'lucide-react';
 import { PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import { useSpeechInput } from '../../hooks/useSpeechInput';
 import { SpeechInputButton } from '../ui/SpeechInputButton';
@@ -11,6 +11,13 @@ import { ModelIndicator } from '../ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusMenu } from './PlusMenu';
+
+interface AttachedFile {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+}
 
 interface TaskInputBarProps {
   value: string;
@@ -67,10 +74,15 @@ export default function TaskInputBar({
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
 
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const dragCounterRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Speech input hook
   const speechInput = useSpeechInput({
     onTranscriptionComplete: (text) => {
-      // Append transcribed text to existing input
       const newValue = value.trim() ? `${value} ${text}` : text;
       onChange(newValue);
 
@@ -78,14 +90,12 @@ export default function TaskInputBar({
         pendingAutoSubmitRef.current = newValue;
       }
 
-      // Auto-focus textarea
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 0);
     },
     onError: (error) => {
       console.error('[Speech] Error:', error.message);
-      // Error is stored in speechInput.error state
     },
   });
 
@@ -117,7 +127,6 @@ export default function TaskInputBar({
   }, [value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Ignore Enter during IME composition (Chinese/Japanese input)
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -128,14 +137,118 @@ export default function TaskInputBar({
   };
 
   const handleSkillSelect = (command: string) => {
-    // Prepend command to input with space
     const newValue = `${command} ${value}`.trim();
     onChange(newValue);
-    // Focus textarea
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 0);
   };
+
+  // Format file size for display
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Handle files dropped or selected
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      const newFiles: AttachedFile[] = [];
+      const errors: string[] = [];
+
+      for (const file of Array.from(files)) {
+        // Check file size limit
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          errors.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB limit`);
+          continue;
+        }
+        // Check total file count limit
+        if (attachedFiles.length + newFiles.length >= MAX_FILES) {
+          errors.push(`Maximum ${MAX_FILES} files allowed per task`);
+          break;
+        }
+        // Avoid duplicates
+        const alreadyAttached = attachedFiles.some(
+          (f) => f.name === file.name && f.size === file.size,
+        );
+        if (!alreadyAttached) {
+          newFiles.push({
+            name: file.name,
+            path: (file as File & { path?: string }).path || file.name,
+            size: file.size,
+            type: file.type || 'unknown',
+          });
+        }
+      }
+
+      if (errors.length > 0) {
+        console.warn('[FileAttach]', errors.join(', '));
+      }
+
+      if (newFiles.length > 0) {
+        setAttachedFiles((prev) => [...prev, ...newFiles]);
+        const fileContext = newFiles.map((f) => `[File: ${f.path || f.name}]`).join(' ');
+        const newValue = value.trim() ? `${value} ${fileContext}` : fileContext;
+        onChange(newValue);
+        setTimeout(() => textareaRef.current?.focus(), 0);
+      }
+    },
+    [attachedFiles, value, onChange],
+  );
+  // Remove an attached file chip
+  const removeFile = useCallback(
+    (fileToRemove: AttachedFile) => {
+      setAttachedFiles((prev) => prev.filter((f) => f !== fileToRemove));
+      // Remove the file reference from the text value
+      const fileContext = `[File: ${fileToRemove.path || fileToRemove.name}]`;
+      onChange(value.replace(fileContext, '').replace(/\s+/g, ' ').trim());
+    },
+    [value, onChange],
+  );
+
+  // Drag event handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      dragCounterRef.current = 0;
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFiles(e.dataTransfer.files);
+        e.dataTransfer.clearData();
+      }
+    },
+    [handleFiles],
+  );
 
   return (
     <div className="w-full space-y-2">
@@ -161,8 +274,51 @@ export default function TaskInputBar({
         </Alert>
       )}
 
-      {/* Input container - two rows: textarea top, toolbar bottom */}
-      <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+      {/* Input container */}
+      <div
+        ref={containerRef}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={`relative rounded-xl border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring ${
+          isDragging ? 'border-primary ring-2 ring-primary ring-offset-1' : 'border-border'
+        }`}
+      >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-primary/10 backdrop-blur-[1px] pointer-events-none">
+            <Paperclip className="h-8 w-8 text-primary mb-2 animate-bounce" />
+            <p className="text-sm font-medium text-primary">Drop files to attach</p>
+            <p className="text-xs text-primary/70 mt-1">Files will be added as context</p>
+          </div>
+        )}
+
+        {/* Attached file chips */}
+        {attachedFiles.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-4 pt-3 pb-1">
+            {attachedFiles.map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground max-w-[200px]"
+                title={`${file.path}\n${formatFileSize(file.size)}`}
+              >
+                <Paperclip className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <span className="truncate">{file.name}</span>
+                <span className="text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(file)}
+                  className="shrink-0 rounded-sm text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Textarea area */}
         <div className="px-4 pt-3 pb-2">
           <textarea
@@ -178,7 +334,7 @@ export default function TaskInputBar({
           />
         </div>
 
-        {/* Toolbar - fixed at bottom */}
+        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/50">
           {/* Plus Menu on left */}
           <PlusMenu
@@ -255,6 +411,13 @@ export default function TaskInputBar({
           </div>
         </div>
       </div>
+
+      {/* Drag hint */}
+      {!isDragging && attachedFiles.length === 0 && (
+        <p className="text-center text-xs text-muted-foreground/50 select-none">
+          Drag & drop files to attach as context
+        </p>
+      )}
     </div>
   );
 }
