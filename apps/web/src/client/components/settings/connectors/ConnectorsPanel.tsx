@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -6,6 +7,7 @@ import { ConnectorCard } from './ConnectorCard';
 import { useConnectors } from './useConnectors';
 
 export function ConnectorsPanel() {
+  const { t } = useTranslation('settings');
   const {
     connectors,
     loading,
@@ -32,29 +34,34 @@ export function ConnectorsPanel() {
         if (code && state) {
           completeOAuth(state, code).catch((err) => {
             console.error('Failed to complete OAuth:', err);
-            setOauthError(err instanceof Error ? err.message : 'OAuth completion failed');
+            setOauthError(
+              err instanceof Error ? err.message : t('connectors.oauthCompletionFailed'),
+            );
           });
         }
       } catch (err) {
         console.error('Failed to parse OAuth callback URL:', err);
-        setOauthError('Invalid OAuth callback received');
+        setOauthError(t('connectors.invalidOauthCallback'));
       }
     });
 
     return () => unsubscribe?.();
-  }, [completeOAuth]);
+  }, [completeOAuth, t]);
 
-  const deriveNameFromUrl = useCallback((serverUrl: string): string => {
-    try {
-      const parsed = new URL(serverUrl);
-      // Use hostname without TLD, capitalize first letter
-      const parts = parsed.hostname.split('.');
-      const name = parts.length > 1 ? parts[parts.length - 2] : parts[0];
-      return name.charAt(0).toUpperCase() + name.slice(1);
-    } catch {
-      return 'MCP Server';
-    }
-  }, []);
+  const deriveNameFromUrl = useCallback(
+    (serverUrl: string): string => {
+      try {
+        const parsed = new URL(serverUrl);
+        // Use hostname without TLD, capitalize first letter
+        const parts = parsed.hostname.split('.');
+        const name = parts.length > 1 ? parts[parts.length - 2] : parts[0];
+        return name.charAt(0).toUpperCase() + name.slice(1);
+      } catch {
+        return t('connectors.defaultName');
+      }
+    },
+    [t],
+  );
 
   const handleAdd = useCallback(async () => {
     const trimmedUrl = url.trim();
@@ -64,11 +71,11 @@ export function ConnectorsPanel() {
     try {
       const parsed = new URL(trimmedUrl);
       if (!parsed.protocol.startsWith('http')) {
-        setAddError('URL must start with http:// or https://');
+        setAddError(t('connectors.urlMustBeHttp'));
         return;
       }
     } catch {
-      setAddError('Please enter a valid URL');
+      setAddError(t('connectors.invalidUrl'));
       return;
     }
 
@@ -81,11 +88,11 @@ export function ConnectorsPanel() {
       setUrl('');
     } catch (err) {
       console.error('Failed to add connector:', err);
-      setAddError(err instanceof Error ? err.message : 'Failed to add connector');
+      setAddError(err instanceof Error ? err.message : t('connectors.addFailed'));
     } finally {
       setAdding(false);
     }
-  }, [url, addConnector, deriveNameFromUrl]);
+  }, [url, addConnector, deriveNameFromUrl, t]);
 
   const handleConnect = useCallback(
     async (connectorId: string) => {
@@ -94,10 +101,10 @@ export function ConnectorsPanel() {
         await startOAuth(connectorId);
       } catch (err) {
         console.error('Failed to start OAuth:', err);
-        setOauthError(err instanceof Error ? err.message : 'Failed to start OAuth flow');
+        setOauthError(err instanceof Error ? err.message : t('connectors.oauthStartFailed'));
       }
     },
-    [startOAuth],
+    [startOAuth, t],
   );
 
   const handleKeyDown = useCallback(
@@ -112,7 +119,7 @@ export function ConnectorsPanel() {
   if (loading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
-        <div className="text-sm text-muted-foreground">Loading connectors...</div>
+        <div className="text-sm text-muted-foreground">{t('connectors.loading')}</div>
       </div>
     );
   }
@@ -120,16 +127,13 @@ export function ConnectorsPanel() {
   return (
     <div className="flex flex-col gap-4">
       {/* Description */}
-      <p className="text-sm text-muted-foreground">
-        Connect remote MCP servers using OAuth. Only servers that support the OAuth 2.0
-        authorization flow are currently supported.
-      </p>
+      <p className="text-sm text-muted-foreground">{t('connectors.description')}</p>
 
       {/* Add form */}
       <div className="flex gap-2">
         <Input
           type="url"
-          placeholder="https://mcp-server.example.com"
+          placeholder={t('connectors.placeholder')}
           value={url}
           onChange={(e) => {
             setUrl(e.target.value);
@@ -157,7 +161,7 @@ export function ConnectorsPanel() {
               <path d="M12 5v14M5 12h14" />
             </svg>
           )}
-          Add
+          {t('connectors.add')}
         </button>
       </div>
 
@@ -213,7 +217,7 @@ export function ConnectorsPanel() {
           animate="animate"
           transition={settingsTransitions.enter}
         >
-          No MCP servers connected yet
+          {t('connectors.empty')}
         </motion.div>
       )}
     </div>

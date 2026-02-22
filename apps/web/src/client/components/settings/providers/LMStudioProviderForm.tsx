@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -31,10 +32,16 @@ interface LMStudioProviderFormProps {
   showModelError: boolean;
 }
 
-function ToolSupportBadge({ status }: { status: ToolSupportStatus }) {
+function ToolSupportBadge({
+  status,
+  t,
+}: {
+  status: ToolSupportStatus;
+  t: (key: string) => string;
+}) {
   const config = {
     supported: {
-      label: 'Tools',
+      label: t('toolBadge.supported'),
       className: 'bg-green-500/20 text-green-400 border-green-500/30',
       icon: (
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +50,7 @@ function ToolSupportBadge({ status }: { status: ToolSupportStatus }) {
       ),
     },
     unsupported: {
-      label: 'No Tools',
+      label: t('toolBadge.unsupported'),
       className: 'bg-red-500/20 text-red-400 border-red-500/30',
       icon: (
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,7 +64,7 @@ function ToolSupportBadge({ status }: { status: ToolSupportStatus }) {
       ),
     },
     unknown: {
-      label: 'Unknown',
+      label: t('toolBadge.unknown'),
       className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
       icon: (
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,6 +97,7 @@ function LMStudioModelSelector({
   onChange: (modelId: string) => void;
   error: boolean;
 }) {
+  const { t } = useTranslation('settings');
   const sortedModels = [...models].sort((a, b) => {
     const order: Record<ToolSupportStatus, number> = { supported: 0, unknown: 1, unsupported: 2 };
     return order[a.toolSupport] - order[b.toolSupport];
@@ -115,8 +123,8 @@ function LMStudioModelSelector({
         value={value}
         onChange={onChange}
         error={error}
-        errorMessage="Please select a model"
-        placeholder="Select a model..."
+        errorMessage={t('common.pleaseSelectModel')}
+        placeholder={t('common.selectModel')}
       />
 
       {hasUnsupportedSelected && (
@@ -135,10 +143,8 @@ function LMStudioModelSelector({
             />
           </svg>
           <div>
-            <p className="font-medium">This model does not support tool/function calling</p>
-            <p className="text-red-400/80 mt-1">
-              Tasks requiring browser automation or file operations will not work correctly.
-            </p>
+            <p className="font-medium">{t('common.toolUnsupported')}</p>
+            <p className="text-red-400/80 mt-1">{t('common.toolUnsupportedDetail')}</p>
           </div>
         </div>
       )}
@@ -159,10 +165,8 @@ function LMStudioModelSelector({
             />
           </svg>
           <div>
-            <p className="font-medium">Tool support could not be verified</p>
-            <p className="text-yellow-400/80 mt-1">
-              This model may or may not support tool/function calling. Test it to confirm.
-            </p>
+            <p className="font-medium">{t('common.toolUnknown')}</p>
+            <p className="text-yellow-400/80 mt-1">{t('common.toolUnknownDetail')}</p>
           </div>
         </div>
       )}
@@ -177,6 +181,7 @@ export function LMStudioProviderForm({
   onModelChange,
   showModelError,
 }: LMStudioProviderFormProps) {
+  const { t } = useTranslation('settings');
   const [serverUrl, setServerUrl] = useState('http://localhost:1234');
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,7 +198,7 @@ export function LMStudioProviderForm({
       const result = await accomplish.testLMStudioConnection(serverUrl);
 
       if (!result.success) {
-        setError(result.error || 'Connection failed');
+        setError(result.error || t('status.connectionFailed'));
         setConnecting(false);
         return;
       }
@@ -219,7 +224,7 @@ export function LMStudioProviderForm({
 
       onConnect(provider);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      setError(err instanceof Error ? err.message : t('status.connectionFailed'));
     } finally {
       setConnecting(false);
     }
@@ -257,7 +262,7 @@ export function LMStudioProviderForm({
             >
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  LM Studio Server URL
+                  {t('lmstudio.serverUrl')}
                 </label>
                 <input
                   type="text"
@@ -267,9 +272,7 @@ export function LMStudioProviderForm({
                   data-testid="lmstudio-server-url"
                   className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Start LM Studio and enable the local server in Developer settings
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t('lmstudio.serverHint')}</p>
               </div>
 
               <FormError error={error} />
@@ -287,7 +290,7 @@ export function LMStudioProviderForm({
             >
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  LM Studio Server URL
+                  {t('lmstudio.serverUrl')}
                 </label>
                 <input
                   type="text"
@@ -311,8 +314,8 @@ export function LMStudioProviderForm({
 
               <div className="flex items-center gap-3 pt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <ToolSupportBadge status="supported" />
-                  <span>Function calling verified</span>
+                  <ToolSupportBadge status="supported" t={t} />
+                  <span>{t('common.functionCallingVerified')}</span>
                 </span>
               </div>
 
@@ -331,11 +334,8 @@ export function LMStudioProviderForm({
                   />
                 </svg>
                 <div>
-                  <p className="font-medium">Context length requirement</p>
-                  <p className="text-blue-400/80 mt-1">
-                    Ensure your model is loaded with a large enough context length (max available
-                    recommended) in LM Studio settings.
-                  </p>
+                  <p className="font-medium">{t('common.contextLengthWarning')}</p>
+                  <p className="text-blue-400/80 mt-1">{t('common.contextLengthWarningDetail')}</p>
                 </div>
               </div>
             </motion.div>
