@@ -2,10 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    "moduleResolution": "node",
+    "lib": ["ES2022", "ES2024.Promise"],
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,

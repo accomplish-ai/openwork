@@ -13,8 +13,8 @@ const isClean = process.env.CLEAN_START === '1';
 
 const web = spawn('pnpm', ['-F', '@accomplish/web', 'dev'], {
   stdio: 'inherit',
+  shell: true,
   env,
-  detached: true,
 });
 
 const waitOn = require(path.join(__dirname, '..', 'node_modules', 'wait-on'));
@@ -22,15 +22,21 @@ let electron;
 
 waitOn({ resources: ['http://localhost:5173'], timeout: 30000 })
   .then(() => {
+    console.log('[dev.cjs] Web server ready, starting Electron...');
     const electronCmd = isClean ? 'dev:clean' : 'dev';
+    console.log('[dev.cjs] Running: pnpm -F @accomplish/desktop', electronCmd);
     electron = spawn('pnpm', ['-F', '@accomplish/desktop', electronCmd], {
       stdio: 'inherit',
+      shell: true,
       env,
-      detached: true,
     });
     electron.on('exit', cleanup);
+    electron.on('error', (err) => {
+      console.error('[dev.cjs] Electron spawn error:', err);
+    });
   })
   .catch((err) => {
+    console.error('[dev.cjs] waitOn failed:', err.message);
     console.error('Failed waiting for web dev server:', err.message);
     cleanup();
   });

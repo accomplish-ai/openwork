@@ -50,6 +50,21 @@ export default defineConfig(() => ({
           },
         },
       },
+      {
+        entry: ['src/main/preload/integrations/whatsapp-preload.ts'],
+        vite: {
+          build: {
+            outDir: 'dist-electron/preload/integrations',
+            rollupOptions: {
+              external: ['electron'],
+              output: {
+                entryFileNames: 'whatsapp.cjs',
+                format: 'cjs',
+              },
+            },
+          },
+        },
+      },
     ]),
   ],
   resolve: {

@@ -412,3 +412,14 @@ export {
   resumeSessionSchema,
   validate,
 } from './common/schemas/validation.js';
+
+// Integration types (for messaging platform integration)
+export type {
+  IntegrationConfig,
+  IntegrationProvider,
+  IIntegrationManager,
+  IntegrationQRCodeData as QRCodeData,
+  IntegrationTunnelConfig as TunnelConfig,
+  IntegrationIncomingMessage as IncomingMessage,
+} from './types/integrations.js';
+export { IntegrationPlatform, IntegrationStatus } from './types/integrations.js';

@@ -90,6 +90,7 @@ import {
 } from '@accomplish_ai/agent-core';
 import { normalizeIpcError, permissionResponseSchema, validate } from './validation';
 import { createTaskCallbacks } from './task-callbacks';
+import { registerIntegrationHandlers } from './integration-handlers';
 import {
   isMockTaskEventsEnabled,
   createMockTask,
@@ -633,6 +634,9 @@ export function registerIPCHandlers(): void {
 
   // Vertex AI handlers
   registerVertexHandlers(handle);
+
+  // Messaging platform integrations (WhatsApp, Slack, Teams, Telegram)
+  registerIntegrationHandlers();
 
   handle('api-key:clear', async (_event: IpcMainInvokeEvent) => {
     await deleteApiKey('anthropic');

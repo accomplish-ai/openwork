@@ -10,6 +10,7 @@
     "dev": "npx tsx --watch src/index.ts"
   },
   "devDependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0"

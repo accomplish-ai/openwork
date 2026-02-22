@@ -11,6 +11,7 @@
     "playwright": "npm:rebrowser-playwright@^1.52.0"
   },
   "devDependencies": {
+    "@accomplish/desktop": "file:../../../../apps/desktop",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "vitest": "^1.0.0"
   }

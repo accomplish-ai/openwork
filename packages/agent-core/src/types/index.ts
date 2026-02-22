@@ -67,3 +67,15 @@ export type {
   TranscriptionResult,
   TranscriptionError,
 } from './speech.js';
+
+// Integration API
+export type {
+  IntegrationQRCodeData,
+  IntegrationTunnelConfig,
+  IntegrationIncomingMessage,
+  IntegrationConfig,
+  IntegrationProvider,
+  IIntegrationManager,
+  IntegrationTaskProgressEvent,
+} from './integrations.js';
+export { IntegrationPlatform, IntegrationStatus } from './integrations.js';

@@ -238,6 +238,7 @@
     "providers": "Providers",
     "connectors": "Connectors",
     "skills": "Skills",
+    "integrations": "Integrations",
     "voiceInput": "Voice Input",
     "appearance": "Appearance",
     "about": "About"

@@ -36,6 +36,7 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { getIntegrationManager } from './integrations/manager';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -85,7 +86,30 @@ const WEB_DIST = app.isPackaged
 let mainWindow: BrowserWindow | null = null;
 
 function getPreloadPath(): string {
-  return path.join(__dirname, '../preload/index.cjs');
+  try {
+    // In development, try multiple possible locations
+    const possiblePaths = [
+      path.join(__dirname, '../preload/index.cjs'),
+      path.join(process.cwd(), 'apps/desktop/dist-electron/preload/index.cjs'),
+      path.join(process.cwd(), 'dist-electron/preload/index.cjs'),
+    ];
+
+    for (const preloadPath of possiblePaths) {
+      if (fs.existsSync(preloadPath)) {
+        console.log('[Main] Found preload at:', preloadPath);
+        return preloadPath;
+      }
+    }
+
+    // If no file found, log details and return best guess (will fail gracefully)
+    const fallbackPath = path.join(__dirname, '../preload/index.cjs');
+    console.log('[Main] Preload file not found in possible locations:', possiblePaths);
+    console.log('[Main] Using fallback:', fallbackPath);
+    return fallbackPath;
+  } catch (err) {
+    console.error('[Main] Error resolving preload path:', err);
+    return path.join(__dirname, '../preload/index.cjs');
+  }
 }
 
 function createWindow() {
@@ -291,6 +315,15 @@ if (!gotTheLock) {
 
     await skillsManager.initialize();
 
+    // Initialize messaging platform integrations (WhatsApp, Slack, Teams, Telegram)
+    try {
+      const integrationManager = getIntegrationManager();
+      await integrationManager.initialize();
+    } catch (err) {
+      console.error('[Main] Integration manager initialization failed:', err);
+      // Continue - integrations are optional
+    }
+
     if (process.platform === 'darwin' && app.dock) {
       const iconPath = app.isPackaged
         ? path.join(process.resourcesPath, 'icon.png')
@@ -338,6 +371,12 @@ app.on('before-quit', () => {
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
+  // Integration cleanup is best-effort — Electron doesn't await async before-quit handlers
+  getIntegrationManager()
+    .cleanup()
+    .catch(() => {
+      // Integration manager cleanup failed - continue shutdown anyway
+    });
   closeStorage();
   shutdownLogCollector();
 });

@@ -388,9 +388,16 @@ declare global {
  * Throws if not running in Electron
  */
 export function getAccomplish() {
-  if (!window.accomplish) {
+  // Check if running in Electron - window.accomplishShell is set by preload script
+  if (typeof window === 'undefined' || !window.accomplishShell) {
     throw new Error('Accomplish API not available - not running in Electron');
   }
+
+  // If API isn't available yet, it means preload hasn't been evaluated
+  if (!window.accomplish) {
+    throw new Error('Accomplish API not available - preload script not loaded yet');
+  }
+
   return {
     ...window.accomplish,
 
