@@ -243,6 +243,29 @@
     "appearance": "Appearance",
     "about": "About"
   },
+  "integrations": {
+    "title": "Messaging Integrations",
+    "description": "Connect messaging platforms to trigger Accomplish tasks remotely. When enabled with tunnel access, you can start and monitor tasks from your phone or any device.",
+    "enabled": "Enabled",
+    "comingSoon": "Coming Soon",
+    "enable": "Enable {{name}}",
+    "enableDescription": "Allow receiving and responding to messages",
+    "disconnect": "Disconnect {{name}}",
+    "connectedAs": "Connected as {{name}}",
+    "remoteAccess": "Enable Remote Access",
+    "remoteAccessDescription": "Open a secure tunnel so messages can reach this machine from anywhere",
+    "platforms": {
+      "whatsapp": "Trigger tasks and receive updates via WhatsApp messages",
+      "slack": "Connect Slack workspace for task management",
+      "telegram": "Use Telegram bot to interact with Accomplish",
+      "teams": "Integrate with Teams channels and chats"
+    },
+    "whatsapp": {
+      "connect": "Connect WhatsApp",
+      "scanQr": "Scan the QR code below with your WhatsApp app to connect this device. Go to WhatsApp > Settings > Linked Devices > Link a Device.",
+      "qrPlaceholder": "QR code will appear here when the WhatsApp service starts"
+    }
+  },
   "appearance": {
     "title": "Theme",
     "description": "Choose how Accomplish looks. Select System to match your operating system setting.",
