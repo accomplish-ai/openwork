@@ -12,7 +12,7 @@ const PROVIDERS: {
   id: CloudBrowserProvider;
   name: string;
   description: string;
-  fields: { key: string; label: string; placeholder: string; required: boolean }[];
+  fields: { key: keyof CloudBrowserProviderConfig; label: string; placeholder: string; required: boolean }[];
 }[] = [
   {
     id: 'aws-agentcore',
@@ -34,22 +34,38 @@ export function CloudBrowsersPanel() {
   const [config, setConfig] = useState<CloudBrowserConfig>(DEFAULT_CONFIG);
   const [expandedProvider, setExpandedProvider] = useState<CloudBrowserProvider | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const accomplish = getAccomplish();
 
   useEffect(() => {
-    accomplish.getCloudBrowserConfig().then((c) => {
-      if (c) {
-        setConfig(c);
-      }
-    });
+    let mounted = true;
+    accomplish
+      .getCloudBrowserConfig()
+      .then((c) => {
+        if (mounted && c) {
+          setConfig(c);
+        }
+      })
+      .catch((err) => {
+        if (mounted) {
+          setLoadError(err instanceof Error ? err.message : 'Failed to load cloud browser config');
+        }
+      });
+    return () => {
+      mounted = false;
+    };
   }, [accomplish]);
 
   const saveConfig = useCallback(
     async (newConfig: CloudBrowserConfig) => {
       setSaving(true);
+      setSaveError(null);
       try {
         await accomplish.setCloudBrowserConfig(newConfig);
         setConfig(newConfig);
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : 'Failed to save configuration');
       } finally {
         setSaving(false);
       }
@@ -120,6 +136,24 @@ export function CloudBrowsersPanel() {
           </span>
         </div>
       </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {loadError}
+        </div>
+      )}
+
+      {saveError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {saveError}
+        </div>
+      )}
 
       {PROVIDERS.map((provider) => {
         const providerConfig = config.providers[provider.id];
@@ -200,20 +234,21 @@ function ProviderForm({
 }) {
   const [formValues, setFormValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
-    const raw = config as unknown as Record<string, string | undefined> | undefined;
     for (const field of provider.fields) {
-      values[field.key] = raw?.[field.key] ?? '';
+      values[field.key] = (config?.[field.key] as string | undefined) ?? '';
     }
     return values;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    const providerConfig: CloudBrowserProviderConfig = {
       provider: provider.id,
       enabled: true,
-      ...formValues,
-    } as CloudBrowserProviderConfig);
+      endpoint: formValues.endpoint || undefined,
+      apiKey: formValues.apiKey || undefined,
+    };
+    onSave(providerConfig);
   };
 
   const isConfigured = provider.fields

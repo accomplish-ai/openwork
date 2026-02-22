@@ -9,8 +9,6 @@ export interface CloudBrowserProviderConfig {
   enabled: boolean;
   /** API key for the provider */
   apiKey?: string;
-  /** Project ID (Browserbase) */
-  projectId?: string;
   /** Region or endpoint URL */
   endpoint?: string;
 }

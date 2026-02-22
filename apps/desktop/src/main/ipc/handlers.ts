@@ -977,7 +977,12 @@ export function registerIPCHandlers(): void {
       if (typeof config !== 'string') {
         throw new Error('Invalid cloud browser config');
       }
-      const parsed = JSON.parse(config);
+      let parsed;
+      try {
+        parsed = JSON.parse(config);
+      } catch {
+        throw new Error('Invalid cloud browser config JSON');
+      }
       storage.setCloudBrowserConfig(parsed);
     },
   );
