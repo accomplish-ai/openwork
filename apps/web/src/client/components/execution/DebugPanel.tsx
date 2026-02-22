@@ -215,13 +215,15 @@ export function DebugPanel({
               }}
               title="Save bug report with screenshot, accessibility tree, and debug logs"
             >
-              {bugReporting ? (
-                <SpinnerGap className="h-3 w-3 mr-1 animate-spin" />
-              ) : bugReportSaved ? (
-                <Check className="h-3 w-3 mr-1 text-green-400" />
-              ) : (
-                <File className="h-3 w-3 mr-1" />
-              )}
+              {(() => {
+                if (bugReporting) {
+                  return <SpinnerGap className="h-3 w-3 mr-1 animate-spin" />;
+                }
+                if (bugReportSaved) {
+                  return <Check className="h-3 w-3 mr-1 text-green-400" />;
+                }
+                return <File className="h-3 w-3 mr-1" />;
+              })()}
               {bugReportSaved ? 'Saved' : 'Bug Report'}
             </Button>
           )}

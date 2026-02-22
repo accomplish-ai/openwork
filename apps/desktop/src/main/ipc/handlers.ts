@@ -1189,7 +1189,9 @@ export function registerIPCHandlers(): void {
         fs.writeFileSync(result.filePath, reportJson, 'utf-8');
 
         if (screenshotBase64) {
-          const pngPath = result.filePath.replace(/\.json$/, '.png');
+          const pngPath = result.filePath.endsWith('.json')
+            ? result.filePath.replace(/\.json$/, '.png')
+            : `${result.filePath}.png`;
           fs.writeFileSync(pngPath, Buffer.from(screenshotBase64, 'base64'));
         }
 

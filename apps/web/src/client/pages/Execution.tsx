@@ -379,7 +379,7 @@ export function ExecutionPage() {
         system: { platform, version, userAgent: navigator.userAgent },
       };
       const result = await accomplish.saveBugReport(JSON.stringify(report, null, 2), screenshot);
-      if (result) {
+      if (result.success) {
         setBugReportSaved(true);
         setTimeout(() => setBugReportSaved(false), 2500);
       }
@@ -392,8 +392,8 @@ export function ExecutionPage() {
     if (!currentTask) { return; }
     setRepeatingTask(true);
     try {
-      const newTaskId = await accomplish.startTask({ prompt: currentTask.prompt });
-      navigate(`/execution/${newTaskId}`);
+      const newTask = await accomplish.startTask({ prompt: currentTask.prompt });
+      navigate(`/execution/${newTask.id}`);
     } catch (err) {
       console.error('[Execution] Failed to repeat task:', err);
     } finally {
