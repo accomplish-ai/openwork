@@ -1,5 +1,5 @@
 /** Supported cloud browser provider IDs */
-export type CloudBrowserProvider = 'browserbase' | 'steel' | 'aws-agentcore';
+export type CloudBrowserProvider = 'browserbase';
 
 /** Configuration for a cloud browser provider */
 export interface CloudBrowserProviderConfig {

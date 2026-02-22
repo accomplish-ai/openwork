@@ -23,21 +23,6 @@ const PROVIDERS: {
       { key: 'projectId', label: 'Project ID', placeholder: 'Your project ID', required: true },
     ],
   },
-  {
-    id: 'steel',
-    name: 'Steel',
-    description: 'Managed browser sessions for AI agents',
-    fields: [{ key: 'apiKey', label: 'API Key', placeholder: 'steel_...', required: true }],
-  },
-  {
-    id: 'aws-agentcore',
-    name: 'AWS AgentCore',
-    description: 'Amazon Bedrock browser tool integration',
-    fields: [
-      { key: 'endpoint', label: 'Endpoint URL', placeholder: 'https://...', required: true },
-      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', required: false },
-    ],
-  },
 ];
 
 const DEFAULT_CONFIG: CloudBrowserConfig = {
