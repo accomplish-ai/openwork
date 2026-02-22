@@ -146,8 +146,16 @@ export function CloudBrowsersPanel() {
       </div>
 
       {saveError && (
-        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {saveError}
+        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive flex items-start justify-between">
+          <span>{saveError}</span>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            className="ml-2 shrink-0 hover:opacity-70"
+            aria-label="Dismiss error"
+          >
+            &times;
+          </button>
         </div>
       )}
 
