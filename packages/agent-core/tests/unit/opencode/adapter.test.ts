@@ -129,11 +129,45 @@ describe('Shell escaping utilities', () => {
       expect(escaped).toBe("'C:\\Users\\O''Brien\\opencode.exe'");
     });
 
-    it('should prevent PowerShell variable expansion', () => {
-      const malicious = '$(whoami)';
-      const escaped = escapeShellArgWin32(malicious);
-      // Single quotes prevent expansion in PowerShell
-      expect(escaped).toBe("'$(whoami)'");
+    it('should quote arguments with shell metacharacters', () => {
+      // Shell metacharacters must be quoted to prevent command injection
+      expect(escapeShellArgWin32(';whoami')).toBe("';whoami'");
+      expect(escapeShellArgWin32('foo|bar')).toBe("'foo|bar'");
+      expect(escapeShellArgWin32('foo&bar')).toBe("'foo&bar'");
+      expect(escapeShellArgWin32('foo>bar')).toBe("'foo>bar'");
+      expect(escapeShellArgWin32('foo<bar')).toBe("'foo<bar'");
+    });
+
+    it('should quote arguments with tab characters', () => {
+      // Tab (0x09) is a whitespace separator — must be quoted
+      expect(escapeShellArgWin32('foo\tbar')).toBe("'foo\tbar'");
+    });
+
+    it('should quote arguments that look like CLI flags', () => {
+      expect(escapeShellArgWin32('--version')).toBe("'--version'");
+      expect(escapeShellArgWin32('-v')).toBe("'-v'");
+      expect(escapeShellArgWin32('help')).toBe("'help'");
+    });
+
+    it('should prevent PowerShell variable and subexpression expansion', () => {
+      // Double quotes would expand these; single quotes prevent it
+      expect(escapeShellArgWin32('$(whoami)')).toBe("'$(whoami)'");
+      expect(escapeShellArgWin32('$env:PATH')).toBe("'$env:PATH'");
+      // Backtick is PowerShell's escape character
+      expect(escapeShellArgWin32('`whoami`')).toBe("'`whoami`'");
+    });
+
+    it('should prevent shell injection in full command', () => {
+      const command = 'C:\\Program\\opencode.exe';
+      const args = ['run', '--format', 'json', ';Invoke-Expression\t$(whoami)'];
+      const fullCommand = buildShellCommand(command, args);
+
+      // The injection payload must be inside single quotes
+      expect(fullCommand).toContain("';Invoke-Expression\t$(whoami)'");
+    });
+
+    it('should handle empty strings', () => {
+      expect(escapeShellArgWin32('')).toBe("''");
     });
 
     it('should handle Chinese and Unicode characters in paths', () => {
@@ -168,7 +202,7 @@ describe('Shell escaping utilities', () => {
     });
 
     it('should quote arguments with shell metacharacters', () => {
-      // These were previously unquoted and allowed shell injection
+      // Shell metacharacters must be quoted to prevent command injection
       expect(escapeShellArgUnix(';whoami')).toBe("';whoami'");
       expect(escapeShellArgUnix('foo|bar')).toBe("'foo|bar'");
       expect(escapeShellArgUnix('foo&bar')).toBe("'foo&bar'");
