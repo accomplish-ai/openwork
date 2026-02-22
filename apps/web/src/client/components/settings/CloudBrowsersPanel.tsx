@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useEffect, useCallback } from 'react';
-import { getAccomplish } from '@/lib/accomplish';
+import { useAccomplish } from '@/lib/accomplish';
 import type {
   CloudBrowserConfig,
   CloudBrowserProvider,
@@ -49,22 +47,33 @@ export function CloudBrowsersPanel() {
   const [config, setConfig] = useState<CloudBrowserConfig>(DEFAULT_CONFIG);
   const [expandedProvider, setExpandedProvider] = useState<CloudBrowserProvider | null>(null);
   const [saving, setSaving] = useState(false);
-  const accomplish = getAccomplish();
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const accomplish = useAccomplish();
 
   useEffect(() => {
-    accomplish.getCloudBrowserConfig().then((c) => {
-      if (c) {
-        setConfig(c);
-      }
-    });
+    accomplish
+      .getCloudBrowserConfig()
+      .then((c) => {
+        if (c) {
+          setConfig(c);
+        }
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Failed to load configuration';
+        setSaveError(message);
+      });
   }, [accomplish]);
 
   const saveConfig = useCallback(
     async (newConfig: CloudBrowserConfig) => {
       setSaving(true);
+      setSaveError(null);
       try {
         await accomplish.setCloudBrowserConfig(newConfig);
         setConfig(newConfig);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save configuration';
+        setSaveError(message);
       } finally {
         setSaving(false);
       }
@@ -136,6 +145,12 @@ export function CloudBrowsersPanel() {
         </div>
       </div>
 
+      {saveError && (
+        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {saveError}
+        </div>
+      )}
+
       {PROVIDERS.map((provider) => {
         const providerConfig = config.providers[provider.id];
         const isActive = config.activeProvider === provider.id;
@@ -148,8 +163,9 @@ export function CloudBrowsersPanel() {
             className="rounded-lg border border-border bg-card overflow-hidden"
           >
             <button
+              type="button"
               onClick={() => setExpandedProvider(isExpanded ? null : provider.id)}
-              className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -168,6 +184,7 @@ export function CloudBrowsersPanel() {
                 <p className="mt-0.5 text-sm text-muted-foreground">{provider.description}</p>
               </div>
               <svg
+                aria-hidden="true"
                 className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                 fill="none"
                 viewBox="0 0 24 24"
@@ -215,25 +232,35 @@ function ProviderForm({
 }) {
   const [formValues, setFormValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
-    const raw = config as unknown as Record<string, string | undefined> | undefined;
-    for (const field of provider.fields) {
-      values[field.key] = raw?.[field.key] ?? '';
+    if (config) {
+      for (const field of provider.fields) {
+        const key = field.key as keyof CloudBrowserProviderConfig;
+        const val = config[key];
+        values[field.key] = typeof val === 'string' ? val : '';
+      }
+    } else {
+      for (const field of provider.fields) {
+        values[field.key] = '';
+      }
     }
     return values;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    const providerConfig: CloudBrowserProviderConfig = {
       provider: provider.id,
       enabled: true,
-      ...formValues,
-    } as CloudBrowserProviderConfig);
+      apiKey: formValues.apiKey || undefined,
+      projectId: formValues.projectId || undefined,
+      endpoint: formValues.endpoint || undefined,
+    };
+    onSave(providerConfig);
   };
 
   const isConfigured = provider.fields
     .filter((f) => f.required)
-    .every((f) => formValues[f.key]?.trim());
+    .every((f) => Boolean(formValues[f.key]?.trim()));
 
   return (
     <div className="border-t border-border p-4 space-y-4">
@@ -249,7 +276,7 @@ function ProviderForm({
               placeholder={field.placeholder}
               value={formValues[field.key] ?? ''}
               onChange={(e) => setFormValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
           </div>
         ))}

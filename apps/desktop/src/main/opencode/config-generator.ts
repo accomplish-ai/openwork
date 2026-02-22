@@ -143,7 +143,7 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
     | undefined;
   if (cloudBrowserConfig?.activeProvider) {
     const providerCfg = cloudBrowserConfig.providers[cloudBrowserConfig.activeProvider];
-    if (providerCfg?.apiKey || providerCfg?.endpoint) {
+    if (providerCfg?.endpoint) {
       browserConfig = {
         mode: 'remote',
         cdpEndpoint: providerCfg.endpoint,

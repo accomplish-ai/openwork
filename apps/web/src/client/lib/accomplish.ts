@@ -70,6 +70,7 @@ interface AccomplishAPI {
       | 'lmstudio'
       | 'elevenlabs'
       | 'browserbase'
+      | 'steel'
       | 'aws-agentcore',
     key: string,
     label?: string,
