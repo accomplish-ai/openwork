@@ -189,7 +189,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
       extraHeaders: { 'anthropic-version': '2023-06-01' },
       responseFormat: 'anthropic',
       modelIdPrefix: 'anthropic/',
-      modelFilter: /^claude-(?!opus-4-6)/,
+      modelFilter: /^claude-/,
     },
     models: [],
   },

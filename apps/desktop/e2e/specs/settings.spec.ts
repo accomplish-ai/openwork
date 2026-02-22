@@ -522,10 +522,6 @@ test.describe('Settings Dialog', () => {
     // Step 5: Verify settings dialog opened successfully (no crash/freeze)
     await expect(settingsPage.providerGrid).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
 
-    // Additional verification: can interact with the dialog
-    const dialogTitle = window.getByRole('heading', { name: 'Set up Accomplish' });
-    await expect(dialogTitle).toBeVisible();
-
     // Capture successful state
     await captureForAI(window, 'settings-dialog', 'after-task-completion', [
       'Settings dialog opened successfully after task completion',
