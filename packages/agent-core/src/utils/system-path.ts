@@ -100,7 +100,7 @@ function getSystemPathFromPathHelper(): string | null {
 export function getExtendedNodePath(basePath?: string): string {
   const base = basePath || process.env.PATH || '';
 
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && process.platform !== 'linux') {
     return base;
   }
 

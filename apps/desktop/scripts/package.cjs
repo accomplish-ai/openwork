@@ -28,6 +28,8 @@ const pnpmSymlinksToResolve = [
   'opencode-darwin-x64-baseline',
   'opencode-windows-x64',
   'opencode-windows-x64-baseline',
+  'opencode-linux-x64',
+  'opencode-linux-x64-baseline',
 ];
 const resolvedSymlinks = {};
 

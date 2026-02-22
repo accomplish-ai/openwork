@@ -223,7 +223,7 @@ if (!gotTheLock) {
       mainWindow.focus();
       console.log('[Main] Focused existing instance after second-instance event');
 
-      if (process.platform === 'win32') {
+      if (process.platform === 'win32' || process.platform === 'linux') {
         const protocolUrl = commandLine.find((arg) => arg.startsWith('accomplish://'));
         if (protocolUrl) {
           console.log('[Main] Received protocol URL from second-instance:', protocolUrl);
@@ -342,14 +342,14 @@ app.on('before-quit', () => {
   shutdownLogCollector();
 });
 
-if (process.platform === 'win32' && !app.isPackaged) {
+if ((process.platform === 'win32' || process.platform === 'linux') && !app.isPackaged) {
   app.setAsDefaultProtocolClient('accomplish', process.execPath, [path.resolve(process.argv[1])]);
 } else {
   app.setAsDefaultProtocolClient('accomplish');
 }
 
 function handleProtocolUrlFromArgs(): void {
-  if (process.platform === 'win32') {
+  if (process.platform === 'win32' || process.platform === 'linux') {
     const protocolUrl = process.argv.find((arg) => arg.startsWith('accomplish://'));
     if (protocolUrl) {
       app.whenReady().then(() => {

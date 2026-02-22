@@ -78,7 +78,12 @@ export function isOpenCodeCliAvailable(): boolean {
 export function getBundledOpenCodeVersion(): string | null {
   if (app.isPackaged) {
     try {
-      const packageName = 'opencode-ai';
+      const packageName =
+        process.platform === 'win32'
+          ? 'opencode-windows-x64'
+          : process.platform === 'linux'
+            ? 'opencode-linux-x64'
+            : 'opencode-ai';
       const packageJsonPath = path.join(
         process.resourcesPath,
         'app.asar.unpacked',
@@ -154,7 +159,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
   }
   console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
 
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' || process.platform === 'linux') {
     env.PATH = getExtendedNodePath(env.PATH);
   }
 

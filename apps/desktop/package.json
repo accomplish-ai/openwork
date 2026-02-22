@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Accomplish Desktop App",
+  "homepage": "https://www.accomplish.ai",
+  "author": {
+    "name": "Accomplish Inc",
+    "email": "support@accomplish.ai"
+  },
   "main": "dist-electron/main/index.js",
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
@@ -22,6 +27,7 @@
     "package": "pnpm download:nodejs && pnpm build:base && pnpm build:mcp-tools:package && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:mac": "pnpm download:nodejs && pnpm build:base && pnpm build:mcp-tools:package && node scripts/package.cjs --mac --publish never && npx electron-rebuild -f",
     "package:win": "pnpm download:nodejs && pnpm build:base && pnpm build:mcp-tools:package && node scripts/package.cjs --win --x64 --publish never",
+    "package:linux": "pnpm download:nodejs && pnpm build:base && pnpm build:mcp-tools:package && node scripts/package.cjs --linux --x64 --publish never && npx electron-rebuild -f",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -79,7 +85,9 @@
   "optionalDependencies": {
     "opencode-darwin-arm64": "1.2.10",
     "opencode-darwin-x64": "1.2.10",
-    "opencode-darwin-x64-baseline": "1.2.10"
+    "opencode-darwin-x64-baseline": "1.2.10",
+    "opencode-linux-x64": "1.2.10",
+    "opencode-linux-x64-baseline": "1.2.10"
   },
   "build": {
     "npmRebuild": false,
@@ -97,6 +105,8 @@
       "node_modules/opencode-darwin-arm64/**",
       "node_modules/opencode-darwin-x64/**",
       "node_modules/opencode-darwin-x64-baseline/**",
+      "node_modules/opencode-linux-x64/**",
+      "node_modules/opencode-linux-x64-baseline/**",
       "node_modules/node-pty/**",
       "node_modules/electron-store/**",
       "node_modules/conf/**",
@@ -104,8 +114,7 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
-      "!node_modules/@accomplish_ai/**",
-      "!node_modules/opencode-linux-*/**"
+      "!node_modules/@accomplish_ai/**"
     ],
     "extraResources": [
       {
@@ -154,6 +163,10 @@
       "node_modules/opencode-windows-x64/package.json",
       "node_modules/opencode-windows-x64-baseline/bin/opencode.exe",
       "node_modules/opencode-windows-x64-baseline/package.json",
+      "node_modules/opencode-linux-x64/bin/opencode",
+      "node_modules/opencode-linux-x64/package.json",
+      "node_modules/opencode-linux-x64-baseline/bin/opencode",
+      "node_modules/opencode-linux-x64-baseline/package.json",
       "node_modules/node-pty/build/**/*.node",
       "node_modules/node-pty/package.json",
       "node_modules/better-sqlite3/build/**/*.node",
@@ -209,6 +222,24 @@
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "pacman"
+      ],
+      "icon": "resources/icon.png",
+      "category": "Utility",
+      "maintainer": "Accomplish Inc <support@accomplish.ai>",
+      "desktop": {
+        "Name": "Accomplish",
+        "Comment": "Open source AI desktop agent",
+        "Terminal": "false",
+        "Type": "Application",
+        "Categories": "Utility;Office;Productivity;",
+        "MimeType": "x-scheme-handler/accomplish;"
+      }
     }
   }
 }
