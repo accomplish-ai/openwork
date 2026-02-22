@@ -123,6 +123,10 @@ export function CloudBrowsersPanel() {
     [config, saveConfig],
   );
 
+  const activeProviderLabel = config.activeProvider === null
+    ? 'Using local browser (default)'
+    : `Using ${PROVIDERS.find((p) => p.id === config.activeProvider)?.name ?? config.activeProvider}`;
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-5">
@@ -138,9 +142,7 @@ export function CloudBrowsersPanel() {
                 : 'text-muted-foreground'
             }
           >
-            {config.activeProvider === null
-              ? 'Using local browser (default)'
-              : `Using ${PROVIDERS.find((p) => p.id === config.activeProvider)?.name ?? config.activeProvider}`}
+            {activeProviderLabel}
           </span>
         </div>
       </div>

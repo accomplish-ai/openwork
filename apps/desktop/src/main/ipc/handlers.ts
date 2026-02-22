@@ -984,6 +984,13 @@ export function registerIPCHandlers(): void {
       } catch {
         throw new Error('Invalid cloud browser config: malformed JSON');
       }
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Invalid cloud browser config: expected object');
+      }
+      const cfg = parsed as Record<string, unknown>;
+      if (cfg.activeProvider !== null && typeof cfg.activeProvider !== 'string') {
+        throw new Error('Invalid cloud browser config: activeProvider must be string or null');
+      }
       storage.setCloudBrowserConfig(parsed as CloudBrowserConfig);
     },
   );

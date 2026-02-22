@@ -41,6 +41,7 @@ export type ApiKeyProvider =
   | 'vertex'
   | 'elevenlabs'
   | 'browserbase'
+  | 'steel'
   | 'aws-agentcore';
 
 /**
@@ -66,6 +67,7 @@ export const ALLOWED_API_KEY_PROVIDERS: ReadonlySet<string> = new Set<string>([
   'vertex',
   'elevenlabs',
   'browserbase',
+  'steel',
   'aws-agentcore',
 ]);
 
