@@ -73,32 +73,39 @@ export function HomePage() {
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
-  const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
-
-    const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
-    if (task) {
-      navigate(`/execution/${task.id}`);
-    }
-  }, [prompt, isLoading, startTask, navigate]);
-
-  const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
-
-    // Check if any provider is ready before sending (skip in E2E mode)
-    const isE2EMode = await accomplish.isE2EMode();
-    if (!isE2EMode) {
-      const settings = await accomplish.getProviderSettings();
-      if (!hasAnyReadyProvider(settings)) {
-        setSettingsInitialTab('providers');
-        setShowSettingsDialog(true);
+  const handleSubmit = useCallback(
+    async (
+      submittedPrompt: string,
+      attachments?: import('@accomplish_ai/agent-core/common').TaskInputAttachment[],
+    ) => {
+      const hasPrompt = !!submittedPrompt.trim();
+      const hasAttachments = attachments && attachments.length > 0;
+      if ((!hasPrompt && !hasAttachments) || isLoading) {
         return;
       }
-    }
 
-    await executeTask();
-  };
+      const isE2EMode = await accomplish.isE2EMode();
+      if (!isE2EMode) {
+        const settings = await accomplish.getProviderSettings();
+        if (!hasAnyReadyProvider(settings)) {
+          setSettingsInitialTab('providers');
+          setShowSettingsDialog(true);
+          return;
+        }
+      }
+
+      const taskId = `task_${Date.now()}`;
+      const task = await startTask({
+        prompt: submittedPrompt.trim() || ' ',
+        taskId,
+        attachments: hasAttachments ? attachments : undefined,
+      });
+      if (task) {
+        navigate(`/execution/${task.id}`);
+      }
+    },
+    [isLoading, startTask, navigate, accomplish],
+  );
 
   const handleSettingsDialogChange = (open: boolean) => {
     setShowSettingsDialog(open);
@@ -119,10 +126,9 @@ export function HomePage() {
   }, []);
 
   const handleApiKeySaved = async () => {
-    // API key was saved - close dialog and execute the task
     setShowSettingsDialog(false);
     if (prompt.trim()) {
-      await executeTask();
+      await handleSubmit(prompt, undefined);
     }
   };
 

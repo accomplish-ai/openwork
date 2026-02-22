@@ -6,6 +6,8 @@
 export type {
   TaskStatus,
   TaskConfig,
+  TaskInputAttachment,
+  TaskInputAttachmentType,
   Task,
   TaskAttachment,
   TaskMessage,

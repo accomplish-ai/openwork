@@ -1,14 +1,16 @@
 import crypto from 'crypto';
-import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
+import { ipcMain, BrowserWindow, shell, dialog, nativeTheme, app } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
   getTaskManager,
   cleanupVertexServiceAccountKey,
 } from '../opencode';
+import { composePromptWithAttachmentsAsync } from '../opencode/compose-prompt-with-attachments';
 import { getLogCollector } from '../logging';
 import {
   validateApiKey,
@@ -147,6 +149,14 @@ export function registerIPCHandlers(): void {
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
 
+    const originalPrompt = validatedConfig.prompt;
+    if (validatedConfig.attachments && validatedConfig.attachments.length > 0) {
+      validatedConfig.prompt = await composePromptWithAttachmentsAsync(
+        validatedConfig.prompt,
+        validatedConfig.attachments,
+      );
+    }
+
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error(
         'No provider is ready. Please connect a provider and select a model in Settings.',
@@ -195,8 +205,15 @@ export function registerIPCHandlers(): void {
     const initialUserMessage: TaskMessage = {
       id: createMessageId(),
       type: 'user',
-      content: validatedConfig.prompt,
+      content: originalPrompt,
       timestamp: new Date().toISOString(),
+      attachments: validatedConfig.attachments?.length
+        ? validatedConfig.attachments.map((a) => ({
+            type: 'file' as const,
+            data: a.path,
+            label: a.name,
+          }))
+        : undefined,
     };
     task.messages = [initialUserMessage];
 
@@ -1032,6 +1049,82 @@ export function registerIPCHandlers(): void {
       return { ok: true };
     },
   );
+
+  const DEBUG_LOG_PATH = path.join(process.cwd(), '.cursor', 'debug.log');
+  handle('debug:log', (_event: IpcMainInvokeEvent, payload: Record<string, unknown>) => {
+    try {
+      const dir = path.dirname(DEBUG_LOG_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.appendFileSync(
+        DEBUG_LOG_PATH,
+        JSON.stringify({ ...payload, timestamp: Date.now() }) + '\n',
+      );
+    } catch {
+      // ignore
+    }
+    return undefined;
+  });
+
+  const DROPS_TEMP_DIR = path.join(app.getPath('temp'), 'accomplish-drops');
+  const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+  handle(
+    'file:resolve-dropped',
+    async (
+      _event: IpcMainInvokeEvent,
+      payload: { name: string; content: string; isBase64?: boolean },
+    ): Promise<{ path: string }> => {
+      let sizeBytes: number;
+      if (payload.isBase64) {
+        sizeBytes = Buffer.byteLength(payload.content, 'base64');
+      } else {
+        sizeBytes = Buffer.byteLength(payload.content, 'utf-8');
+      }
+      if (sizeBytes > MAX_ATTACHMENT_BYTES) {
+        throw new Error(
+          `Attachment exceeds maximum size of ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB`,
+        );
+      }
+      const safeName = path.basename(payload.name).replace(/[^a-zA-Z0-9._-]/g, '_') || 'dropped';
+      if (!fs.existsSync(DROPS_TEMP_DIR)) {
+        fs.mkdirSync(DROPS_TEMP_DIR, { recursive: true });
+      }
+      const filePath = path.join(DROPS_TEMP_DIR, `${Date.now()}-${safeName}`);
+      if (payload.isBase64) {
+        const buf = Buffer.from(payload.content, 'base64');
+        fs.writeFileSync(filePath, buf);
+      } else {
+        fs.writeFileSync(filePath, payload.content, 'utf-8');
+      }
+      return { path: filePath };
+    },
+  );
+
+  handle('file:delete-dropped', (_event: IpcMainInvokeEvent, filePath: string): void => {
+    if (typeof filePath !== 'string' || !filePath) {
+      return;
+    }
+    try {
+      const resolved = path.resolve(filePath);
+      const dropsDirResolved = path.resolve(DROPS_TEMP_DIR);
+      const relative = path.relative(dropsDirResolved, resolved);
+      if (
+        relative === '' ||
+        relative.startsWith('..') ||
+        path.isAbsolute(relative) ||
+        resolved === dropsDirResolved
+      ) {
+        return;
+      }
+      if (fs.existsSync(resolved)) {
+        fs.unlinkSync(resolved);
+      }
+    } catch {
+      // ignore
+    }
+  });
 
   handle('speech:is-configured', async (_event: IpcMainInvokeEvent) => {
     return isElevenLabsConfigured();

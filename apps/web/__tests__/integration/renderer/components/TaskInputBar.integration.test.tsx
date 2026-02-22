@@ -459,6 +459,104 @@ describe('TaskInputBar Integration', () => {
     });
   });
 
+  describe('attachments', () => {
+    function createFileWithPath(name: string, size: number, path: string): File & { path: string } {
+      const file = new File(['x'], name, { type: 'text/plain' }) as File & { path?: string };
+      Object.defineProperty(file, 'path', { value: path, writable: false });
+      Object.defineProperty(file, 'size', { value: size, writable: false });
+      return file as File & { path: string };
+    }
+
+    function createFileList(files: File[]): FileList {
+      const list = Object.assign([...files], {
+        item: (i: number) => files[i] ?? null,
+        length: files.length,
+      });
+      return list as unknown as FileList;
+    }
+
+    it('should show attachment chips when files are dropped with path', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
+
+      const dropZone = screen.getByRole('group', { name: /drop files/i });
+      const file = createFileWithPath('note.txt', 100, '/tmp/note.txt');
+      const dataTransfer = { files: createFileList([file]) };
+
+      fireEvent.drop(dropZone, { dataTransfer });
+
+      expect(screen.getByTestId('task-input-attachments')).toBeInTheDocument();
+      expect(screen.getByText('note.txt')).toBeInTheDocument();
+    });
+
+    it('should remove attachment when remove button is clicked', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
+
+      const dropZone = screen.getByRole('group', { name: /drop files/i });
+      const file = createFileWithPath('x.txt', 50, '/tmp/x.txt');
+      fireEvent.drop(dropZone, { dataTransfer: { files: createFileList([file]) } });
+
+      const removeBtn = screen.getByRole('button', { name: /remove attachment/i });
+      fireEvent.click(removeBtn);
+
+      expect(screen.queryByTestId('task-input-attachments')).not.toBeInTheDocument();
+    });
+
+    it('should call onSubmit with prompt and attachments when submit with attachments', async () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      renderWithRouter(<TaskInputBar value="Do it" onChange={onChange} onSubmit={onSubmit} />);
+
+      const dropZone = screen.getByRole('group', { name: /drop files/i });
+      const file = createFileWithPath('f.txt', 10, '/tmp/f.txt');
+      fireEvent.drop(dropZone, { dataTransfer: { files: createFileList([file]) } });
+
+      const submitBtn = screen.getByTestId('task-input-submit');
+      fireEvent.click(submitBtn);
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(onSubmit).toHaveBeenCalledWith('Do it', expect.any(Array));
+      expect(onSubmit.mock.calls[0][1]).toHaveLength(1);
+      expect(onSubmit.mock.calls[0][1][0]).toMatchObject({
+        name: 'f.txt',
+        path: '/tmp/f.txt',
+        type: 'text',
+        size: 10,
+      });
+    });
+
+    it('should show error when dropped file exceeds 10MB', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
+
+      const dropZone = screen.getByRole('group', { name: /drop files/i });
+      const file = createFileWithPath('huge.txt', 11 * 1024 * 1024, '/tmp/huge.txt');
+      fireEvent.drop(dropZone, { dataTransfer: { files: createFileList([file]) } });
+
+      expect(screen.getByText(/maximum 10MB per file/i)).toBeInTheDocument();
+    });
+
+    it('should not add more than 5 attachments', () => {
+      const onChange = vi.fn();
+      const onSubmit = vi.fn();
+      renderWithRouter(<TaskInputBar value="" onChange={onChange} onSubmit={onSubmit} />);
+
+      const dropZone = screen.getByRole('group', { name: /drop files/i });
+      const files = Array.from({ length: 6 }, (_, i) =>
+        createFileWithPath(`f${i}.txt`, 1, `/tmp/f${i}.txt`),
+      );
+      fireEvent.drop(dropZone, { dataTransfer: { files: createFileList(files) } });
+
+      const chips = screen.getByTestId('task-input-attachments');
+      const chipElements = chips.querySelectorAll('[data-testid^="attachment-chip-"]');
+      expect(chipElements.length).toBe(5);
+    });
+  });
+
   describe('large variant', () => {
     it('should apply consistent text style when large prop is true', () => {
       const onChange = vi.fn();

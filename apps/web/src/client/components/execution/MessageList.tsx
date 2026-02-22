@@ -4,7 +4,7 @@ import { springs } from '../../lib/animations';
 import type { TaskMessage } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Wrench, Terminal, Check, Copy, Play } from '@phosphor-icons/react';
+import { Wrench, Terminal, Check, Copy, Play, FileText } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -163,14 +163,36 @@ export const MessageBubble = memo(
                   </div>
                 )}
                 {isUser ? (
-                  <p
-                    className={cn(
-                      'text-sm whitespace-pre-wrap break-words',
-                      'text-primary-foreground',
-                    )}
-                  >
-                    {message.content}
-                  </p>
+                  <>
+                    <p
+                      className={cn(
+                        'text-sm whitespace-pre-wrap break-words',
+                        'text-primary-foreground',
+                      )}
+                    >
+                      {message.content}
+                    </p>
+                    {message.attachments?.filter((a) => a.type === 'file').length ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {message.attachments
+                          .filter((a) => a.type === 'file')
+                          .map((att) => (
+                            <span
+                              key={att.label ?? att.data}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
+                                'bg-primary-foreground/15 text-primary-foreground',
+                              )}
+                            >
+                              <FileText className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate max-w-[12rem]">
+                                {att.label ?? att.data}
+                              </span>
+                            </span>
+                          ))}
+                      </div>
+                    ) : null}
+                  </>
                 ) : isAssistant && shouldStream && !streamComplete ? (
                   <StreamingText
                     text={message.content}

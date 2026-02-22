@@ -32,7 +32,15 @@
     "dismiss": "关闭",
     "messageTooLong": "消息过长",
     "enterMessage": "请输入消息",
-    "quit": "退出"
+    "quit": "退出",
+    "remove": "移除"
+  },
+  "attachments": {
+    "attachFiles": "附加文件",
+    "dropFilesHere": "将文件拖放到此处",
+    "maxFiles": "每个任务最多 5 个文件",
+    "maxFileSize": "每个文件最大 10MB",
+    "removeAria": "移除附件"
   },
   "aria": {
     "scrollToBottom": "滚动到底部",

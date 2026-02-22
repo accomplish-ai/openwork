@@ -267,6 +267,19 @@ describe('validation.ts', () => {
           expect(result.data.chrome).toBe(false);
         }
       });
+
+      it('should accept config with valid attachments array', () => {
+        const config = {
+          prompt: 'Do something',
+          attachments: [{ id: 'a1', name: 'f.txt', path: '/tmp/f.txt', type: 'text', size: 100 }],
+        };
+        const result = taskConfigSchema.safeParse(config);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.attachments).toHaveLength(1);
+          expect(result.data.attachments![0].name).toBe('f.txt');
+        }
+      });
     });
 
     describe('invalid payloads', () => {
@@ -338,6 +351,21 @@ describe('validation.ts', () => {
         const result = taskConfigSchema.safeParse(config);
 
         // Assert
+        expect(result.success).toBe(false);
+      });
+
+      it('should reject more than 5 attachments', () => {
+        const config = {
+          prompt: 'Task',
+          attachments: Array.from({ length: 6 }, (_, i) => ({
+            id: `a${i}`,
+            name: `f${i}.txt`,
+            path: `/tmp/f${i}.txt`,
+            type: 'text',
+            size: 0,
+          })),
+        };
+        const result = taskConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
       });
     });

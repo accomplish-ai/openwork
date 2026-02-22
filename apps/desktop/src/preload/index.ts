@@ -405,6 +405,19 @@ const accomplishAPI = {
   logEvent: (payload: { level?: string; message: string; context?: Record<string, unknown> }) =>
     ipcRenderer.invoke('log:event', payload),
 
+  appendDebugLog: (payload: Record<string, unknown>): Promise<void> =>
+    ipcRenderer.invoke('debug:log', payload),
+
+  resolveDroppedFile: (
+    name: string,
+    content: string,
+    isBase64?: boolean,
+  ): Promise<{ path: string }> =>
+    ipcRenderer.invoke('file:resolve-dropped', { name, content, isBase64 }),
+
+  deleteDroppedFile: (filePath: string): Promise<void> =>
+    ipcRenderer.invoke('file:delete-dropped', filePath),
+
   // Export application logs
   exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
     ipcRenderer.invoke('logs:export'),

@@ -48,6 +48,7 @@
     "gray-matter": "^4.0.3",
     "node-pty": "catalog:",
     "opencode-ai": "1.2.6",
+    "pdf-parse": "^2.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "catalog:"

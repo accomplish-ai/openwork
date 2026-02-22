@@ -8,6 +8,16 @@ export type TaskStatus =
   | 'cancelled'
   | 'interrupted';
 
+export type TaskInputAttachmentType = 'image' | 'text' | 'document' | 'other';
+
+export interface TaskInputAttachment {
+  id: string;
+  name: string;
+  path: string;
+  type: TaskInputAttachmentType;
+  size: number;
+}
+
 export interface TaskConfig {
   prompt: string;
   taskId?: string;
@@ -18,6 +28,8 @@ export interface TaskConfig {
   sessionId?: string;
   /** Model ID for display name in progress events */
   modelId?: string;
+  /** Files attached to the task input (drag-and-drop or picker). Max 5, 10MB each. */
+  attachments?: TaskInputAttachment[];
 }
 
 export interface Task {
@@ -34,7 +46,7 @@ export interface Task {
 }
 
 export interface TaskAttachment {
-  type: 'screenshot' | 'json';
+  type: 'screenshot' | 'json' | 'file';
   data: string;
   label?: string;
 }

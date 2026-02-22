@@ -32,7 +32,15 @@
     "dismiss": "Dismiss",
     "messageTooLong": "Message is too long",
     "enterMessage": "Enter a message",
-    "quit": "Quit"
+    "quit": "Quit",
+    "remove": "Remove"
+  },
+  "attachments": {
+    "attachFiles": "Attach files",
+    "dropFilesHere": "Drop files here",
+    "maxFiles": "Maximum 5 files per task",
+    "maxFileSize": "Maximum 10MB per file",
+    "removeAria": "Remove attachment"
   },
   "aria": {
     "scrollToBottom": "Scroll to bottom",
