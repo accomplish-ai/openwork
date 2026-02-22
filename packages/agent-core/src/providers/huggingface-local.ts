@@ -131,7 +131,12 @@ export function validateHuggingFaceLocalConfig(config: HuggingFaceLocalConfig): 
 }
 
 /**
- * Fetches available models from the local HuggingFace inference server.
+ * Fetches available models from the local HuggingFace inference server
+ * by querying the OpenAI-compatible /v1/models endpoint.
+ *
+ * @param options.baseUrl - The server URL (e.g. http://localhost:8787)
+ * @returns Array of available models with their metadata
+ * @throws If the server is unreachable or returns an error
  */
 export async function fetchHuggingFaceLocalModels(options: {
   baseUrl: string;

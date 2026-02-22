@@ -7,6 +7,7 @@ import type {
   HuggingFaceLocalCredentials,
   ToolSupportStatus,
 } from '@accomplish_ai/agent-core/common';
+import { HF_LOCAL_DEFAULT_URL } from '@accomplish_ai/agent-core';
 import {
   ConnectButton,
   ConnectedControls,
@@ -39,7 +40,7 @@ export function HuggingFaceLocalProviderForm({
   onModelChange,
   showModelError,
 }: HuggingFaceLocalProviderFormProps) {
-  const [serverUrl, setServerUrl] = useState('http://localhost:8787');
+  const [serverUrl, setServerUrl] = useState(HF_LOCAL_DEFAULT_URL);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<HuggingFaceLocalModel[]>([]);
@@ -91,12 +92,13 @@ export function HuggingFaceLocalProviderForm({
     connectedProvider?.availableModels || availableModels
   ).map((m) => {
     const id = m.id.replace(/^huggingface-local\//, '');
-    const displayName = 'displayName' in m ? m.displayName : (m as { name?: string }).name || id;
     return {
       id,
-      displayName,
+      displayName:
+        ('name' in m ? m.name : undefined) || ('displayName' in m ? (m.displayName as string) : id),
       size: 0,
-      toolSupport: (m as { toolSupport?: ToolSupportStatus }).toolSupport || 'unknown',
+      toolSupport:
+        ('toolSupport' in m ? (m.toolSupport as ToolSupportStatus) : undefined) || 'unknown',
     };
   });
 
@@ -162,7 +164,7 @@ export function HuggingFaceLocalProviderForm({
                   type="text"
                   value={
                     (connectedProvider?.credentials as HuggingFaceLocalCredentials)?.serverUrl ||
-                    'http://localhost:8787'
+                    HF_LOCAL_DEFAULT_URL
                   }
                   disabled
                   className="w-full rounded-md border border-input bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
