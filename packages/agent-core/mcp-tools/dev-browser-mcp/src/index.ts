@@ -344,6 +344,69 @@ async function waitForPageLoad(page: Page, timeout = 3000): Promise<void> {
   }
 }
 
+const DEFAULT_MAX_SCREENSHOT_BYTES = 120_000;
+const MAX_SCREENSHOT_BYTES = (() => {
+  const parsed = Number.parseInt(process.env.DEV_BROWSER_MCP_MAX_SCREENSHOT_BYTES ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_SCREENSHOT_BYTES;
+})();
+
+interface BoundedScreenshot {
+  buffer: Buffer | null;
+  fullPageUsed: boolean;
+  qualityUsed: number;
+  byteLength: number;
+}
+
+async function captureBoundedScreenshot(
+  page: Page,
+  fullPageRequested: boolean,
+): Promise<BoundedScreenshot> {
+  const attempts = fullPageRequested
+    ? [
+        { fullPage: true, quality: 70 },
+        { fullPage: true, quality: 55 },
+        { fullPage: false, quality: 50 },
+        { fullPage: false, quality: 40 },
+      ]
+    : [
+        { fullPage: false, quality: 70 },
+        { fullPage: false, quality: 55 },
+        { fullPage: false, quality: 40 },
+      ];
+
+  let lastAttempt = attempts[attempts.length - 1];
+  let lastByteLength = 0;
+
+  for (const attempt of attempts) {
+    const buffer = await page.screenshot({
+      fullPage: attempt.fullPage,
+      type: 'jpeg',
+      quality: attempt.quality,
+      // Avoid retina-scale screenshots that explode payload size.
+      scale: 'css',
+    });
+
+    if (buffer.byteLength <= MAX_SCREENSHOT_BYTES) {
+      return {
+        buffer,
+        fullPageUsed: attempt.fullPage,
+        qualityUsed: attempt.quality,
+        byteLength: buffer.byteLength,
+      };
+    }
+
+    lastAttempt = attempt;
+    lastByteLength = buffer.byteLength;
+  }
+
+  return {
+    buffer: null,
+    fullPageUsed: lastAttempt.fullPage,
+    qualityUsed: lastAttempt.quality,
+    byteLength: lastByteLength,
+  };
+}
+
 const SNAPSHOT_SCRIPT = `
 (function() {
   if (window.__devBrowser_getAISnapshot) return;
@@ -2886,17 +2949,35 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
         case 'browser_screenshot': {
           const { page_name, full_page } = args as BrowserScreenshotInput;
           const page = await getPage(page_name);
+          const requestedFullPage = full_page ?? false;
+          const screenshot = await captureBoundedScreenshot(page, requestedFullPage);
 
-          const screenshotBuffer = await page.screenshot({
-            fullPage: full_page ?? false,
-            type: 'jpeg',
-            quality: 80,
-          });
+          if (!screenshot.buffer) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text:
+                    `Screenshot skipped: image remained ${screenshot.byteLength} bytes after compression ` +
+                    `(max ${MAX_SCREENSHOT_BYTES} bytes). Use browser_snapshot() for a lightweight page view.`,
+                },
+              ],
+              isError: true,
+            };
+          }
 
-          const base64 = screenshotBuffer.toString('base64');
+          const base64 = screenshot.buffer.toString('base64');
+          const fallbackNote =
+            requestedFullPage && !screenshot.fullPageUsed
+              ? ' Full-page capture was reduced to viewport to stay within size limits.'
+              : '';
 
           return {
             content: [
+              {
+                type: 'text',
+                text: `Screenshot captured (${screenshot.byteLength} bytes, JPEG quality ${screenshot.qualityUsed}).${fallbackNote}`,
+              },
               {
                 type: 'image',
                 data: base64,
@@ -3221,17 +3302,24 @@ The page has loaded. Use browser_snapshot() to see the page elements and find in
                 }
 
                 case 'screenshot': {
-                  const buffer = await page.screenshot({
-                    fullPage: step.fullPage ?? false,
-                    type: 'jpeg',
-                    quality: 80,
-                  });
+                  const requestedFullPage = step.fullPage ?? false;
+                  const screenshot = await captureBoundedScreenshot(page, requestedFullPage);
+                  if (!screenshot.buffer) {
+                    results.push(
+                      `${stepNum}. Screenshot skipped (still ${screenshot.byteLength} bytes after compression; max ${MAX_SCREENSHOT_BYTES})`,
+                    );
+                    break;
+                  }
                   screenshotData = {
                     type: 'image',
                     mimeType: 'image/jpeg',
-                    data: buffer.toString('base64'),
+                    data: screenshot.buffer.toString('base64'),
                   };
-                  results.push(`${stepNum}. Screenshot taken`);
+                  results.push(
+                    requestedFullPage && !screenshot.fullPageUsed
+                      ? `${stepNum}. Screenshot taken (auto-switched to viewport to stay under ${MAX_SCREENSHOT_BYTES} bytes)`
+                      : `${stepNum}. Screenshot taken (${screenshot.byteLength} bytes)`,
+                  );
                   break;
                 }
 
