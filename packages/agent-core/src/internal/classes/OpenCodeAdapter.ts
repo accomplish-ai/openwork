@@ -1,9 +1,12 @@
 import * as crypto from 'crypto';
 import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
-import { execFileSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+
+const execFileAsync = promisify(execFile);
 
 import { StreamParser } from './StreamParser.js';
 import { OpenCodeLogWatcher, createLogWatcher, OpenCodeLogError } from './OpenCodeLogWatcher.js';
@@ -172,6 +175,82 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     });
   }
 
+  /**
+   * Wraps the spawn arguments with Docker if sandbox mode is enabled.
+   * Returns the final command, args, cwd, and env for pty.spawn.
+   */
+  private async buildSandboxAwareSpawnConfig(
+    spawnFile: string,
+    spawnArgs: string[],
+    safeCwd: string,
+    env: NodeJS.ProcessEnv,
+  ): Promise<{
+    cmd: string;
+    args: string[];
+    cwd: string;
+    env: { [key: string]: string };
+  }> {
+    const sandboxConfig = this.options.getSandboxConfig?.() ?? null;
+
+    if (sandboxConfig?.mode === 'docker') {
+      try {
+        await execFileAsync('docker', ['info'], { timeout: 5000 });
+      } catch {
+        throw new Error(
+          'Docker is not available. Please ensure Docker is installed and the daemon is running.',
+        );
+      }
+
+      const dockerArgs = ['run', '--rm', '-i'];
+
+      // Mount working directory
+      dockerArgs.push('-v', `${safeCwd}:/workspace`, '-w', '/workspace');
+
+      // Mount additional allowed paths
+      if (sandboxConfig.allowedPaths) {
+        for (const p of sandboxConfig.allowedPaths) {
+          dockerArgs.push('-v', `${p}:${p}`);
+        }
+      }
+
+      // Network policy
+      if (!sandboxConfig.networkPolicy.allowOutbound) {
+        dockerArgs.push('--network', 'none');
+      }
+
+      // Forward environment variables
+      for (const [key, val] of Object.entries(env)) {
+        if (val && key !== 'PATH' && key !== 'HOME' && key !== 'USER') {
+          dockerArgs.push('-e', `${key}=${val}`);
+        }
+      }
+
+      const image = sandboxConfig.dockerImage || 'node:20-slim';
+      dockerArgs.push(image);
+
+      // Run the original command inside the container
+      dockerArgs.push('sh', '-c', this.buildShellCommand(spawnFile, spawnArgs));
+
+      const dockerMsg = `Docker sandbox: docker ${dockerArgs.join(' ')}`;
+      console.log('[OpenCode CLI]', dockerMsg);
+      this.emit('debug', { type: 'info', message: dockerMsg });
+
+      return {
+        cmd: 'docker',
+        args: dockerArgs,
+        cwd: safeCwd,
+        env: { ...process.env } as { [key: string]: string },
+      };
+    }
+
+    return {
+      cmd: spawnFile,
+      args: spawnArgs,
+      cwd: safeCwd,
+      env: env as { [key: string]: string },
+    };
+  }
+
   async startTask(config: TaskConfig): Promise<Task> {
     if (this.isDisposed) {
       throw new Error('Adapter has been disposed and cannot start new tasks');
@@ -247,71 +326,19 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       console.log('[OpenCode CLI]', spawnMsg);
       this.emit('debug', { type: 'info', message: spawnMsg });
 
-      const sandboxConfig = this.options.getSandboxConfig?.() ?? null;
-      let spawnCmd: string;
-      let finalSpawnArgs: string[];
-      let spawnCwd: string;
-      let spawnEnv = env as { [key: string]: string };
+      const spawnConfig = await this.buildSandboxAwareSpawnConfig(
+        spawnFile,
+        spawnArgs,
+        safeCwd,
+        env,
+      );
 
-      if (sandboxConfig?.mode === 'docker') {
-        try {
-          execFileSync('docker', ['info'], { stdio: 'ignore', timeout: 5000 });
-        } catch {
-          throw new Error(
-            'Docker is not available. Please ensure Docker is installed and the daemon is running.',
-          );
-        }
-
-        const dockerArgs = ['run', '--rm', '-i'];
-
-        // Mount working directory
-        dockerArgs.push('-v', `${safeCwd}:/workspace`, '-w', '/workspace');
-
-        // Mount additional allowed paths
-        if (sandboxConfig.allowedPaths) {
-          for (const p of sandboxConfig.allowedPaths) {
-            dockerArgs.push('-v', `${p}:${p}`);
-          }
-        }
-
-        // Network policy
-        if (!sandboxConfig.networkPolicy.allowOutbound) {
-          dockerArgs.push('--network', 'none');
-        }
-
-        // Forward environment variables
-        for (const [key, val] of Object.entries(env)) {
-          if (val && key !== 'PATH' && key !== 'HOME' && key !== 'USER') {
-            dockerArgs.push('-e', `${key}=${val}`);
-          }
-        }
-
-        const image = sandboxConfig.dockerImage || 'node:20-slim';
-        dockerArgs.push(image);
-
-        // Run the original command inside the container
-        dockerArgs.push('sh', '-c', this.buildShellCommand(spawnFile, spawnArgs));
-
-        spawnCmd = 'docker';
-        finalSpawnArgs = dockerArgs;
-        spawnCwd = safeCwd;
-        spawnEnv = { ...process.env } as { [key: string]: string };
-
-        const dockerMsg = `Docker sandbox: docker ${dockerArgs.join(' ')}`;
-        console.log('[OpenCode CLI]', dockerMsg);
-        this.emit('debug', { type: 'info', message: dockerMsg });
-      } else {
-        spawnCmd = spawnFile;
-        finalSpawnArgs = spawnArgs;
-        spawnCwd = safeCwd;
-      }
-
-      this.ptyProcess = pty.spawn(spawnCmd, finalSpawnArgs, {
+      this.ptyProcess = pty.spawn(spawnConfig.cmd, spawnConfig.args, {
         name: 'xterm-256color',
         cols: 32000,
         rows: 30,
-        cwd: spawnCwd,
-        env: spawnEnv,
+        cwd: spawnConfig.cwd,
+        env: spawnConfig.env,
       });
       const pidMsg = `PTY Process PID: ${this.ptyProcess.pid}`;
       console.log('[OpenCode CLI]', pidMsg);
@@ -798,12 +825,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     const { file: spawnFile, args: spawnArgs } = this.buildPtySpawnArgs(command, allArgs);
 
-    this.ptyProcess = pty.spawn(spawnFile, spawnArgs, {
+    const spawnConfig = await this.buildSandboxAwareSpawnConfig(spawnFile, spawnArgs, safeCwd, env);
+
+    this.ptyProcess = pty.spawn(spawnConfig.cmd, spawnConfig.args, {
       name: 'xterm-256color',
       cols: 32000,
       rows: 30,
-      cwd: safeCwd,
-      env: env as { [key: string]: string },
+      cwd: spawnConfig.cwd,
+      env: spawnConfig.env,
     });
 
     this.ptyProcess.onData((data: string) => {

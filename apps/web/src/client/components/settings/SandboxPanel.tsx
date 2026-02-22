@@ -12,17 +12,23 @@ const DEFAULT_CONFIG: SandboxConfig = {
 export function SandboxPanel() {
   const [config, setConfig] = useState<SandboxConfig>(DEFAULT_CONFIG);
   const [saving, setSaving] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
   const dockerImageRef = useRef<HTMLInputElement>(null);
   const hostsRef = useRef<HTMLTextAreaElement>(null);
   const pathsRef = useRef<HTMLTextAreaElement>(null);
   const accomplish = useAccomplish();
 
   useEffect(() => {
-    accomplish.getSandboxConfig().then((c) => {
-      if (c) {
-        setConfig(c);
-      }
-    });
+    accomplish
+      .getSandboxConfig()
+      .then((c) => {
+        if (c) {
+          setConfig(c);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load sandbox config:', err);
+      });
   }, [accomplish]);
 
   const saveConfig = useCallback(
@@ -92,6 +98,14 @@ export function SandboxPanel() {
   const handleDockerImageBlur = useCallback(() => {
     const value = dockerImageRef.current?.value ?? '';
     const trimmed = value.trim() || undefined;
+    if (trimmed) {
+      const DOCKER_IMAGE_REGEX = /^[\w.-]+(\/[\w.-]+)*(:[\w.-]+)?$/;
+      if (!DOCKER_IMAGE_REGEX.test(trimmed)) {
+        setConfigError('Invalid Docker image name. Use format: name[:tag] or org/name[:tag]');
+        return;
+      }
+    }
+    setConfigError(null);
     if (trimmed !== config.dockerImage) {
       saveConfig({ ...config, dockerImage: trimmed });
     }
@@ -155,8 +169,11 @@ export function SandboxPanel() {
               placeholder="node:20-slim (default)"
               defaultValue={config.dockerImage ?? ''}
               onBlur={handleDockerImageBlur}
-              className="mt-3 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className={`mt-3 w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+                configError ? 'border-destructive' : 'border-border'
+              }`}
             />
+            {configError && <p className="mt-1.5 text-sm text-destructive">{configError}</p>}
           </div>
 
           <div className="rounded-lg border border-border bg-card p-5">
