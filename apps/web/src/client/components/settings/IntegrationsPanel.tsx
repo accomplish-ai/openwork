@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getAccomplish } from '@/lib/accomplish';
+import { useAccomplish } from '@/lib/accomplish';
 import type {
   MessagingConfig,
   MessagingPlatform,
@@ -69,7 +69,7 @@ export function IntegrationsPanel() {
   const [config, setConfig] = useState<MessagingConfig>(DEFAULT_CONFIG);
   const [expandedPlatform, setExpandedPlatform] = useState<MessagingPlatform | null>(null);
   const [saving, setSaving] = useState(false);
-  const accomplish = getAccomplish();
+  const accomplish = useAccomplish();
 
   useEffect(() => {
     accomplish.getMessagingConfig().then((c) => {
@@ -113,7 +113,9 @@ export function IntegrationsPanel() {
   const handleToggleTunnel = useCallback(
     async (platform: MessagingPlatform) => {
       const existing = config.integrations[platform];
-      if (!existing) return;
+      if (!existing) {
+        return;
+      }
       const newConfig: MessagingConfig = {
         ...config,
         integrations: {
@@ -204,7 +206,6 @@ export function IntegrationsPanel() {
 
             {isExpanded && platform.available && (
               <div className="border-t border-border p-4 space-y-4">
-                {/* Enable/Disable Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-medium text-foreground">
@@ -215,6 +216,9 @@ export function IntegrationsPanel() {
                     </p>
                   </div>
                   <button
+                    role="switch"
+                    aria-checked={isEnabled}
+                    aria-label={`Enable ${platform.name}`}
                     onClick={() => handleToggleEnabled(platform.id)}
                     disabled={saving}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
@@ -229,7 +233,6 @@ export function IntegrationsPanel() {
                   </button>
                 </div>
 
-                {/* QR Code Section (WhatsApp) */}
                 {platform.id === 'whatsapp' && isEnabled && (
                   <div className="rounded-lg border border-border p-4">
                     <div className="text-sm font-medium text-foreground mb-2">Connect WhatsApp</div>
@@ -283,7 +286,6 @@ export function IntegrationsPanel() {
                   </div>
                 )}
 
-                {/* Tunnel Toggle */}
                 {isEnabled && (
                   <div className="flex items-center justify-between">
                     <div>
@@ -295,6 +297,9 @@ export function IntegrationsPanel() {
                       </p>
                     </div>
                     <button
+                      role="switch"
+                      aria-checked={integration?.tunnelEnabled ?? false}
+                      aria-label={`Enable remote access for ${platform.name}`}
                       onClick={() => handleToggleTunnel(platform.id)}
                       disabled={saving}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
@@ -310,7 +315,6 @@ export function IntegrationsPanel() {
                   </div>
                 )}
 
-                {/* Remove Button */}
                 {integration && (
                   <div className="pt-2 border-t border-border">
                     <button

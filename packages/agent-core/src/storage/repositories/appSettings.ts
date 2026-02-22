@@ -196,7 +196,9 @@ export function setCloudBrowserConfig(config: CloudBrowserConfig | null): void {
 
 export function getMessagingConfig(): MessagingConfig | null {
   const row = getRow();
-  if (!row.messaging_config) return null;
+  if (!row.messaging_config) {
+    return null;
+  }
   try {
     return JSON.parse(row.messaging_config) as MessagingConfig;
   } catch {

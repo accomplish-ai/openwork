@@ -440,7 +440,6 @@ export function SettingsDialog({
                 </div>
               )}
 
-              {/* Integrations Tab */}
               {activeTab === 'integrations' && (
                 <div className="space-y-6">
                   <IntegrationsPanel />

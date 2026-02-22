@@ -977,8 +977,14 @@ export function registerIPCHandlers(): void {
       if (typeof config !== 'string') {
         throw new Error('Invalid cloud browser config');
       }
-      const parsed = JSON.parse(config);
-      storage.setCloudBrowserConfig(parsed);
+      try {
+        const parsed = JSON.parse(config);
+        storage.setCloudBrowserConfig(parsed);
+      } catch (e) {
+        throw new Error(
+          `Invalid cloud browser config: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
     },
   );
 
@@ -997,8 +1003,12 @@ export function registerIPCHandlers(): void {
       if (typeof config !== 'string') {
         throw new Error('Invalid messaging config');
       }
-      const parsed = JSON.parse(config);
-      storage.setMessagingConfig(parsed);
+      try {
+        const parsed = JSON.parse(config);
+        storage.setMessagingConfig(parsed);
+      } catch (e) {
+        throw new Error(`Invalid messaging config: ${e instanceof Error ? e.message : String(e)}`);
+      }
     },
   );
 
