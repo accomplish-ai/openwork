@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import type { SandboxConfig } from '../../../src/common/types/sandbox.js';
 
 describe('Sandbox Docker command construction', () => {
@@ -325,5 +327,101 @@ describe('Migration v009 sandbox', () => {
 
     expect(mockExec).toHaveBeenCalledOnce();
     expect(mockExec.mock.calls[0][0]).toContain('DROP COLUMN sandbox_config');
+  });
+});
+
+describe('Sandbox config storage persistence', () => {
+  let testDir: string;
+  let dbPath: string;
+  let databaseModule: typeof import('../../../src/storage/database.js') | null = null;
+  let appSettingsModule: typeof import('../../../src/storage/repositories/appSettings.js') | null =
+    null;
+
+  beforeAll(async () => {
+    try {
+      databaseModule = await import('../../../src/storage/database.js');
+      appSettingsModule = await import('../../../src/storage/repositories/appSettings.js');
+    } catch (_err) {
+      console.warn('Skipping storage tests: better-sqlite3 native module not available');
+      console.warn('To fix: pnpm rebuild better-sqlite3');
+    }
+  });
+
+  beforeEach(() => {
+    testDir = path.join(
+      os.tmpdir(),
+      `sandbox-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+    fs.mkdirSync(testDir, { recursive: true });
+    dbPath = path.join(testDir, 'test.db');
+
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    if (databaseModule) {
+      databaseModule.resetDatabaseInstance();
+    }
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+    vi.restoreAllMocks();
+  });
+
+  it('should return null when no sandbox config is set', () => {
+    if (!databaseModule || !appSettingsModule) return;
+
+    databaseModule.initializeDatabase({ databasePath: dbPath });
+    const config = appSettingsModule.getSandboxConfig();
+    expect(config).toBeNull();
+  });
+
+  it('should persist and retrieve a docker sandbox config', () => {
+    if (!databaseModule || !appSettingsModule) return;
+
+    databaseModule.initializeDatabase({ databasePath: dbPath });
+
+    const config: SandboxConfig = {
+      mode: 'docker',
+      dockerImage: 'node:20-slim',
+      allowedPaths: ['/tmp/data'],
+      networkPolicy: { allowOutbound: true, allowedHosts: ['api.openai.com'] },
+    };
+
+    appSettingsModule.setSandboxConfig(config);
+    const retrieved = appSettingsModule.getSandboxConfig();
+
+    expect(retrieved).toEqual(config);
+  });
+
+  it('should clear sandbox config when set to null', () => {
+    if (!databaseModule || !appSettingsModule) return;
+
+    databaseModule.initializeDatabase({ databasePath: dbPath });
+
+    appSettingsModule.setSandboxConfig({
+      mode: 'docker',
+      networkPolicy: { allowOutbound: false },
+    });
+    expect(appSettingsModule.getSandboxConfig()).not.toBeNull();
+
+    appSettingsModule.setSandboxConfig(null);
+    expect(appSettingsModule.getSandboxConfig()).toBeNull();
+  });
+
+  it('should include sandboxConfig in getAppSettings()', () => {
+    if (!databaseModule || !appSettingsModule) return;
+
+    databaseModule.initializeDatabase({ databasePath: dbPath });
+
+    const config: SandboxConfig = {
+      mode: 'none',
+      networkPolicy: { allowOutbound: true },
+    };
+
+    appSettingsModule.setSandboxConfig(config);
+    const settings = appSettingsModule.getAppSettings();
+
+    expect(settings.sandboxConfig).toEqual(config);
   });
 });
