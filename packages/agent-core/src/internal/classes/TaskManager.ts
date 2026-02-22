@@ -170,6 +170,18 @@ export class TaskManager {
         const taskMessage = toTaskMessage(message);
         if (taskMessage) {
           queueMessage(taskId, taskMessage, batchForward, () => {});
+
+          // Forward browser screenshots as live preview frames
+          if (
+            callbacks.onBrowserFrame &&
+            taskMessage.attachments &&
+            taskMessage.toolName?.includes('browser_')
+          ) {
+            const screenshot = taskMessage.attachments.find((a) => a.type === 'screenshot');
+            if (screenshot) {
+              callbacks.onBrowserFrame({ data: screenshot.data });
+            }
+          }
         }
       }
       callbacks.onMessage?.(message);

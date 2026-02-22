@@ -53,6 +53,7 @@ export function ExecutionPage() {
   const followUpInputRef = useRef<HTMLTextAreaElement>(null);
   const [currentTool, setCurrentTool] = useState<string | null>(null);
   const [currentToolInput, setCurrentToolInput] = useState<unknown>(null);
+  const [hasBrowserActivity, setHasBrowserActivity] = useState(false);
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [debugModeEnabled, setDebugModeEnabled] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -151,6 +152,7 @@ export function ExecutionPage() {
       setDebugLogs([]);
       setCurrentTool(null);
       setCurrentToolInput(null);
+      setHasBrowserActivity(false);
       accomplish.getTodosForTask(id).then((todos) => {
         useTaskStore.getState().setTodos(id, todos);
       });
@@ -164,6 +166,9 @@ export function ExecutionPage() {
         if (toolName) {
           setCurrentTool(toolName);
           setCurrentToolInput(event.message.toolInput);
+          if (getBaseToolName(toolName).startsWith('browser_')) {
+            setHasBrowserActivity(true);
+          }
         }
       }
       if (event.taskId === id && event.type === 'message' && event.message?.type === 'assistant') {
@@ -191,6 +196,9 @@ export function ExecutionPage() {
             if (toolName) {
               setCurrentTool(toolName);
               setCurrentToolInput(lastMsg.toolInput);
+              if (getBaseToolName(toolName).startsWith('browser_')) {
+                setHasBrowserActivity(true);
+              }
             }
           }
         }
@@ -644,8 +652,8 @@ export function ExecutionPage() {
               </div>
             </div>
 
-            {/* Browser live preview - shown when browser tools are active */}
-            {currentTask.status === 'running' && currentTool?.startsWith('browser_') && id && (
+            {/* Browser live preview - shown when browser tools have been used */}
+            {hasBrowserActivity && id && (
               <BrowserPreviewPanel taskId={id} isRunning={currentTask.status === 'running'} />
             )}
             <AnimatePresence>

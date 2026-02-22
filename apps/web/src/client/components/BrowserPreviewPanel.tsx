@@ -138,7 +138,11 @@ export function BrowserPreviewPanel({ taskId, isRunning }: BrowserPreviewPanelPr
           <div className="flex-1 overflow-auto p-2">
             <div className="relative rounded-md overflow-hidden border border-border/50 bg-muted/20">
               <img
-                src={`data:image/jpeg;base64,${frame.data}`}
+                src={
+                  frame.data.startsWith('data:')
+                    ? frame.data
+                    : `data:image/png;base64,${frame.data}`
+                }
                 alt="Browser preview"
                 className="w-full h-auto"
               />
