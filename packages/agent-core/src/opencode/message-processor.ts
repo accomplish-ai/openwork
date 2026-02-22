@@ -1,6 +1,7 @@
 import type { OpenCodeMessage, OpenCodeToolUseMessage } from '../common/types/opencode.js';
 import type { TaskMessage } from '../common/types/task.js';
 import { createMessageId } from '../common/index.js';
+import { isHiddenToolName } from './tool-classification.js';
 
 /**
  * Delay in milliseconds for batching messages before sending to renderer.
@@ -77,9 +78,6 @@ const TOOL_DISPLAY_NAMES: Record<string, string | null> = {
   browser_script: 'Running script',
   browser_click: 'Clicking element',
   browser_keyboard: 'Typing',
-  discard: null,
-  extract: null,
-  context_info: null,
 };
 
 const INSTRUCTION_BLOCK_RE = /<instruction\b[^>]*>[\s\S]*?<\/instruction>/gi;
@@ -113,6 +111,9 @@ export function sanitizeAssistantTextForDisplay(text: string): string | null {
 }
 
 export function getToolDisplayName(toolName: string): string | null {
+  if (isHiddenToolName(toolName)) {
+    return null;
+  }
   if (Object.prototype.hasOwnProperty.call(TOOL_DISPLAY_NAMES, toolName)) {
     return TOOL_DISPLAY_NAMES[toolName];
   }
