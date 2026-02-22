@@ -397,7 +397,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private escapeShellArg(arg: string): string {
     if (this.options.platform === 'win32') {
-      return `"${arg.replace(/"/g, '""')}"`;
+      return `'${arg.replace(/'/g, "''")}'`;
     }
     return `'${arg.replace(/'/g, "'\\''")}'`;
   }

@@ -18,7 +18,7 @@ export function stripAnsi(input: string): string {
  */
 export function quoteForShell(arg: string): string {
   if (process.platform === 'win32') {
-    return `"${arg.replace(/"/g, '\\"')}"`;
+    return `'${arg.replace(/'/g, "''")}'`;
   }
   return `'${arg.replace(/'/g, "'\\''")}'`;
 }

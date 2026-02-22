@@ -79,12 +79,12 @@ describe('Shell escaping utilities', () => {
     });
   });
 
-  describe('Windows cmd.exe /s /c quoting (Issue #354)', () => {
-    // Reproduce the escapeShellArg + getShellArgs logic from the adapter.
-    // All arguments are now unconditionally quoted to prevent injection.
+  describe('Windows PowerShell escaping', () => {
+    // Reproduce the escapeShellArg logic from the adapter.
+    // All arguments are now unconditionally single-quoted (PowerShell-safe).
 
     function escapeShellArgWin32(arg: string): string {
-      return `"${arg.replace(/"/g, '""')}"`;
+      return `'${arg.replace(/'/g, "''")}'`;
     }
 
     function buildShellCommand(command: string, args: string[]): string {
@@ -93,66 +93,54 @@ describe('Shell escaping utilities', () => {
       return [escapedCommand, ...escapedArgs].join(' ');
     }
 
-    function getShellArgsWin32(command: string): string[] {
-      return ['/s', '/c', `"${command}"`];
-    }
-
-    it('should wrap the full command in outer quotes for cmd.exe /s /c', () => {
-      const command =
-        'C:\\Users\\Li Yao\\AppData\\Local\\Programs\\@accomplishdesktop\\opencode.exe';
-      const args = ['run', '--format', 'json', '--prompt', 'hello world'];
-      const fullCommand = buildShellCommand(command, args);
-      const shellArgs = getShellArgsWin32(fullCommand);
-
-      expect(shellArgs[2]).toBe(`"${fullCommand}"`);
-      expect(fullCommand).toContain(
-        '"C:\\Users\\Li Yao\\AppData\\Local\\Programs\\@accomplishdesktop\\opencode.exe"',
-      );
-      expect(shellArgs[0]).toBe('/s');
-      expect(shellArgs[1]).toBe('/c');
-      expect(shellArgs[2].startsWith('"')).toBe(true);
-      expect(shellArgs[2].endsWith('"')).toBe(true);
-    });
-
     it('should always quote arguments even without spaces', () => {
       const command = 'C:\\Program\\opencode.exe';
       const args = ['run'];
       const fullCommand = buildShellCommand(command, args);
-      const shellArgs = getShellArgsWin32(fullCommand);
 
-      expect(fullCommand).toBe('"C:\\Program\\opencode.exe" "run"');
-      expect(shellArgs[2]).toBe(`"${fullCommand}"`);
+      expect(fullCommand).toBe("'C:\\Program\\opencode.exe' 'run'");
+    });
+
+    it('should handle paths with spaces', () => {
+      const command =
+        'C:\\Users\\Li Yao\\AppData\\Local\\Programs\\@accomplishdesktop\\opencode.exe';
+      const args = ['run', '--format', 'json', '--prompt', 'hello world'];
+      const fullCommand = buildShellCommand(command, args);
+
+      expect(fullCommand).toContain(
+        "'C:\\Users\\Li Yao\\AppData\\Local\\Programs\\@accomplishdesktop\\opencode.exe'",
+      );
+      expect(fullCommand).toContain("'hello world'");
     });
 
     it('should handle multiple arguments with spaces', () => {
       const command = 'C:\\Users\\Li Yao\\opencode.exe';
       const args = ['--cwd', 'C:\\Users\\Li Yao\\projects', '--prompt', 'fix the bug'];
       const fullCommand = buildShellCommand(command, args);
-      const shellArgs = getShellArgsWin32(fullCommand);
 
-      // All args with spaces should be individually quoted
-      expect(fullCommand).toContain('"C:\\Users\\Li Yao\\opencode.exe"');
-      expect(fullCommand).toContain('"C:\\Users\\Li Yao\\projects"');
-      expect(fullCommand).toContain('"fix the bug"');
-      // Outer quotes must be present
-      expect(shellArgs[2].startsWith('"')).toBe(true);
-      expect(shellArgs[2].endsWith('"')).toBe(true);
+      expect(fullCommand).toContain("'C:\\Users\\Li Yao\\opencode.exe'");
+      expect(fullCommand).toContain("'C:\\Users\\Li Yao\\projects'");
+      expect(fullCommand).toContain("'fix the bug'");
     });
 
-    it('should handle paths with embedded double quotes', () => {
-      const command = 'C:\\Users\\Li "test" Yao\\opencode.exe';
+    it('should escape embedded single quotes by doubling', () => {
+      const command = "C:\\Users\\O'Brien\\opencode.exe";
       const escaped = escapeShellArgWin32(command);
-      // Embedded quotes are doubled
-      expect(escaped).toBe('"C:\\Users\\Li ""test"" Yao\\opencode.exe"');
+      expect(escaped).toBe("'C:\\Users\\O''Brien\\opencode.exe'");
+    });
+
+    it('should prevent PowerShell variable expansion', () => {
+      const malicious = '$(whoami)';
+      const escaped = escapeShellArgWin32(malicious);
+      // Single quotes prevent expansion in PowerShell
+      expect(escaped).toBe("'$(whoami)'");
     });
 
     it('should handle Chinese and Unicode characters in paths', () => {
       const command = 'C:\\Users\\李 耀\\AppData\\opencode.exe';
       const fullCommand = buildShellCommand(command, ['run']);
-      const shellArgs = getShellArgsWin32(fullCommand);
 
-      expect(fullCommand).toContain('"C:\\Users\\李 耀\\AppData\\opencode.exe"');
-      expect(shellArgs[2]).toBe(`"${fullCommand}"`);
+      expect(fullCommand).toContain("'C:\\Users\\李 耀\\AppData\\opencode.exe'");
     });
   });
 
