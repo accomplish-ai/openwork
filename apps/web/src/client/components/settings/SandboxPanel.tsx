@@ -13,6 +13,7 @@ export function SandboxPanel() {
   const [config, setConfig] = useState<SandboxConfig>(DEFAULT_CONFIG);
   const [saving, setSaving] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const dockerImageRef = useRef<HTMLInputElement>(null);
   const hostsRef = useRef<HTMLTextAreaElement>(null);
   const pathsRef = useRef<HTMLTextAreaElement>(null);
@@ -34,9 +35,14 @@ export function SandboxPanel() {
   const saveConfig = useCallback(
     async (newConfig: SandboxConfig) => {
       setSaving(true);
+      setSaveError(null);
       try {
         await accomplish.setSandboxConfig(newConfig);
         setConfig(newConfig);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save sandbox configuration';
+        setSaveError(message);
+        console.error('Failed to save sandbox config:', err);
       } finally {
         setSaving(false);
       }
@@ -253,6 +259,12 @@ export function SandboxPanel() {
             </p>
           </div>
         </>
+      )}
+
+      {saveError && (
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-3" role="alert">
+          <p className="text-sm text-destructive">{saveError}</p>
+        </div>
       )}
 
       <div className="rounded-lg border border-border bg-card p-4">

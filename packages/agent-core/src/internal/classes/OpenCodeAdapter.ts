@@ -218,22 +218,36 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         dockerArgs.push('--network', 'none');
       }
 
-      // Forward environment variables
+      // Forward environment variables (using --env-file would be ideal,
+      // but for simplicity we pass them as -e flags)
+      const envKeys: string[] = [];
       for (const [key, val] of Object.entries(env)) {
         if (val && key !== 'PATH' && key !== 'HOME' && key !== 'USER') {
           dockerArgs.push('-e', `${key}=${val}`);
+          envKeys.push(key);
         }
       }
 
       const image = sandboxConfig.dockerImage || 'node:20-slim';
       dockerArgs.push(image);
 
-      // Run the original command inside the container
-      dockerArgs.push('sh', '-c', this.buildShellCommand(spawnFile, spawnArgs));
+      // Run the original command inside the container using its basename,
+      // since the host-specific absolute path won't exist in the container.
+      // The CLI must be available on the container's PATH (e.g. via the image).
+      const containerCommand = path.basename(spawnFile);
+      dockerArgs.push('sh', '-c', this.buildShellCommand(containerCommand, spawnArgs));
 
-      const dockerMsg = `Docker sandbox: docker ${dockerArgs.join(' ')}`;
+      // Log Docker command with env values redacted to avoid leaking secrets
+      const redactedArgs = dockerArgs.map((arg, i) => {
+        if (i > 0 && dockerArgs[i - 1] === '-e' && arg.includes('=')) {
+          const eqIdx = arg.indexOf('=');
+          return `${arg.substring(0, eqIdx)}=***`;
+        }
+        return arg;
+      });
+      const dockerMsg = `Docker sandbox: docker ${redactedArgs.join(' ')}`;
       console.log('[OpenCode CLI]', dockerMsg);
-      this.emit('debug', { type: 'info', message: dockerMsg });
+      this.emit('debug', { type: 'info', message: dockerMsg, data: { envKeys } });
 
       return {
         cmd: 'docker',
