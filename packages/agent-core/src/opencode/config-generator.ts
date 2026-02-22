@@ -622,6 +622,7 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
 
   args.push('--agent', ACCOMPLISH_AGENT_NAME);
 
+  args.push('--');
   args.push(prompt);
 
   return args;

@@ -397,17 +397,9 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private escapeShellArg(arg: string): string {
     if (this.options.platform === 'win32') {
-      if (arg.includes(' ') || arg.includes('"')) {
-        return `"${arg.replace(/"/g, '""')}"`;
-      }
-      return arg;
-    } else {
-      const needsEscaping = ["'", ' ', '$', '`', '\\', '"', '\n'].some((c) => arg.includes(c));
-      if (needsEscaping) {
-        return `'${arg.replace(/'/g, "'\\''")}'`;
-      }
-      return arg;
+      return `"${arg.replace(/"/g, '""')}"`;
     }
+    return `'${arg.replace(/'/g, "'\\''")}'`;
   }
 
   private buildShellCommand(command: string, args: string[]): string {

