@@ -126,22 +126,26 @@ export function getDaemonClient(): DaemonRpcClient | null {
 
 export async function disconnectFromDaemon(): Promise<void> {
   disconnecting = true;
-
-  if (connectingPromise) {
-    try {
-      await connectingPromise;
-    } catch {
-      // Connection may have failed or been cancelled — that's fine
+  try {
+    if (connectingPromise) {
+      try {
+        await connectingPromise;
+      } catch {
+        // Connection may have failed or been cancelled — that's fine
+      }
+      connectingPromise = null;
     }
-    connectingPromise = null;
-  }
 
-  if (client) {
-    await client.disconnect();
-    client = null;
+    if (client) {
+      try {
+        await client.disconnect();
+      } finally {
+        client = null;
+      }
+    }
+  } finally {
+    disconnecting = false;
   }
-
-  disconnecting = false;
 }
 
 export async function isDaemonRunning(): Promise<boolean> {

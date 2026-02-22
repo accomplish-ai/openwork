@@ -5,7 +5,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@accomplish_ai/agent-core': path.resolve(__dirname, '../../packages/agent-core/src'),
-      '@accomplish_ai/agent-core/*': path.resolve(__dirname, '../../packages/agent-core/src/*'),
     },
   },
   test: {

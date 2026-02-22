@@ -105,7 +105,7 @@ export function isTransientError(err: unknown): boolean {
   }
 
   if (err instanceof AggregateError && err.errors?.length) {
-    return err.errors.some((e) => isTransientError(e));
+    return err.errors.every((e) => isTransientError(e));
   }
 
   return false;

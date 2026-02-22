@@ -121,6 +121,7 @@ export class ThoughtStreamService {
   }
 
   close(): void {
+    this.rateLimiter.dispose();
     if (this.server) {
       this.server.close();
       this.server = null;

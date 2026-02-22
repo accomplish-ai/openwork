@@ -169,6 +169,7 @@ export class PermissionService {
   }
 
   close(): void {
+    this.rateLimiter.dispose();
     if (this.permissionServer) {
       this.permissionServer.close();
       this.permissionServer = null;

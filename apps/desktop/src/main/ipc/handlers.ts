@@ -222,8 +222,11 @@ export function registerIPCHandlers(): void {
     if (isMockTaskEventsEnabled()) {
       return;
     }
+    if (!parsedResponse.requestId) {
+      throw new Error('requestId is required for permission:respond');
+    }
     await daemonRespondPermission({
-      requestId: parsedResponse.requestId || '',
+      requestId: parsedResponse.requestId,
       taskId: parsedResponse.taskId,
       decision: parsedResponse.decision,
       message: parsedResponse.message,
