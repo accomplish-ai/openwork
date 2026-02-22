@@ -957,8 +957,10 @@ export function registerIPCHandlers(): void {
       resolved = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
     } else if (theme === 'pure-dark') {
       resolved = 'dark';
+    } else if (theme === 'dark') {
+      resolved = 'dark';
     } else {
-      resolved = theme;
+      resolved = 'light';
     }
 
     for (const win of BrowserWindow.getAllWindows()) {
