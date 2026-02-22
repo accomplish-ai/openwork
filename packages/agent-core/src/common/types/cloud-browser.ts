@@ -9,7 +9,7 @@ export interface CloudBrowserProviderConfig {
   enabled: boolean;
   /** API key for the provider */
   apiKey?: string;
-  /** Project ID (Browserbase) */
+  /** Project ID — required by Browserbase for session creation (future provider support) */
   projectId?: string;
   /** Region or endpoint URL */
   endpoint?: string;

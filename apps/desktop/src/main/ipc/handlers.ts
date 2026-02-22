@@ -82,6 +82,7 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
 } from '@accomplish_ai/agent-core';
+import type { CloudBrowserConfig } from '@accomplish_ai/agent-core/common';
 import {
   DEFAULT_PROVIDERS,
   ALLOWED_API_KEY_PROVIDERS,
@@ -977,8 +978,13 @@ export function registerIPCHandlers(): void {
       if (typeof config !== 'string') {
         throw new Error('Invalid cloud browser config');
       }
-      const parsed = JSON.parse(config);
-      storage.setCloudBrowserConfig(parsed);
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(config);
+      } catch {
+        throw new Error('Invalid cloud browser config: malformed JSON');
+      }
+      storage.setCloudBrowserConfig(parsed as CloudBrowserConfig);
     },
   );
 

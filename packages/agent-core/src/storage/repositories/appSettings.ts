@@ -174,12 +174,7 @@ export function setTheme(theme: ThemePreference): void {
 
 export function getCloudBrowserConfig(): CloudBrowserConfig | null {
   const row = getRow();
-  if (!row.cloud_browser_config) return null;
-  try {
-    return JSON.parse(row.cloud_browser_config) as CloudBrowserConfig;
-  } catch {
-    return null;
-  }
+  return safeParseJsonWithFallback<CloudBrowserConfig>(row.cloud_browser_config);
 }
 
 export function setCloudBrowserConfig(config: CloudBrowserConfig | null): void {
