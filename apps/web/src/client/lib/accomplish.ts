@@ -69,7 +69,6 @@ interface AccomplishAPI {
       | 'litellm'
       | 'lmstudio'
       | 'elevenlabs'
-      | 'browserbase'
       | 'aws-agentcore',
     key: string,
     label?: string,
