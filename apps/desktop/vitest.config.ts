@@ -55,8 +55,7 @@ export default defineConfig({
         'src/renderer/components/ui/select.tsx',
         // Simple page wrappers
         'src/renderer/pages/History.tsx',
-        // Infrastructure code - HTTP server and file system cleanup utilities
-        'src/main/permission-api.ts', // MCP permission HTTP server - infrastructure
+        // Infrastructure code - file system cleanup utilities
         'src/main/store/freshInstallCleanup.ts', // One-time cleanup utility
         // E2E test utilities - not production code
         'src/main/test-utils/**',

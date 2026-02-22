@@ -37,6 +37,7 @@ export function initializeDatabase(options: DatabaseOptions): Database.Database 
   _currentPath = databasePath;
 
   _db.pragma('journal_mode = WAL');
+  _db.pragma('busy_timeout = 5000');
   _db.pragma('foreign_keys = ON');
 
   if (shouldRunMigrations) {

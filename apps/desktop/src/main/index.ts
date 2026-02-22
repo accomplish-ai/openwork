@@ -15,18 +15,17 @@ import { registerIPCHandlers } from './ipc/handlers';
 import {
   FutureSchemaError,
 } from '@accomplish_ai/agent-core';
-import {
-  initThoughtStreamApi,
-  startThoughtStreamServer,
-} from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
-import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
+import { cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import { initializeStorage, closeStorage, getStorage, resetStorageSingleton } from './store/storage';
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { connectToDaemon, disconnectFromDaemon, isDaemonRunning } from './daemon-client';
+import { getSocketPath } from '@accomplish_ai/agent-core';
+import { spawn } from 'child_process';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -69,6 +68,108 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
 let mainWindow: BrowserWindow | null = null;
+let daemonChild: import('child_process').ChildProcess | null = null;
+let isQuitting = false;
+
+async function startDaemonProcess(): Promise<void> {
+  const socketPath = getSocketPath();
+  const dataDir = app.getPath('userData');
+
+  let daemonEntry: string;
+  let args: string[];
+
+  if (app.isPackaged) {
+    // ABI strategy: ELECTRON_RUN_AS_NODE=1 causes the spawned process to use
+    // Electron's bundled Node.js runtime. Native modules (e.g. better-sqlite3)
+    // must therefore be compiled against Electron's ABI. This is handled by
+    // electron-rebuild during the build step.
+    const asarUnpackedModules = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules');
+    const env = {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+      NODE_PATH: asarUnpackedModules,
+      MCP_TOOLS_PATH: path.join(process.resourcesPath, 'mcp-tools'),
+      ACCOMPLISH_IS_PACKAGED: '1',
+      ACCOMPLISH_RESOURCES_PATH: process.resourcesPath,
+      ACCOMPLISH_APP_PATH: app.getAppPath(),
+    };
+
+    daemonEntry = path.join(process.resourcesPath, 'daemon', 'index.js');
+    args = ['--socket-path', socketPath, '--data-dir', dataDir];
+    const child = spawn(process.execPath, [daemonEntry, ...args], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env,
+    });
+
+    child.stdout?.on('data', (chunk: Buffer) => {
+      console.log('[Daemon Process]', chunk.toString().trim());
+    });
+    child.stderr?.on('data', (chunk: Buffer) => {
+      console.error('[Daemon Process]', chunk.toString().trim());
+    });
+    child.on('error', (err) => {
+      console.error('[Daemon Process] spawn error:', err.message);
+    });
+    child.on('exit', (code, signal) => {
+      if (code !== null && code !== 0) {
+        console.error(`[Daemon Process] exited with code ${code}`);
+      } else if (signal) {
+        console.warn(`[Daemon Process] killed by signal ${signal}`);
+      }
+    });
+    daemonChild = child;
+    child.unref();
+  } else {
+    const monorepoRoot = path.join(__dirname, '..', '..', '..', '..');
+    daemonEntry = path.join(monorepoRoot, 'apps', 'daemon', 'src', 'index.ts');
+    args = ['--socket-path', socketPath, '--data-dir', dataDir];
+
+    // Use Electron's own Node binary (via ELECTRON_RUN_AS_NODE) so the daemon
+    // loads native modules compiled by electron-rebuild for the same ABI.
+    const daemonDir = path.join(monorepoRoot, 'apps', 'daemon');
+    const tsxCli = path.join(daemonDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+    const child = spawn(process.execPath, [tsxCli, daemonEntry, ...args], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: monorepoRoot,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: `${path.join(monorepoRoot, 'node_modules', '.bin')}${path.delimiter}${process.env.PATH ?? ''}` },
+    });
+
+    child.stdout?.on('data', (chunk: Buffer) => {
+      console.log('[Daemon Process]', chunk.toString().trim());
+    });
+    child.stderr?.on('data', (chunk: Buffer) => {
+      console.error('[Daemon Process]', chunk.toString().trim());
+    });
+    child.on('error', (err) => {
+      console.error('[Daemon Process] spawn error:', err.message);
+    });
+    child.on('exit', (code, signal) => {
+      if (code !== null && code !== 0) {
+        console.error(`[Daemon Process] exited with code ${code}`);
+      } else if (signal) {
+        console.warn(`[Daemon Process] killed by signal ${signal}`);
+      }
+    });
+    daemonChild = child;
+    child.unref();
+  }
+
+  const maxWait = 10_000;
+  const start = Date.now();
+  while (Date.now() - start < maxWait) {
+    if (isQuitting) {
+      throw new Error('Daemon startup cancelled: app is quitting');
+    }
+    const running = await isDaemonRunning();
+    if (running) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error('Daemon did not start within 10 seconds');
+}
 
 function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
@@ -252,15 +353,33 @@ if (!gotTheLock) {
       // First launch or corrupt DB — nativeTheme stays 'system'
     }
 
+    if (!(global as Record<string, unknown>).E2E_MOCK_TASK_EVENTS) {
+      try {
+        const running = await isDaemonRunning();
+        if (!running) {
+          console.log('[Main] Daemon not running, starting...');
+          await startDaemonProcess();
+        }
+        await connectToDaemon();
+        console.log('[Main] Connected to daemon');
+      } catch (err) {
+        console.error('[Main] Failed to connect to daemon:', err);
+        dialog.showMessageBox({
+          type: 'warning',
+          title: 'Daemon Connection Failed',
+          message: 'Could not connect to the Accomplish daemon.',
+          detail: `Task execution will be unavailable until the daemon is running.\n\nError: ${err instanceof Error ? err.message : String(err)}`,
+          buttons: ['OK'],
+        }).catch(() => {});
+      }
+    } else {
+      console.log('[Main] E2E mock mode — skipping daemon startup');
+    }
+
     registerIPCHandlers();
     console.log('[Main] IPC handlers registered');
 
     createWindow();
-
-    if (mainWindow) {
-      initThoughtStreamApi(mainWindow);
-      startThoughtStreamServer();
-    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -277,12 +396,37 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('before-quit', () => {
-  disposeTaskManager(); // Also cleans up proxies internally
-  cleanupVertexServiceAccountKey();
-  oauthBrowserFlow.dispose();
-  closeStorage();
-  shutdownLogCollector();
+let isCleaningUp = false;
+
+app.on('before-quit', (event) => {
+  isQuitting = true;
+
+  if (isCleaningUp) {
+    // Second call after async cleanup finished — let quit proceed
+    return;
+  }
+
+  // First call: prevent quit, run async cleanup, then re-trigger quit
+  event.preventDefault();
+  isCleaningUp = true;
+
+  (async () => {
+    if (daemonChild && !daemonChild.killed) {
+      daemonChild.kill('SIGTERM');
+      daemonChild = null;
+    }
+    try {
+      await disconnectFromDaemon();
+    } catch {
+      // Best-effort disconnect
+    }
+    cleanupVertexServiceAccountKey();
+    oauthBrowserFlow.dispose();
+    closeStorage();
+    shutdownLogCollector();
+  })().finally(() => {
+    app.quit();
+  });
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {

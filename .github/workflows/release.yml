@@ -260,6 +260,9 @@ jobs:
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
 
+      - name: Build daemon
+        run: pnpm -F @accomplish/daemon build
+
       - name: Build desktop app
         run: pnpm -F @accomplish/desktop build
 
@@ -310,6 +313,9 @@ jobs:
 
       - name: Download Node.js binaries
         run: pnpm -F @accomplish/desktop download:nodejs
+
+      - name: Build daemon
+        run: pnpm -F @accomplish/daemon build
 
       - name: Build desktop app
         run: pnpm -F @accomplish/desktop build

@@ -10,7 +10,7 @@
  * - Session management
  *
  * NOTE: This is a UNIT test, not an integration test.
- * All dependent modules (taskHistory, secureStorage, appSettings, task-manager, adapter)
+ * All dependent modules (secureStorage, appSettings, daemon-client, adapter)
  * are mocked to test handler logic in isolation. This follows the principle that
  * unit tests should test a single unit with all dependencies mocked.
  *
@@ -81,31 +81,68 @@ vi.mock('electron', () => {
   };
 });
 
-// Mock task manager instance (will be returned by getTaskManager)
-const mockTaskManager = {
-  startTask: vi.fn(),
-  cancelTask: vi.fn(),
-  interruptTask: vi.fn(),
-  sendResponse: vi.fn(),
-  hasActiveTask: vi.fn(() => false),
-  getActiveTaskId: vi.fn(() => null),
-  getSessionId: vi.fn(() => null),
-  isTaskQueued: vi.fn(() => false),
-  cancelQueuedTask: vi.fn(),
-  dispose: vi.fn(),
-};
+// Mock daemon client (replaces old task manager mock)
+// Use vi.hoisted() so these are available when vi.mock factories run (hoisted to top)
+const {
+  mockDaemonClient,
+  mockGetDaemonClient,
+  mockDaemonStartTask,
+  mockDaemonStopTask,
+  mockDaemonInterruptTask,
+  mockDaemonGetTask,
+  mockDaemonDeleteTask,
+  mockDaemonClearHistory,
+  mockDaemonGetTodos,
+  mockDaemonRespondPermission,
+  mockDaemonResumeSession,
+  mockDaemonListTasks,
+} = vi.hoisted(() => {
+  const mockDaemonClient = {
+    isConnected: vi.fn(() => true),
+    call: vi.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  };
 
-// Mock @main/opencode - this is what handlers.ts imports from
+  return {
+    mockDaemonClient,
+    mockGetDaemonClient: vi.fn(() => mockDaemonClient),
+    mockDaemonStartTask: vi.fn(),
+    mockDaemonStopTask: vi.fn(),
+    mockDaemonInterruptTask: vi.fn(),
+    mockDaemonGetTask: vi.fn(),
+    mockDaemonDeleteTask: vi.fn(),
+    mockDaemonClearHistory: vi.fn(),
+    mockDaemonGetTodos: vi.fn(),
+    mockDaemonRespondPermission: vi.fn(),
+    mockDaemonResumeSession: vi.fn(),
+    mockDaemonListTasks: vi.fn(),
+  };
+});
+
+vi.mock('@main/daemon-client', () => ({
+  getDaemonClient: mockGetDaemonClient,
+  daemonStartTask: mockDaemonStartTask,
+  daemonStopTask: mockDaemonStopTask,
+  daemonInterruptTask: mockDaemonInterruptTask,
+  daemonGetTask: mockDaemonGetTask,
+  daemonDeleteTask: mockDaemonDeleteTask,
+  daemonClearHistory: mockDaemonClearHistory,
+  daemonGetTodos: mockDaemonGetTodos,
+  daemonRespondPermission: mockDaemonRespondPermission,
+  daemonResumeSession: mockDaemonResumeSession,
+  daemonListTasks: mockDaemonListTasks,
+}));
+
+// Mock @main/opencode - only used for isOpenCodeCliInstalled, getOpenCodeCliVersion
 vi.mock('@main/opencode', () => ({
-  getTaskManager: vi.fn(() => mockTaskManager),
-  disposeTaskManager: vi.fn(),
   isOpenCodeCliInstalled: vi.fn(() => Promise.resolve(true)),
   getOpenCodeCliVersion: vi.fn(() => Promise.resolve('1.0.0')),
+  cleanupVertexServiceAccountKey: vi.fn(),
 }));
 
 // Mock OpenCode auth (ChatGPT OAuth) - used by handlers.ts for OpenAI OAuth
-vi.mock('@main/opencode/auth', () => ({
-  getOpenAiOauthStatus: vi.fn(() => ({ connected: false })),
+vi.mock('@main/opencode/auth-browser', () => ({
   loginOpenAiWithChatGpt: vi.fn(() => Promise.resolve({ openedUrl: undefined })),
 }));
 
@@ -190,6 +227,8 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     setLiteLLMConfig: vi.fn(),
     getLMStudioConfig: vi.fn(() => null),
     setLMStudioConfig: vi.fn(),
+    getTheme: vi.fn(() => 'system'),
+    setTheme: vi.fn(),
     clearAppSettings: vi.fn(),
 
     // Provider settings
@@ -242,6 +281,16 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     hasAnyApiKey: vi.fn(() => Promise.resolve(false)),
     listStoredCredentials: vi.fn(() => []),
     clearSecureStorage: vi.fn(),
+
+    // MCP Connectors
+    getAllConnectors: vi.fn(() => []),
+    getConnectorById: vi.fn(() => null),
+    upsertConnector: vi.fn(),
+    deleteConnector: vi.fn(),
+    setConnectorEnabled: vi.fn(),
+    setConnectorStatus: vi.fn(),
+    storeConnectorTokens: vi.fn(),
+    deleteConnectorTokens: vi.fn(),
   };
 
   return {
@@ -251,6 +300,8 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     validateTaskConfig: actual.validateTaskConfig,
     ALLOWED_API_KEY_PROVIDERS: actual.ALLOWED_API_KEY_PROVIDERS,
     STANDARD_VALIDATION_PROVIDERS: actual.STANDARD_VALIDATION_PROVIDERS,
+    DEFAULT_PROVIDERS: actual.DEFAULT_PROVIDERS,
+    ZAI_ENDPOINTS: actual.ZAI_ENDPOINTS,
     validate: actual.validate,
     permissionResponseSchema: actual.permissionResponseSchema,
 
@@ -303,6 +354,26 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
     validateLMStudioConfig: vi.fn(),
     validateAzureFoundryConnection: vi.fn(() => Promise.resolve({ valid: true })),
     validateMoonshotApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+
+    // Other functions used by handlers
+    validateAzureFoundry: vi.fn(() => Promise.resolve({ valid: true })),
+    testAzureFoundryConnection: vi.fn(() => Promise.resolve({ success: true })),
+    fetchOpenRouterModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+    fetchProviderModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+    testOllamaConnection: vi.fn(() => Promise.resolve({ success: true })),
+    testLiteLLMConnection: vi.fn(() => Promise.resolve({ success: true })),
+    fetchLiteLLMModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+    fetchBedrockModels: vi.fn(() => Promise.resolve({ success: true, models: [] })),
+
+    // OAuth
+    discoverOAuthMetadata: vi.fn(),
+    registerOAuthClient: vi.fn(),
+    generatePkceChallenge: vi.fn(() => ({ codeVerifier: 'v', codeChallenge: 'c' })),
+    buildAuthorizationUrl: vi.fn(() => 'https://auth.example.com'),
+    exchangeCodeForTokens: vi.fn(),
+
+    // DaemonRpcClient class mock (needed for module-level reference)
+    DaemonRpcClient: vi.fn(),
   };
 });
 
@@ -335,6 +406,7 @@ vi.mock('@main/store/secureStorage', () => ({
     Promise.resolve(Object.values(mockApiKeys).some((k) => k !== null))
   ),
   listStoredCredentials: vi.fn(() => mockStoredCredentials),
+  getBedrockCredentials: vi.fn(() => null),
 }));
 
 // Note: App settings and provider settings are now mocked via @accomplish/core mock above
@@ -344,26 +416,47 @@ vi.mock('@main/config', () => ({
   getDesktopConfig: vi.fn(() => ({})),
 }));
 
-// Mock permission API
-let mockPendingPermissions = new Map<string, { resolve: Function }>();
+// Mock test-utils
+vi.mock('@main/test-utils/mock-task-flow', () => ({
+  isMockTaskEventsEnabled: vi.fn(() => false),
+  executeMockTaskFlow: vi.fn(),
+  detectScenarioFromPrompt: vi.fn(),
+  createMockTask: vi.fn(),
+}));
 
-vi.mock('@main/permission-api', () => ({
-  startPermissionApiServer: vi.fn(),
-  startQuestionApiServer: vi.fn(),
-  initPermissionApi: vi.fn(),
-  resolvePermission: vi.fn((requestId: string, allowed: boolean) => {
-    const pending = mockPendingPermissions.get(requestId);
-    if (pending) {
-      pending.resolve(allowed);
-      mockPendingPermissions.delete(requestId);
-      return true;
-    }
-    return false;
-  }),
-  resolveQuestion: vi.fn(() => true),
-  isFilePermissionRequest: vi.fn((requestId: string) => requestId.startsWith('filereq_')),
-  isQuestionRequest: vi.fn((requestId: string) => requestId.startsWith('question_')),
-  QUESTION_API_PORT: 9227,
+// Mock logging
+vi.mock('@main/logging', () => ({
+  getLogCollector: vi.fn(() => ({
+    flush: vi.fn(),
+    getCurrentLogPath: vi.fn(() => '/tmp/test.log'),
+    getLogDir: vi.fn(() => '/tmp'),
+  })),
+}));
+
+// Mock skills manager
+vi.mock('@main/skills', () => ({
+  skillsManager: {
+    getAll: vi.fn(() => []),
+    getEnabled: vi.fn(() => []),
+    setEnabled: vi.fn(),
+    getContent: vi.fn(() => null),
+    addFromFile: vi.fn(),
+    addFromGitHub: vi.fn(),
+    delete: vi.fn(),
+    resync: vi.fn(),
+  },
+}));
+
+// Mock providers
+vi.mock('@main/providers', () => ({
+  registerVertexHandlers: vi.fn(),
+}));
+
+// Mock speech-to-text service
+vi.mock('@main/services/speechToText', () => ({
+  validateElevenLabsApiKey: vi.fn(() => Promise.resolve({ valid: true })),
+  transcribeAudio: vi.fn(() => Promise.resolve({ text: 'test' })),
+  isElevenLabsConfigured: vi.fn(() => false),
 }));
 
 // Import after mocks are set up
@@ -410,18 +503,19 @@ describe('IPC Handlers Integration', () => {
     mockDebugMode = false;
     mockOnboardingComplete = false;
     mockSelectedModel = null;
-    mockPendingPermissions.clear();
 
-    // Reset task manager mocks
-    mockTaskManager.startTask.mockReset();
-    mockTaskManager.cancelTask.mockReset();
-    mockTaskManager.interruptTask.mockReset();
-    mockTaskManager.sendResponse.mockReset();
-    mockTaskManager.hasActiveTask.mockReturnValue(false);
-    mockTaskManager.getActiveTaskId.mockReturnValue(null);
-    mockTaskManager.getSessionId.mockReturnValue(null);
-    mockTaskManager.isTaskQueued.mockReturnValue(false);
-    mockTaskManager.cancelQueuedTask.mockReset();
+    // Reset daemon client mocks
+    mockGetDaemonClient.mockReturnValue(mockDaemonClient);
+    mockDaemonStartTask.mockReset();
+    mockDaemonStopTask.mockReset();
+    mockDaemonInterruptTask.mockReset();
+    mockDaemonGetTask.mockReset();
+    mockDaemonDeleteTask.mockReset();
+    mockDaemonClearHistory.mockReset();
+    mockDaemonGetTodos.mockReset();
+    mockDaemonRespondPermission.mockReset();
+    mockDaemonResumeSession.mockReset();
+    mockDaemonListTasks.mockReset();
   });
 
   afterEach(() => {
@@ -685,32 +779,26 @@ describe('IPC Handlers Integration', () => {
       registerIPCHandlers();
     });
 
-    it('task:start should create and start a new task', async () => {
+    it('task:start should validate config and call daemonStartTask', async () => {
       // Arrange
       const config = { prompt: 'Test task prompt' };
-      mockTaskManager.startTask.mockResolvedValue({
+      const mockTask = {
         id: 'task_123',
         prompt: 'Test task prompt',
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-      });
+      };
+      mockDaemonStartTask.mockResolvedValue(mockTask);
 
       // Act
       const result = await invokeHandler('task:start', config);
 
       // Assert
-      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
-        expect.stringMatching(/^task_/),
-        expect.objectContaining({ prompt: 'Test task prompt' }),
-        expect.any(Object)
+      expect(mockDaemonStartTask).toHaveBeenCalledWith(
+        expect.objectContaining({ prompt: 'Test task prompt' })
       );
-      expect(result).toEqual(
-        expect.objectContaining({
-          prompt: 'Test task prompt',
-          status: 'running',
-        })
-      );
+      expect(result).toEqual(mockTask);
     });
 
     it('task:start should validate task config', async () => {
@@ -721,161 +809,102 @@ describe('IPC Handlers Integration', () => {
       await expect(invokeHandler('task:start', { prompt: '   ' })).rejects.toThrow();
     });
 
-    it('task:cancel should cancel a running task', async () => {
+    it('task:start should throw when daemon is not connected', async () => {
+      // Arrange
+      mockGetDaemonClient.mockReturnValue(null);
+      const config = { prompt: 'Test task prompt' };
+
+      // Act & Assert
+      await expect(invokeHandler('task:start', config)).rejects.toThrow(
+        'Daemon is not connected'
+      );
+    });
+
+    it('task:start should check provider readiness', async () => {
+      // Arrange
+      const { hasReadyProvider } = await import('@accomplish_ai/agent-core');
+      (hasReadyProvider as Mock).mockReturnValue(false);
+      const config = { prompt: 'Test task prompt' };
+
+      // Act & Assert
+      await expect(invokeHandler('task:start', config)).rejects.toThrow(
+        'No provider is ready'
+      );
+
+      // Cleanup
+      (hasReadyProvider as Mock).mockReturnValue(true);
+    });
+
+    it('task:start should pass all config fields through to daemonStartTask', async () => {
+      // Arrange
+      const config = {
+        prompt: 'Full config test',
+        modelId: 'claude-3-opus',
+        sessionId: 'custom_session',
+        workingDirectory: '/some/path',
+      };
+      const mockTask = {
+        id: 'task_full',
+        prompt: 'Full config test',
+        status: 'running',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      };
+      mockDaemonStartTask.mockResolvedValue(mockTask);
+
+      // Act
+      await invokeHandler('task:start', config);
+
+      // Assert
+      expect(mockDaemonStartTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: 'Full config test',
+          sessionId: 'custom_session',
+          workingDirectory: '/some/path',
+        })
+      );
+    });
+
+    it('task:cancel should call daemonStopTask', async () => {
       // Arrange
       const taskId = 'task_to_cancel';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('task:cancel', taskId);
 
       // Assert
-      expect(mockTaskManager.cancelTask).toHaveBeenCalledWith(taskId);
+      expect(mockDaemonStopTask).toHaveBeenCalledWith({ taskId });
     });
 
-    it('task:cancel should cancel a queued task', async () => {
-      // Arrange
-      const taskId = 'task_queued';
-      mockTaskManager.isTaskQueued.mockReturnValue(true);
-
-      // Act
-      await invokeHandler('task:cancel', taskId);
-
-      // Assert
-      expect(mockTaskManager.cancelQueuedTask).toHaveBeenCalledWith(taskId);
+    it('task:cancel should throw when taskId is undefined', async () => {
+      await expect(invokeHandler('task:cancel', undefined)).rejects.toThrow(
+        'taskId is required for task:cancel'
+      );
+      expect(mockDaemonStopTask).not.toHaveBeenCalled();
     });
 
-    it('task:cancel should do nothing for non-existent task', async () => {
-      // Arrange
-      const taskId = 'task_nonexistent';
-      mockTaskManager.isTaskQueued.mockReturnValue(false);
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-
-      // Act
-      await invokeHandler('task:cancel', taskId);
-
-      // Assert
-      expect(mockTaskManager.cancelTask).not.toHaveBeenCalled();
-      expect(mockTaskManager.cancelQueuedTask).not.toHaveBeenCalled();
-    });
-
-    it('task:interrupt should interrupt a running task', async () => {
+    it('task:interrupt should call daemonInterruptTask', async () => {
       // Arrange
       const taskId = 'task_to_interrupt';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('task:interrupt', taskId);
 
       // Assert
-      expect(mockTaskManager.interruptTask).toHaveBeenCalledWith(taskId);
+      expect(mockDaemonInterruptTask).toHaveBeenCalledWith({ taskId });
     });
 
-    it('task:get should return task from history', async () => {
-      // Arrange
-      const taskId = 'task_existing';
-      mockTasks.push({
-        id: taskId,
-        prompt: 'Existing task',
-        status: 'completed',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      const result = await invokeHandler('task:get', taskId);
-
-      // Assert
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: taskId,
-          prompt: 'Existing task',
-          status: 'completed',
-        })
+    it('task:interrupt should throw when taskId is undefined', async () => {
+      await expect(invokeHandler('task:interrupt', undefined)).rejects.toThrow(
+        'taskId is required for task:interrupt'
       );
+      expect(mockDaemonInterruptTask).not.toHaveBeenCalled();
     });
 
-    it('task:get should return null for non-existent task', async () => {
-      // Arrange - no tasks
-
-      // Act
-      const result = await invokeHandler('task:get', 'task_nonexistent');
-
-      // Assert
-      expect(result).toBeNull();
-    });
-
-    it('task:list should return all tasks from history', async () => {
-      // Arrange
-      mockTasks.push(
-        {
-          id: 'task_1',
-          prompt: 'Task 1',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'task_2',
-          prompt: 'Task 2',
-          status: 'running',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        }
-      );
-
-      // Act
-      const result = await invokeHandler('task:list');
-
-      // Assert
-      expect(result).toHaveLength(2);
-    });
-
-    it('task:delete should remove task from history', async () => {
-      // Arrange
-      const taskId = 'task_to_delete';
-      mockTasks.push({
-        id: taskId,
-        prompt: 'Task to delete',
-        status: 'completed',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('task:delete', taskId);
-
-      // Assert
-      const { deleteTask } = await import('@accomplish_ai/agent-core');
-      expect(deleteTask).toHaveBeenCalledWith(taskId);
-    });
-
-    it('task:clear-history should clear all tasks', async () => {
-      // Arrange
-      mockTasks.push(
-        {
-          id: 'task_1',
-          prompt: 'Task 1',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'task_2',
-          prompt: 'Task 2',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        }
-      );
-
-      // Act
-      await invokeHandler('task:clear-history');
-
-      // Assert
-      const { clearHistory } = await import('@accomplish_ai/agent-core');
-      expect(clearHistory).toHaveBeenCalled();
-    });
+    // Note: Pure passthrough tests for task:get, task:list, task:delete,
+    // task:clear-history, and task:get-todos were removed. These handlers
+    // simply forward to daemon client functions without any handler-layer
+    // logic. Handler registration is verified in the registration test above.
   });
 
   describe('Onboarding Handlers', () => {
@@ -941,10 +970,9 @@ describe('IPC Handlers Integration', () => {
       registerIPCHandlers();
     });
 
-    it('permission:respond should send response for active task', async () => {
+    it('permission:respond should call daemonRespondPermission with allow decision', async () => {
       // Arrange
       const taskId = 'task_active';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('permission:respond', {
@@ -954,13 +982,18 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Assert
-      expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(taskId, 'yes');
+      expect(mockDaemonRespondPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: 'req_123',
+          taskId,
+          decision: 'allow',
+        })
+      );
     });
 
-    it('permission:respond should send custom message when provided', async () => {
+    it('permission:respond should forward custom message', async () => {
       // Arrange
       const taskId = 'task_active';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('permission:respond', {
@@ -971,59 +1004,44 @@ describe('IPC Handlers Integration', () => {
       });
 
       // Assert
-      expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(taskId, 'proceed with caution');
+      expect(mockDaemonRespondPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: 'req_123',
+          taskId,
+          decision: 'allow',
+          message: 'proceed with caution',
+        })
+      );
     });
 
-    it('permission:respond should send "no" for denied decisions', async () => {
+    it('permission:respond should forward selectedOptions', async () => {
       // Arrange
-      const taskId = 'task_active';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
+      const taskId = 'task_options';
 
       // Act
       await invokeHandler('permission:respond', {
-        requestId: 'req_123',
-        taskId,
-        decision: 'deny',
-      });
-
-      // Assert
-      expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(taskId, 'no');
-    });
-
-    it('permission:respond should resolve file permission requests', async () => {
-      // Arrange
-      const requestId = 'filereq_123_abc';
-      const taskId = 'task_active';
-
-      // Simulate pending file permission
-      mockPendingPermissions.set(requestId, { resolve: vi.fn() });
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId,
+        requestId: 'req_456',
         taskId,
         decision: 'allow',
+        selectedOptions: ['option1', 'option2', 'option3'],
       });
 
       // Assert
-      const { resolvePermission } = await import('@main/permission-api');
-      expect(resolvePermission).toHaveBeenCalledWith(requestId, true);
+      expect(mockDaemonRespondPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: 'req_456',
+          taskId,
+          decision: 'allow',
+          selectedOptions: ['option1', 'option2', 'option3'],
+        })
+      );
     });
 
-    it('permission:respond should skip response for inactive task', async () => {
-      // Arrange
-      const taskId = 'task_inactive';
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId: 'req_123',
-        taskId,
-        decision: 'allow',
-      });
-
-      // Assert
-      expect(mockTaskManager.sendResponse).not.toHaveBeenCalled();
+    it('permission:respond should validate input via schema', async () => {
+      // Act & Assert - missing required fields should fail validation
+      await expect(
+        invokeHandler('permission:respond', {})
+      ).rejects.toThrow();
     });
   });
 
@@ -1219,64 +1237,65 @@ describe('IPC Handlers Integration', () => {
       registerIPCHandlers();
     });
 
-    it('session:resume should start a new task with session ID', async () => {
+    it('session:resume should call daemonResumeSession with correct params', async () => {
       // Arrange
       const sessionId = 'session_123';
       const prompt = 'Continue with the task';
-      mockTaskManager.startTask.mockResolvedValue({
+      const mockTask = {
         id: 'task_resumed',
         prompt,
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-      });
+      };
+      mockDaemonResumeSession.mockResolvedValue(mockTask);
 
       // Act
       const result = await invokeHandler('session:resume', sessionId, prompt);
 
       // Assert
-      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
-        expect.stringMatching(/^task_/),
-        expect.objectContaining({
-          prompt,
-          sessionId,
-        }),
-        expect.any(Object)
-      );
-      expect(result).toEqual(
-        expect.objectContaining({
-          prompt,
-          status: 'running',
-        })
-      );
+      expect(mockDaemonResumeSession).toHaveBeenCalledWith({
+        sessionId,
+        prompt,
+        existingTaskId: undefined,
+      });
+      expect(result).toEqual(mockTask);
     });
 
-    it('session:resume should use existing task ID when provided', async () => {
+    it('session:resume should pass existing task ID when provided', async () => {
       // Arrange
       const sessionId = 'session_123';
       const prompt = 'Continue';
       const existingTaskId = 'task_existing';
-      mockTaskManager.startTask.mockResolvedValue({
+      const mockTask = {
         id: existingTaskId,
         prompt,
         status: 'running',
         messages: [],
         createdAt: new Date().toISOString(),
-      });
+      };
+      mockDaemonResumeSession.mockResolvedValue(mockTask);
 
       // Act
-      await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
+      const result = await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
 
       // Assert
-      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
+      expect(mockDaemonResumeSession).toHaveBeenCalledWith({
+        sessionId,
+        prompt,
         existingTaskId,
-        expect.objectContaining({
-          prompt,
-          sessionId,
-          taskId: existingTaskId,
-        }),
-        expect.any(Object)
-      );
+      });
+      expect(result).toEqual(mockTask);
+    });
+
+    it('session:resume should throw when daemon is not connected', async () => {
+      // Arrange
+      mockGetDaemonClient.mockReturnValue(null);
+
+      // Act & Assert
+      await expect(
+        invokeHandler('session:resume', 'session_123', 'prompt')
+      ).rejects.toThrow('Daemon is not connected');
     });
 
     it('session:resume should validate session ID', async () => {
@@ -1313,415 +1332,9 @@ describe('IPC Handlers Integration', () => {
     });
   });
 
-  describe('Task Callbacks and Message Batching', () => {
-    beforeEach(() => {
-      registerIPCHandlers();
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('task:start should initialize permission API on first call', async () => {
-      // Arrange
-      const config = { prompt: 'Test task prompt' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_123',
-        prompt: 'Test task prompt',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('task:start', config);
-
-      // Assert
-      const { initPermissionApi, startPermissionApiServer } = await import('@main/permission-api');
-      expect(initPermissionApi).toHaveBeenCalled();
-      expect(startPermissionApiServer).toHaveBeenCalled();
-    });
-
-    it('task:start should only initialize permission API once', async () => {
-      // Arrange
-      const config = { prompt: 'Test task' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_1',
-        prompt: 'Test task',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act - start two tasks
-      await invokeHandler('task:start', config);
-      await invokeHandler('task:start', { prompt: 'Second task' });
-
-      // Assert - should only be called once
-      const { initPermissionApi } = await import('@main/permission-api');
-      expect(initPermissionApi).toHaveBeenCalledTimes(1);
-    });
-
-    it('task:start should create initial user message', async () => {
-      // Arrange
-      const config = { prompt: 'My test prompt' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_msg',
-        prompt: 'My test prompt',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      const result = await invokeHandler('task:start', config) as {
-        id: string;
-        messages: Array<{ type: string; content: string }>;
-      };
-
-      // Assert
-      expect(result.messages).toHaveLength(1);
-      expect(result.messages[0].type).toBe('user');
-      expect(result.messages[0].content).toBe('My test prompt');
-    });
-
-    it('task:start should save task to history', async () => {
-      // Arrange
-      const config = { prompt: 'Save me' };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_save',
-        prompt: 'Save me',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('task:start', config);
-
-      // Assert
-      const { saveTask } = await import('@accomplish_ai/agent-core');
-      expect(saveTask).toHaveBeenCalled();
-    });
-
-    it('task:start should validate all optional config fields', async () => {
-      // Arrange
-      const config = {
-        prompt: 'Full config test',
-        taskId: 'custom_task_id',
-        sessionId: 'custom_session',
-        workingDirectory: '/some/path',
-        allowedTools: ['tool1', 'tool2', 123, null], // Should filter non-strings
-        systemPromptAppend: 'Additional instructions',
-        outputSchema: { type: 'object' },
-      };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_full',
-        prompt: 'Full config test',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      const result = await invokeHandler('task:start', config);
-
-      // Assert
-      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          prompt: 'Full config test',
-          taskId: 'custom_task_id',
-          sessionId: 'custom_session',
-          workingDirectory: '/some/path',
-          allowedTools: ['tool1', 'tool2'], // Non-strings filtered
-          systemPromptAppend: 'Additional instructions',
-          outputSchema: { type: 'object' },
-        }),
-        expect.any(Object)
-      );
-    });
-
-    it('task:start should truncate allowedTools array to 20 items', async () => {
-      // Arrange
-      const manyTools = Array.from({ length: 30 }, (_, i) => `tool${i}`);
-      const config = {
-        prompt: 'Many tools test',
-        allowedTools: manyTools,
-      };
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_tools',
-        prompt: 'Many tools test',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('task:start', config);
-
-      // Assert
-      expect(mockTaskManager.startTask).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          allowedTools: expect.any(Array),
-        }),
-        expect.any(Object)
-      );
-      const callArgs = mockTaskManager.startTask.mock.calls[0][1];
-      expect(callArgs.allowedTools.length).toBe(20);
-    });
-
-    it('task:cancel should do nothing when taskId is undefined', async () => {
-      // Arrange & Act
-      await invokeHandler('task:cancel', undefined);
-
-      // Assert
-      expect(mockTaskManager.cancelTask).not.toHaveBeenCalled();
-      expect(mockTaskManager.cancelQueuedTask).not.toHaveBeenCalled();
-    });
-
-    it('task:interrupt should do nothing when taskId is undefined', async () => {
-      // Arrange & Act
-      await invokeHandler('task:interrupt', undefined);
-
-      // Assert
-      expect(mockTaskManager.interruptTask).not.toHaveBeenCalled();
-    });
-
-    it('task:interrupt should do nothing for inactive task', async () => {
-      // Arrange
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-
-      // Act
-      await invokeHandler('task:interrupt', 'task_inactive');
-
-      // Assert
-      expect(mockTaskManager.interruptTask).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Session Resume with Existing Task', () => {
-    beforeEach(() => {
-      registerIPCHandlers();
-    });
-
-    it('session:resume should add user message to existing task', async () => {
-      // Arrange
-      const sessionId = 'session_existing';
-      const prompt = 'Follow-up message';
-      const existingTaskId = 'task_existing';
-
-      mockTaskManager.startTask.mockResolvedValue({
-        id: existingTaskId,
-        prompt,
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
-
-      // Assert
-      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
-      expect(addTaskMessage).toHaveBeenCalledWith(
-        existingTaskId,
-        expect.objectContaining({
-          type: 'user',
-          content: prompt,
-        })
-      );
-    });
-
-    it('session:resume should update task status in history', async () => {
-      // Arrange
-      const sessionId = 'session_status';
-      const prompt = 'Status update test';
-      const existingTaskId = 'task_status';
-
-      mockTaskManager.startTask.mockResolvedValue({
-        id: existingTaskId,
-        prompt,
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('session:resume', sessionId, prompt, existingTaskId);
-
-      // Assert
-      const { updateTaskStatus } = await import('@accomplish_ai/agent-core');
-      expect(updateTaskStatus).toHaveBeenCalledWith(
-        existingTaskId,
-        'running',
-        expect.any(String)
-      );
-    });
-
-    it('session:resume should not add message when no existing task ID', async () => {
-      // Arrange
-      const sessionId = 'session_new';
-      const prompt = 'New session';
-
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_new',
-        prompt,
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      await invokeHandler('session:resume', sessionId, prompt);
-
-      // Assert
-      const { addTaskMessage } = await import('@accomplish_ai/agent-core');
-      // Should not be called for new tasks
-      expect(addTaskMessage).not.toHaveBeenCalledWith(
-        undefined,
-        expect.anything()
-      );
-    });
-  });
-
-  describe('Permission Response Edge Cases', () => {
-    beforeEach(() => {
-      registerIPCHandlers();
-    });
-
-    it('permission:respond should use selectedOptions when provided', async () => {
-      // Arrange
-      const taskId = 'task_options';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId: 'req_456',
-        taskId,
-        decision: 'allow',
-        selectedOptions: ['option1', 'option2', 'option3'],
-      });
-
-      // Assert
-      expect(mockTaskManager.sendResponse).toHaveBeenCalledWith(
-        taskId,
-        'option1, option2, option3'
-      );
-    });
-
-    it('permission:respond should log when file permission not found', async () => {
-      // Arrange
-      const taskId = 'task_notfound';
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-      // File permission request that is not in pending
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Act
-      await invokeHandler('permission:respond', {
-        requestId: 'filereq_notfound',
-        taskId,
-        decision: 'allow',
-      });
-
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File permission request')
-      );
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Window Trust Validation', () => {
-    beforeEach(() => {
-      registerIPCHandlers();
-    });
-
-    it('should throw error when window is destroyed', async () => {
-      // Arrange
-      const { BrowserWindow } = await import('electron');
-      (BrowserWindow.fromWebContents as Mock).mockReturnValue({
-        id: 1,
-        isDestroyed: () => true,
-        webContents: { send: vi.fn(), isDestroyed: () => true },
-      });
-
-      // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('Untrusted window');
-    });
-
-    it('should throw error when window is null', async () => {
-      // Arrange
-      const { BrowserWindow } = await import('electron');
-      (BrowserWindow.fromWebContents as Mock).mockReturnValue(null);
-
-      // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('Untrusted window');
-    });
-
-    it('should throw error when IPC from non-focused window with multiple windows', async () => {
-      // Arrange
-      const { BrowserWindow } = await import('electron');
-      (BrowserWindow.fromWebContents as Mock).mockReturnValue({
-        id: 2, // Different from focused window
-        isDestroyed: () => false,
-        webContents: { send: vi.fn(), isDestroyed: () => false },
-      });
-      (BrowserWindow.getFocusedWindow as Mock).mockReturnValue({
-        id: 1, // Different ID
-        isDestroyed: () => false,
-      });
-      (BrowserWindow.getAllWindows as Mock).mockReturnValue([{ id: 1 }, { id: 2 }]);
-
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_test',
-        prompt: 'Test',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act & Assert
-      await expect(
-        invokeHandler('task:start', { prompt: 'Test' })
-      ).rejects.toThrow('IPC request must originate from the focused window');
-    });
-
-    it('should allow IPC when only one window exists', async () => {
-      // Arrange
-      const { BrowserWindow } = await import('electron');
-      (BrowserWindow.fromWebContents as Mock).mockReturnValue({
-        id: 1,
-        isDestroyed: () => false,
-        webContents: { send: vi.fn(), isDestroyed: () => false },
-      });
-      (BrowserWindow.getFocusedWindow as Mock).mockReturnValue({
-        id: 2, // Different but only one window
-        isDestroyed: () => false,
-      });
-      (BrowserWindow.getAllWindows as Mock).mockReturnValue([{ id: 1 }]); // Only one window
-
-      mockTaskManager.startTask.mockResolvedValue({
-        id: 'task_single',
-        prompt: 'Test',
-        status: 'running',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
-
-      // Act
-      const result = await invokeHandler('task:start', { prompt: 'Test' });
-
-      // Assert
-      expect(result).toBeDefined();
-    });
-  });
+  // Note: Window trust validation tests have been removed because the daemon-based
+  // handle() wrapper in handlers.ts no longer performs per-request window trust checks.
+  // Window trust is now managed at the daemon connection level.
 
   describe('E2E Skip Auth Mode', () => {
     beforeEach(() => {
@@ -2048,10 +1661,4 @@ describe('IPC Handlers Integration', () => {
       expect(result[0].keyPrefix).toBe('');
     });
   });
-
-  // Note: Callback execution tests for onStatusChange, onDebug, onError, onComplete
-  // are complex to set up due to vitest mock hoisting for webContents.send.
-  // The callback logic is exercised through the task lifecycle tests above.
-  // The utility functions (extractScreenshots, sanitizeToolOutput)
-  // are tested in handlers-utils.unit.test.ts as pure function tests.
 });

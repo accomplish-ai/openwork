@@ -1,15 +1,26 @@
 import crypto from 'crypto';
-import { ipcMain, BrowserWindow, shell, app, dialog, nativeTheme } from 'electron';
+import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
-  getTaskManager,
-  disposeTaskManager,
   cleanupVertexServiceAccountKey,
 } from '../opencode';
+import {
+  getDaemonClient,
+  daemonStartTask,
+  daemonStopTask,
+  daemonInterruptTask,
+  daemonGetTask,
+  daemonDeleteTask,
+  daemonClearHistory,
+  daemonGetTodos,
+  daemonRespondPermission,
+  daemonResumeSession,
+  daemonListTasks,
+} from '../daemon-client';
 import { getLogCollector } from '../logging';
 import {
   validateApiKey,
@@ -23,10 +34,8 @@ import {
   fetchLiteLLMModels,
   validateHttpUrl,
   sanitizeString,
-  generateTaskSummary,
   validateTaskConfig,
 } from '@accomplish_ai/agent-core';
-import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
   storeApiKey,
   getApiKey,
@@ -36,14 +45,12 @@ import {
   getBedrockCredentials,
 } from '../store/secureStorage';
 import {
-  testOllamaModelToolSupport,
   testOllamaConnection,
   testLMStudioConnection,
   fetchLMStudioModels,
   validateLMStudioConfig,
 } from '@accomplish_ai/agent-core';
 import { getStorage } from '../store/storage';
-import { safeParseJson } from '@accomplish_ai/agent-core';
 import {
   getOpenAiOauthStatus,
 } from '@accomplish_ai/agent-core';
@@ -56,16 +63,6 @@ import {
   buildAuthorizationUrl,
   exchangeCodeForTokens,
 } from '@accomplish_ai/agent-core';
-import { getDesktopConfig } from '../config';
-import {
-  startPermissionApiServer,
-  startQuestionApiServer,
-  initPermissionApi,
-  resolvePermission,
-  resolveQuestion,
-  isFilePermissionRequest,
-  isQuestionRequest,
-} from '../permission-api';
 import {
   validateElevenLabsApiKey,
   transcribeAudio,
@@ -74,24 +71,18 @@ import {
 import type {
   TaskConfig,
   PermissionResponse,
-  OpenCodeMessage,
-  TaskMessage,
   SelectedModel,
   OllamaConfig,
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
-  ToolSupportStatus,
 } from '@accomplish_ai/agent-core';
 import { DEFAULT_PROVIDERS, ALLOWED_API_KEY_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '@accomplish_ai/agent-core';
 import {
   normalizeIpcError,
   permissionResponseSchema,
-  resumeSessionSchema,
-  taskConfigSchema,
   validate,
 } from './validation';
-import { createTaskCallbacks } from './task-callbacks';
 import {
   isMockTaskEventsEnabled,
   createMockTask,
@@ -102,19 +93,6 @@ import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
-
-function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
-  if (!window || window.isDestroyed()) {
-    throw new Error('Untrusted window');
-  }
-
-  const focused = BrowserWindow.getFocusedWindow();
-  if (BrowserWindow.getAllWindows().length > 1 && focused && focused.id !== window.id) {
-    throw new Error('IPC request must originate from the focused window');
-  }
-
-  return window;
-}
 
 function isE2ESkipAuthEnabled(): boolean {
   return (
@@ -140,211 +118,149 @@ function handle<Args extends unknown[], ReturnType = unknown>(
 
 export function registerIPCHandlers(): void {
   const storage = getStorage();
-  const taskManager = getTaskManager();
 
-  let permissionApiInitialized = false;
-
-  handle('task:start', async (event: IpcMainInvokeEvent, config: TaskConfig) => {
-    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
-    const sender = event.sender;
+  handle('task:start', async (_event: IpcMainInvokeEvent, config: TaskConfig) => {
     const validatedConfig = validateTaskConfig(config);
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
     }
 
-    if (!permissionApiInitialized) {
-      initPermissionApi(window, () => taskManager.getActiveTaskId());
-      startPermissionApiServer();
-      startQuestionApiServer();
-      permissionApiInitialized = true;
-    }
-
-    const taskId = createTaskId();
-
+    // In E2E mock mode, bypass the daemon and run mock task events directly
     if (isMockTaskEventsEnabled()) {
-      const mockTask = createMockTask(taskId, validatedConfig.prompt);
+      const window = BrowserWindow.getAllWindows()[0];
+      if (!window) {
+        throw new Error('No window available for mock task flow');
+      }
+      const taskId = `mock_${Date.now()}`;
       const scenario = detectScenarioFromPrompt(validatedConfig.prompt);
+      const task = createMockTask(taskId, validatedConfig.prompt);
 
-      storage.saveTask(mockTask);
-
-      void executeMockTaskFlow(window, {
+      storage.saveTask(task);
+      executeMockTaskFlow(window, {
         taskId,
         prompt: validatedConfig.prompt,
         scenario,
-        delayMs: 50,
       });
 
-      return mockTask;
+      return task;
     }
 
-    const activeModel = storage.getActiveProviderModel();
-    const selectedModel = activeModel || storage.getSelectedModel();
-    if (selectedModel?.model) {
-      validatedConfig.modelId = selectedModel.model;
+    if (!getDaemonClient()) {
+      throw new Error('Daemon is not connected. Please ensure the daemon is running.');
     }
 
-    const callbacks = createTaskCallbacks({
-      taskId,
-      window,
-      sender,
+    const task = await daemonStartTask({
+      prompt: validatedConfig.prompt,
+      taskId: validatedConfig.taskId,
+      modelId: validatedConfig.modelId,
+      sessionId: validatedConfig.sessionId,
+      workingDirectory: validatedConfig.workingDirectory,
     });
-
-    const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
-
-    const initialUserMessage: TaskMessage = {
-      id: createMessageId(),
-      type: 'user',
-      content: validatedConfig.prompt,
-      timestamp: new Date().toISOString(),
-    };
-    task.messages = [initialUserMessage];
-
-    storage.saveTask(task);
-
-    generateTaskSummary(validatedConfig.prompt, getApiKey)
-      .then((summary) => {
-        storage.updateTaskSummary(taskId, summary);
-        if (!window.isDestroyed() && !sender.isDestroyed()) {
-          sender.send('task:summary', { taskId, summary });
-        }
-      })
-      .catch((err) => {
-        console.warn('[IPC] Failed to generate task summary:', err);
-      });
-
     return task;
   });
 
   handle('task:cancel', async (_event: IpcMainInvokeEvent, taskId?: string) => {
-    if (!taskId) return;
-
-    if (taskManager.isTaskQueued(taskId)) {
-      taskManager.cancelQueuedTask(taskId);
-      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+    if (!taskId) {
+      throw new Error('taskId is required for task:cancel');
+    }
+    if (isMockTaskEventsEnabled()) {
       return;
     }
-
-    if (taskManager.hasActiveTask(taskId)) {
-      await taskManager.cancelTask(taskId);
-      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
-    }
+    await daemonStopTask({ taskId });
   });
 
   handle('task:interrupt', async (_event: IpcMainInvokeEvent, taskId?: string) => {
-    if (!taskId) return;
-
-    if (taskManager.hasActiveTask(taskId)) {
-      await taskManager.interruptTask(taskId);
+    if (!taskId) {
+      throw new Error('taskId is required for task:interrupt');
     }
+    if (isMockTaskEventsEnabled()) {
+      return;
+    }
+    await daemonInterruptTask({ taskId });
   });
 
   handle('task:get', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return storage.getTask(taskId) || null;
+    if (isMockTaskEventsEnabled()) {
+      return storage.getTask(taskId) ?? null;
+    }
+    return daemonGetTask({ taskId });
   });
 
   handle('task:list', async (_event: IpcMainInvokeEvent) => {
-    return storage.getTasks();
+    if (isMockTaskEventsEnabled()) {
+      return storage.getTasks();
+    }
+    return daemonListTasks();
   });
 
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    storage.deleteTask(taskId);
+    if (isMockTaskEventsEnabled()) {
+      storage.deleteTask(taskId);
+      return;
+    }
+    await daemonDeleteTask({ taskId });
   });
 
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
-    storage.clearHistory();
+    if (isMockTaskEventsEnabled()) {
+      storage.clearHistory();
+      return;
+    }
+    await daemonClearHistory();
   });
 
   handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return storage.getTodosForTask(taskId);
+    if (isMockTaskEventsEnabled()) {
+      return [];
+    }
+    return daemonGetTodos({ taskId });
   });
 
   handle('permission:respond', async (_event: IpcMainInvokeEvent, response: PermissionResponse) => {
     const parsedResponse = validate(permissionResponseSchema, response);
-    const { taskId, decision, requestId } = parsedResponse;
-
-    if (requestId && isFilePermissionRequest(requestId)) {
-      const allowed = decision === 'allow';
-      const resolved = resolvePermission(requestId, allowed);
-      if (resolved) {
-        return;
-      }
-      console.warn(`[IPC] File permission request ${requestId} not found in pending requests`);
-    }
-
-    if (requestId && isQuestionRequest(requestId)) {
-      const denied = decision === 'deny';
-      const resolved = resolveQuestion(requestId, {
-        selectedOptions: parsedResponse.selectedOptions,
-        customText: parsedResponse.customText,
-        denied,
-      });
-      if (resolved) {
-        return;
-      }
-      console.warn(`[IPC] Question request ${requestId} not found in pending requests`);
-    }
-
-    if (!taskManager.hasActiveTask(taskId)) {
-      console.warn(`[IPC] Permission response for inactive task ${taskId}`);
+    if (isMockTaskEventsEnabled()) {
       return;
     }
-
-    if (decision === 'allow') {
-      const message = parsedResponse.selectedOptions?.join(', ') || parsedResponse.message || 'yes';
-      const sanitizedMessage = sanitizeString(message, 'permissionResponse', 1024);
-      await taskManager.sendResponse(taskId, sanitizedMessage);
-    } else {
-      await taskManager.sendResponse(taskId, 'no');
-    }
+    await daemonRespondPermission({
+      requestId: parsedResponse.requestId || '',
+      taskId: parsedResponse.taskId,
+      decision: parsedResponse.decision,
+      message: parsedResponse.message,
+      selectedOptions: parsedResponse.selectedOptions,
+      customText: parsedResponse.customText,
+    });
   });
 
-  handle('session:resume', async (event: IpcMainInvokeEvent, sessionId: string, prompt: string, existingTaskId?: string) => {
-    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
-    const sender = event.sender;
+  handle('session:resume', async (_event: IpcMainInvokeEvent, sessionId: string, prompt: string, existingTaskId?: string) => {
     const validatedSessionId = sanitizeString(sessionId, 'sessionId', 128);
     const validatedPrompt = sanitizeString(prompt, 'prompt');
     const validatedExistingTaskId = existingTaskId
       ? sanitizeString(existingTaskId, 'taskId', 128)
       : undefined;
 
-    if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
-      throw new Error('No provider is ready. Please connect a provider and select a model in Settings.');
+    if (isMockTaskEventsEnabled()) {
+      const window = BrowserWindow.getAllWindows()[0];
+      if (!window) {
+        throw new Error('No window available for mock task flow');
+      }
+      const taskId = validatedExistingTaskId || `mock_${Date.now()}`;
+      const scenario = detectScenarioFromPrompt(validatedPrompt);
+      const task = createMockTask(taskId, validatedPrompt);
+      storage.saveTask(task);
+      executeMockTaskFlow(window, { taskId, prompt: validatedPrompt, scenario });
+      return task;
     }
 
-    const taskId = validatedExistingTaskId || createTaskId();
-
-    if (validatedExistingTaskId) {
-      const userMessage: TaskMessage = {
-        id: createMessageId(),
-        type: 'user',
-        content: validatedPrompt,
-        timestamp: new Date().toISOString(),
-      };
-      storage.addTaskMessage(validatedExistingTaskId, userMessage);
+    if (!getDaemonClient()) {
+      throw new Error('Daemon is not connected. Please ensure the daemon is running.');
     }
 
-    const activeModelForResume = storage.getActiveProviderModel();
-    const selectedModelForResume = activeModelForResume || storage.getSelectedModel();
-
-    const callbacks = createTaskCallbacks({
-      taskId,
-      window,
-      sender,
-    });
-
-    const task = await taskManager.startTask(taskId, {
-      prompt: validatedPrompt,
+    return daemonResumeSession({
       sessionId: validatedSessionId,
-      taskId,
-      modelId: selectedModelForResume?.model,
-    }, callbacks);
-
-    if (validatedExistingTaskId) {
-      storage.updateTaskStatus(validatedExistingTaskId, task.status, new Date().toISOString());
-    }
-
-    return task;
+      prompt: validatedPrompt,
+      existingTaskId: validatedExistingTaskId,
+    });
   });
 
   handle('settings:api-keys', async (_event: IpcMainInvokeEvent) => {

@@ -7,10 +7,11 @@ import {
   type CallToolResult,
 } from '@modelcontextprotocol/sdk/types.js';
 
-const THOUGHT_STREAM_PORT = process.env.THOUGHT_STREAM_PORT || '9228';
+const THOUGHT_STREAM_PORT = process.env.ACCOMPLISH_THOUGHT_STREAM_PORT || process.env.THOUGHT_STREAM_PORT || '9228';
 const THOUGHT_STREAM_URL = `http://127.0.0.1:${THOUGHT_STREAM_PORT}/thought`;
 const THOUGHT_STREAM_TASK_ID =
   process.env.THOUGHT_STREAM_TASK_ID || process.env.ACCOMPLISH_TASK_ID || '';
+const AUTH_TOKEN = process.env.ACCOMPLISH_DAEMON_AUTH_TOKEN;
 
 interface ReportThoughtInput {
   content: string;
@@ -72,7 +73,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
     try {
       const response = await fetch(THOUGHT_STREAM_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(AUTH_TOKEN && { Authorization: `Bearer ${AUTH_TOKEN}` }),
+        },
         body: JSON.stringify({
           taskId: THOUGHT_STREAM_TASK_ID,
           content,

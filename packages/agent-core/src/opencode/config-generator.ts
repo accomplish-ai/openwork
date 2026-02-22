@@ -33,6 +33,7 @@ export interface ConfigGeneratorOptions {
   azureFoundryToken?: string;
   permissionApiPort?: number;
   questionApiPort?: number;
+  authToken?: string;
   userDataPath: string;
   model?: string;
   smallModel?: string;
@@ -339,6 +340,7 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
     providerConfigs = [],
     permissionApiPort = 9226,
     questionApiPort = 9227,
+    authToken,
     userDataPath,
     model,
     smallModel,
@@ -394,6 +396,7 @@ Use empty array [] if no skills apply to your task.
       enabled: true,
       environment: {
         PERMISSION_API_PORT: String(permissionApiPort),
+        ...(authToken && { ACCOMPLISH_DAEMON_AUTH_TOKEN: authToken }),
       },
       timeout: 30000,
     },
@@ -411,6 +414,7 @@ Use empty array [] if no skills apply to your task.
       enabled: true,
       environment: {
         QUESTION_API_PORT: String(questionApiPort),
+        ...(authToken && { ACCOMPLISH_DAEMON_AUTH_TOKEN: authToken }),
       },
       timeout: 30000,
     },

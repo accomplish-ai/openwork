@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/desktop/**'
+      - 'apps/daemon/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - 'apps/desktop/**'
+      - 'apps/daemon/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci.yml'
@@ -119,6 +121,36 @@ jobs:
           name: integration-test-results
           path: apps/desktop/coverage/
           retention-days: 7
+
+  # Daemon tests
+  daemon-tests:
+    name: Daemon Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: pnpm rebuild better-sqlite3 --recursive
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run daemon tests
+        run: pnpm -F @accomplish/daemon test
 
   # Type checking
   typecheck:

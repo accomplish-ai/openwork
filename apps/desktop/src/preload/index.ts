@@ -19,7 +19,7 @@ const accomplishAPI = {
     ipcRenderer.invoke('shell:open-external', url),
 
   // Task operations
-  startTask: (config: { description: string }): Promise<unknown> =>
+  startTask: (config: { prompt: string; taskId?: string; workingDirectory?: string; sessionId?: string; modelId?: string }): Promise<unknown> =>
     ipcRenderer.invoke('task:start', config),
   cancelTask: (taskId: string): Promise<void> =>
     ipcRenderer.invoke('task:cancel', taskId),
@@ -35,7 +35,7 @@ const accomplishAPI = {
     ipcRenderer.invoke('task:get-todos', taskId),
 
   // Permission responses
-  respondToPermission: (response: { taskId: string; allowed: boolean }): Promise<void> =>
+  respondToPermission: (response: { requestId: string; taskId: string; decision: 'allow' | 'deny'; message?: string; selectedOptions?: string[]; customText?: string }): Promise<void> =>
     ipcRenderer.invoke('permission:respond', response),
 
   // Session management

@@ -166,6 +166,20 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "../daemon/dist",
+        "to": "daemon"
+      },
+      {
+        "from": "node_modules/better-sqlite3",
+        "to": "daemon/node_modules/better-sqlite3",
+        "filter": ["**/*", "!**/docs/**", "!**/test/**", "!**/*.md"]
+      },
+      {
+        "from": "node_modules/node-pty",
+        "to": "daemon/node_modules/node-pty",
+        "filter": ["**/*", "!**/test/**", "!**/*.md"]
       }
     ],
     "publish": {
