@@ -4,14 +4,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { TaskInputBar } from '@/components/landing/TaskInputBar';
 import type { FileAttachmentInfo } from '@accomplish_ai/agent-core/common';
-import {
-  MAX_FILES,
-  MAX_FILE_SIZE,
-  getFileType,
-  generateFileId,
-  formatFileSize,
-} from '@/lib/fileUtils';
-import { toast } from 'sonner';
+import { MAX_FILES, processFileAttachments } from '@/lib/fileUtils';
 import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
@@ -95,7 +88,7 @@ export function HomePage() {
 
     const taskId = `task_${Date.now()}`;
     const enrichedPrompt = buildPromptWithAttachments(prompt.trim(), attachments);
-    const task = await startTask({ prompt: enrichedPrompt, taskId });
+    const task = await startTask({ prompt: enrichedPrompt, taskId, files: attachments });
     if (task) {
       setAttachments([]);
       navigate(`/execution/${task.id}`);
@@ -107,7 +100,9 @@ export function HomePage() {
       void interruptTask();
       return;
     }
-    if (!prompt.trim() && attachments.length === 0) return;
+    if (!prompt.trim() && attachments.length === 0) {
+      return;
+    }
 
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
@@ -141,7 +136,7 @@ export function HomePage() {
 
   const handleApiKeySaved = async () => {
     setShowSettingsDialog(false);
-    if (prompt.trim()) {
+    if (prompt.trim() || attachments.length > 0) {
       await executeTask();
     }
   };
@@ -167,41 +162,9 @@ export function HomePage() {
 
   const addFiles = useCallback(
     (fileList: FileList | File[]) => {
-      const files = Array.from(fileList);
-      const remaining = MAX_FILES - attachments.length;
-      if (remaining <= 0) {
-        toast.warning(`Maximum ${MAX_FILES} files allowed`);
-        return;
-      }
-
-      const skippedOversize: string[] = [];
-      const skippedOverLimit = Math.max(0, files.length - remaining);
-      const newAttachments: FileAttachmentInfo[] = [];
-      for (const file of files.slice(0, remaining)) {
-        if (file.size > MAX_FILE_SIZE) {
-          skippedOversize.push(file.name);
-          continue;
-        }
-        newAttachments.push({
-          id: generateFileId(),
-          name: file.name,
-          path: (file as File & { path?: string }).path || file.name,
-          type: getFileType(file.name),
-          size: file.size,
-        });
-      }
-
-      for (const name of skippedOversize) {
-        toast.error(`${name} exceeds ${formatFileSize(MAX_FILE_SIZE)} limit`);
-      }
-      if (skippedOverLimit > 0) {
-        toast.warning(
-          `${skippedOverLimit} file${skippedOverLimit > 1 ? 's' : ''} skipped — maximum ${MAX_FILES} allowed`,
-        );
-      }
-
-      if (newAttachments.length > 0) {
-        setAttachments((prev) => [...prev, ...newAttachments]);
+      const accepted = processFileAttachments(fileList, attachments.length);
+      if (accepted.length > 0) {
+        setAttachments((prev) => [...prev, ...accepted]);
       }
     },
     [attachments.length],

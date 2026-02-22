@@ -18,7 +18,10 @@ export interface TaskConfig {
   sessionId?: string;
   /** Model ID for display name in progress events */
   modelId?: string;
-  /** File paths attached by the user via drag-and-drop or file picker */
+  /**
+   * User-attached files (drag-and-drop or file picker). Ephemeral — paths reference
+   * the host filesystem at submission time and are not persisted with the task.
+   */
   files?: FileAttachmentInfo[];
 }
 

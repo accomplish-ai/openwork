@@ -13,14 +13,7 @@ import { ModelIndicator } from '@/components/ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import {
-  MAX_FILES,
-  MAX_FILE_SIZE,
-  getFileType,
-  generateFileId,
-  formatFileSize,
-} from '@/lib/fileUtils';
-import { toast } from 'sonner';
+import { MAX_FILES, MAX_FILE_SIZE, formatFileSize, processFileAttachments } from '@/lib/fileUtils';
 
 function FileTypeIcon({
   type,
@@ -81,7 +74,7 @@ export function TaskInputBar({
   const { t } = useTranslation('common');
   const isInputDisabled = disabled || isLoading;
   const isOverLimit = value.length > PROMPT_DEFAULT_MAX_LENGTH;
-  const canSubmit = !!value.trim() && !disabled && !isOverLimit;
+  const canSubmit = (!!value.trim() || attachments.length > 0) && !disabled && !isOverLimit;
   const isSubmitDisabled = !isLoading && (!canSubmit || isInputDisabled);
   const submitLabel = isLoading ? t('buttons.stop') : t('buttons.submit');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,41 +94,9 @@ export function TaskInputBar({
         return;
       }
 
-      const files = Array.from(fileList);
-      const remaining = MAX_FILES - attachments.length;
-      if (remaining <= 0) {
-        toast.warning(`Maximum ${MAX_FILES} files allowed`);
-        return;
-      }
-
-      const skippedOversize: string[] = [];
-      const skippedOverLimit = Math.max(0, files.length - remaining);
-      const newAttachments: FileAttachmentInfo[] = [];
-      for (const file of files.slice(0, remaining)) {
-        if (file.size > MAX_FILE_SIZE) {
-          skippedOversize.push(file.name);
-          continue;
-        }
-        newAttachments.push({
-          id: generateFileId(),
-          name: file.name,
-          path: (file as File & { path?: string }).path || file.name,
-          type: getFileType(file.name),
-          size: file.size,
-        });
-      }
-
-      for (const name of skippedOversize) {
-        toast.error(`${name} exceeds ${formatFileSize(MAX_FILE_SIZE)} limit`);
-      }
-      if (skippedOverLimit > 0) {
-        toast.warning(
-          `${skippedOverLimit} file${skippedOverLimit > 1 ? 's' : ''} skipped — maximum ${MAX_FILES} allowed`,
-        );
-      }
-
-      if (newAttachments.length > 0) {
-        onAttachmentsChange([...attachments, ...newAttachments]);
+      const accepted = processFileAttachments(fileList, attachments.length);
+      if (accepted.length > 0) {
+        onAttachmentsChange([...attachments, ...accepted]);
       }
     },
     [attachments, onAttachmentsChange],
@@ -389,7 +350,7 @@ export function TaskInputBar({
                 <span>
                   {isOverLimit
                     ? t('buttons.messageTooLong')
-                    : !value.trim()
+                    : !value.trim() && attachments.length === 0
                       ? t('buttons.enterMessage')
                       : submitLabel}
                 </span>
