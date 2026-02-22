@@ -68,7 +68,7 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
   );
 }
 
-export function isOpenCodeBundled(): boolean {
+export function isOpenCodeCliAvailable(): boolean {
   return coreIsCliAvailable(getCliResolverConfig());
 }
 
@@ -112,36 +112,52 @@ export function getBundledOpenCodeVersion(): string | null {
 export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEnv> {
   // Start with base environment
   let env: NodeJS.ProcessEnv = { ...process.env };
+  const bundledNode = getBundledNodePaths();
 
-  // Handle Electron-specific environment setup for packaged app
-  if (app.isPackaged) {
-    env.ELECTRON_RUN_AS_NODE = '1';
+  if (!bundledNode) {
+    throw new Error(
+      '[OpenCode CLI] Bundled Node.js path is missing. ' +
+        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
+    );
+  }
 
-    logBundledNodeInfo();
+  if (!fs.existsSync(bundledNode.nodePath)) {
+    throw new Error(
+      `[OpenCode CLI] Bundled Node.js executable not found at ${bundledNode.nodePath}. ` +
+        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
+    );
+  }
 
-    const bundledNode = getBundledNodePaths();
-    if (bundledNode) {
-      const delimiter = process.platform === 'win32' ? ';' : ':';
-      const existingPath = env.PATH ?? env.Path ?? '';
-      const combinedPath = existingPath
-        ? `${bundledNode.binDir}${delimiter}${existingPath}`
-        : bundledNode.binDir;
-      env.PATH = combinedPath;
-      if (process.platform === 'win32') {
-        env.Path = combinedPath;
-      }
-      console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
-    }
+  try {
+    fs.accessSync(bundledNode.nodePath, fs.constants.X_OK);
+  } catch {
+    throw new Error(
+      `[OpenCode CLI] Bundled Node.js executable is not executable at ${bundledNode.nodePath}. ` +
+        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
+    );
+  }
 
-    if (process.platform === 'darwin') {
-      env.PATH = getExtendedNodePath(env.PATH);
-    }
+  env.ELECTRON_RUN_AS_NODE = '1';
+  logBundledNodeInfo();
+
+  const delimiter = process.platform === 'win32' ? ';' : ':';
+  const existingPath = env.PATH ?? env.Path ?? '';
+  const combinedPath = existingPath
+    ? `${bundledNode.binDir}${delimiter}${existingPath}`
+    : bundledNode.binDir;
+  env.PATH = combinedPath;
+  if (process.platform === 'win32') {
+    env.Path = combinedPath;
+  }
+  console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
+
+  if (process.platform === 'darwin') {
+    env.PATH = getExtendedNodePath(env.PATH);
   }
 
   // Gather configuration for the reusable environment builder
   const apiKeys = await getAllApiKeys();
   const bedrockCredentials = getBedrockCredentials() as BedrockCredentials | null;
-  const bundledNode = getBundledNodePaths();
 
   // Determine OpenAI base URL
   const storage = getStorage();
@@ -181,7 +197,7 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     bedrockCredentials: bedrockCredentials || undefined,
     vertexCredentials,
     vertexServiceAccountKeyPath,
-    bundledNodeBinPath: bundledNode?.binDir,
+    bundledNodeBinPath: bundledNode.binDir,
     taskId: taskId || undefined,
     openAiBaseUrl: configuredOpenAiBaseUrl || undefined,
     ollamaHost,
@@ -219,7 +235,7 @@ export function getCliCommand(): { command: string; args: string[] } {
 }
 
 export async function isCliAvailable(): Promise<boolean> {
-  return isOpenCodeBundled();
+  return isOpenCodeCliAvailable();
 }
 
 export async function onBeforeStart(): Promise<void> {
@@ -253,9 +269,15 @@ export async function onBeforeStart(): Promise<void> {
 
 function getBrowserServerConfig(): BrowserServerConfig {
   const bundledPaths = getBundledNodePaths();
+  if (!bundledPaths) {
+    throw new Error(
+      '[Browser] Bundled Node.js path is missing. ' +
+        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
+    );
+  }
   return {
     mcpToolsPath: getMcpToolsPath(),
-    bundledNodeBinPath: bundledPaths?.binDir,
+    bundledNodeBinPath: bundledPaths.binDir,
     devBrowserPort: DEV_BROWSER_PORT,
   };
 }
