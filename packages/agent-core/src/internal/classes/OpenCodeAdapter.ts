@@ -10,6 +10,7 @@ import {
   CompletionEnforcer,
   CompletionEnforcerCallbacks,
 } from '../../opencode/completion/index.js';
+import { isNonTaskContinuationToolName } from '../../opencode/tool-classification.js';
 import type { TaskConfig, Task, TaskMessage, TaskResult } from '../../common/types/task.js';
 import type { OpenCodeMessage } from '../../common/types/opencode.js';
 import type { PermissionRequest } from '../../common/types/permission.js';
@@ -792,29 +793,8 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     return false;
   }
 
-  private static readonly NON_TASK_TOOLS = new Set([
-    'discard',
-    'todowrite',
-    'complete_task',
-    'AskUserQuestion',
-    'report_checkpoint',
-    'report_thought',
-    'request_file_permission',
-  ]);
-
   private isNonTaskContinuationTool(toolName: string): boolean {
-    if (toolName === 'skill' || toolName.endsWith('_skill')) {
-      return true;
-    }
-    if (this.isStartTaskTool(toolName)) {
-      return true;
-    }
-    for (const tool of OpenCodeAdapter.NON_TASK_TOOLS) {
-      if (toolName === tool || toolName.endsWith(`_${tool}`)) {
-        return true;
-      }
-    }
-    return false;
+    return isNonTaskContinuationToolName(toolName);
   }
 
   private emitPlanMessage(input: StartTaskInput, sessionId: string): void {
