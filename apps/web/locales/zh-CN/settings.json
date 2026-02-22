@@ -235,7 +235,8 @@
     "whatsapp": {
       "connect": "连接 WhatsApp",
       "scanQr": "使用 WhatsApp 应用扫描下方二维码以连接此设备。前往 WhatsApp > 设置 > 已关联的设备 > 关联设备。",
-      "qrPlaceholder": "WhatsApp 服务启动后二维码将显示在此处"
+      "qrPlaceholder": "WhatsApp 服务启动后二维码将显示在此处",
+      "securityNotice": "连接 WhatsApp 即表示您授权 Accomplish 访问您的 WhatsApp 消息和联系人。所有数据保留在您的设备上，不会对外共享。"
     }
   },
   "appearance": {
