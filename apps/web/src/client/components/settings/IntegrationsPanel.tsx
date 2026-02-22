@@ -75,11 +75,18 @@ export function IntegrationsPanel() {
   const accomplish = useAccomplish();
 
   useEffect(() => {
-    accomplish.getMessagingConfig().then((c) => {
-      if (c) {
-        setConfig(c);
-      }
-    });
+    let mounted = true;
+    accomplish
+      .getMessagingConfig()
+      .then((c) => {
+        if (mounted && c) {
+          setConfig(c);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
   }, [accomplish]);
 
   const saveConfig = useCallback(

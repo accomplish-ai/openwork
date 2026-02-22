@@ -11,6 +11,7 @@ interface SwitchProps {
 export function Switch({ checked, onChange, disabled, ariaLabel, className }: SwitchProps) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
