@@ -115,6 +115,21 @@ vi.mock('framer-motion', () => ({
 
 // Mock SettingsDialog
 vi.mock('@/components/layout/SettingsDialog', () => ({
+  SettingsDialog: ({
+    open,
+    onOpenChange,
+    onApiKeySaved,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onApiKeySaved?: () => void;
+  }) =>
+    open ? (
+      <div data-testid="settings-dialog" role="dialog">
+        <button onClick={() => onOpenChange(false)}>Close</button>
+        {onApiKeySaved && <button onClick={onApiKeySaved}>Save API Key</button>}
+      </div>
+    ) : null,
   default: ({
     open,
     onOpenChange,
