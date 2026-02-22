@@ -37,6 +37,12 @@ const PLATFORMS = [
     extract: 'zip',
     sha256: '56e5aacdeee7168871721b75819ccacf2367de8761b78eaceacdecd41e04ca03',
   },
+  {
+    name: 'linux-x64',
+    file: `node-v${NODE_VERSION}-linux-x64.tar.gz`,
+    extract: 'tar',
+    sha256: '259e5a8bf2e15ecece65bd2a47153262eda71c0b2c9700d5e703ce4951572784',
+  },
 ];
 
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'nodejs');
