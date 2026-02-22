@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -40,6 +41,7 @@ export function HuggingFaceLocalProviderForm({
   onModelChange,
   showModelError,
 }: HuggingFaceLocalProviderFormProps) {
+  const { t } = useTranslation('settings');
   const [serverUrl, setServerUrl] = useState(HF_LOCAL_DEFAULT_URL);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,18 +130,18 @@ export function HuggingFaceLocalProviderForm({
             >
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  HuggingFace Local Server URL
+                  {t('huggingfaceLocal.serverUrl')}
                 </label>
                 <input
                   type="text"
                   value={serverUrl}
                   onChange={(e) => setServerUrl(e.target.value)}
-                  placeholder="http://localhost:8787"
+                  placeholder={HF_LOCAL_DEFAULT_URL}
                   data-testid="huggingface-local-server-url"
                   className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Run a local HuggingFace Transformers.js inference server with ONNX Runtime
+                  {t('huggingfaceLocal.serverHint')}
                 </p>
               </div>
 
@@ -158,7 +160,7 @@ export function HuggingFaceLocalProviderForm({
             >
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  HuggingFace Local Server URL
+                  {t('huggingfaceLocal.serverUrl')}
                 </label>
                 <input
                   type="text"
@@ -178,8 +180,8 @@ export function HuggingFaceLocalProviderForm({
                 value={connectedProvider?.selectedModelId || null}
                 onChange={onModelChange}
                 error={showModelError && !connectedProvider?.selectedModelId}
-                errorMessage="Please select a model"
-                placeholder="Select a model..."
+                errorMessage={t('huggingfaceLocal.selectModel')}
+                placeholder={t('huggingfaceLocal.selectModelPlaceholder')}
               />
 
               <div className="flex items-start gap-2 rounded-md border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-400">
@@ -197,10 +199,9 @@ export function HuggingFaceLocalProviderForm({
                   />
                 </svg>
                 <div>
-                  <p className="font-medium">Local inference with Transformers.js</p>
+                  <p className="font-medium">{t('huggingfaceLocal.infoBannerTitle')}</p>
                   <p className="text-blue-400/80 mt-1">
-                    Models run locally using ONNX Runtime. Smaller quantized models (Q4) are
-                    recommended for faster inference.
+                    {t('huggingfaceLocal.infoBannerDescription')}
                   </p>
                 </div>
               </div>

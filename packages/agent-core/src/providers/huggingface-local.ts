@@ -1,6 +1,7 @@
 import type { ToolSupportStatus } from '../common/types/providerSettings.js';
 import type { HuggingFaceLocalConfig } from '../common/types/provider.js';
 
+import { getModelDisplayName } from '../common/constants/model-display.js';
 import { fetchWithTimeout } from '../utils/fetch.js';
 import { validateHttpUrl } from '../utils/url.js';
 import { sanitizeString } from '../utils/sanitize.js';
@@ -101,7 +102,7 @@ export async function testHuggingFaceLocalConnection(
 
     const models: HuggingFaceLocalModel[] = rawModels.map((m) => ({
       id: m.id,
-      displayName: m.id.split('/').pop() || m.id,
+      displayName: getModelDisplayName(m.id),
       size: 0,
       toolSupport: 'unknown' as ToolSupportStatus,
     }));
