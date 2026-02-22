@@ -62,7 +62,8 @@ export function CloudBrowsersPanel() {
         const message = err instanceof Error ? err.message : 'Failed to load configuration';
         setSaveError(message);
       });
-  }, [accomplish]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- accomplish is a stable singleton
+  }, []);
 
   const saveConfig = useCallback(
     async (newConfig: CloudBrowserConfig) => {
