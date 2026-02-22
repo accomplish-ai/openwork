@@ -10,6 +10,12 @@ function getOpenCodePlatformInfo(): { packageName: string; binaryName: string } 
       binaryName: 'opencode.exe',
     };
   }
+  if (process.platform === 'linux') {
+    return {
+      packageName: `opencode-linux-${process.arch}`,
+      binaryName: 'opencode',
+    };
+  }
   return {
     packageName: 'opencode-ai',
     binaryName: 'opencode',
