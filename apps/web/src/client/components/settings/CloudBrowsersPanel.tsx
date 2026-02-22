@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { useAccomplish } from '@/lib/accomplish';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type {
   CloudBrowserConfig,
   CloudBrowserProvider,
@@ -166,7 +169,13 @@ export function CloudBrowsersPanel() {
         const providerConfig = config.providers[provider.id];
         const isActive = config.activeProvider === provider.id;
         const isExpanded = expandedProvider === provider.id;
-        const isConfigured = !!providerConfig?.apiKey || !!providerConfig?.endpoint;
+        const isConfigured = provider.fields
+          .filter((f) => f.required)
+          .every((f) => {
+            const key = f.key as keyof CloudBrowserProviderConfig;
+            const val = providerConfig?.[key];
+            return typeof val === 'string' && val.trim().length > 0;
+          });
 
         return (
           <div
@@ -257,7 +266,17 @@ function ProviderForm({
     return values;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const values: Record<string, string> = {};
+    for (const field of provider.fields) {
+      const key = field.key as keyof CloudBrowserProviderConfig;
+      const val = config?.[key];
+      values[field.key] = typeof val === 'string' ? val : '';
+    }
+    setFormValues(values);
+  }, [config, provider.fields]);
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const providerConfig: CloudBrowserProviderConfig = {
       provider: provider.id,
@@ -278,50 +297,54 @@ function ProviderForm({
       <form onSubmit={handleSubmit} className="space-y-3">
         {provider.fields.map((field) => (
           <div key={field.key}>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <Label htmlFor={`cloud-browser-${provider.id}-${field.key}`} className="mb-1">
               {field.label}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
-            </label>
-            <input
+            </Label>
+            <Input
+              id={`cloud-browser-${provider.id}-${field.key}`}
               type={field.key === 'apiKey' ? 'password' : 'text'}
               placeholder={field.placeholder}
               value={formValues[field.key] ?? ''}
               onChange={(e) => setFormValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
           </div>
         ))}
 
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <Button
             type="submit"
+            size="sm"
             disabled={saving || !isConfigured}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save'}
-          </button>
+          </Button>
           {config && (
             <>
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant={isActive ? 'secondary' : 'outline'}
                 onClick={onToggleActive}
                 disabled={saving}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                className={
                   isActive
-                    ? 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    : 'bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20'
-                }`}
+                    ? ''
+                    : 'text-green-600 dark:text-green-400 hover:bg-green-500/10'
+                }
               >
                 {isActive ? 'Deactivate' : 'Set Active'}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick={onRemove}
                 disabled={saving}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:bg-destructive/10"
               >
                 Remove
-              </button>
+              </Button>
             </>
           )}
         </div>
