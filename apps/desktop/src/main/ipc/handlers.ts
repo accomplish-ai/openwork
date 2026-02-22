@@ -983,6 +983,12 @@ export function registerIPCHandlers(): void {
       } catch {
         throw new Error('Invalid cloud browser config JSON');
       }
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Invalid cloud browser config: expected object');
+      }
+      if (parsed.activeProvider !== null && typeof parsed.activeProvider !== 'string') {
+        throw new Error('Invalid cloud browser config: activeProvider must be string or null');
+      }
       storage.setCloudBrowserConfig(parsed);
     },
   );

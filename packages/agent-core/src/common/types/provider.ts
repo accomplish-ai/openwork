@@ -40,7 +40,6 @@ export type ApiKeyProvider =
   | 'lmstudio'
   | 'vertex'
   | 'elevenlabs'
-  | 'browserbase'
   | 'aws-agentcore';
 
 /**
@@ -65,7 +64,6 @@ export const ALLOWED_API_KEY_PROVIDERS: ReadonlySet<string> = new Set<string>([
   'lmstudio',
   'vertex',
   'elevenlabs',
-  'browserbase',
   'aws-agentcore',
 ]);
 
