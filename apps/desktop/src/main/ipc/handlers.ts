@@ -1355,10 +1355,18 @@ export function registerIPCHandlers(): void {
     storage.setConnectorStatus(connectorId, 'disconnected');
   });
 
-  // Browser live preview — request a fresh screenshot from dev-browser
+  // Browser live preview — request a fresh screenshot from dev-browser MCP tool
+  const DEV_BROWSER_SCREENSHOT_URL = 'http://127.0.0.1:9224/screenshot';
+  const SCREENSHOT_TIMEOUT_MS = 5000;
+
   handle('browser:request-screenshot', async (event: IpcMainInvokeEvent, taskId: string) => {
     try {
-      const res = await fetch('http://127.0.0.1:9224/screenshot');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), SCREENSHOT_TIMEOUT_MS);
+
+      const res = await fetch(DEV_BROWSER_SCREENSHOT_URL, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         return;
       }
@@ -1368,6 +1376,11 @@ export function registerIPCHandlers(): void {
         title: string;
         timestamp: number;
       };
+
+      if (!screenshot.data || typeof screenshot.data !== 'string') {
+        return;
+      }
+
       const sender = event.sender;
       sender.send('browser:frame', {
         taskId,
@@ -1377,7 +1390,7 @@ export function registerIPCHandlers(): void {
         timestamp: screenshot.timestamp,
       });
     } catch {
-      // Dev browser not running — silently ignore
+      // Dev browser not running or timed out — silently ignore
     }
   });
 }

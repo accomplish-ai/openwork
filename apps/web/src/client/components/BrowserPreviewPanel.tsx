@@ -23,6 +23,7 @@ export function BrowserPreviewPanel({ taskId, isRunning }: BrowserPreviewPanelPr
   const [collapsed, setCollapsed] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [isStale, setIsStale] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const staleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleBrowserFrame = useCallback(
@@ -31,6 +32,7 @@ export function BrowserPreviewPanel({ taskId, isRunning }: BrowserPreviewPanelPr
         setFrame(data);
         setDismissed(false);
         setIsStale(false);
+        setImageError(false);
 
         if (staleTimerRef.current) {
           clearTimeout(staleTimerRef.current);
@@ -137,15 +139,22 @@ export function BrowserPreviewPanel({ taskId, isRunning }: BrowserPreviewPanelPr
         {!collapsed && (
           <div className="flex-1 overflow-auto p-2">
             <div className="relative rounded-md overflow-hidden border border-border/50 bg-muted/20">
-              <img
-                src={
-                  frame.data.startsWith('data:')
-                    ? frame.data
-                    : `data:image/png;base64,${frame.data}`
-                }
-                alt="Browser preview"
-                className="w-full h-auto"
-              />
+              {imageError ? (
+                <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
+                  Failed to load preview image
+                </div>
+              ) : (
+                <img
+                  src={
+                    frame.data.startsWith('data:')
+                      ? frame.data
+                      : `data:image/png;base64,${frame.data}`
+                  }
+                  alt="Browser preview"
+                  className="w-full h-auto"
+                  onError={() => setImageError(true)}
+                />
+              )}
               {derivedIsStale && (
                 <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5">

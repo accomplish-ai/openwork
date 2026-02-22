@@ -166,6 +166,7 @@ export function ExecutionPage() {
         if (toolName) {
           setCurrentTool(toolName);
           setCurrentToolInput(event.message.toolInput);
+          // Keep browser preview visible once activated to avoid flicker between tool calls
           if (getBaseToolName(toolName).startsWith('browser_')) {
             setHasBrowserActivity(true);
           }
@@ -196,6 +197,7 @@ export function ExecutionPage() {
             if (toolName) {
               setCurrentTool(toolName);
               setCurrentToolInput(lastMsg.toolInput);
+              // Keep browser preview visible once activated to avoid flicker between tool calls
               if (getBaseToolName(toolName).startsWith('browser_')) {
                 setHasBrowserActivity(true);
               }
