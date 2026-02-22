@@ -1,7 +1,7 @@
 # Maintainer: varshithm7x <m7xvoltx@gmail.com>
 pkgname=accomplish-ai-bin
 pkgver=0.3.8
-pkgrel=1
+pkgrel=2
 pkgdesc="Open source AI desktop agent that automates file management, document creation, and browser tasks"
 arch=('x86_64')
 url="https://github.com/varshithm7x/accomplish"
@@ -29,11 +29,20 @@ package() {
   install -dm755 "${pkgdir}/opt/${pkgname}"
   cp -r "${srcdir}/squashfs-root/"* "${pkgdir}/opt/${pkgname}/"
 
-  # Create launcher script
+  # Fix permissions - squashfs extraction creates owner-only dirs
+  find "${pkgdir}/opt/${pkgname}" -type d -exec chmod 755 {} +
+  find "${pkgdir}/opt/${pkgname}" -type f -exec chmod 644 {} +
+  find "${pkgdir}/opt/${pkgname}" -type f -name "*.so*" -exec chmod 755 {} +
+  chmod 755 "${pkgdir}/opt/${pkgname}/@accomplishdesktop"
+  chmod 755 "${pkgdir}/opt/${pkgname}/chrome_crashpad_handler"
+  chmod 755 "${pkgdir}/opt/${pkgname}/chrome-sandbox"
+
+  # Create launcher script (bypass AppRun which fails outside AppImage)
   install -dm755 "${pkgdir}/usr/bin"
   cat > "${pkgdir}/usr/bin/accomplish" << 'EOF'
 #!/bin/bash
-exec /opt/accomplish-ai-bin/AppRun --no-sandbox "$@"
+export APPDIR=/opt/accomplish-ai-bin
+exec "$APPDIR/@accomplishdesktop" --no-sandbox "$@"
 EOF
   chmod +x "${pkgdir}/usr/bin/accomplish"
 
