@@ -150,8 +150,8 @@ export function startDaemonServer(): void {
     if (process.platform !== 'win32') {
       try {
         fs.chmodSync(socketPath, 0o600);
-      } catch {
-        // non-fatal
+      } catch (err) {
+        console.warn('[Daemon] Failed to chmod socket:', err);
       }
     }
   });
@@ -168,8 +168,8 @@ export function stopDaemonServer(): void {
   if (process.platform !== 'win32' && fs.existsSync(socketPath)) {
     try {
       fs.unlinkSync(socketPath);
-    } catch {
-      // non-fatal
+    } catch (err) {
+      console.warn('[Daemon] Failed to remove socket file:', err);
     }
   }
 

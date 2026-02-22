@@ -1,13 +1,12 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import { getAccomplish } from '@/lib/accomplish';
+import { useAccomplish } from '@/lib/accomplish';
+import { Switch } from '@/components/ui/switch';
 
 export function DaemonPanel() {
   const [runInBackground, setRunInBackground] = useState(false);
   const [socketPath, setSocketPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const accomplish = getAccomplish();
+  const accomplish = useAccomplish();
 
   useEffect(() => {
     accomplish.getRunInBackground().then(setRunInBackground);
@@ -27,7 +26,6 @@ export function DaemonPanel() {
 
   return (
     <div className="space-y-4 overflow-hidden">
-      {/* Background Mode Toggle */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -37,20 +35,12 @@ export function DaemonPanel() {
               running and the app can receive requests from external sources.
             </p>
           </div>
-          <button
-            onClick={handleToggle}
+          <Switch
+            checked={runInBackground}
+            onChange={handleToggle}
             disabled={saving}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-accomplish ${
-              runInBackground ? 'bg-primary' : 'bg-muted'
-            }`}
-            aria-label="Toggle background mode"
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${
-                runInBackground ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+            ariaLabel="Toggle background mode"
+          />
         </div>
 
         {runInBackground && (
@@ -63,7 +53,6 @@ export function DaemonPanel() {
         )}
       </div>
 
-      {/* Daemon Socket */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="font-medium text-foreground">Daemon Socket</div>
         <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
@@ -71,7 +60,7 @@ export function DaemonPanel() {
           via the local daemon socket using JSON-RPC 2.0.
         </p>
 
-        {socketPath && (
+        {socketPath ? (
           <div className="mt-3">
             <label className="block text-xs font-medium text-muted-foreground mb-1">
               Socket Path
@@ -81,6 +70,7 @@ export function DaemonPanel() {
                 {socketPath}
               </code>
               <button
+                type="button"
                 onClick={() => navigator.clipboard.writeText(socketPath)}
                 className="flex-shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 title="Copy to clipboard"
@@ -89,6 +79,8 @@ export function DaemonPanel() {
               </button>
             </div>
           </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground italic">Socket path unavailable.</p>
         )}
 
         <div className="mt-4 space-y-2">
@@ -99,7 +91,6 @@ export function DaemonPanel() {
         </div>
       </div>
 
-      {/* Architecture Overview */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="font-medium text-foreground">Architecture</div>
         <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">

@@ -90,9 +90,23 @@ const WEB_DIST = app.isPackaged
   ? path.join(process.resourcesPath, 'web-ui')
   : path.join(process.env.APP_ROOT, '../web/dist/client');
 
+interface AppWithQuitting extends Electron.App {
+  isQuitting: boolean;
+}
+
+const quitableApp = app as AppWithQuitting;
+
 let mainWindow: BrowserWindow | null = null;
 // Track app quit intent so the close handler knows to allow it
-(app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting = false;
+quitableApp.isQuitting = false;
+
+function getRunInBackgroundSafely(): boolean {
+  try {
+    return getStorage().getRunInBackground();
+  } catch {
+    return false;
+  }
+}
 
 function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
@@ -167,15 +181,7 @@ function createWindow() {
 
   // When runInBackground is enabled, hide to tray instead of closing
   mainWindow.on('close', (event) => {
-    const runInBackground = (() => {
-      try {
-        return getStorage().getRunInBackground();
-      } catch {
-        return false;
-      }
-    })();
-
-    if (runInBackground && !(app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting) {
+    if (getRunInBackgroundSafely() && !quitableApp.isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -396,21 +402,13 @@ if (!gotTheLock) {
 
 app.on('window-all-closed', () => {
   // When runInBackground is enabled, keep the app alive (it lives in the system tray)
-  const runInBackground = (() => {
-    try {
-      return getStorage().getRunInBackground();
-    } catch {
-      return false;
-    }
-  })();
-
-  if (!runInBackground && process.platform !== 'darwin') {
+  if (!getRunInBackgroundSafely() && process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('before-quit', () => {
-  (app as NodeJS.EventEmitter & { isQuitting?: boolean }).isQuitting = true;
+  quitableApp.isQuitting = true;
   stopDaemonServer();
   destroyTray();
   disposeTaskManager(); // Also cleans up proxies internally
