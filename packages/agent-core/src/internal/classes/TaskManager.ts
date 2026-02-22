@@ -175,7 +175,7 @@ export class TaskManager {
           if (
             callbacks.onBrowserFrame &&
             taskMessage.attachments &&
-            taskMessage.toolName?.includes('browser_')
+            (taskMessage.toolName?.split('__').pop() ?? '').startsWith('browser_')
           ) {
             const screenshot = taskMessage.attachments.find((a) => a.type === 'screenshot');
             if (screenshot) {

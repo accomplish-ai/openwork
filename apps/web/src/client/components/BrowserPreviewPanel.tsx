@@ -107,9 +107,7 @@ export function BrowserPreviewPanel({ taskId, isRunning }: BrowserPreviewPanelPr
                 className="p-1 rounded hover:bg-muted transition-colors"
                 title="Refresh screenshot"
               >
-                <RefreshCw
-                  className={cn('h-3 w-3 text-muted-foreground', !derivedIsStale && 'animate-spin')}
-                />
+                <RefreshCw className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
             <button
