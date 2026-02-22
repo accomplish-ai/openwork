@@ -170,6 +170,10 @@ describe('getToolDisplayName', () => {
     expect(getToolDisplayName('discard')).toBeNull();
     expect(getToolDisplayName('extract')).toBeNull();
     expect(getToolDisplayName('context_info')).toBeNull();
+    expect(getToolDisplayName('prune')).toBeNull();
+    expect(getToolDisplayName('distill')).toBeNull();
+    expect(getToolDisplayName('mcp_prune')).toBeNull();
+    expect(getToolDisplayName('mcp_distill')).toBeNull();
   });
 
   it('returns display name for mapped tools', () => {
