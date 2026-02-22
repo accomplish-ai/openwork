@@ -30,7 +30,8 @@ const accomplishAPI = {
     ipcRenderer.invoke('task:get-todos', taskId),
   setTaskFavorite: (taskId: string, isFavorite: boolean): Promise<void> =>
     ipcRenderer.invoke('task:set-favorite', taskId, isFavorite),
-  getFavoriteTasks: (): Promise<unknown[]> => ipcRenderer.invoke('task:get-favorites'),
+  getFavoriteTasks: (): Promise<Array<Record<string, unknown>>> =>
+    ipcRenderer.invoke('task:get-favorites'),
 
   // Permission responses
   respondToPermission: (response: { taskId: string; allowed: boolean }): Promise<void> =>

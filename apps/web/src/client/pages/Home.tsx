@@ -44,6 +44,8 @@ export function HomePage() {
   const accomplish = useMemo(() => getAccomplish(), []);
   const { t } = useTranslation('home');
 
+  const MAX_DISPLAYED_FAVORITES = 5;
+
   const useCaseExamples = useMemo(() => {
     return USE_CASE_KEYS.map(({ key, icons }) => ({
       title: t(`useCases.${key}.title`),
@@ -52,6 +54,11 @@ export function HomePage() {
       icons,
     }));
   }, [t]);
+
+  const displayedFavorites = useMemo(
+    () => favoriteTasks.slice(0, MAX_DISPLAYED_FAVORITES),
+    [favoriteTasks],
+  );
 
   useEffect(() => {
     const unsubscribeTask = accomplish.onTaskUpdate((event) => {
@@ -204,14 +211,14 @@ export function HomePage() {
               transition={{ ...springs.gentle, delay: 0.2 }}
               className="w-full"
             >
-              {favoriteTasks.length > 0 && (
+              {displayedFavorites.length > 0 && (
                 <div className="w-full pt-6">
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="h-3.5 w-3.5" weight="fill" color="#facc15" />
                     <span className="text-sm font-medium text-foreground">Favorites</span>
                   </div>
                   <div className="space-y-1">
-                    {favoriteTasks.slice(0, 5).map((task) => (
+                    {displayedFavorites.map((task) => (
                       <Link
                         key={task.id}
                         to={`/execution/${task.id}`}
