@@ -151,6 +151,31 @@ describe('toTaskMessage', () => {
     expect(result!.toolName).toBe('browser_click');
     expect(result!.content).toBe('Using tool: Clicking element');
   });
+
+  it('extracts raw JPEG base64 screenshot payloads from tool output', () => {
+    const rawJpeg = '/9j/' + 'A'.repeat(180);
+    const message: OpenCodeMessage = {
+      type: 'tool_use',
+      part: {
+        id: '6',
+        sessionID: 's1',
+        messageID: 'm6',
+        type: 'tool_use',
+        tool: 'browser_screenshot',
+        state: {
+          status: 'completed',
+          output: `Screenshot payload: "${rawJpeg}"`,
+        },
+      },
+    } as OpenCodeMessage;
+
+    const result = toTaskMessage(message);
+
+    expect(result).not.toBeNull();
+    expect(result!.attachments).toBeDefined();
+    expect(result!.attachments![0].data.startsWith('data:image/jpeg;base64,/9j/')).toBe(true);
+    expect(result!.content).toContain('[Screenshot]');
+  });
 });
 
 describe('sanitizeToolOutput', () => {
