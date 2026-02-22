@@ -15,6 +15,42 @@ const PERMISSION_API_PORT = process.env.PERMISSION_API_PORT || '9226';
 const PERMISSION_API_URL = `http://localhost:${PERMISSION_API_PORT}/permission`;
 const PLATFORM = process.platform;
 
+/** Timeout for short-lived operations like clicks and window queries */
+const EXEC_TIMEOUT_SHORT = 5000;
+/** Timeout for longer operations like screenshots, typing, and app launches */
+const EXEC_TIMEOUT_LONG = 10000;
+
+interface ClickArgs {
+  x: number;
+  y: number;
+  button?: 'left' | 'right';
+}
+
+interface TypeArgs {
+  text: string;
+}
+
+interface HotkeyArgs {
+  keys: string[];
+}
+
+interface FindWindowArgs {
+  title: string;
+}
+
+interface FocusWindowArgs {
+  appName: string;
+}
+
+interface OpenAppArgs {
+  appName: string;
+}
+
+/** Escape single quotes for AppleScript shell invocation */
+function escapeAppleScript(str: string): string {
+  return str.replace(/'/g, "'\\''");
+}
+
 // ─── Permission Helper ───────────────────────────────────────────────
 async function requestDesktopPermission(action: string, details: string): Promise<boolean> {
   try {
@@ -43,16 +79,16 @@ async function requestDesktopPermission(action: string, details: string): Promis
 // ─── Platform-specific helpers ───────────────────────────────────────
 
 function runAppleScript(script: string): string {
-  return execSync(`osascript -e '${script.replace(/'/g, "'\\''")}'`, {
+  return execSync(`osascript -e '${escapeAppleScript(script)}'`, {
     encoding: 'utf8',
-    timeout: 10000,
+    timeout: EXEC_TIMEOUT_LONG,
   }).trim();
 }
 
 function runPowerShell(script: string): string {
   return execSync(`powershell -NoProfile -Command "${script.replace(/"/g, '\\"')}"`, {
     encoding: 'utf8',
-    timeout: 10000,
+    timeout: EXEC_TIMEOUT_LONG,
   }).trim();
 }
 
@@ -65,9 +101,8 @@ async function desktopScreenshot(): Promise<CallToolResult> {
 
   try {
     if (PLATFORM === 'darwin') {
-      execSync(`screencapture -x ${filepath}`, { timeout: 10000 });
+      execSync(`screencapture -x ${filepath}`, { timeout: EXEC_TIMEOUT_LONG });
     } else if (PLATFORM === 'win32') {
-      // Use PowerShell to capture screen
       runPowerShell(`
         Add-Type -AssemblyName System.Windows.Forms;
         [System.Windows.Forms.Screen]::PrimaryScreen | ForEach-Object {
@@ -78,14 +113,13 @@ async function desktopScreenshot(): Promise<CallToolResult> {
         }
       `);
     } else {
-      // Linux - try various tools
       try {
-        execSync(`gnome-screenshot -f ${filepath}`, { timeout: 10000 });
+        execSync(`gnome-screenshot -f ${filepath}`, { timeout: EXEC_TIMEOUT_LONG });
       } catch {
         try {
-          execSync(`scrot ${filepath}`, { timeout: 10000 });
+          execSync(`scrot ${filepath}`, { timeout: EXEC_TIMEOUT_LONG });
         } catch {
-          execSync(`import -window root ${filepath}`, { timeout: 10000 });
+          execSync(`import -window root ${filepath}`, { timeout: EXEC_TIMEOUT_LONG });
         }
       }
     }
@@ -99,8 +133,6 @@ async function desktopScreenshot(): Promise<CallToolResult> {
 
     const imageData = fs.readFileSync(filepath);
     const base64 = imageData.toString('base64');
-    // Clean up temp file
-    fs.unlinkSync(filepath);
 
     return {
       content: [
@@ -121,6 +153,15 @@ async function desktopScreenshot(): Promise<CallToolResult> {
       content: [{ type: 'text', text: `Error taking screenshot: ${msg}` }],
       isError: true,
     };
+  } finally {
+    // Clean up temp file regardless of success or failure
+    try {
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }
 
@@ -129,12 +170,18 @@ async function desktopClick(
   y: number,
   button: string = 'left',
 ): Promise<CallToolResult> {
+  if (x < 0 || y < 0) {
+    return {
+      content: [{ type: 'text', text: 'Error: Coordinates must be non-negative' }],
+      isError: true,
+    };
+  }
+
   try {
     if (PLATFORM === 'darwin') {
-      // Use cliclick if available, otherwise AppleScript + Python
       try {
         const clickCmd = button === 'right' ? 'rc' : 'c';
-        execSync(`cliclick ${clickCmd}:${x},${y}`, { timeout: 5000 });
+        execSync(`cliclick ${clickCmd}:${x},${y}`, { timeout: EXEC_TIMEOUT_SHORT });
       } catch {
         // Fallback: use Python with Quartz
         const pyScript = `
@@ -145,7 +192,7 @@ event = Quartz.CGEventCreateMouseEvent(None, ${button === 'right' ? 'Quartz.kCGE
 Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
 `;
         execSync(`python3 -c "${pyScript.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`, {
-          timeout: 5000,
+          timeout: EXEC_TIMEOUT_SHORT,
         });
       }
     } else if (PLATFORM === 'win32') {
@@ -164,7 +211,7 @@ Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
       `);
     } else {
       execSync(`xdotool mousemove ${x} ${y} click ${button === 'right' ? '3' : '1'}`, {
-        timeout: 5000,
+        timeout: EXEC_TIMEOUT_SHORT,
       });
     }
 
@@ -181,13 +228,18 @@ Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
 }
 
 async function desktopType(text: string): Promise<CallToolResult> {
+  if (!text) {
+    return {
+      content: [{ type: 'text', text: 'Error: Text must not be empty' }],
+      isError: true,
+    };
+  }
+
   try {
     if (PLATFORM === 'darwin') {
       try {
-        // cliclick type
-        execSync(`cliclick t:'${text.replace(/'/g, "'\\''")}'`, { timeout: 10000 });
+        execSync(`cliclick t:'${escapeAppleScript(text)}'`, { timeout: EXEC_TIMEOUT_LONG });
       } catch {
-        // Fallback: AppleScript keystroke
         runAppleScript(
           `tell application "System Events" to keystroke "${text.replace(/"/g, '\\"')}"`,
         );
@@ -198,7 +250,7 @@ async function desktopType(text: string): Promise<CallToolResult> {
         [System.Windows.Forms.SendKeys]::SendWait('${text.replace(/'/g, "''")}');
       `);
     } else {
-      execSync(`xdotool type -- '${text.replace(/'/g, "'\\''")}'`, { timeout: 10000 });
+      execSync(`xdotool type -- '${escapeAppleScript(text)}'`, { timeout: EXEC_TIMEOUT_LONG });
     }
 
     return {
@@ -214,6 +266,13 @@ async function desktopType(text: string): Promise<CallToolResult> {
 }
 
 async function desktopHotkey(keys: string[]): Promise<CallToolResult> {
+  if (!keys || keys.length === 0) {
+    return {
+      content: [{ type: 'text', text: 'Error: At least one key is required' }],
+      isError: true,
+    };
+  }
+
   try {
     if (PLATFORM === 'darwin') {
       // Convert key names to AppleScript format
@@ -261,7 +320,7 @@ async function desktopHotkey(keys: string[]): Promise<CallToolResult> {
         [System.Windows.Forms.SendKeys]::SendWait('${sendKeysStr}');
       `);
     } else {
-      execSync(`xdotool key ${keys.join('+')}`, { timeout: 5000 });
+      execSync(`xdotool key ${keys.join('+')}`, { timeout: EXEC_TIMEOUT_SHORT });
     }
 
     return {
@@ -310,7 +369,7 @@ return windowList`;
         'wmctrl -l 2>/dev/null || xdotool search --name "" getwindowname %@ 2>/dev/null || echo "No window list tool available"',
         {
           encoding: 'utf8',
-          timeout: 5000,
+          timeout: EXEC_TIMEOUT_SHORT,
         },
       ).trim();
     }
@@ -333,6 +392,13 @@ return windowList`;
 }
 
 async function desktopFindWindow(title: string): Promise<CallToolResult> {
+  if (!title) {
+    return {
+      content: [{ type: 'text', text: 'Error: Window title must not be empty' }],
+      isError: true,
+    };
+  }
+
   try {
     let result: string;
 
@@ -365,7 +431,7 @@ return windowInfo`;
         `xdotool search --name "${title.replace(/"/g, '\\"')}" getwindowname %@ 2>/dev/null || echo "Not found"`,
         {
           encoding: 'utf8',
-          timeout: 5000,
+          timeout: EXEC_TIMEOUT_SHORT,
         },
       ).trim();
     }
@@ -390,6 +456,13 @@ return windowInfo`;
 }
 
 async function desktopFocusWindow(appName: string): Promise<CallToolResult> {
+  if (!appName) {
+    return {
+      content: [{ type: 'text', text: 'Error: Application name must not be empty' }],
+      isError: true,
+    };
+  }
+
   try {
     if (PLATFORM === 'darwin') {
       runAppleScript(`tell application "${appName.replace(/"/g, '\\"')}" to activate`);
@@ -417,13 +490,20 @@ async function desktopFocusWindow(appName: string): Promise<CallToolResult> {
 }
 
 async function desktopOpenApp(appName: string): Promise<CallToolResult> {
+  if (!appName) {
+    return {
+      content: [{ type: 'text', text: 'Error: Application name must not be empty' }],
+      isError: true,
+    };
+  }
+
   try {
     if (PLATFORM === 'darwin') {
-      execSync(`open -a "${appName.replace(/"/g, '\\"')}"`, { timeout: 10000 });
+      execSync(`open -a "${appName.replace(/"/g, '\\"')}"`, { timeout: EXEC_TIMEOUT_LONG });
     } else if (PLATFORM === 'win32') {
       runPowerShell(`Start-Process "${appName.replace(/"/g, '\\"')}"`);
     } else {
-      execSync(`${appName} &`, { timeout: 5000 });
+      execSync(`${appName} &`, { timeout: EXEC_TIMEOUT_SHORT });
     }
 
     return {
@@ -577,17 +657,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
       return desktopScreenshot();
 
     case 'desktop_click': {
-      const { x, y, button } = args as { x: number; y: number; button?: string };
+      const { x, y, button } = args as ClickArgs;
       return desktopClick(x, y, button);
     }
 
     case 'desktop_type': {
-      const { text } = args as { text: string };
+      const { text } = args as TypeArgs;
       return desktopType(text);
     }
 
     case 'desktop_hotkey': {
-      const { keys } = args as { keys: string[] };
+      const { keys } = args as HotkeyArgs;
       return desktopHotkey(keys);
     }
 
@@ -595,17 +675,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
       return desktopListWindows();
 
     case 'desktop_find_window': {
-      const { title } = args as { title: string };
+      const { title } = args as FindWindowArgs;
       return desktopFindWindow(title);
     }
 
     case 'desktop_focus_window': {
-      const { appName } = args as { appName: string };
+      const { appName } = args as FocusWindowArgs;
       return desktopFocusWindow(appName);
     }
 
     case 'desktop_open_app': {
-      const { appName } = args as { appName: string };
+      const { appName } = args as OpenAppArgs;
       return desktopOpenApp(appName);
     }
 

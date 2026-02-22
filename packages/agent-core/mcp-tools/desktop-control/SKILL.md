@@ -27,6 +27,12 @@ Control native desktop applications using keyboard, mouse, and window management
 - **Windows**: Uses PowerShell and SendKeys
 - **Linux**: Uses xdotool, wmctrl, and scrot
 
+## Requirements
+
+- **macOS**: `cliclick` (optional, falls back to Python Quartz) — install via `brew install cliclick`
+- **Windows**: PowerShell (included with Windows)
+- **Linux**: `xdotool`, `wmctrl`, and `scrot` or `gnome-screenshot` — install via your package manager
+
 ## Permissions
 
 - macOS requires **Accessibility** permission in System Preferences > Privacy & Security > Accessibility
