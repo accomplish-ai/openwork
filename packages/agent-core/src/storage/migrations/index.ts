@@ -18,6 +18,9 @@ import { migration as v008 } from './v008-theme.js';
 import { migration as v009 } from './v009-messaging.js';
 import { migration as v010 } from './v010-cloud-browsers.js';
 
+// Migrations must be ordered by version number (ascending). The runner iterates
+// sequentially and applies every migration whose version exceeds the stored
+// schema version. `registerMigration` keeps this invariant via sort.
 const migrations: Migration[] = [v001, v002, v003, v004, v005, v006, v007, v008, v009, v010];
 
 export function registerMigration(migration: Migration): void {

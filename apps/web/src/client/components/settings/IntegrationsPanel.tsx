@@ -65,6 +65,66 @@ const DEFAULT_CONFIG: MessagingConfig = {
   integrations: {},
 };
 
+function WhatsAppQRSection({
+  integration,
+  t,
+}: {
+  integration: MessagingIntegrationConfig | undefined;
+  t: (key: string, options?: Record<string, string>) => string;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="text-sm font-medium text-foreground mb-2">
+        {t('integrations.whatsapp.connect')}
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">{t('integrations.whatsapp.scanQr')}</p>
+      <div className="flex items-center justify-center rounded-lg bg-white p-6 dark:bg-gray-100">
+        <div className="text-center">
+          <div className="h-48 w-48 rounded-lg bg-muted flex items-center justify-center mx-auto">
+            <div className="text-center text-muted-foreground">
+              <svg
+                className="h-12 w-12 mx-auto mb-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 14.625v2.625m0 0v2.625m0-2.625h2.625m-2.625 0H10.875"
+                />
+              </svg>
+              <span className="text-xs">{t('integrations.whatsapp.qrPlaceholder')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {integration?.accountName && (
+        <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          {t('integrations.connectedAs', { name: integration.accountName })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function IntegrationsPanel() {
   const { t } = useTranslation('settings');
   const [config, setConfig] = useState<MessagingConfig>(DEFAULT_CONFIG);
@@ -85,7 +145,9 @@ export function IntegrationsPanel() {
       })
       .catch((err) => {
         if (mounted) {
-          setLoadError(err instanceof Error ? err.message : 'Failed to load configuration');
+          setLoadError(
+            `Failed to load integration settings: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          );
         }
       });
     return () => {
@@ -261,59 +323,7 @@ export function IntegrationsPanel() {
                 </div>
 
                 {platform.id === 'whatsapp' && isEnabled && (
-                  <div className="rounded-lg border border-border p-4">
-                    <div className="text-sm font-medium text-foreground mb-2">
-                      {t('integrations.whatsapp.connect')}
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      {t('integrations.whatsapp.scanQr')}
-                    </p>
-                    <div className="flex items-center justify-center rounded-lg bg-white p-6 dark:bg-gray-100">
-                      <div className="text-center">
-                        <div className="h-48 w-48 rounded-lg bg-muted flex items-center justify-center mx-auto">
-                          <div className="text-center text-muted-foreground">
-                            <svg
-                              className="h-12 w-12 mx-auto mb-2"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={1.5}
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M13.5 14.625v2.625m0 0v2.625m0-2.625h2.625m-2.625 0H10.875"
-                              />
-                            </svg>
-                            <span className="text-xs">
-                              {t('integrations.whatsapp.qrPlaceholder')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {integration?.accountName && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {t('integrations.connectedAs', { name: integration.accountName })}
-                      </div>
-                    )}
-                  </div>
+                  <WhatsAppQRSection integration={integration} t={t} />
                 )}
 
                 {isEnabled && (

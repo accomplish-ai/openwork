@@ -6,9 +6,10 @@ interface SwitchProps {
   disabled?: boolean;
   ariaLabel: string;
   className?: string;
+  id?: string;
 }
 
-export function Switch({ checked, onChange, disabled, ariaLabel, className }: SwitchProps) {
+export function Switch({ checked, onChange, disabled, ariaLabel, className, id }: SwitchProps) {
   return (
     <button
       type="button"
@@ -17,6 +18,7 @@ export function Switch({ checked, onChange, disabled, ariaLabel, className }: Sw
       aria-label={ariaLabel}
       onClick={onChange}
       disabled={disabled}
+      id={id}
       className={cn(
         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200',
         'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed',

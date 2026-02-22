@@ -1005,6 +1005,9 @@ export function registerIPCHandlers(): void {
       }
       try {
         const parsed = JSON.parse(config);
+        if (!parsed.integrations || typeof parsed.integrations !== 'object') {
+          throw new Error('Invalid messaging config structure: missing integrations');
+        }
         storage.setMessagingConfig(parsed);
       } catch (e) {
         throw new Error(`Invalid messaging config: ${e instanceof Error ? e.message : String(e)}`);
