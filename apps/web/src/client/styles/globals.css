@@ -89,7 +89,7 @@
   --border: 12 8% 90%; /* #eae2e1 */
   --input: 0 0% 84.7%; /* #d8d8d8 */
   --ring: 20 25% 33%; /* #644a40 */
-  --radius: 0.25rem;
+  --radius: 0.25rem; /* Border radius for cards, inputs, and buttons */
   --warning-subtle: 36 95% 95%;
   --success-subtle: 152 60% 93%;
   --provider-bg: 40 20% 93%;
@@ -116,7 +116,7 @@
   --secondary: 120 8% 18%;
   --secondary-foreground: 120 14% 85%;
   --muted: 220 8% 16%;
-  --muted-foreground: 0 0% 58%;
+  --muted-foreground: 0 0% 61%;
   --accent: 220 10% 10%;
   --accent-foreground: 0 0% 93%;
   --destructive: 8 78% 54%;
@@ -132,9 +132,9 @@
   --provider-border-active: 123 30% 40%;
   --provider-accent: 123 30% 45%;
   --provider-accent-text: 123 30% 75%;
-  --todo-progress-pending: 0 0% 24%;
-  --todo-item-completed: 0 0% 14%;
-  --todo-item-in-progress: 0 0% 11%;
+  --todo-progress-pending: 220 8% 24%;
+  --todo-item-completed: 220 8% 14%;
+  --todo-item-in-progress: 220 8% 11%;
 }
 
 /* Custom scrollbar — auto-hide, shown only while scrolling */
