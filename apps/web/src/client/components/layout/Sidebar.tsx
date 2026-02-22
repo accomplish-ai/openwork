@@ -32,10 +32,11 @@ const THEME_OPTIONS: Array<{
   { value: 'light', label: 'Light', Icon: Sun },
   { value: 'system', label: 'System', Icon: Laptop },
 ];
+const THEME_OPTION_VALUES = new Set(THEME_OPTIONS.map((option) => option.value));
 
 const normalizeTheme = (value: unknown): ThemePreference => {
-  if (value === 'light' || value === 'dark' || value === 'system' || value === 'pure-dark') {
-    return value;
+  if (typeof value === 'string' && THEME_OPTION_VALUES.has(value as ThemePreference)) {
+    return value as ThemePreference;
   }
 
   return 'system';
@@ -96,9 +97,17 @@ export function Sidebar() {
   };
 
   const handleThemeChange = async (nextTheme: ThemePreference) => {
+    const previousTheme = themePreference;
     setThemePreference(nextTheme);
-    if (typeof accomplish.setTheme === 'function') {
+    if (typeof accomplish.setTheme !== 'function') {
+      return;
+    }
+
+    try {
       await accomplish.setTheme(nextTheme);
+    } catch (error) {
+      setThemePreference(previousTheme);
+      console.error('Failed to update theme preference', error);
     }
   };
 

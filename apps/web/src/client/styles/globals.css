@@ -137,6 +137,17 @@
   --ring: 123 32% 62%;
   --overlay: 0 0% 0% / 0.74;
   --backdrop: 0 0% 0% / 0.72;
+  --warning-subtle: 30 60% 15%;
+  --success-subtle: 150 40% 12%;
+  --provider-bg: 0 0% 15%;
+  --provider-bg-active: 130 20% 15%;
+  --provider-bg-hover: 0 0% 13%;
+  --provider-border-active: 40 30% 50%;
+  --provider-accent: 123 30% 45%;
+  --provider-accent-text: 123 30% 75%;
+  --todo-progress-pending: 0 0% 24%;
+  --todo-item-completed: 0 0% 14%;
+  --todo-item-in-progress: 0 0% 11%;
 }
 
 /* Custom scrollbar */
