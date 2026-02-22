@@ -168,7 +168,8 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **Desktop Automation**: Control the mouse, keyboard, and application windows on the native desktop; take screenshots
+- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -391,6 +392,15 @@ Use empty array [] if no skills apply to your task.
       command: resolveMcpCommand(mcpToolsPath, 'start-task', 'dist/index.mjs', nodeExe),
       enabled: true,
       timeout: 30000,
+    },
+    'desktop-control': {
+      type: 'local',
+      command: resolveMcpCommand(mcpToolsPath, 'desktop-control', 'dist/index.mjs', nodeExe),
+      enabled: true,
+      environment: {
+        PERMISSION_API_PORT: String(permissionApiPort),
+      },
+      timeout: 60000,
     },
   };
 

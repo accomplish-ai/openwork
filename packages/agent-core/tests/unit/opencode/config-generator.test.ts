@@ -21,6 +21,7 @@ describe('ConfigGenerator', () => {
     ['ask-user-question', 'dist/index.mjs'],
     ['complete-task', 'dist/index.mjs'],
     ['start-task', 'dist/index.mjs'],
+    ['desktop-control', 'dist/index.mjs'],
     ['dev-browser-mcp', 'dist/index.mjs'],
   ] as const;
 
@@ -176,6 +177,7 @@ describe('ConfigGenerator', () => {
       expect(result.mcpServers['dev-browser-mcp']).toBeDefined();
       expect(result.mcpServers['complete-task']).toBeDefined();
       expect(result.mcpServers['start-task']).toBeDefined();
+      expect(result.mcpServers['desktop-control']).toBeDefined();
     });
 
     it('should set permission API port in environment', () => {
@@ -189,6 +191,7 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9999');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9999');
     });
 
     it('should set question API port in environment', () => {
@@ -215,6 +218,7 @@ describe('ConfigGenerator', () => {
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9226');
       expect(result.mcpServers['ask-user-question'].environment?.QUESTION_API_PORT).toBe('9227');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9226');
     });
 
     it('should include skills in system prompt when provided', () => {
