@@ -18,7 +18,7 @@ export {
   onBeforeStart,
   onBeforeTaskStart,
   getOpenCodeCliPath,
-  isOpenCodeBundled,
+  isOpenCodeCliAvailable,
   getBundledOpenCodeVersion,
   cleanupVertexServiceAccountKey,
 } from './electron-options';
