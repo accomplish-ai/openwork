@@ -177,7 +177,8 @@ export async function validateApiKey(
         return { valid: true };
 
       default: {
-        // Data-driven validation: use modelsEndpoint from DEFAULT_PROVIDERS
+        // Data-driven validation: fetch from modelsEndpoint configured in DEFAULT_PROVIDERS.
+        // This enables validation for any OpenAI-compatible provider without adding new cases.
         const providerConfig = DEFAULT_PROVIDERS.find((p) => p.id === provider);
         if (providerConfig?.modelsEndpoint) {
           const { url, authStyle } = providerConfig.modelsEndpoint;
