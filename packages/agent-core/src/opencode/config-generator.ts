@@ -39,8 +39,6 @@ export interface ConfigGeneratorOptions {
   enabledProviders?: string[];
   /** Browser configuration. Defaults to { mode: 'builtin' } */
   browser?: BrowserConfig;
-  /** Enable desktop control MCP tool for native automation */
-  desktopControl?: boolean;
   /** Connected MCP remote servers with OAuth access tokens */
   connectors?: Array<{
     id: string;
@@ -488,6 +486,22 @@ Use empty array [] if no skills apply to your task.
     };
   }
 
+  // Register desktop-control MCP tool for native automation
+  mcpServers['desktop-control'] = {
+    type: 'local',
+    command: resolveMcpCommand(
+      tsxCommand,
+      mcpToolsPath,
+      'desktop-control',
+      'src/index.ts',
+      'dist/index.mjs',
+      isPackaged,
+      nodePath,
+    ),
+    enabled: true,
+    timeout: 30000,
+  };
+
   // Add connected MCP connectors as remote servers
   if (options.connectors) {
     for (const connector of options.connectors) {
@@ -592,7 +606,9 @@ Example bad narration (too terse):
     plugin: ['@tarquinen/opencode-dcp@^2.0.0'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
-        description: 'Browser automation assistant using dev-browser',
+        description: hasBrowser
+          ? 'Browser and desktop automation assistant'
+          : 'Desktop automation assistant',
         prompt: systemPrompt,
         mode: 'primary',
       },
