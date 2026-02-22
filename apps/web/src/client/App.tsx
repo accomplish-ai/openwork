@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { isRunningInElectron, getAccomplish } from './lib/accomplish';
 import { springs, variants } from './lib/animations';
 import type { ProviderId } from '@accomplish_ai/agent-core/common';
+import { Toaster } from 'sonner';
 
 // Components
 import Sidebar from './components/layout/Sidebar';
@@ -149,6 +150,7 @@ export function App() {
         <AnimatedOutletWrapper />
       </main>
       <TaskLauncher />
+      <Toaster position="bottom-right" richColors closeButton />
 
       {/* Auth Error Toast - shown when OAuth session expires */}
       <AuthErrorToast error={authError} onReLogin={handleAuthReLogin} onDismiss={clearAuthError} />

@@ -20,6 +20,7 @@ import {
   generateFileId,
   formatFileSize,
 } from '@/lib/fileUtils';
+import { toast } from 'sonner';
 
 function FileTypeIcon({
   type,
@@ -103,12 +104,16 @@ export function TaskInputBar({
       const files = Array.from(fileList);
       const remaining = MAX_FILES - attachments.length;
       if (remaining <= 0) {
+        toast.warning(`Maximum ${MAX_FILES} files allowed`);
         return;
       }
 
+      const skippedOversize: string[] = [];
+      const skippedOverLimit = Math.max(0, files.length - remaining);
       const newAttachments: FileAttachmentInfo[] = [];
       for (const file of files.slice(0, remaining)) {
         if (file.size > MAX_FILE_SIZE) {
+          skippedOversize.push(file.name);
           continue;
         }
         newAttachments.push({
@@ -118,6 +123,15 @@ export function TaskInputBar({
           type: getFileType(file.name),
           size: file.size,
         });
+      }
+
+      for (const name of skippedOversize) {
+        toast.error(`${name} exceeds ${formatFileSize(MAX_FILE_SIZE)} limit`);
+      }
+      if (skippedOverLimit > 0) {
+        toast.warning(
+          `${skippedOverLimit} file${skippedOverLimit > 1 ? 's' : ''} skipped — maximum ${MAX_FILES} allowed`,
+        );
       }
 
       if (newAttachments.length > 0) {

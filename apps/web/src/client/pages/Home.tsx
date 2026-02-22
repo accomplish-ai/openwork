@@ -4,7 +4,14 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { TaskInputBar } from '@/components/landing/TaskInputBar';
 import type { FileAttachmentInfo } from '@accomplish_ai/agent-core/common';
-import { MAX_FILES, MAX_FILE_SIZE, getFileType, generateFileId } from '@/lib/fileUtils';
+import {
+  MAX_FILES,
+  MAX_FILE_SIZE,
+  getFileType,
+  generateFileId,
+  formatFileSize,
+} from '@/lib/fileUtils';
+import { toast } from 'sonner';
 import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
@@ -163,12 +170,16 @@ export function HomePage() {
       const files = Array.from(fileList);
       const remaining = MAX_FILES - attachments.length;
       if (remaining <= 0) {
+        toast.warning(`Maximum ${MAX_FILES} files allowed`);
         return;
       }
 
+      const skippedOversize: string[] = [];
+      const skippedOverLimit = Math.max(0, files.length - remaining);
       const newAttachments: FileAttachmentInfo[] = [];
       for (const file of files.slice(0, remaining)) {
         if (file.size > MAX_FILE_SIZE) {
+          skippedOversize.push(file.name);
           continue;
         }
         newAttachments.push({
@@ -179,6 +190,16 @@ export function HomePage() {
           size: file.size,
         });
       }
+
+      for (const name of skippedOversize) {
+        toast.error(`${name} exceeds ${formatFileSize(MAX_FILE_SIZE)} limit`);
+      }
+      if (skippedOverLimit > 0) {
+        toast.warning(
+          `${skippedOverLimit} file${skippedOverLimit > 1 ? 's' : ''} skipped — maximum ${MAX_FILES} allowed`,
+        );
+      }
+
       if (newAttachments.length > 0) {
         setAttachments((prev) => [...prev, ...newAttachments]);
       }
