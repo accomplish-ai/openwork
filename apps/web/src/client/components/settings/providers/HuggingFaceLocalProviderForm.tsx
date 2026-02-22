@@ -8,7 +8,7 @@ import type {
   HuggingFaceLocalCredentials,
   ToolSupportStatus,
 } from '@accomplish_ai/agent-core/common';
-import { HF_LOCAL_DEFAULT_URL } from '@accomplish_ai/agent-core';
+import { HF_LOCAL_DEFAULT_URL, type HuggingFaceLocalModel } from '@accomplish_ai/agent-core';
 import {
   ConnectButton,
   ConnectedControls,
@@ -18,13 +18,6 @@ import {
 } from '../shared';
 
 import huggingfaceLogo from '/assets/ai-logos/huggingface.png';
-
-interface HuggingFaceLocalModel {
-  id: string;
-  displayName: string;
-  size: number;
-  toolSupport?: ToolSupportStatus;
-}
 
 interface HuggingFaceLocalProviderFormProps {
   connectedProvider?: ConnectedProvider;
@@ -114,7 +107,10 @@ export function HuggingFaceLocalProviderForm({
       className="rounded-xl border border-border bg-card p-5"
       data-testid="provider-settings-panel"
     >
-      <ProviderFormHeader logoSrc={huggingfaceLogo} providerName="HuggingFace Local" />
+      <ProviderFormHeader
+        logoSrc={huggingfaceLogo}
+        providerName={t('providers.huggingface-local')}
+      />
 
       <div className="space-y-3">
         <AnimatePresence mode="wait">
