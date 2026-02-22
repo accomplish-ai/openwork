@@ -48,13 +48,23 @@ export function extractScreenshots(output: string): {
     });
   }
 
-  const rawBase64Regex = /(?<![;,])(?:^|["\s])?(iVBORw0[A-Za-z0-9+/=]{100,})(?:["\s]|$)/g;
+  const rawBase64Regex =
+    /(?<![;,])(^|["\s])?((?:iVBORw0|\/9j\/|UklGR|R0lGOD)[A-Za-z0-9+/=]{100,})(["\s]|$)/g;
   while ((match = rawBase64Regex.exec(output)) !== null) {
-    const base64Data = match[1];
+    const base64Data = match[2];
     if (base64Data && base64Data.length > 100) {
+      let mimeType = 'image/png';
+      if (base64Data.startsWith('/9j/')) {
+        mimeType = 'image/jpeg';
+      } else if (base64Data.startsWith('UklGR')) {
+        mimeType = 'image/webp';
+      } else if (base64Data.startsWith('R0lGOD')) {
+        mimeType = 'image/gif';
+      }
+
       attachments.push({
         type: 'screenshot',
-        data: `data:image/png;base64,${base64Data}`,
+        data: `data:${mimeType};base64,${base64Data}`,
         label: 'Browser screenshot',
       });
     }
@@ -62,10 +72,12 @@ export function extractScreenshots(output: string): {
 
   let cleanedText = output
     .replace(dataUrlRegex, '[Screenshot captured]')
-    .replace(rawBase64Regex, '[Screenshot captured]');
+    .replace(rawBase64Regex, (_fullMatch, prefix = '', _data = '', suffix = '') => {
+      return `${prefix}[Screenshot captured]${suffix}`;
+    });
 
   cleanedText = cleanedText
-    .replace(/"[Screenshot captured]"/g, '"[Screenshot]"')
+    .replace(/"\[Screenshot captured\]"/g, '"[Screenshot]"')
     .replace(/\[Screenshot captured\]\[Screenshot captured\]/g, '[Screenshot captured]');
 
   return { cleanedText, attachments };

@@ -46,6 +46,9 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // MiniMax
   'MiniMax-M2': 'MiniMax M2',
   'MiniMax-M2.1': 'MiniMax M2.1',
+  'MiniMax-M2.1-highspeed': 'MiniMax M2.1 Highspeed',
+  'MiniMax-M2.5': 'MiniMax M2.5',
+  'MiniMax-M2.5-highspeed': 'MiniMax M2.5 Highspeed',
 };
 
 export const PROVIDER_PREFIXES = [
