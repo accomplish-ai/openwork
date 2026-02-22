@@ -76,5 +76,5 @@ export function writeOpenCodeAuth(
   }
 
   fs.writeFileSync(authPath, JSON.stringify(auth, null, 2));
-  console.log('[OpenCode Auth] Updated auth.json at:', authPath);
+  // console.log('[OpenCode Auth] Updated auth.json at:', authPath);
 }

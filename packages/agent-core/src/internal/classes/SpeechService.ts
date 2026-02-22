@@ -131,22 +131,11 @@ export class SpeechService {
 
     const startTime = Date.now();
 
-    console.log('[ElevenLabs] Starting transcription:', {
-      audioSize: audioData.length,
-      mimeType,
-      modelId,
-    });
-
     try {
       // Create a Blob from the Buffer for FormData
       // Use Uint8Array to ensure proper typing for Blob constructor
       const uint8Array = new Uint8Array(audioData);
       const blob = new Blob([uint8Array], { type: mimeType });
-
-      console.log('[ElevenLabs] Created blob:', {
-        blobSize: blob.size,
-        blobType: blob.type,
-      });
 
       // Create FormData for multipart upload
       const formData = new FormData();

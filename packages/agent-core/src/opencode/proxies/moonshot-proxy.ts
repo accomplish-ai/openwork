@@ -107,9 +107,7 @@ function extractAndCacheReasoningContent(responseText: string): void {
     reasoningContentCache.set(hash, fullReasoningContent);
 
     if (DEBUG) {
-      console.log(
-        `[Moonshot Proxy] Cached reasoning_content (${fullReasoningContent.length} chars) for hash: ${hash.slice(0, 50)}...`,
-      );
+      // reasoning content cached
     }
 
     if (reasoningContentCache.size > 100) {
@@ -155,14 +153,11 @@ export function transformMoonshotRequestBody(body: Buffer): Buffer {
     let modified = false;
 
     if (DEBUG) {
-      console.log('[Moonshot Proxy] Incoming request keys:', Object.keys(parsed));
+      // console.log('[Moonshot Proxy] Incoming request keys:', Object.keys(parsed));
       if (Array.isArray(parsed.messages)) {
-        console.log('[Moonshot Proxy] Message count:', parsed.messages.length);
-        parsed.messages.forEach((msg, i) => {
-          const m = msg as Record<string, unknown>;
-          console.log(
-            `[Moonshot Proxy] Message ${i}: role=${m.role}, has_tool_calls=${Boolean(m.tool_calls)}, has_reasoning_content=${'reasoning_content' in m}`,
-          );
+        // console.log('[Moonshot Proxy] Message count:', parsed.messages.length);
+        parsed.messages.forEach((_msg, _i) => {
+          const _m = _msg as Record<string, unknown>;
         });
       }
     }
@@ -173,7 +168,7 @@ export function transformMoonshotRequestBody(body: Buffer): Buffer {
         delete parsed[key];
         modified = true;
         if (DEBUG) {
-          console.log(`[Moonshot Proxy] Removed top-level key: ${key}`);
+          // console.log(`[Moonshot Proxy] Removed top-level key: ${key}`);
         }
       }
     }
@@ -205,14 +200,12 @@ export function transformMoonshotRequestBody(body: Buffer): Buffer {
           if (cachedReasoning) {
             msg.reasoning_content = cachedReasoning;
             if (DEBUG) {
-              console.log(
-                `[Moonshot Proxy] Restored reasoning_content from cache (${cachedReasoning.length} chars)`,
-              );
+              // cached reasoning injected
             }
           } else {
             msg.reasoning_content = 'Thinking...';
             if (DEBUG) {
-              console.log(`[Moonshot Proxy] No cached reasoning_content, using placeholder`);
+              // console.log(`[Moonshot Proxy] No cached reasoning_content, using placeholder`);
             }
           }
           modified = true;
@@ -238,20 +231,17 @@ export function transformMoonshotRequestBody(body: Buffer): Buffer {
     visitForMessages(parsed);
 
     if (DEBUG) {
-      console.log(`[Moonshot Proxy] Transform modified: ${modified}`);
+      // console.log(`[Moonshot Proxy] Transform modified: ${modified}`);
       if (Array.isArray(parsed.messages)) {
-        parsed.messages.forEach((msg, i) => {
-          const m = msg as Record<string, unknown>;
-          console.log(
-            `[Moonshot Proxy] After transform msg ${i}: role=${m.role}, has_reasoning_content=${'reasoning_content' in m}, has_tool_calls=${Boolean(m.tool_calls)}`,
-          );
+        parsed.messages.forEach((_msg, _i) => {
+          const _m = _msg as Record<string, unknown>;
         });
       }
     }
 
     const result = Buffer.from(JSON.stringify(parsed), 'utf8');
     if (DEBUG && modified) {
-      console.log(`[Moonshot Proxy] Body transformed: ${body.length} -> ${result.length} bytes`);
+      // console.log(`[Moonshot Proxy] Body transformed: ${body.length} -> ${result.length} bytes`);
     }
     return result;
   } catch (e) {
@@ -325,13 +315,10 @@ function proxyRequest(req: http.IncomingMessage, res: http.ServerResponse): void
 
     const rawBody = Buffer.concat(chunks);
     const contentType = req.headers['content-type'];
-    const contentEncoding = req.headers['content-encoding'];
+    const _contentEncoding = req.headers['content-encoding'];
 
     if (DEBUG) {
-      console.log(`[Moonshot Proxy] Request: ${req.method} ${req.url}`);
-      console.log(
-        `[Moonshot Proxy] Content-Type: ${contentType}, Content-Encoding: ${contentEncoding}, Body size: ${rawBody.length}`,
-      );
+      // console.log(`[Moonshot Proxy] Request: ${req.method} ${req.url}`);
     }
 
     const body =
@@ -340,7 +327,7 @@ function proxyRequest(req: http.IncomingMessage, res: http.ServerResponse): void
         : rawBody;
 
     if (DEBUG) {
-      console.log(`[Moonshot Proxy] Transformed body size: ${body.length} (was ${rawBody.length})`);
+      // console.log(`[Moonshot Proxy] Transformed body size: ${body.length} (was ${rawBody.length})`);
     }
 
     const headers = { ...req.headers } as Record<string, string | string[] | undefined>;
@@ -441,7 +428,7 @@ export async function ensureMoonshotProxy(baseURL: string): Promise<MoonshotProx
 
       server!.listen(MOONSHOT_PROXY_PORT, '127.0.0.1', () => {
         clearTimeout(timeout);
-        console.log(`[Moonshot Proxy] Listening on port ${MOONSHOT_PROXY_PORT}`);
+        // console.log(`[Moonshot Proxy] Listening on port ${MOONSHOT_PROXY_PORT}`);
         resolve();
       });
     });
@@ -473,7 +460,7 @@ export async function stopMoonshotProxy(): Promise<void> {
         console.error('[Moonshot Proxy] Error during shutdown:', err);
         reject(err);
       } else {
-        console.log('[Moonshot Proxy] Server stopped');
+        // console.log('[Moonshot Proxy] Server stopped');
         resolve();
       }
     });

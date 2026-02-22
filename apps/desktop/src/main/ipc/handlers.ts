@@ -472,14 +472,14 @@ export function registerIPCHandlers(): void {
 
   handle('api-key:validate', async (_event: IpcMainInvokeEvent, key: string) => {
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
-    console.log('[API Key] Validation requested for provider: anthropic');
+    // console.log('[API Key] Validation requested for provider: anthropic');
 
     const result = await validateApiKey('anthropic', sanitizedKey, {
       timeout: API_KEY_VALIDATION_TIMEOUT_MS,
     });
 
     if (result.valid) {
-      console.log('[API Key] Validation succeeded');
+      // console.log('[API Key] Validation succeeded');
     } else {
       console.warn('[API Key] Validation failed', { error: result.error });
     }
@@ -500,7 +500,7 @@ export function registerIPCHandlers(): void {
         return { valid: false, error: 'Unsupported provider' };
       }
 
-      console.log(`[API Key] Validation requested for provider: ${provider}`);
+      // console.log(`[API Key] Validation requested for provider: ${provider}`);
 
       if (STANDARD_VALIDATION_PROVIDERS.has(provider)) {
         let sanitizedKey: string;
@@ -526,7 +526,7 @@ export function registerIPCHandlers(): void {
         );
 
         if (result.valid) {
-          console.log(`[API Key] Validation succeeded for ${provider}`);
+          // console.log(`[API Key] Validation succeeded for ${provider}`);
         } else {
           console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
         }
@@ -545,7 +545,7 @@ export function registerIPCHandlers(): void {
         });
 
         if (result.valid) {
-          console.log(`[API Key] Validation succeeded for ${provider}`);
+          // console.log(`[API Key] Validation succeeded for ${provider}`);
         } else {
           console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
         }
@@ -553,13 +553,13 @@ export function registerIPCHandlers(): void {
         return result;
       }
 
-      console.log(`[API Key] Skipping validation for ${provider} (local/custom provider)`);
+      // console.log(`[API Key] Skipping validation for ${provider} (local/custom provider)`);
       return { valid: true };
     },
   );
 
   handle('bedrock:validate', async (_event: IpcMainInvokeEvent, credentials: string) => {
-    console.log('[Bedrock] Validation requested');
+    // console.log('[Bedrock] Validation requested');
     return validateBedrockCredentials(credentials);
   });
 
@@ -784,13 +784,6 @@ export function registerIPCHandlers(): void {
         lastValidated: Date.now(),
       };
       storage.setAzureFoundryConfig(azureConfig);
-
-      console.log('[Azure Foundry] Config saved for new provider settings:', {
-        endpoint,
-        deploymentName,
-        authType,
-        hasApiKey: !!apiKey,
-      });
     },
   );
 
@@ -1053,13 +1046,8 @@ export function registerIPCHandlers(): void {
   handle(
     'speech:transcribe',
     async (_event: IpcMainInvokeEvent, audioData: ArrayBuffer, mimeType?: string) => {
-      console.log('[IPC] speech:transcribe received:', {
-        audioDataType: typeof audioData,
-        audioDataByteLength: audioData?.byteLength,
-        mimeType,
-      });
       const buffer = Buffer.from(audioData);
-      console.log('[IPC] Converted to buffer:', { bufferLength: buffer.length });
+      // console.log('[IPC] Converted to buffer:', { bufferLength: buffer.length });
       return transcribeAudio(buffer, mimeType);
     },
   );

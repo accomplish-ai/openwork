@@ -72,7 +72,7 @@ export async function testLiteLLMConnection(
       };
     });
 
-    console.log(`[LiteLLM] Connection successful, found ${models.length} models`);
+    // console.log(`[LiteLLM] Connection successful, found ${models.length} models`);
     return { success: true, models };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Connection failed';
@@ -150,7 +150,7 @@ export async function fetchLiteLLMModels(
       };
     });
 
-    console.log(`[LiteLLM] Fetched ${models.length} models`);
+    // console.log(`[LiteLLM] Fetched ${models.length} models`);
     return { success: true, models };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch models';

@@ -46,11 +46,11 @@ if (process.argv.includes('--e2e-mock-tasks') || process.env.E2E_MOCK_TASK_EVENT
 
 if (process.env.CLEAN_START === '1') {
   const userDataPath = app.getPath('userData');
-  console.log('[Clean Mode] Clearing userData directory:', userDataPath);
+  // console.log('[Clean Mode] Clearing userData directory:', userDataPath);
   try {
     if (fs.existsSync(userDataPath)) {
       fs.rmSync(userDataPath, { recursive: true, force: true });
-      console.log('[Clean Mode] Successfully cleared userData');
+      // console.log('[Clean Mode] Successfully cleared userData');
     }
   } catch (err) {
     console.error('[Clean Mode] Failed to clear userData:', err);
@@ -59,7 +59,7 @@ if (process.env.CLEAN_START === '1') {
   // Reversing this order would cause getStorage() to re-create the singleton.
   clearSecureStorage();
   resetStorageSingleton();
-  console.log('[Clean Mode] All singletons reset');
+  // console.log('[Clean Mode] All singletons reset');
 }
 
 app.setName('Accomplish');
@@ -89,7 +89,7 @@ function getPreloadPath(): string {
 }
 
 function createWindow() {
-  console.log('[Main] Creating main application window');
+  // console.log('[Main] Creating main application window');
 
   const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
   const iconPath = app.isPackaged
@@ -101,7 +101,7 @@ function createWindow() {
   }
 
   const preloadPath = getPreloadPath();
-  console.log('[Main] Using preload script:', preloadPath);
+  // console.log('[Main] Using preload script:', preloadPath);
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -173,11 +173,11 @@ function createWindow() {
   });
 
   if (ROUTER_URL) {
-    console.log('[Main] Loading from router URL:', ROUTER_URL);
+    // console.log('[Main] Loading from router URL:', ROUTER_URL);
     mainWindow.loadURL(ROUTER_URL);
   } else {
     const indexPath = path.join(WEB_DIST, 'index.html');
-    console.log('[Main] Loading from file:', indexPath);
+    // console.log('[Main] Loading from file:', indexPath);
     mainWindow.loadFile(indexPath);
   }
 }
@@ -206,7 +206,7 @@ process.on('unhandledRejection', (reason) => {
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  console.log('[Main] Second instance attempted; quitting');
+  // console.log('[Main] Second instance attempted; quitting');
   app.quit();
 } else {
   initializeLogCollector();
@@ -221,12 +221,12 @@ if (!gotTheLock) {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-      console.log('[Main] Focused existing instance after second-instance event');
+      // console.log('[Main] Focused existing instance after second-instance event');
 
       if (process.platform === 'win32') {
         const protocolUrl = commandLine.find((arg) => arg.startsWith('accomplish://'));
         if (protocolUrl) {
-          console.log('[Main] Received protocol URL from second-instance:', protocolUrl);
+          // console.log('[Main] Received protocol URL from second-instance:', protocolUrl);
           if (protocolUrl.startsWith('accomplish://callback/mcp')) {
             mainWindow.webContents.send('auth:mcp-callback', protocolUrl);
           } else if (protocolUrl.startsWith('accomplish://callback')) {
@@ -238,13 +238,13 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
-    console.log('[Main] Electron app ready, version:', app.getVersion());
+    // console.log('[Main] Electron app ready, version:', app.getVersion());
 
     if (process.env.CLEAN_START !== '1') {
       try {
         const didMigrate = migrateLegacyData();
         if (didMigrate) {
-          console.log('[Main] Migrated data from legacy userData path');
+          // console.log('[Main] Migrated data from legacy userData path');
         }
       } catch (err) {
         console.error('[Main] Legacy data migration failed:', err);
@@ -281,7 +281,7 @@ if (!gotTheLock) {
               `[Main] Provider ${providerId} has api_key auth but key not found in secure storage`,
             );
             storage.removeConnectedProvider(providerId);
-            console.log(`[Main] Removed provider ${providerId} due to missing API key`);
+            // console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
         }
       }
@@ -310,7 +310,7 @@ if (!gotTheLock) {
     }
 
     registerIPCHandlers();
-    console.log('[Main] IPC handlers registered');
+    // console.log('[Main] IPC handlers registered');
 
     createWindow();
 
@@ -322,7 +322,7 @@ if (!gotTheLock) {
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
-        console.log('[Main] Application reactivated; recreated window');
+        // console.log('[Main] Application reactivated; recreated window');
       }
     });
   });

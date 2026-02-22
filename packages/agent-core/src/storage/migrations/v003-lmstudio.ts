@@ -8,13 +8,13 @@ export const migration: Migration = {
       ALTER TABLE app_settings
       ADD COLUMN lmstudio_config TEXT
     `);
-    console.log('[v003] Added lmstudio_config column');
+    // console.log('[v003] Added lmstudio_config column');
   },
   down(db: Database): void {
     db.exec(`
       ALTER TABLE app_settings
       DROP COLUMN lmstudio_config
     `);
-    console.log('[v003] Removed lmstudio_config column');
+    // console.log('[v003] Removed lmstudio_config column');
   },
 };

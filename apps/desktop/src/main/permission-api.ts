@@ -136,7 +136,7 @@ export function startPermissionApiServer(): http.Server {
   });
 
   server.listen(PERMISSION_API_PORT, '127.0.0.1', () => {
-    console.log(`[Permission API] Server listening on port ${PERMISSION_API_PORT}`);
+    // console.log(`[Permission API] Server listening on port ${PERMISSION_API_PORT}`);
   });
 
   server.on('error', (error: NodeJS.ErrnoException) => {
@@ -235,7 +235,7 @@ export function startQuestionApiServer(): http.Server {
   });
 
   server.listen(QUESTION_API_PORT, '127.0.0.1', () => {
-    console.log(`[Question API] Server listening on port ${QUESTION_API_PORT}`);
+    // console.log(`[Question API] Server listening on port ${QUESTION_API_PORT}`);
   });
 
   server.on('error', (error: NodeJS.ErrnoException) => {

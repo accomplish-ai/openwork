@@ -54,27 +54,27 @@ export function setStoredVersion(db: Database, version: number): void {
 export function runMigrations(db: Database): void {
   const storedVersion = getStoredVersion(db);
 
-  console.log(`[Migrations] Stored version: ${storedVersion}, App version: ${CURRENT_VERSION}`);
+  // console.log(`[Migrations] Stored version: ${storedVersion}, App version: ${CURRENT_VERSION}`);
 
   if (storedVersion > CURRENT_VERSION) {
     throw new FutureSchemaError(storedVersion, CURRENT_VERSION);
   }
 
   if (storedVersion === CURRENT_VERSION) {
-    console.log('[Migrations] Database is up to date');
+    // console.log('[Migrations] Database is up to date');
     return;
   }
 
   for (const migration of migrations) {
     if (migration.version > storedVersion) {
-      console.log(`[Migrations] Running migration v${migration.version}`);
+      // console.log(`[Migrations] Running migration v${migration.version}`);
 
       try {
         db.transaction(() => {
           migration.up(db);
           setStoredVersion(db, migration.version);
         })();
-        console.log(`[Migrations] Migration v${migration.version} complete`);
+        // console.log(`[Migrations] Migration v${migration.version} complete`);
       } catch (err) {
         throw new MigrationError(
           migration.version,
@@ -84,7 +84,7 @@ export function runMigrations(db: Database): void {
     }
   }
 
-  console.log('[Migrations] All migrations complete');
+  // console.log('[Migrations] All migrations complete');
 }
 
 export { FutureSchemaError, MigrationError, CorruptDatabaseError } from './errors.js';

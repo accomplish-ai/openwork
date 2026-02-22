@@ -121,10 +121,10 @@ export async function testLMStudioConnection(
         toolSupport,
       });
 
-      console.log(`[LM Studio] Model ${m.id}: toolSupport=${toolSupport}`);
+      // console.log(`[LM Studio] Model ${m.id}: toolSupport=${toolSupport}`);
     }
 
-    console.log(`[LM Studio] Connection successful, found ${models.length} models`);
+    // console.log(`[LM Studio] Connection successful, found ${models.length} models`);
     return { success: true, models };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Connection failed';

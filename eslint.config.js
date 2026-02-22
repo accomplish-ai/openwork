@@ -15,6 +15,7 @@ export default tseslint.config(
       '**/playwright-report/**',
       'scripts/**',
       '**/scripts/**/*.cjs',
+      'safe-cleanup.js',
     ],
   },
   eslint.configs.recommended,

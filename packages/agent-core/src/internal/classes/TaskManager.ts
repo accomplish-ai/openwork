@@ -109,9 +109,6 @@ export class TaskManager {
     }
 
     if (this.activeTasks.size >= this.maxConcurrentTasks) {
-      console.log(
-        `[TaskManager] At max concurrent tasks (${this.maxConcurrentTasks}). Queueing task ${taskId}`,
-      );
       return this.queueTask(taskId, config, callbacks);
     }
 
@@ -133,7 +130,7 @@ export class TaskManager {
     };
 
     this.taskQueue.push(queuedTask);
-    console.log(`[TaskManager] Task ${taskId} queued. Queue length: ${this.taskQueue.length}`);
+    // console.log(`[TaskManager] Task ${taskId} queued. Queue length: ${this.taskQueue.length}`);
 
     return {
       id: taskId,
@@ -278,7 +275,7 @@ export class TaskManager {
     };
     this.activeTasks.set(taskId, managedTask);
 
-    console.log(`[TaskManager] Executing task ${taskId}. Active tasks: ${this.activeTasks.size}`);
+    // console.log(`[TaskManager] Executing task ${taskId}. Active tasks: ${this.activeTasks.size}`);
 
     const task: Task = {
       id: taskId,
@@ -326,9 +323,6 @@ export class TaskManager {
   private async processQueue(): Promise<void> {
     while (this.taskQueue.length > 0 && this.activeTasks.size < this.maxConcurrentTasks) {
       const nextTask = this.taskQueue.shift()!;
-      console.log(
-        `[TaskManager] Processing queue. Starting task ${nextTask.taskId}. Active: ${this.activeTasks.size}, Remaining in queue: ${this.taskQueue.length}`,
-      );
 
       nextTask.callbacks.onStatusChange?.('running');
 
@@ -341,14 +335,14 @@ export class TaskManager {
     }
 
     if (this.taskQueue.length === 0) {
-      console.log('[TaskManager] Queue empty, no more tasks to process');
+      // console.log('[TaskManager] Queue empty, no more tasks to process');
     }
   }
 
   async cancelTask(taskId: string): Promise<void> {
     const queueIndex = this.taskQueue.findIndex((q) => q.taskId === taskId);
     if (queueIndex !== -1) {
-      console.log(`[TaskManager] Cancelling queued task ${taskId}`);
+      // console.log(`[TaskManager] Cancelling queued task ${taskId}`);
       this.taskQueue.splice(queueIndex, 1);
       return;
     }
@@ -359,7 +353,7 @@ export class TaskManager {
       return;
     }
 
-    console.log(`[TaskManager] Cancelling running task ${taskId}`);
+    // console.log(`[TaskManager] Cancelling running task ${taskId}`);
 
     try {
       await managedTask.adapter.cancelTask();
@@ -376,7 +370,7 @@ export class TaskManager {
       return;
     }
 
-    console.log(`[TaskManager] Interrupting task ${taskId}`);
+    // console.log(`[TaskManager] Interrupting task ${taskId}`);
     await managedTask.adapter.interruptTask();
   }
 
@@ -386,7 +380,7 @@ export class TaskManager {
       return false;
     }
 
-    console.log(`[TaskManager] Removing task ${taskId} from queue`);
+    // console.log(`[TaskManager] Removing task ${taskId} from queue`);
     this.taskQueue.splice(queueIndex, 1);
     return true;
   }
@@ -448,7 +442,7 @@ export class TaskManager {
   }
 
   cancelAllTasks(): void {
-    console.log(`[TaskManager] Cancelling all ${this.activeTasks.size} active tasks`);
+    // console.log(`[TaskManager] Cancelling all ${this.activeTasks.size} active tasks`);
 
     this.taskQueue = [];
 
@@ -462,20 +456,13 @@ export class TaskManager {
   private cleanupTask(taskId: string): void {
     const managedTask = this.activeTasks.get(taskId);
     if (managedTask) {
-      console.log(`[TaskManager] Cleaning up task ${taskId}`);
+      // console.log(`[TaskManager] Cleaning up task ${taskId}`);
       managedTask.cleanup();
       this.activeTasks.delete(taskId);
-      console.log(
-        `[TaskManager] Task ${taskId} cleaned up. Active tasks: ${this.activeTasks.size}`,
-      );
     }
   }
 
   dispose(): void {
-    console.log(
-      `[TaskManager] Disposing all tasks (${this.activeTasks.size} active, ${this.taskQueue.length} queued)`,
-    );
-
     this.taskQueue = [];
 
     for (const [taskId, managedTask] of this.activeTasks) {
@@ -497,7 +484,7 @@ export class TaskManager {
       console.error('[TaskManager] Failed to stop Moonshot proxy:', err);
     });
 
-    console.log('[TaskManager] All tasks disposed');
+    // console.log('[TaskManager] All tasks disposed');
   }
 }
 

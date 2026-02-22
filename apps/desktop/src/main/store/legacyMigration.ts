@@ -48,7 +48,7 @@ export function migrateLegacyData(): boolean {
 
     const currentDb = path.join(currentPath, NEW_DB_NAME);
     if (fs.existsSync(currentDb)) {
-      console.log('[Migration] Current userData already has data, skipping migration');
+      // console.log('[Migration] Current userData already has data, skipping migration');
       return false;
     }
 
@@ -56,9 +56,6 @@ export function migrateLegacyData(): boolean {
     for (const legacyDbName of legacyDbNames) {
       const currentLegacyDb = path.join(currentPath, legacyDbName);
       if (fs.existsSync(currentLegacyDb)) {
-        console.log(
-          `[Migration] Found legacy database name in current userData path: ${legacyDbName}`,
-        );
         const filesToMigrate = getFilesToMigrate(legacyDbName);
         let migratedCount = 0;
         for (const file of filesToMigrate) {
@@ -68,7 +65,7 @@ export function migrateLegacyData(): boolean {
           try {
             if (fs.existsSync(src)) {
               fs.copyFileSync(src, dest);
-              console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
+              // console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
               migratedCount++;
             }
           } catch (err) {
@@ -76,7 +73,7 @@ export function migrateLegacyData(): boolean {
           }
         }
         if (migratedCount > 0) {
-          console.log(`[Migration] In-place migration complete. Copied ${migratedCount} files.`);
+          // console.log(`[Migration] In-place migration complete. Copied ${migratedCount} files.`);
           return true;
         }
       }
@@ -102,12 +99,12 @@ export function migrateLegacyData(): boolean {
           continue;
         }
 
-        console.log(`[Migration] Found legacy data at: ${legacyPath.path}`);
+        // console.log(`[Migration] Found legacy data at: ${legacyPath.path}`);
 
         try {
           if (!fs.existsSync(currentPath)) {
             fs.mkdirSync(currentPath, { recursive: true });
-            console.log(`[Migration] Created userData directory: ${currentPath}`);
+            // console.log(`[Migration] Created userData directory: ${currentPath}`);
           }
         } catch (err) {
           console.error('[Migration] Failed to create userData directory:', err);
@@ -123,7 +120,7 @@ export function migrateLegacyData(): boolean {
           try {
             if (fs.existsSync(src)) {
               fs.copyFileSync(src, dest);
-              console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
+              // console.log(`[Migration] Copied: ${file.src} -> ${file.dest}`);
               migratedCount++;
             }
           } catch (err) {
@@ -131,15 +128,15 @@ export function migrateLegacyData(): boolean {
           }
         }
 
-        console.log(`[Migration] Migration complete. Copied ${migratedCount} files.`);
-        console.log(`[Migration] Original data preserved at: ${legacyPath.path}`);
+        // console.log(`[Migration] Migration complete. Copied ${migratedCount} files.`);
+        // console.log(`[Migration] Original data preserved at: ${legacyPath.path}`);
         return migratedCount > 0;
       } catch (err) {
         console.error(`[Migration] Error processing legacy path ${legacyPath.path}:`, err);
       }
     }
 
-    console.log('[Migration] No legacy data found to migrate');
+    // console.log('[Migration] No legacy data found to migrate');
     return false;
   } catch (err) {
     console.error('[Migration] Unexpected error during migration:', err);

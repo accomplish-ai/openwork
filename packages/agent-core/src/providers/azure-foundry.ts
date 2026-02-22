@@ -108,7 +108,7 @@ export async function testAzureFoundryConnection(
       }
     }
 
-    console.log('[Azure Foundry] Connection test successful for deployment:', deploymentName);
+    // console.log('[Azure Foundry] Connection test successful for deployment:', deploymentName);
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Connection failed';
@@ -188,7 +188,7 @@ export async function validateAzureFoundry(
 
   // Skip validation if missing required config
   if (!baseUrl || !deploymentName) {
-    console.log('[Azure Foundry] Skipping validation (missing config or options)');
+    // console.log('[Azure Foundry] Skipping validation (missing config or options)');
     return { valid: true };
   }
 
@@ -253,7 +253,7 @@ export async function validateAzureFoundry(
     }
 
     if (response.ok) {
-      console.log('[Azure Foundry] Validation succeeded');
+      // console.log('[Azure Foundry] Validation succeeded');
       return { valid: true };
     }
 

@@ -53,8 +53,8 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   const nodePath = getNodePath();
   const bundledNodeBinPath = nodePath ? path.dirname(nodePath) : undefined;
 
-  console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
-  console.log('[OpenCode Config] User data path:', userDataPath);
+  // console.log('[OpenCode Config] MCP tools path:', mcpToolsPath);
+  // console.log('[OpenCode Config] User data path:', userDataPath);
 
   // Use the extracted buildProviderConfigs from core package
   const { providerConfigs, enabledProviders, modelOverride } = await buildProviderConfigs({
@@ -146,9 +146,9 @@ export async function generateOpenCodeConfig(azureFoundryToken?: string): Promis
   process.env.OPENCODE_CONFIG = result.configPath;
   process.env.OPENCODE_CONFIG_DIR = path.dirname(result.configPath);
 
-  console.log('[OpenCode Config] Generated config at:', result.configPath);
-  console.log('[OpenCode Config] OPENCODE_CONFIG env set to:', process.env.OPENCODE_CONFIG);
-  console.log('[OpenCode Config] OPENCODE_CONFIG_DIR env set to:', process.env.OPENCODE_CONFIG_DIR);
+  // console.log('[OpenCode Config] Generated config at:', result.configPath);
+  // console.log('[OpenCode Config] OPENCODE_CONFIG env set to:', process.env.OPENCODE_CONFIG);
+  // console.log('[OpenCode Config] OPENCODE_CONFIG_DIR env set to:', process.env.OPENCODE_CONFIG_DIR);
 
   return result.configPath;
 }

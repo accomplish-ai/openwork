@@ -35,7 +35,7 @@ export async function generateTaskSummary(prompt: string, getApiKey: GetApiKeyFn
     try {
       const summary = await callProvider(provider, apiKey, prompt);
       if (summary) {
-        console.log(`[Summarizer] Generated summary using ${provider}: "${summary}"`);
+        // console.log(`[Summarizer] Generated summary using ${provider}: "${summary}"`);
         return summary;
       }
     } catch (error) {
@@ -45,7 +45,7 @@ export async function generateTaskSummary(prompt: string, getApiKey: GetApiKeyFn
   }
 
   // Fallback: truncate prompt
-  console.log('[Summarizer] All providers failed, using truncated prompt');
+  // console.log('[Summarizer] All providers failed, using truncated prompt');
   return truncatePrompt(prompt);
 }
 

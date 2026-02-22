@@ -24,11 +24,11 @@ export class OAuthBrowserFlow {
 
   async start(): Promise<LoginResult> {
     if (this.isInProgress()) {
-      console.log('[OAuthBrowserFlow] Cancelling previous flow before starting new one');
+      // console.log('[OAuthBrowserFlow] Cancelling previous flow before starting new one');
       await this.cancel();
       try {
         await waitForPortRelease(1455, 2000);
-        console.log('[OAuthBrowserFlow] Port 1455 released');
+        // console.log('[OAuthBrowserFlow] Port 1455 released');
       } catch {
         console.warn('[OAuthBrowserFlow] Port 1455 still in use after 2000ms');
       }
@@ -131,11 +131,11 @@ export class OAuthBrowserFlow {
 
   async cancel(): Promise<void> {
     if (!this.activePty) {
-      console.log('[OAuthBrowserFlow] No active flow to cancel');
+      // console.log('[OAuthBrowserFlow] No active flow to cancel');
       return;
     }
 
-    console.log('[OAuthBrowserFlow] Cancelling active OAuth flow');
+    // console.log('[OAuthBrowserFlow] Cancelling active OAuth flow');
 
     const ptyProcess = this.activePty;
 
@@ -149,7 +149,7 @@ export class OAuthBrowserFlow {
     const gracefulExited = await this.waitForExit(ptyProcess, 1000);
 
     if (!gracefulExited && this.activePty === ptyProcess) {
-      console.log('[OAuthBrowserFlow] Force killing after graceful timeout');
+      // console.log('[OAuthBrowserFlow] Force killing after graceful timeout');
       try {
         ptyProcess.kill();
       } catch (err) {
@@ -163,7 +163,7 @@ export class OAuthBrowserFlow {
   dispose(): void {
     if (this.isDisposed) return;
 
-    console.log('[OAuthBrowserFlow] Disposing');
+    // console.log('[OAuthBrowserFlow] Disposing');
     this.isDisposed = true;
 
     if (this.activePty) {

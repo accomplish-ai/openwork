@@ -1,0 +1,114 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/david/Documents/GitHub/accomplish/apps/desktop[39m
+
+[90mstdout[2m | __tests__/unit/main/ipc/handlers.screencast.unit.test.ts
+[22m[39m[agent-core] u2d sync test
+
+node.exe : 
+[90mstderr[2m | __te
+sts__/unit/main/ipc/ha
+ndlers.screencast.unit
+.test.ts[2m > 
+[22m[2mScreencast 
+IPC Handlers[2m > [2
+2m[2mbrowser:start-sc
+reencast[2m > 
+[22m[2mshould throw 
+when the start 
+endpoint returns an 
+error
+En línea: 1 Carácter: 
+1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ([90mstder   
+ r[2m...eturns an    
+ error:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+[22m[39mIPC handler 
+browser:start-screenca
+st failed Error: 
+Failed to start 
+screencast: Page not 
+found
+    at C:/Users/david/
+Documents/GitHub/accom
+plish/apps/desktop/src
+/main/ipc/handlers.ts:
+1246:13
+[90m    at processTic
+ksAndRejections (node:
+internal/process/task_
+queues:103:5)[39m
+    at C:/Users/david/
+Documents/GitHub/accom
+plish/apps/desktop/src
+/main/ipc/handlers.ts:
+133:14
+    at C:/Users/david/
+Documents/GitHub/accom
+plish/apps/desktop/__t
+ests__/unit/main/ipc/h
+andlers.screencast.uni
+t.test.ts:428:7
+    at file:///C:/User
+s/david/Documents/GitH
+ub/accomplish/node_mod
+ules/[4m.pnpm[24m/@v
+itest+runner@4.0.17/no
+de_modules/[4m@vitest
+/runner[24m/dist/inde
+x.js:915:20
+
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould register the handler[32m 11[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould POST to the dev-browser start endpoint with pageName[32m 12[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould create a WebSocket to the correct ws:// URL[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould register message, close, and error listeners on the WebSocket[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould throw when the start endpoint returns an error[32m 22[2mms[22m[39m
+[90mstderr[2m | __te
+sts__/unit/main/ipc/ha
+ndlers.screencast.unit
+.test.ts[2m > 
+[22m[2mScreencast 
+IPC Handlers[2m > [2
+2m[2mbrowser:start-sc
+reencast[2m > 
+[22m[2mshould send 
+error status when 
+WebSocket errors
+[22m[39m[IPC] 
+Screencast WebSocket 
+error: Connection 
+refused
+
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould forward frame messages to the renderer via IPC[32m 49[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould send idle status when WebSocket closes[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould send error status when WebSocket errors[32m 7[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:start-screencast[2m > [22mshould close the WebSocket when sender is destroyed[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:stop-screencast[2m > [22mshould register the handler[32m 3[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:stop-screencast[2m > [22mshould close the active WebSocket[32m 11[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:stop-screencast[2m > [22mshould POST to the dev-browser stop endpoint[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:stop-screencast[2m > [22mshould be safe to call when no screencast is active[32m 9[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22mbrowser:stop-screencast[2m > [22mshould handle fetch errors gracefully when stopping[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22midempotency (memory leak prevention)[2m > [22mshould close the previous WebSocket when start is called twice[32m 3[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22midempotency (memory leak prevention)[2m > [22mshould send different pageName for each start call[32m 3[2mms[22m[39m
+ [32mÔ£ô[39m [30m[42m unit [49m[39m __tests__/unit/main/ipc/handlers.screencast.unit.test.ts[2m > [22mScreencast IPC Handlers[2m > [22midempotency (memory leak prevention)[2m > [22mshould not leak after start-stop-start cycle[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m17 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 17:50:45
+[2m   Duration [22m 3.04s[2m (transform 1.03s, setup 64ms, import 2.51s, tests 170ms, environment 0ms)[22m
+

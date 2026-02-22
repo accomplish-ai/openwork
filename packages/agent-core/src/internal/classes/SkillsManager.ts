@@ -27,7 +27,7 @@ export class SkillsManager {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('[SkillsManager] Initializing...');
+    // console.log('[SkillsManager] Initializing...');
 
     if (!fs.existsSync(this.userSkillsPath)) {
       fs.mkdirSync(this.userSkillsPath, { recursive: true });
@@ -36,11 +36,11 @@ export class SkillsManager {
     await this.resync();
 
     this.initialized = true;
-    console.log('[SkillsManager] Initialized');
+    // console.log('[SkillsManager] Initialized');
   }
 
   async resync(): Promise<Skill[]> {
-    console.log('[SkillsManager] Resyncing skills...');
+    // console.log('[SkillsManager] Resyncing skills...');
 
     const existingSkills = this.getAllSkills();
     const existingById = new Map(existingSkills.map((s) => [s.id, s]));
@@ -78,14 +78,11 @@ export class SkillsManager {
 
     for (const existingSkill of existingSkills) {
       if (!processedPaths.has(existingSkill.filePath)) {
-        console.log(
-          `[SkillsManager] Removing stale skill: ${existingSkill.name} (${existingSkill.filePath})`,
-        );
         dbDeleteSkill(existingSkill.id);
       }
     }
 
-    console.log(`[SkillsManager] Synced ${allFoundSkills.length} skills`);
+    // console.log(`[SkillsManager] Synced ${allFoundSkills.length} skills`);
 
     return this.getAllSkills();
   }
@@ -241,7 +238,7 @@ export class SkillsManager {
   private async addFromUrl(rawUrl: string): Promise<Skill> {
     const fetchUrl = this.resolveGithubRawUrl(rawUrl);
 
-    console.log('[SkillsManager] Fetching from:', fetchUrl);
+    // console.log('[SkillsManager] Fetching from:', fetchUrl);
 
     const response = await fetch(fetchUrl);
     if (!response.ok) {
