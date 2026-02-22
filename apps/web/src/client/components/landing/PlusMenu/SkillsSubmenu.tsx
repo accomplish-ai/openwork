@@ -48,6 +48,9 @@ export function SkillsSubmenu({
           placeholder={t('skills.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
           className="h-8 text-sm"
           autoFocus
         />
@@ -146,7 +149,12 @@ export function SkillsSubmenu({
           {t('skills.manage')}
         </button>
         <motion.button
-          onClick={onRefresh}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRefresh();
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
           disabled={isRefreshing}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] text-muted-foreground bg-secondary border border-border rounded-md hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
           whileTap={{ scale: 0.95 }}
