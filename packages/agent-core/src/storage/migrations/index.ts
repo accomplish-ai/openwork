@@ -15,7 +15,7 @@ import { migration as v005 } from './v005-task-todos.js';
 import { migration as v006 } from './v006-skills.js';
 import { migration as v007 } from './v007-connectors.js';
 import { migration as v008 } from './v008-theme.js';
-import { migration as v009 } from './v011-sandbox.js';
+import { migration as v009 } from './v009-sandbox.js';
 
 const migrations: Migration[] = [v001, v002, v003, v004, v005, v006, v007, v008, v009];
 

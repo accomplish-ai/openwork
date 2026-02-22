@@ -51,6 +51,7 @@ import type {
   OAuthMetadata,
   OAuthClientRegistration,
 } from '@accomplish_ai/agent-core';
+import type { SandboxConfig } from '@accomplish_ai/agent-core/common';
 import {
   discoverOAuthMetadata,
   registerOAuthClient,
@@ -1220,10 +1221,26 @@ export function registerIPCHandlers(): void {
     return storage.getSandboxConfig();
   });
 
-  handle('settings:sandbox-config:set', async (_event: IpcMainInvokeEvent, configJson: string) => {
-    const config = configJson ? JSON.parse(configJson) : null;
-    storage.setSandboxConfig(config);
-  });
+  handle(
+    'settings:sandbox-config:set',
+    async (_event: IpcMainInvokeEvent, config: SandboxConfig | null) => {
+      if (config !== null) {
+        if (!['none', 'docker'].includes(config.mode)) {
+          throw new Error('Invalid sandbox config: mode must be "none" or "docker"');
+        }
+        if (typeof config.networkPolicy?.allowOutbound !== 'boolean') {
+          throw new Error('Invalid sandbox config: networkPolicy.allowOutbound must be a boolean');
+        }
+        if (config.dockerImage != null && /\s/.test(String(config.dockerImage).trim())) {
+          throw new Error('Invalid sandbox config: dockerImage must not contain whitespace');
+        }
+        if (config.allowedPaths !== undefined && !Array.isArray(config.allowedPaths)) {
+          throw new Error('Invalid sandbox config: allowedPaths must be an array');
+        }
+      }
+      storage.setSandboxConfig(config);
+    },
+  );
 
   // ── MCP Connectors ──────────────────────────────────────────────────
 

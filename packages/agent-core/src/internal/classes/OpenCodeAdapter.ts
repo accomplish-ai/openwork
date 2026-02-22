@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import * as pty from 'node-pty';
 import { EventEmitter } from 'events';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -253,6 +254,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       let spawnEnv = env as { [key: string]: string };
 
       if (sandboxConfig?.mode === 'docker') {
+        try {
+          execFileSync('docker', ['info'], { stdio: 'ignore', timeout: 5000 });
+        } catch {
+          throw new Error(
+            'Docker is not available. Please ensure Docker is installed and the daemon is running.',
+          );
+        }
+
         const dockerArgs = ['run', '--rm', '-i'];
 
         // Mount working directory
@@ -281,7 +290,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         dockerArgs.push(image);
 
         // Run the original command inside the container
-        dockerArgs.push('sh', '-c', `${spawnFile} ${spawnArgs.join(' ')}`);
+        dockerArgs.push('sh', '-c', this.buildShellCommand(spawnFile, spawnArgs));
 
         spawnCmd = 'docker';
         finalSpawnArgs = dockerArgs;
