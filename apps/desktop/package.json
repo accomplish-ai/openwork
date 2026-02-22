@@ -109,7 +109,8 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
-      "!node_modules/@accomplish_ai/**"
+      "!node_modules/@accomplish_ai/**",
+      "node_modules/opencode-linux-x64/**"
     ],
     "extraResources": [
       {
