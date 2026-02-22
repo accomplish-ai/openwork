@@ -5,6 +5,7 @@
   "buttons": {
     "send": "Send",
     "submit": "Submit",
+    "stop": "Stop",
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
