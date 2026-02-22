@@ -263,7 +263,8 @@
     "whatsapp": {
       "connect": "Connect WhatsApp",
       "scanQr": "Scan the QR code below with your WhatsApp app to connect this device. Go to WhatsApp > Settings > Linked Devices > Link a Device.",
-      "qrPlaceholder": "QR code will appear here when the WhatsApp service starts"
+      "qrPlaceholder": "QR code will appear here when the WhatsApp service starts",
+      "securityNotice": "By connecting WhatsApp, you grant Accomplish access to your WhatsApp messages and contacts. All data remains on your device and is not shared externally."
     }
   },
   "appearance": {

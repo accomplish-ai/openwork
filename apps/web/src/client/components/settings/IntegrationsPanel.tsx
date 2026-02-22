@@ -78,6 +78,9 @@ function WhatsAppQRSection({
         {t('integrations.whatsapp.connect')}
       </div>
       <p className="text-xs text-muted-foreground mb-3">{t('integrations.whatsapp.scanQr')}</p>
+      <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 mb-3 text-xs text-yellow-700 dark:text-yellow-400">
+        {t('integrations.whatsapp.securityNotice')}
+      </div>
       <div className="flex items-center justify-center rounded-lg bg-white p-6 dark:bg-gray-100">
         <div className="text-center">
           <div className="h-48 w-48 rounded-lg bg-muted flex items-center justify-center mx-auto">
