@@ -125,7 +125,10 @@ export function PlusMenu({
             <Paperclip className="h-4 w-4 mr-2 shrink-0" />
             {t('plusMenu.attachFiles')}
             {attachmentCount > 0 && (
-              <span className="ml-auto pl-4 text-[10px] text-muted-foreground whitespace-nowrap">
+              <span
+                className="ml-auto pl-4 text-[10px] text-muted-foreground whitespace-nowrap"
+                aria-label={`${attachmentCount} of ${maxAttachments} files attached`}
+              >
                 {attachmentCount}/{maxAttachments}
               </span>
             )}

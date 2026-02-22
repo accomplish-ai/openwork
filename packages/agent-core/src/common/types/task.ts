@@ -22,11 +22,17 @@ export interface TaskConfig {
   files?: FileAttachmentInfo[];
 }
 
+/** Metadata for a user-attached file in a task. */
 export interface FileAttachmentInfo {
+  /** Unique identifier for this attachment */
   id: string;
+  /** Original filename */
   name: string;
+  /** Absolute or working-directory-relative file path */
   path: string;
+  /** Categorized file type based on extension */
   type: 'image' | 'text' | 'code' | 'pdf' | 'other';
+  /** File size in bytes */
   size: number;
 }
 

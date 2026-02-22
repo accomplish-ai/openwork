@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { TaskInputBar } from '@/components/landing/TaskInputBar';
 import type { FileAttachmentInfo } from '@accomplish_ai/agent-core/common';
+import { MAX_FILES, MAX_FILE_SIZE, getFileType, generateFileId } from '@/lib/fileUtils';
 import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
@@ -160,33 +161,21 @@ export function HomePage() {
   const addFiles = useCallback(
     (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
-      const remaining = 5 - attachments.length;
-      if (remaining <= 0) return;
+      const remaining = MAX_FILES - attachments.length;
+      if (remaining <= 0) {
+        return;
+      }
 
-      const maxSize = 10 * 1024 * 1024;
       const newAttachments: FileAttachmentInfo[] = [];
       for (const file of files.slice(0, remaining)) {
-        if (file.size > maxSize) continue;
-        const ext = file.name.split('.').pop()?.toLowerCase() || '';
-        let type: FileAttachmentInfo['type'] = 'other';
-        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-          type = 'image';
-        } else if (['txt', 'md', 'csv', 'log', 'xml', 'html', 'yml', 'yaml'].includes(ext)) {
-          type = 'text';
-        } else if (
-          ['js', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'json', 'css'].includes(
-            ext,
-          )
-        ) {
-          type = 'code';
-        } else if (ext === 'pdf') {
-          type = 'pdf';
+        if (file.size > MAX_FILE_SIZE) {
+          continue;
         }
         newAttachments.push({
-          id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          id: generateFileId(),
           name: file.name,
           path: (file as File & { path?: string }).path || file.name,
-          type,
+          type: getFileType(file.name),
           size: file.size,
         });
       }
@@ -205,6 +194,7 @@ export function HomePage() {
       if (input.files) {
         addFiles(input.files);
       }
+      input.remove();
     };
     input.click();
   }, [addFiles]);
@@ -261,7 +251,7 @@ export function HomePage() {
                     onAttachFiles={handleAttachFiles}
                     disabled={isLoading}
                     attachmentCount={attachments.length}
-                    maxAttachments={5}
+                    maxAttachments={MAX_FILES}
                   />
                 }
               />

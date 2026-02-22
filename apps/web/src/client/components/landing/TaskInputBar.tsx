@@ -13,65 +13,13 @@ import { ModelIndicator } from '@/components/ui/ModelIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-
-const MAX_FILES = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-function getFileType(name: string): FileAttachmentInfo['type'] {
-  const ext = name.split('.').pop()?.toLowerCase() || '';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-    return 'image';
-  }
-  if (
-    ['txt', 'md', 'csv', 'log', 'xml', 'html', 'yml', 'yaml', 'toml', 'ini', 'cfg'].includes(ext)
-  ) {
-    return 'text';
-  }
-  if (
-    [
-      'js',
-      'jsx',
-      'ts',
-      'tsx',
-      'py',
-      'rb',
-      'go',
-      'rs',
-      'java',
-      'c',
-      'cpp',
-      'h',
-      'hpp',
-      'cs',
-      'swift',
-      'kt',
-      'sh',
-      'bash',
-      'zsh',
-      'json',
-      'css',
-      'scss',
-      'less',
-      'sql',
-      'r',
-      'lua',
-      'php',
-      'pl',
-      'ex',
-      'exs',
-      'hs',
-      'ml',
-      'scala',
-      'clj',
-    ].includes(ext)
-  ) {
-    return 'code';
-  }
-  if (ext === 'pdf') {
-    return 'pdf';
-  }
-  return 'other';
-}
+import {
+  MAX_FILES,
+  MAX_FILE_SIZE,
+  getFileType,
+  generateFileId,
+  formatFileSize,
+} from '@/lib/fileUtils';
 
 function FileTypeIcon({
   type,
@@ -90,16 +38,6 @@ function FileTypeIcon({
     default:
       return <File className={className} />;
   }
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 interface TaskInputBarProps {
@@ -174,7 +112,7 @@ export function TaskInputBar({
           continue;
         }
         newAttachments.push({
-          id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          id: generateFileId(),
           name: file.name,
           path: (file as File & { path?: string }).path || file.name,
           type: getFileType(file.name),
