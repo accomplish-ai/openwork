@@ -12,6 +12,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="최근 커밋" /></a>
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS 다운로드" /></a>
+  <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 # Accomplish™ - 오픈소스 AI 데스크톱 에이전트

@@ -63,8 +63,9 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
   if (resolved) {
     return { command: resolved.cliPath, args: [] };
   }
-  console.log('[CLI Path] Falling back to opencode command on PATH');
-  return { command: 'opencode', args: [] };
+  throw new Error(
+    '[CLI Path] OpenCode CLI executable not found. Reinstall dependencies to restore platform binaries.',
+  );
 }
 
 export function isOpenCodeBundled(): boolean {
@@ -72,7 +73,6 @@ export function isOpenCodeBundled(): boolean {
 }
 
 export function getBundledOpenCodeVersion(): string | null {
-  const { command } = getOpenCodeCliPath();
   if (app.isPackaged) {
     try {
       const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
@@ -94,6 +94,7 @@ export function getBundledOpenCodeVersion(): string | null {
   }
 
   try {
+    const { command } = getOpenCodeCliPath();
     const fullCommand = `"${command}" --version`;
     const output = execSync(fullCommand, {
       encoding: 'utf-8',

@@ -1,14 +1,10 @@
 # @accomplish_ai/agent-core
 
-Core library for the Accomplish desktop automation assistant. Provides factory-based APIs for task management, persistent storage, permission handling, logging, and more -- designed for embedding the Accomplish agent runtime into Node.js host applications.
+Core library for the Accomplish desktop automation assistant. Provides factory-based APIs for task management, persistent storage, permission handling, logging, and more.
 
-## Installation
+## Usage
 
-```bash
-npm install @accomplish_ai/agent-core
-# or
-pnpm add @accomplish_ai/agent-core
-```
+This package is internal to the Accomplish monorepo and is consumed via workspace dependencies (for example, `"@accomplish_ai/agent-core": "workspace:*"`).
 
 ## Quick Start
 
