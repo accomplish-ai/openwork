@@ -3,6 +3,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssTypography from '@tailwindcss/typography';
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -43,6 +44,8 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        overlay: 'hsl(var(--overlay))',
+        backdrop: 'hsl(var(--backdrop))',
         'background-card': 'hsl(var(--card))',
         text: 'hsl(var(--foreground))',
         'text-secondary': 'hsl(var(--foreground))',

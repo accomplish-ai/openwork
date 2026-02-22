@@ -20,7 +20,7 @@ function getOperationBadgeClasses(operation?: string): string {
     case 'move':
       return 'bg-blue-500/10 text-blue-600';
     default:
-      return 'bg-gray-500/10 text-gray-600';
+      return 'bg-muted text-muted-foreground';
   }
 }
 
@@ -66,7 +66,7 @@ export function PermissionDialog({ permissionRequest, onRespond }: PermissionDia
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop backdrop-blur-sm"
       data-testid="execution-permission-modal"
     >
       <motion.div

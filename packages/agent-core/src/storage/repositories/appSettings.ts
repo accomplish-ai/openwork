@@ -150,7 +150,7 @@ export function setOpenAiBaseUrl(baseUrl: string): void {
   db.prepare('UPDATE app_settings SET openai_base_url = ? WHERE id = 1').run(baseUrl || '');
 }
 
-const VALID_THEMES: ThemePreference[] = ['system', 'light', 'dark'];
+const VALID_THEMES: ThemePreference[] = ['system', 'light', 'dark', 'pure-dark'];
 
 export function getTheme(): ThemePreference {
   const row = getRow();

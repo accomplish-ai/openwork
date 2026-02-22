@@ -41,7 +41,7 @@ export interface StoredTask {
   completedAt?: string;
 }
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = 'system' | 'light' | 'dark' | 'pure-dark';
 
 /** Application settings snapshot */
 export interface AppSettings {

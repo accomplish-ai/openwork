@@ -64,7 +64,57 @@
   --border: 12 8% 90%; /* #eae2e1 */
   --input: 0 0% 84.7%; /* #d8d8d8 */
   --ring: 20 25% 33%; /* #644a40 */
+  --overlay: 0 0% 100% / 0.6;
+  --backdrop: 0 0% 0% / 0.4;
   --radius: 0.5rem;
+}
+
+.dark {
+  --background: 220 10% 12%;
+  --foreground: 0 0% 95%;
+  --card: 220 10% 15%;
+  --card-foreground: 0 0% 95%;
+  --popover: 220 10% 14%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 123 28% 58%;
+  --primary-foreground: 0 0% 12%;
+  --secondary: 220 9% 21%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 220 8% 18%;
+  --muted-foreground: 220 7% 67%;
+  --accent: 220 10% 20%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 8 80% 58%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 8% 24%;
+  --input: 220 8% 24%;
+  --ring: 123 28% 58%;
+  --overlay: 220 10% 12% / 0.64;
+  --backdrop: 0 0% 0% / 0.55;
+}
+
+.pure-dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 123 32% 62%;
+  --primary-foreground: 0 0% 6%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 8%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 11%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 8 80% 58%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14%;
+  --input: 0 0% 14%;
+  --ring: 123 32% 62%;
+  --overlay: 0 0% 0% / 0.74;
+  --backdrop: 0 0% 0% / 0.72;
 }
 
 /* Custom scrollbar */
@@ -111,10 +161,40 @@
     @apply bg-background text-foreground;
   }
 
+  html,
+  body {
+    color-scheme: light;
+  }
+
+  .dark,
+  .dark body {
+    color-scheme: dark;
+  }
+
   /* Prevent text selection in UI elements */
   button,
   [role='button'] {
     @apply select-none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-changing,
+  html.theme-changing body,
+  html.theme-changing div,
+  html.theme-changing section,
+  html.theme-changing article,
+  html.theme-changing aside,
+  html.theme-changing main,
+  html.theme-changing nav,
+  html.theme-changing header,
+  html.theme-changing footer,
+  html.theme-changing button,
+  html.theme-changing a,
+  html.theme-changing svg {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 180ms;
+    transition-timing-function: ease;
   }
 }
 

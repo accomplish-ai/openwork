@@ -304,7 +304,8 @@ if (!gotTheLock) {
     // Must run before createWindow() so backgroundColor matches the theme
     try {
       const storage = getStorage();
-      nativeTheme.themeSource = storage.getTheme();
+      const theme = storage.getTheme();
+      nativeTheme.themeSource = theme === 'pure-dark' ? 'dark' : theme;
     } catch {
       // First launch or corrupt DB — nativeTheme stays 'system'
     }

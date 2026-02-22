@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../stores/taskStore';
 import { getAccomplish } from '../lib/accomplish';
 import { springs } from '../lib/animations';
-import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import { hasAnyReadyProvider, PROMPT_DEFAULT_MAX_LENGTH } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
@@ -20,11 +20,12 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { isWaitingForUser } from '../lib/waiting-detection';
-import { SettingsDialog } from '../components/layout/SettingsDialog';
+import SettingsDialog from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
 import { ModelIndicator } from '../components/ui/ModelIndicator';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SpeechInputButton } from '../components/ui/SpeechInputButton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PlusMenu } from '../components/landing/PlusMenu';
 import { SpinningIcon } from '../components/execution/SpinningIcon';
 import { MessageBubble } from '../components/execution/MessageList';
@@ -231,6 +232,9 @@ export function ExecutionPage() {
   );
   const hasSession = currentTask?.sessionId || currentTask?.result?.sessionId;
   const canFollowUp = isComplete && (hasSession || currentTask?.status === 'interrupted');
+  const isFollowUpOverLimit = followUp.length > PROMPT_DEFAULT_MAX_LENGTH;
+  const canSendFollowUp =
+    !!followUp.trim() && !isFollowUpOverLimit && !isLoading && !speechInput.isRecording;
 
   useEffect(() => {
     if (canFollowUp) {
@@ -239,7 +243,7 @@ export function ExecutionPage() {
   }, [canFollowUp]);
 
   const handleFollowUp = useCallback(async () => {
-    if (!followUp.trim()) return;
+    if (!followUp.trim() || isFollowUpOverLimit) return;
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
       const settings = await accomplish.getProviderSettings();
@@ -252,7 +256,7 @@ export function ExecutionPage() {
     }
     await sendFollowUp(followUp);
     setFollowUp('');
-  }, [followUp, accomplish, sendFollowUp]);
+  }, [followUp, isFollowUpOverLimit, accomplish, sendFollowUp]);
 
   const handleSettingsDialogClose = (open: boolean) => {
     setShowSettingsDialog(open);
@@ -439,7 +443,7 @@ export function ExecutionPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[12px]"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-[12px]"
               >
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -705,7 +709,7 @@ export function ExecutionPage() {
                   </AlertDescription>
                 </Alert>
               )}
-              <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+              <div className="rounded-xl border border-border bg-background shadow-sm transition-colors duration-200 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
                 <div className="px-4 pt-3 pb-2">
                   <textarea
                     ref={followUpInputRef}
@@ -766,15 +770,29 @@ export function ExecutionPage() {
                       onOpenSettings={handleOpenSpeechSettings}
                       size="md"
                     />
-                    <button
-                      type="button"
-                      onClick={handleFollowUp}
-                      disabled={!followUp.trim() || isLoading || speechInput.isRecording}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Send"
-                    >
-                      <CornerDownLeft className="h-4 w-4" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={handleFollowUp}
+                          disabled={!canSendFollowUp}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title="Send"
+                          aria-label="Send"
+                        >
+                          <CornerDownLeft className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>
+                          {isFollowUpOverLimit
+                            ? 'Message is too long'
+                            : !followUp.trim()
+                              ? 'Enter a message'
+                              : 'Send'}
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               </div>

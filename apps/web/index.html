@@ -13,10 +13,13 @@
         try {
           t = localStorage.getItem('theme') || 'system';
         } catch (e) {}
+        var p = t === 'pure-dark';
         var d =
+          p ||
           t === 'dark' ||
           (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (d) document.documentElement.classList.add('dark');
+        if (p) document.documentElement.classList.add('pure-dark');
       })();
     </script>
     <script type="module" src="/src/client/main.tsx"></script>

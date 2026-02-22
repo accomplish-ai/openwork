@@ -78,6 +78,8 @@ export function ClassicProviderForm({
     if (!providerConfig?.modelsEndpoint) return;
 
     const accomplish = getAccomplish();
+    if (typeof accomplish.fetchProviderModels !== 'function') return;
+
     accomplish
       .fetchProviderModels(providerId, {
         baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
@@ -120,7 +122,7 @@ export function ClassicProviderForm({
 
       // Fetch models dynamically if provider has a models endpoint
       let fetchedModels: Array<{ id: string; name: string }> | undefined;
-      if (providerConfig?.modelsEndpoint) {
+      if (providerConfig?.modelsEndpoint && typeof accomplish.fetchProviderModels === 'function') {
         const fetchResult = await accomplish.fetchProviderModels(providerId, {
           baseUrl: isOpenAI ? openAiBaseUrl.trim() || undefined : undefined,
         });

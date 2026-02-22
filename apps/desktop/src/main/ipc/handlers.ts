@@ -945,14 +945,21 @@ export function registerIPCHandlers(): void {
   });
 
   handle('settings:set-theme', async (_event: IpcMainInvokeEvent, theme: string) => {
-    if (!['system', 'light', 'dark'].includes(theme)) {
+    if (!['system', 'light', 'dark', 'pure-dark'].includes(theme)) {
       throw new Error('Invalid theme value');
     }
-    storage.setTheme(theme as 'system' | 'light' | 'dark');
-    nativeTheme.themeSource = theme as 'system' | 'light' | 'dark';
+    storage.setTheme(theme as 'system' | 'light' | 'dark' | 'pure-dark');
+    nativeTheme.themeSource =
+      theme === 'pure-dark' ? 'dark' : (theme as 'system' | 'light' | 'dark');
 
     const resolved =
-      theme === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : theme;
+      theme === 'system'
+        ? nativeTheme.shouldUseDarkColors
+          ? 'dark'
+          : 'light'
+        : theme === 'pure-dark'
+          ? 'dark'
+          : theme;
 
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('settings:theme-changed', { theme, resolved });

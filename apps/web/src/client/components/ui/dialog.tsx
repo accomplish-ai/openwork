@@ -69,7 +69,7 @@ const DialogContent = React.forwardRef<
           initial={{ opacity: 0 }}
           animate={{ opacity: isOpen ? 1 : 0 }}
           transition={{ duration: EXIT_ANIMATION_DURATION / 1000 }}
-          className="fixed inset-0 z-50 bg-white/60 backdrop-blur-[12px]"
+          className="fixed inset-0 z-50 bg-overlay backdrop-blur-[12px]"
         />
       </DialogPrimitive.Overlay>
       <DialogPrimitive.Content

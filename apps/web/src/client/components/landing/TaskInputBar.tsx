@@ -160,7 +160,7 @@ export default function TaskInputBar({
       )}
 
       {/* Input container - two rows: textarea top, toolbar bottom */}
-      <div className="rounded-xl border border-border bg-background shadow-sm transition-all duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+      <div className="rounded-xl border border-border bg-background shadow-sm transition-colors duration-200 ease-accomplish focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
         {/* Textarea area */}
         <div className="px-4 pt-3 pb-2">
           <textarea
@@ -231,7 +231,7 @@ export default function TaskInputBar({
                     onSubmit();
                   }}
                   disabled={!canSubmit || speechInput.isRecording}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors duration-200 ease-accomplish hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
