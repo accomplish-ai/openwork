@@ -12,7 +12,7 @@ import { TaskLauncher } from './components/TaskLauncher';
 import { AuthErrorToast } from './components/AuthErrorToast';
 import SettingsDialog from './components/layout/SettingsDialog';
 import { useTaskStore } from './stores/taskStore';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { SpinnerGap, Warning } from '@phosphor-icons/react';
 
 type AppStatus = 'loading' | 'ready' | 'error';
 
@@ -117,7 +117,7 @@ export function App() {
   if (status === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <SpinnerGap className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -129,7 +129,7 @@ export function App() {
         <div className="max-w-md text-center">
           <div className="mb-6 flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <Warning className="h-8 w-8 text-destructive" />
             </div>
           </div>
           <h1 className="mb-2 text-xl font-semibold text-foreground">{t('app.unableToStart')}</h1>

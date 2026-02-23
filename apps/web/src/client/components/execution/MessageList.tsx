@@ -4,7 +4,7 @@ import { springs } from '../../lib/animations';
 import type { TaskMessage } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Wrench, Terminal, Check, Copy, Play } from 'lucide-react';
+import { Wrench, Terminal, Check, Copy, Play } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -150,11 +150,7 @@ export const MessageBubble = memo(
           >
             {isTool ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                {ToolIcon ? (
-                  <ToolIcon className="h-4 w-4 fill-none" />
-                ) : (
-                  <Wrench className="h-4 w-4" />
-                )}
+                {ToolIcon ? <ToolIcon className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}
                 <span>{toolDisplayInfo?.label || toolName || 'Processing'}</span>
                 {isLastMessage && isRunning && <SpinningIcon className="h-3.5 w-3.5 ml-1" />}
               </div>
