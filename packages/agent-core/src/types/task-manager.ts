@@ -50,6 +50,8 @@ export interface TaskCallbacks {
   onAuthError?: (error: { providerId: string; message: string }) => void;
   /** Called when the agent emits reasoning text */
   onReasoning?: (text: string) => void;
+  /** Called when a tool is about to be used (before execution) */
+  onToolUse?: (toolName: string, toolInput: unknown) => void;
   /** Called when a tool call completes (success or error) */
   onToolCallComplete?: (data: {
     toolName: string;
