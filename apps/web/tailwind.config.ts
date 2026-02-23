@@ -79,11 +79,13 @@ const config: Config = {
         'card-hover': '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10)',
       },
       borderRadius: {
-        sm: 'calc(var(--radius) - 4px)',
+        sm: 'var(--radius)',
         DEFAULT: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
+        md: 'var(--radius)',
         lg: 'var(--radius)',
-        xl: 'calc(var(--radius) + 4px)',
+        xl: 'var(--radius)',
+        '2xl': 'var(--radius)',
+        '3xl': 'var(--radius)',
         card: 'var(--radius)',
       },
       fontFamily: {
@@ -99,6 +101,7 @@ const config: Config = {
           'Arial',
           'sans-serif',
         ],
+        apparat: ['KMR Apparat', 'Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       transitionTimingFunction: {
         accomplish: 'cubic-bezier(0.64, 0, 0.78, 0)',

@@ -15,7 +15,7 @@
     "predev:clean": "node scripts/check-deps.cjs",
     "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --workspace-concurrency=1 build",
     "build:desktop": "pnpm -F @accomplish/desktop build",
     "dev:web": "pnpm -F @accomplish/web dev",
     "build:web": "pnpm -F @accomplish/web build",
