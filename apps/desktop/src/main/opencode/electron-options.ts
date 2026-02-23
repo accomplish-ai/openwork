@@ -78,7 +78,7 @@ export function isOpenCodeCliAvailable(): boolean {
 export function getBundledOpenCodeVersion(): string | null {
   if (app.isPackaged) {
     try {
-      const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
+      const packageName = 'opencode-ai';
       const packageJsonPath = path.join(
         process.resourcesPath,
         'app.asar.unpacked',
@@ -308,9 +308,7 @@ export async function recoverDevBrowserServer(
   const force = options?.force === true;
 
   if (!force && now - lastBrowserRecoveryAt < BROWSER_RECOVERY_COOLDOWN_MS) {
-    console.log(
-      `[Browser] Recovery skipped due to cooldown (${BROWSER_RECOVERY_COOLDOWN_MS}ms)`,
-    );
+    console.log(`[Browser] Recovery skipped due to cooldown (${BROWSER_RECOVERY_COOLDOWN_MS}ms)`);
     return false;
   }
 
