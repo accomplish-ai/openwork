@@ -66,7 +66,10 @@ describe('OpenCode CLI Path Module', () => {
   describe('getOpenCodeCliPath()', () => {
     it('resolves local CLI from appPath in development mode', async () => {
       const appPath = '/mock/app/path';
-      const localCliPath = path.join(appPath, 'node_modules', '.bin', 'opencode');
+      const localCliPath =
+        process.platform === 'win32'
+          ? path.join(appPath, 'node_modules', 'opencode-windows-x64', 'bin', 'opencode.exe')
+          : path.join(appPath, 'node_modules', '.bin', 'opencode');
       mockApp.getAppPath.mockReturnValue(appPath);
       mockFs.existsSync.mockImplementation((p: string) => p === localCliPath);
 
@@ -81,7 +84,10 @@ describe('OpenCode CLI Path Module', () => {
       const appPath = '/mock/app/path';
       const appRoot = '/mock/app/root';
       process.env.APP_ROOT = appRoot;
-      const localCliPath = path.join(appRoot, 'node_modules', '.bin', 'opencode');
+      const localCliPath =
+        process.platform === 'win32'
+          ? path.join(appRoot, 'node_modules', 'opencode-windows-x64', 'bin', 'opencode.exe')
+          : path.join(appRoot, 'node_modules', '.bin', 'opencode');
       mockApp.getAppPath.mockReturnValue(appPath);
       mockFs.existsSync.mockImplementation((p: string) => p === localCliPath);
 
@@ -127,7 +133,10 @@ describe('OpenCode CLI Path Module', () => {
   describe('isOpenCodeCliAvailable()', () => {
     it('returns true when local workspace CLI is available', async () => {
       const appPath = '/mock/app/path';
-      const localCliPath = path.join(appPath, 'node_modules', '.bin', 'opencode');
+      const localCliPath =
+        process.platform === 'win32'
+          ? path.join(appPath, 'node_modules', 'opencode-windows-x64', 'bin', 'opencode.exe')
+          : path.join(appPath, 'node_modules', '.bin', 'opencode');
       mockApp.getAppPath.mockReturnValue(appPath);
       mockFs.existsSync.mockImplementation((p: string) => p === localCliPath);
 
