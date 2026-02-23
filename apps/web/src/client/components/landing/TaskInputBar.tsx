@@ -1,4 +1,5 @@
 'use client';
+import { processFileAttachments } from '../../lib/fileUtils';
 import { useRef, useEffect, useState } from 'react';
 import { getAccomplish } from '../../lib/accomplish';
 import { CornerDownLeft, Loader2, AlertCircle } from 'lucide-react';
@@ -143,19 +144,18 @@ export default function TaskInputBar({
       textareaRef.current?.focus();
     }, 0);
   };
-  // Enable drag and drop file support for task input
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
-  // Captures dropped files for future attachment handling
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) {
-      return;
-    }
-    setDroppedFiles(files);  // Handle file drop and store files in state for attachment preview
-  };
+
+const handleDrop = async (e: React.DragEvent) => {
+  e.preventDefault();
+  const files = Array.from(e.dataTransfer.files);
+  if (!files.length) return;
+
+  const validated = await processFileAttachments(files);
+  setDroppedFiles(validated);
+};
 
   return (
     <div className="w-full space-y-2">
@@ -274,17 +274,7 @@ export default function TaskInputBar({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-<<<<<<< HEAD:apps/desktop/src/renderer/components/landing/TaskInputBar.tsx
                 <span>{submitTooltip}</span>
-=======
-                <span>
-                  {isOverLimit
-                    ? 'Message is too long'
-                    : !value.trim()
-                      ? 'Enter a message'
-                      : 'Submit'}
-                </span>
->>>>>>> origin:apps/web/src/client/components/landing/TaskInputBar.tsx
               </TooltipContent>
             </Tooltip>
           </div>
