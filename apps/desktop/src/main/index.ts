@@ -114,7 +114,8 @@ const DEFAULT_WINDOW_MIN_WIDTH = 380;
 const DEFAULT_WINDOW_MIN_HEIGHT = 500;
 const DEFAULT_WINDOW_MAX_WIDTH = 600;
 const DEFAULT_WINDOW_MAX_HEIGHT = 900;
-const ICON_WINDOW_SIZE = 160;
+const ICON_WINDOW_SCALE = 4;
+const ICON_WINDOW_SIZE = 160 * ICON_WINDOW_SCALE;
 const ICON_WINDOW_MARGIN = 16;
 
 function getIconWindowBounds(targetWindow: BrowserWindow): { x: number; y: number; width: number; height: number } {
@@ -234,8 +235,10 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  // Open DevTools in dev mode (non-packaged)
-  if (!app.isPackaged) {
+  // Open DevTools only for interactive local development.
+  // In automated runs (CI/tests/diagnostics), detached DevTools can become the first window
+  // and break startup healthchecks that expect the renderer window.
+  if (!app.isPackaged && process.env.CI !== 'true' && process.env.NODE_ENV !== 'test') {
     // Use detached devtools for floating window
     createdWindow.webContents.openDevTools({ mode: 'detach' });
   }

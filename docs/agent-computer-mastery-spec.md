@@ -131,6 +131,8 @@ Best practices:
 - Ask for tool execution, not just advice, when you want edits.
 - Request verification commands explicitly.
 - Ask for a short diff summary if speed matters.
+- For Codex chat tasks: open the target thread first, type in the bottom message composer, then send and verify.
+- Use `Shift+Enter` for newline and `Enter` to send unless the UI says otherwise.
 
 ## 6) Cursor Workflow (How to write to Cursor)
 
@@ -283,6 +285,7 @@ Use the smallest navigation that solves the task:
 - Source control task: open Source Control (branch icon) or `Ctrl+Shift+G`.
 - File/task reading: use Explorer.
 - Thread review/respond: use Threads.
+- Sending a chat message: open Threads, select the correct thread, then use the bottom composer field.
 
 Wrong-panel guardrail:
 
@@ -334,6 +337,14 @@ Do not stop after selecting `Commit and push`; click `Continue`.
 - Click seems ignored: verify no overlay/modal interception, then retry.
 - If repeated failure: switch to menu-based path for same action.
 
+Typing reliability micro-protocol:
+
+1. Click once in the intended input field.
+2. Confirm caret is visible in that field.
+3. Paste/type full text.
+4. Re-read first and last 10-20 characters to confirm text landed in the correct field.
+5. Only then send/submit.
+
 ### 12.7 Recovery when stuck or uncertain
 
 Use this fallback order:
@@ -364,12 +375,18 @@ Avoid speculative phrasing such as "I will click" without confirming click happe
 
 ### 12.9 Self-awareness and self-UI filtering (critical)
 
-When operating inside Codex, the agent must treat Codex as self-environment, not a third-party app to narrate.
+When operating inside Codex, the agent must treat Codex assistant surfaces as self-environment, not a separate actor.
+
+Definitions:
+
+- `self-UI`: Codex assistant bubbles, helper panes, "agent" labels, and side assistant widgets inside Codex.
+- `target-UI`: only the controls needed for the user mission (thread list, composer, source control, dialogs, and needed controls).
 
 Rules:
 
-- Do not describe assistant side panels (for example Claude/Codex helper panes) unless user explicitly asks about them.
-- Do not report "there is an agent on the right" as task-relevant context.
+- Do not describe assistant side panels (for example Codex helper panes) unless user explicitly asks about them.
+- Never report "another agent is on screen" as mission context when that surface is Codex self-UI.
+- Never talk about Codex as if it is an external teammate while operating inside Codex.
 - Prioritize only user-requested target surfaces: app under control, dialog needed for task, and required controls.
 - If uncertain whether a visible panel is relevant, ignore it and proceed with mission-critical UI first.
 
@@ -458,3 +475,147 @@ Post-click confirmation:
 
 - If button remains unchanged after two centered clicks, assume miss/overlay and reopen the step.
 - Report exact retry reason (`miss`, `overlay`, `focus lost`, `unknown`).
+
+### 12.13 Codex thread send-and-verify protocol (critical)
+
+Use this whenever the mission includes sending a chat message in Codex.
+
+Required sequence:
+
+1. Confirm correct thread is open (context/title matches mission).
+2. Focus the message composer field (bottom input area of the active thread).
+3. Check whether composer already contains text.
+4. If text exists and overwrite behavior is ambiguous, ask one short clarification:
+- `replace draft`,
+- `append to draft`, or
+- `send draft as-is`.
+5. If user provided exact text to send, use that exact text and do not improvise.
+6. Enter text into composer:
+- click composer once,
+- confirm caret is in composer,
+- paste/type message.
+7. Send message (`Enter` or Send button).
+8. If multi-line text is needed before send, use `Shift+Enter` for line breaks.
+9. Verify send within 3 seconds using visible evidence:
+- outbound message bubble appears in thread,
+- composer clears/resets, and
+- response-in-progress indicator appears.
+10. If evidence is incomplete, re-focus composer and retry send once.
+11. If still not verified, report blocker with exact observed UI state.
+
+Truthfulness guardrail:
+
+- Never claim "message sent" unless step 9 is satisfied.
+- If not verified, say `send not yet verified` and continue recovery.
+
+### 12.14 Multi-turn Codex bug-resolution loop (critical)
+
+Use this when user asks to talk with Codex repeatedly until a bug is solved.
+
+Turn loop:
+
+1. Keep the original bug statement anchored in every outbound message.
+2. End every outbound message with: `Is the original bug solved now?`
+3. Send using section 12.13 and verify before reporting success.
+4. Read Codex's full reply before composing next turn.
+5. Classify result as `solved`, `not solved`, or `blocked`.
+6. If `solved`, stop loop and report completion immediately.
+7. If `not solved`, continue same thread with the next targeted step.
+8. If `blocked`, ask user only for the smallest missing input.
+
+Continuity guardrails:
+
+- If user reports previous send did not happen, trust that report and re-run section 12.13 from composer check.
+- Do not open a new thread unless user explicitly requests a new thread.
+
+### 12.15 Autonomous outbound messaging and unattended mode (critical)
+
+Use this when the user wants the agent to generate its own messages to another AI and continue without live supervision.
+
+Prerequisites before first send:
+
+1. Confirm user explicitly allowed autonomous outbound messaging for this task.
+2. Confirm desktop-control readiness is healthy (`ready`) and required permissions are granted:
+- `System Settings > Privacy & Security > Accessibility`
+- `System Settings > Privacy & Security > Screen Recording`
+- `System Settings > Privacy & Security > Input Monitoring` (if keyboard events are required)
+3. Confirm target app/thread is correct.
+4. Confirm stop condition is defined (for example: bug solved, max turns reached, or blocker encountered).
+
+Autonomous message-generation rule:
+
+- If user did not provide exact text, the agent must generate concise outbound messages using this structure:
+
+```text
+Goal:
+Current state:
+Request:
+Output needed:
+Is the original goal solved now?
+```
+
+- Keep each outbound message tied to the same original mission.
+- Do not switch topics or threads unless user requested it.
+
+Send-and-verify requirement (no exceptions):
+
+1. Follow section 12.13 exactly.
+2. A turn counts only if send is verified by visible evidence.
+3. If send is not verified after one retry, stop loop and report blocker immediately.
+
+Unattended loop contract:
+
+1. Send one message.
+2. Verify send.
+3. Wait and read full reply.
+4. Classify reply as `solved`, `not solved`, or `blocked`.
+5. If `not solved`, send next targeted message.
+6. If `solved` or `blocked`, stop and report.
+
+Default unattended limits (when user does not specify):
+
+- Max turns: `6`
+- Max idle wait per turn: `120` seconds for first token/response indicator
+- Retry on failed send verification: `1`
+
+Mandatory stop conditions:
+
+- User intervention required (login/CAPTCHA/2FA/permission prompt not auto-resolvable)
+- Repeated send verification failure
+- Target thread/context mismatch
+- Safety boundary reached (would perform irreversible or high-risk action without explicit user approval)
+
+Required final report to user:
+
+```text
+Mission:
+Turns completed:
+Last status: solved | not solved | blocked
+Evidence:
+Next required user action (if blocked):
+```
+
+### 12.16 Compose-and-talk protocol for Codex threads (critical)
+
+Use this when user asks how to type/talk to an AI in Codex or when repeated chat turns are required.
+
+Where to type:
+
+1. Open `Threads`.
+2. Click the target thread title.
+3. Locate the composer at the bottom of that thread (single-line or multi-line input field).
+4. Click inside the composer until a caret appears.
+
+How to write outbound messages:
+
+1. Keep one concrete objective per message.
+2. Include expected output format when precision matters.
+3. Keep constraints explicit (`do not edit X`, `run tests Y`).
+4. End with a direct request for the next action or verification evidence.
+
+How to send safely:
+
+1. Use `Enter` to send (or click Send).
+2. If you need a newline before sending, use `Shift+Enter`.
+3. Verify the message appears in the thread and composer clears.
+4. If no send evidence appears, retry once, then report blocker.

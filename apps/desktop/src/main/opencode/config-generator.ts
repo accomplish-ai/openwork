@@ -8,7 +8,7 @@ import { getNpxPath, getBundledNodePaths } from '../utils/bundled-node';
 /**
  * Agent name used by Screen Agent
  */
-export const ACCOMPLISH_AGENT_NAME = 'screen-agent';
+export const ACCOMPLISH_AGENT_NAME = 'accomplish';
 
 /**
  * Get the skills directory path
@@ -18,9 +18,30 @@ export const ACCOMPLISH_AGENT_NAME = 'screen-agent';
 export function getSkillsPath(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'skills');
-  } else {
-    return path.join(app.getAppPath(), 'skills');
   }
+
+  const appPath = app.getAppPath();
+  const appRootPath =
+    typeof process.env.APP_ROOT === 'string'
+      ? path.join(process.env.APP_ROOT, 'skills')
+      : null;
+  if (appRootPath && fs.existsSync(appRootPath)) {
+    return appRootPath;
+  }
+
+  const directPath = path.join(appPath, 'skills');
+  if (fs.existsSync(directPath)) {
+    return directPath;
+  }
+
+  // When launching from built `dist-electron/main/index.js` in diagnostics/tests,
+  // appPath points at `.../dist-electron`. Skills live in the sibling folder.
+  const siblingPath = path.join(appPath, '..', 'skills');
+  if (fs.existsSync(siblingPath)) {
+    return siblingPath;
+  }
+
+  return directPath;
 }
 
 /**

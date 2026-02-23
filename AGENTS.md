@@ -12,6 +12,10 @@ Purpose: keep agent behavior consistent for computer/system tasks without adding
 - cross-agent handoff or message formatting
 - For Codex UI execution tasks, prioritize section `12` (Codex Desktop Operation Playbook) and section `5`.
 - For Codex UI tasks, enforce section `12.9` (self-UI filtering) and section `12.10` (conversation continuity).
+- For Codex chat-send tasks, enforce section `12.13` (thread send-and-verify protocol).
+- For Codex typing/conversation tasks, enforce section `12.16` (compose-and-talk protocol).
+- For iterative Codex bug-chat tasks, enforce section `12.14` (multi-turn bug-resolution loop).
+- For autonomous AI-chat tasks (agent writes its own outbound prompts or runs unattended), enforce section `12.15` (autonomous outbound messaging and unattended-mode guardrails).
 - For commit/push tasks, enforce section `12.11` (commit/push anti-stall guardrail).
 - For commit/push tasks, enforce section `12.12` (click precision and transition speed).
 - For unknown app/system behavior, load section `4.3` first.

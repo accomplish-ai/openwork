@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { flushSync } from 'react-dom';
 import {
   Send,
   Camera,
@@ -9,7 +10,6 @@ import {
   ChevronDown,
   Menu,
   Settings,
-  SlidersHorizontal,
   Minimize2,
   Loader2,
   Bot,
@@ -109,6 +109,10 @@ const WORK_WITH_APPS = [
   'Notion',
   'Figma',
 ];
+
+const MINIMIZED_ICON_SCALE = 4;
+const BASE_MINIMIZED_BUTTON_SIZE = 112;
+const BASE_MINIMIZED_ICON_SIZE = 96;
 
 function appendWorkWithContext(prompt: string, workWithApp: string | null): string {
   if (!workWithApp) {
@@ -212,9 +216,8 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const [selectedModel, setSelectedModel] = useState<SelectedModel | null>(null);
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
   const [selectedWorkWithApp, setSelectedWorkWithApp] = useState<string | null>(null);
-  const [showPersonalSettings, setShowPersonalSettings] = useState(false);
-  const [speakRepliesEnabled, setSpeakRepliesEnabled] = useState(true);
-  const [liveGuidanceByDefault, setLiveGuidanceByDefault] = useState(false);
+  const [speakRepliesEnabled] = useState(true);
+  const [liveGuidanceByDefault] = useState(false);
   const [liveGuidanceEnabled, setLiveGuidanceEnabled] = useState(false);
   const [screenCaptureQueued, setScreenCaptureQueued] = useState(false);
   const [pendingVoiceSend, setPendingVoiceSend] = useState(false);
@@ -1041,7 +1044,12 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   };
 
   const collapseToIcon = useCallback(async () => {
-    setIsMinimized(true);
+    flushSync(() => {
+      setIsMinimized(true);
+    });
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
     try {
       await accomplish.collapseToIconWindow?.();
     } catch (error) {
@@ -1059,35 +1067,58 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     }
   }, [accomplish]);
 
+  const minimizedButtonSize = BASE_MINIMIZED_BUTTON_SIZE * MINIMIZED_ICON_SCALE;
+  const minimizedIconSize = BASE_MINIMIZED_ICON_SIZE * MINIMIZED_ICON_SCALE;
+
   // Minimized view
   if (isMinimized) {
     return (
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.12, ease: 'easeOut' }}
-        className="fixed bottom-4 right-4 z-50"
+        initial={{ scale: 0.72, opacity: 0, rotate: -8 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+        transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+        className="h-screen w-screen bg-transparent"
       >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => void expandFromIcon()}
-          className="h-44 w-44 rounded-none bg-transparent p-0 hover:bg-transparent"
-          title="Open Screen Agent"
-          aria-label="Open Screen Agent"
-        >
-          <svg
-            viewBox="0 0 64 64"
-            className="h-40 w-40 drop-shadow-sm"
-            aria-hidden="true"
+        <div className="flex h-full w-full items-center justify-center">
+          <motion.div
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
           >
-            <circle cx="30" cy="30" r="22" fill="#25D366" />
-            <path d="M44 44L56 54L50 40Z" fill="#25D366" />
-            <circle cx="22" cy="30" r="3.6" fill="#ffffff" />
-            <circle cx="30" cy="30" r="3.6" fill="#ffffff" />
-            <circle cx="38" cy="30" r="3.6" fill="#ffffff" />
-          </svg>
-        </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => void expandFromIcon()}
+              className="rounded-none bg-transparent p-0 transition-transform duration-300 hover:bg-transparent"
+              style={{ width: minimizedButtonSize, height: minimizedButtonSize }}
+              title="Open Screen Agent"
+              aria-label="Open Screen Agent"
+            >
+              <motion.svg
+                viewBox="0 0 64 64"
+                className="drop-shadow-[0_10px_30px_rgba(37,211,102,0.45)]"
+                style={{ width: minimizedIconSize, height: minimizedIconSize }}
+                animate={{
+                  y: [0, -6, 0],
+                  rotate: [0, -2, 0, 2, 0],
+                  scale: [1, 1.035, 1],
+                }}
+                transition={{
+                  duration: 3.1,
+                  ease: 'easeInOut',
+                  repeat: Infinity,
+                }}
+                aria-hidden="true"
+              >
+                <circle cx="30" cy="30" r="22" fill="#25D366" />
+                <path d="M44 44L56 54L50 40Z" fill="#25D366" />
+                <circle cx="22" cy="30" r="3.6" fill="#ffffff" />
+                <circle cx="30" cy="30" r="3.6" fill="#ffffff" />
+                <circle cx="38" cy="30" r="3.6" fill="#ffffff" />
+              </motion.svg>
+            </Button>
+          </motion.div>
+        </div>
       </motion.div>
     );
   }
@@ -1245,44 +1276,6 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                     <Settings className="h-4 w-4" />
                     Settings
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    onClick={() => setShowPersonalSettings((value) => !value)}
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Personal settings
-                  </Button>
-                  <AnimatePresence initial={false}>
-                    {showPersonalSettings && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="rounded-md border border-border/70 p-2 space-y-2 bg-background/80"
-                      >
-                        <label className="flex items-center justify-between gap-2 text-[11px] text-foreground">
-                          Read replies aloud
-                          <input
-                            type="checkbox"
-                            checked={speakRepliesEnabled}
-                            onChange={(event) => setSpeakRepliesEnabled(event.target.checked)}
-                            className="h-3.5 w-3.5 accent-primary"
-                          />
-                        </label>
-                        <label className="flex items-center justify-between gap-2 text-[11px] text-foreground">
-                          Live guidance by default
-                          <input
-                            type="checkbox"
-                            checked={liveGuidanceByDefault}
-                            onChange={(event) => setLiveGuidanceByDefault(event.target.checked)}
-                            className="h-3.5 w-3.5 accent-primary"
-                          />
-                        </label>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </motion.div>
             )}
