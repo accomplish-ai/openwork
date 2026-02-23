@@ -183,6 +183,8 @@ jobs:
   windows-ci:
     name: Windows CI
     runs-on: windows-latest
+    env:
+      npm_config_script_shell: pwsh.exe
 
     steps:
       - name: Checkout code
@@ -205,6 +207,12 @@ jobs:
 
       - name: Build packages
         run: pnpm build
+
+      - name: Verify local dev bootstrap paths
+        timeout-minutes: 10
+        run: |
+          pnpm dev:check
+          pnpm dev:clean:check
 
       - name: Run unit tests
         run: pnpm -F @accomplish/desktop test:unit

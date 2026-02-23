@@ -3,6 +3,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssTypography from '@tailwindcss/typography';
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -57,6 +58,15 @@ const config: Config = {
         success: {
           DEFAULT: '#019E55',
         },
+        'provider-bg': 'hsl(var(--provider-bg))',
+        'provider-bg-active': 'hsl(var(--provider-bg-active))',
+        'provider-bg-hover': 'hsl(var(--provider-bg-hover))',
+        'provider-border-active': 'hsl(var(--provider-border-active))',
+        'provider-accent': 'hsl(var(--provider-accent))',
+        'provider-accent-text': 'hsl(var(--provider-accent-text))',
+        'todo-progress-pending': 'hsl(var(--todo-progress-pending))',
+        'todo-item-completed': 'hsl(var(--todo-item-completed))',
+        'todo-item-in-progress': 'hsl(var(--todo-item-in-progress))',
       },
       boxShadow: {
         sm: '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10)',
@@ -69,11 +79,13 @@ const config: Config = {
         'card-hover': '0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10)',
       },
       borderRadius: {
-        sm: 'calc(var(--radius) - 4px)',
+        sm: 'var(--radius)',
         DEFAULT: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
+        md: 'var(--radius)',
         lg: 'var(--radius)',
-        xl: 'calc(var(--radius) + 4px)',
+        xl: 'var(--radius)',
+        '2xl': 'var(--radius)',
+        '3xl': 'var(--radius)',
         card: 'var(--radius)',
       },
       fontFamily: {
@@ -89,6 +101,7 @@ const config: Config = {
           'Arial',
           'sans-serif',
         ],
+        apparat: ['KMR Apparat', 'Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       transitionTimingFunction: {
         accomplish: 'cubic-bezier(0.64, 0, 0.78, 0)',
