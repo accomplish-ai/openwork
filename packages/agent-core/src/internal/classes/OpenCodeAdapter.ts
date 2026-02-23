@@ -397,7 +397,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private escapeShellArg(arg: string): string {
     if (this.options.platform === 'win32') {
-      if (arg.includes(' ') || arg.includes('"')) {
+      // Quote if the argument contains spaces, double-quotes, or any cmd.exe
+      // metacharacter (&, |, <, >, ^, %) that would be interpreted as command
+      // operators when executing via cmd.exe /s /c. This prevents user-controlled
+      // text (e.g. a prompt containing "&" or "|") from being parsed as separators.
+      if (/[ "&|<>^%]/.test(arg)) {
         return `"${arg.replace(/"/g, '""')}"`;
       }
       return arg;
@@ -823,12 +827,19 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private buildPtySpawnArgs(command: string, args: string[]): { file: string; args: string[] } {
     if (this.options.platform === 'win32') {
-      // Windows policy: always spawn the real .exe, never cmd wrappers.
-      if (command.toLowerCase().endsWith('.exe')) {
-        return { file: command, args };
+      if (!command.toLowerCase().endsWith('.exe')) {
+        throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
       }
 
-      throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
+      // On Windows, route through cmd.exe /s /c with proper inner quoting so that
+      // installation paths containing spaces (e.g. "C:\Users\My Name\...") are
+      // handled correctly in both ConPTY (Windows 10 1809+) and WinPTY fallback
+      // modes.  Passing the raw .exe path directly to pty.spawn works for ConPTY
+      // but fails in WinPTY, where the intermediate cmd.exe session receives the
+      // unquoted path and splits it at every space.
+      // See: https://github.com/accomplish-ai/accomplish/issues/596
+      const fullCommand = this.buildShellCommand(command, args);
+      return { file: 'cmd.exe', args: ['/s', '/c', `"${fullCommand}"`] };
     }
 
     const shell =
