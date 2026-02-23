@@ -21,6 +21,7 @@ import {
   CaretDown,
 } from '@phosphor-icons/react';
 import { isWaitingForUser } from '../lib/waiting-detection';
+import { getBaseToolName } from '../constants/tool-mappings';
 import { SettingsDialog } from '../components/layout/SettingsDialog';
 import { TodoSidebar } from '../components/TodoSidebar';
 import { BrowserPreviewPanel } from '../components/BrowserPreviewPanel';
