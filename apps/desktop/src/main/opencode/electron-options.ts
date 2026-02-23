@@ -33,6 +33,9 @@ import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
+const BROWSER_RECOVERY_COOLDOWN_MS = 10000;
+let browserEnsurePromise: Promise<void> | null = null;
+let lastBrowserRecoveryAt = 0;
 
 /**
  * Removes the Vertex AI service account key file from disk if it exists.
@@ -282,6 +285,45 @@ function getBrowserServerConfig(): BrowserServerConfig {
   };
 }
 
+async function ensureBrowserServer(callbacks?: Pick<TaskCallbacks, 'onProgress'>): Promise<void> {
+  if (browserEnsurePromise) {
+    return browserEnsurePromise;
+  }
+
+  const browserConfig = getBrowserServerConfig();
+  browserEnsurePromise = ensureDevBrowserServer(browserConfig, callbacks?.onProgress)
+    .then(() => undefined)
+    .finally(() => {
+      browserEnsurePromise = null;
+    });
+
+  return browserEnsurePromise;
+}
+
+export async function recoverDevBrowserServer(
+  callbacks?: Pick<TaskCallbacks, 'onProgress'>,
+  options?: { reason?: string; force?: boolean },
+): Promise<boolean> {
+  const now = Date.now();
+  const force = options?.force === true;
+
+  if (!force && now - lastBrowserRecoveryAt < BROWSER_RECOVERY_COOLDOWN_MS) {
+    console.log(
+      `[Browser] Recovery skipped due to cooldown (${BROWSER_RECOVERY_COOLDOWN_MS}ms)`,
+    );
+    return false;
+  }
+
+  const reason = options?.reason || 'Browser connection issue detected. Reconnecting browser...';
+  callbacks?.onProgress({ stage: 'browser-recovery', message: reason });
+
+  await ensureBrowserServer(callbacks);
+  lastBrowserRecoveryAt = Date.now();
+  callbacks?.onProgress({ stage: 'browser-recovery', message: 'Browser reconnected.' });
+
+  return true;
+}
+
 export async function onBeforeTaskStart(
   callbacks: TaskCallbacks,
   isFirstTask: boolean,
@@ -290,8 +332,7 @@ export async function onBeforeTaskStart(
     callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
   }
 
-  const browserConfig = getBrowserServerConfig();
-  await ensureDevBrowserServer(browserConfig, callbacks.onProgress);
+  await ensureBrowserServer(callbacks);
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {
