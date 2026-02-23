@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Search, Plus, X } from 'lucide-react';
+import { MagnifyingGlass, Plus, X } from '@phosphor-icons/react';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
 import { cn } from '@/lib/utils';
@@ -157,7 +157,7 @@ export function TaskLauncher() {
               >
                 {/* Search Input */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                  <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <MagnifyingGlass className="h-4 w-4 text-muted-foreground shrink-0" />
                   <Input
                     type="text"
                     value={searchQuery}

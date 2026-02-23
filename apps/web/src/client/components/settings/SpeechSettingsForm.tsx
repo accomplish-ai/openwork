@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
-import { Mic, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Microphone, CheckCircle, WarningCircle, SpinnerGap } from '@phosphor-icons/react';
 import { getAccomplish } from '../../lib/accomplish';
 
 interface SpeechSettingsFormProps {
@@ -53,7 +53,7 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
       {/* Header: Title + Toggle */}
       <div className="mb-1.5">
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
-          <Mic className="h-3.5 w-3.5 text-blue-500" />
+          <Microphone className="h-3.5 w-3.5 text-blue-500" />
           {t('speech.title')}
         </span>
       </div>
@@ -65,7 +65,7 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
 
       {/* Info section */}
       <div className="mb-2.5 flex items-start gap-1.5 rounded-md border border-border bg-background px-2.5 py-2 text-[11px] text-foreground">
-        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <WarningCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
           {t('speech.setupInstructions')}{' '}
           <a
@@ -82,7 +82,7 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
       {/* Configured status */}
       {isConfigured && !apiKey && (
         <div className="mb-2.5 flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-2 text-[11px] text-foreground">
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
+          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
           <span>{t('speech.apiKeyConfigured')}</span>
         </div>
       )}
@@ -107,7 +107,7 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
             disabled={isLoading || !apiKey.trim()}
             className="inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : t('apiKey.saveButton')}
+            {isLoading ? <SpinnerGap className="h-3 w-3 animate-spin" /> : t('apiKey.saveButton')}
           </button>
         </div>
         <p className="text-[10px] text-muted-foreground">{t('speech.secureStorage')}</p>
@@ -123,9 +123,9 @@ export function SpeechSettingsForm({ onSave, onChange }: SpeechSettingsFormProps
           }`}
         >
           {saveResult.success ? (
-            <CheckCircle2 className="h-3 w-3" />
+            <CheckCircle className="h-3 w-3" />
           ) : (
-            <AlertCircle className="h-3 w-3" />
+            <WarningCircle className="h-3 w-3" />
           )}
           {saveResult.message}
         </div>

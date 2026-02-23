@@ -15,6 +15,14 @@ describe('ConfigGenerator', () => {
   let testDir: string;
   let mcpToolsPath: string;
   let userDataPath: string;
+  const sharedBundledNodeBinPath = path.join(os.tmpdir(), 'config-gen-test-bundled-node', 'bin');
+  const requiredMcpDistEntries = [
+    ['file-permission', 'dist/index.mjs'],
+    ['ask-user-question', 'dist/index.mjs'],
+    ['complete-task', 'dist/index.mjs'],
+    ['start-task', 'dist/index.mjs'],
+    ['dev-browser-mcp', 'dist/index.mjs'],
+  ] as const;
 
   beforeEach(() => {
     testDir = path.join(
@@ -27,6 +35,15 @@ describe('ConfigGenerator', () => {
     // Create directories
     fs.mkdirSync(mcpToolsPath, { recursive: true });
     fs.mkdirSync(userDataPath, { recursive: true });
+    fs.mkdirSync(sharedBundledNodeBinPath, { recursive: true });
+    fs.writeFileSync(path.join(sharedBundledNodeBinPath, 'node'), '');
+    fs.writeFileSync(path.join(sharedBundledNodeBinPath, 'node.exe'), '');
+
+    for (const [toolName, relEntry] of requiredMcpDistEntries) {
+      const entryPath = path.join(mcpToolsPath, toolName, relEntry);
+      fs.mkdirSync(path.dirname(entryPath), { recursive: true });
+      fs.writeFileSync(entryPath, `// ${toolName} bundled entry`);
+    }
 
     // Suppress console output
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,6 +51,11 @@ describe('ConfigGenerator', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+
+    const sharedBundledNodeRoot = path.dirname(sharedBundledNodeBinPath);
+    if (fs.existsSync(sharedBundledNodeRoot)) {
+      fs.rmSync(sharedBundledNodeRoot, { recursive: true, force: true });
+    }
 
     if (fs.existsSync(testDir)) {
       fs.rmSync(testDir, { recursive: true, force: true });
@@ -52,6 +74,7 @@ describe('ConfigGenerator', () => {
       mcpToolsPath: '',
       isPackaged: false,
       userDataPath: '',
+      bundledNodeBinPath: sharedBundledNodeBinPath,
     };
 
     it('should generate config with required fields', () => {
@@ -240,7 +263,7 @@ describe('ConfigGenerator', () => {
     });
 
     it('should include bundled node bin path in environment', () => {
-      const nodeBinPath = '/path/to/bundled/node/bin';
+      const nodeBinPath = sharedBundledNodeBinPath;
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
@@ -378,17 +401,16 @@ describe('ConfigGenerator', () => {
     });
 
     it('should use bundled MCP entry when packaged and dist exists', () => {
-      // Create dist file
-      const mcpDir = path.join(mcpToolsPath, 'file-permission', 'dist');
-      fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      const bundledNodeBinPath = path.join(testDir, 'bundled-node', 'bin');
+      fs.mkdirSync(bundledNodeBinPath, { recursive: true });
+      fs.writeFileSync(path.join(bundledNodeBinPath, 'node'), '');
 
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
         userDataPath,
         isPackaged: true,
-        bundledNodeBinPath: '/bundled/node/bin',
+        bundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -399,7 +421,19 @@ describe('ConfigGenerator', () => {
       expect(command?.[1]).toContain('dist/index.mjs');
     });
 
-    it('should use tsx for MCP entry when not packaged', () => {
+    it('should throw when bundled node is missing in packaged mode', () => {
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: true,
+        bundledNodeBinPath: path.join(testDir, 'missing-bundled-node'),
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing bundled Node\.js executable/);
+    });
+
+    it('should use node and dist MCP entry when not packaged', () => {
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
@@ -410,8 +444,21 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       const command = result.mcpServers['file-permission'].command;
-      // Should use npx tsx or bundled tsx
-      expect(command?.some((arg) => arg.includes('tsx') || arg.includes('npx'))).toBe(true);
+      expect(command?.[0]).toContain('node');
+      expect(command?.[1]).toContain('dist/index.mjs');
+    });
+
+    it('should throw when MCP dist entry is missing', () => {
+      fs.rmSync(path.join(mcpToolsPath, 'file-permission', 'dist', 'index.mjs'));
+
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing MCP dist entry/);
     });
   });
 
@@ -430,6 +477,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -444,6 +492,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -459,6 +508,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -473,6 +523,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -487,6 +538,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -502,6 +554,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -516,6 +569,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -531,6 +585,7 @@ describe('ConfigGenerator', () => {
       mcpToolsPath: '',
       isPackaged: false,
       userDataPath: '',
+      bundledNodeBinPath: sharedBundledNodeBinPath,
     };
 
     function makeOptions(overrides: Partial<ConfigGeneratorOptions> = {}): ConfigGeneratorOptions {
@@ -636,6 +691,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       });
       prompt = result.systemPrompt;
     });
@@ -712,6 +768,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       });
       prompt = result.systemPrompt;
     });
@@ -734,6 +791,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
         skills: [
           {
             name: 'test-skill',
