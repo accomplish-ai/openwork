@@ -411,7 +411,7 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     requiresApiKey: true,
     apiKeyEnvVar: 'GROQ_API_KEY',
     baseUrl: 'https://api.groq.com/openai/v1',
-    defaultModelId: 'llama-3.3-70b-versatile',
+    defaultModelId: 'groq/llama-3.3-70b-versatile',
     modelsEndpoint: {
       url: 'https://api.groq.com/openai/v1/models',
       authStyle: 'bearer',
