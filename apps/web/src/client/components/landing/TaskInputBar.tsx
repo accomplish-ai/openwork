@@ -151,7 +151,9 @@ export default function TaskInputBar({
 const handleDrop = async (e: React.DragEvent) => {
   e.preventDefault();
   const files = Array.from(e.dataTransfer.files);
-  if (!files.length) return;
+ if (!files.length) {
+  return;
+}
 
   const validated = await processFileAttachments(files);
   setDroppedFiles(validated);
