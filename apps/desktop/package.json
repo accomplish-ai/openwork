@@ -8,9 +8,9 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.cjs",
     "predev": "node ../../scripts/ensure-agent-core-built.cjs && pnpm build:mcp-tools:dev",
-    "dev": "node scripts/patch-electron-name.cjs && npx electron-rebuild -f && node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
+    "dev": "node scripts/dev.cjs",
     "predev:clean": "node ../../scripts/ensure-agent-core-built.cjs && pnpm build:mcp-tools:dev",
-    "dev:clean": "CLEAN_START=1 ACCOMPLISH_ROUTER_URL=http://localhost:5173 vite",
+    "dev:clean": "node scripts/dev.cjs --clean",
     "build:mcp-tools:dev": "node scripts/bundle-skills.cjs --mode=dev",
     "build:mcp-tools:package": "node scripts/bundle-skills.cjs --mode=package",
     "build:base": "pnpm -F @accomplish/web build && tsc && vite build",
@@ -75,6 +75,8 @@
     "vitest": "^4.0.17"
   },
   "optionalDependencies": {
+    "opencode-windows-x64": "1.2.6",
+    "opencode-windows-x64-baseline": "1.2.6",
     "opencode-darwin-arm64": "1.2.6",
     "opencode-darwin-x64": "1.2.6",
     "opencode-darwin-x64-baseline": "1.2.6"

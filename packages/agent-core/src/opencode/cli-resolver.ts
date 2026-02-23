@@ -3,17 +3,83 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import type { CliResolverConfig, ResolvedCliPaths } from '../types.js';
 
-function getOpenCodePlatformInfo(): { packageNames: string[]; binaryName: string } {
+function getOpenCodePlatformInfo(): { packageNames: string[]; binaryNames: string[] } {
   if (process.platform === 'win32') {
     return {
-      packageNames: ['opencode-windows-x64', 'opencode-windows-x64-baseline'],
-      binaryName: 'opencode.exe',
+      // Prefer baseline first for maximum CPU compatibility.
+      packageNames: ['opencode-windows-x64-baseline', 'opencode-windows-x64', 'opencode-ai'],
+      // opencode-ai publishes a JS launcher at bin/opencode on Windows.
+      binaryNames: ['opencode.exe', 'opencode'],
     };
   }
   return {
     packageNames: ['opencode-ai'],
-    binaryName: 'opencode',
+    binaryNames: ['opencode'],
   };
+}
+
+const WINDOWS_NATIVE_PACKAGE_NAMES = ['opencode-windows-x64-baseline', 'opencode-windows-x64'];
+const WINDOWS_NATIVE_BINARY_NAME = 'opencode.exe';
+
+function findWindowsNativeCliInNodeModules(nodeModulesDir: string): string | null {
+  for (const packageName of WINDOWS_NATIVE_PACKAGE_NAMES) {
+    const cliPath = path.join(nodeModulesDir, packageName, 'bin', WINDOWS_NATIVE_BINARY_NAME);
+    if (fs.existsSync(cliPath)) {
+      return cliPath;
+    }
+  }
+  return null;
+}
+
+function findWindowsNativeCliFromPnpmStore(root: string): string | null {
+  const pnpmDir = path.join(root, 'node_modules', '.pnpm');
+  if (!fs.existsSync(pnpmDir)) {
+    return null;
+  }
+
+  try {
+    const entries = fs.readdirSync(pnpmDir, { withFileTypes: true });
+    for (const packageName of WINDOWS_NATIVE_PACKAGE_NAMES) {
+      const packageEntries = entries.filter(
+        (entry) => entry.isDirectory() && entry.name.startsWith(`${packageName}@`),
+      );
+      for (const packageEntry of packageEntries) {
+        const cliPath = path.join(
+          pnpmDir,
+          packageEntry.name,
+          'node_modules',
+          packageName,
+          'bin',
+          WINDOWS_NATIVE_BINARY_NAME,
+        );
+        if (fs.existsSync(cliPath)) {
+          return cliPath;
+        }
+      }
+    }
+  } catch {
+    // ignore pnpm store scanning failures and continue fallback resolution
+  }
+
+  return null;
+}
+
+function findWindowsNativeCliFromWrapper(wrapperPath: string): string | null {
+  let current = path.dirname(wrapperPath);
+
+  for (;;) {
+    const nodeModulesDir = path.join(current, 'node_modules');
+    const nativeCli = findWindowsNativeCliInNodeModules(nodeModulesDir);
+    if (nativeCli) {
+      return nativeCli;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
+  }
 }
 
 function getCandidateAppRoots(appPath?: string): string[] {
@@ -34,24 +100,26 @@ function getCandidateAppRoots(appPath?: string): string[] {
 }
 
 function resolveBundledCliPath(resourcesPath: string): ResolvedCliPaths | null {
-  const { packageNames, binaryName } = getOpenCodePlatformInfo();
+  const { packageNames, binaryNames } = getOpenCodePlatformInfo();
 
   for (const packageName of packageNames) {
-    const cliPath = path.join(
-      resourcesPath,
-      'app.asar.unpacked',
-      'node_modules',
-      packageName,
-      'bin',
-      binaryName,
-    );
+    for (const binaryName of binaryNames) {
+      const cliPath = path.join(
+        resourcesPath,
+        'app.asar.unpacked',
+        'node_modules',
+        packageName,
+        'bin',
+        binaryName,
+      );
 
-    if (fs.existsSync(cliPath)) {
-      return {
-        cliPath,
-        cliDir: path.dirname(cliPath),
-        source: 'bundled',
-      };
+      if (fs.existsSync(cliPath)) {
+        return {
+          cliPath,
+          cliDir: path.dirname(cliPath),
+          source: 'bundled',
+        };
+      }
     }
   }
 
@@ -60,25 +128,60 @@ function resolveBundledCliPath(resourcesPath: string): ResolvedCliPaths | null {
 
 function resolveLocalCliPath(appPath?: string): ResolvedCliPaths | null {
   const appRoots = getCandidateAppRoots(appPath);
-  const { packageNames, binaryName } = getOpenCodePlatformInfo();
+  const { packageNames, binaryNames } = getOpenCodePlatformInfo();
 
   for (const root of appRoots) {
     if (process.platform === 'win32') {
-      for (const packageName of packageNames) {
-        const cliPath = path.join(root, 'node_modules', packageName, 'bin', binaryName);
-        if (fs.existsSync(cliPath)) {
-          console.log('[CLI Resolver] Using local OpenCode CLI executable:', cliPath);
+      // 1) Prefer direct native Windows binaries.
+      const nativeFromNodeModules = findWindowsNativeCliInNodeModules(path.join(root, 'node_modules'));
+      if (nativeFromNodeModules) {
+        console.log('[CLI Resolver] Using local OpenCode CLI executable:', nativeFromNodeModules);
+        return {
+          cliPath: nativeFromNodeModules,
+          cliDir: path.dirname(nativeFromNodeModules),
+          source: 'local',
+        };
+      }
+
+      // 2) Try pnpm store layout.
+      const nativeFromPnpmStore = findWindowsNativeCliFromPnpmStore(root);
+      if (nativeFromPnpmStore) {
+        console.log('[CLI Resolver] Using local OpenCode CLI executable:', nativeFromPnpmStore);
+        return {
+          cliPath: nativeFromPnpmStore,
+          cliDir: path.dirname(nativeFromPnpmStore),
+          source: 'local',
+        };
+      }
+
+      // 3) Wrapper fallback: resolve native binary from wrapper location if possible.
+      for (const binaryName of binaryNames) {
+        const wrapperPath = path.join(root, 'node_modules', 'opencode-ai', 'bin', binaryName);
+        if (!fs.existsSync(wrapperPath)) {
+          continue;
+        }
+
+        const nativeFromWrapper = findWindowsNativeCliFromWrapper(wrapperPath);
+        if (nativeFromWrapper) {
+          console.log('[CLI Resolver] Using local OpenCode CLI executable:', nativeFromWrapper);
           return {
-            cliPath,
-            cliDir: path.dirname(cliPath),
+            cliPath: nativeFromWrapper,
+            cliDir: path.dirname(nativeFromWrapper),
             source: 'local',
           };
         }
+
+        console.log('[CLI Resolver] Using local OpenCode CLI executable:', wrapperPath);
+        return {
+          cliPath: wrapperPath,
+          cliDir: path.dirname(wrapperPath),
+          source: 'local',
+        };
       }
       continue;
     }
 
-    const cliPath = path.join(root, 'node_modules', '.bin', binaryName);
+    const cliPath = path.join(root, 'node_modules', '.bin', binaryNames[0]);
     if (fs.existsSync(cliPath)) {
       console.log('[CLI Resolver] Using local OpenCode CLI executable:', cliPath);
       return {

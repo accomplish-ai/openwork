@@ -823,12 +823,18 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private buildPtySpawnArgs(command: string, args: string[]): { file: string; args: string[] } {
     if (this.options.platform === 'win32') {
-      // Windows policy: always spawn the real .exe, never cmd wrappers.
+      // Prefer native executables on Windows.
       if (command.toLowerCase().endsWith('.exe')) {
         return { file: command, args };
       }
 
-      throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
+      // Fallback for JS launchers (for example opencode-ai/bin/opencode).
+      // Use `node` from PATH (buildEnvironment prepends bundled node on desktop).
+      if (fs.existsSync(command)) {
+        return { file: 'node', args: [command, ...args] };
+      }
+
+      throw new Error(`Windows CLI command path does not exist: ${command}`);
     }
 
     const shell =

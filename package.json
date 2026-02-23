@@ -13,7 +13,7 @@
     "predev": "node scripts/check-deps.cjs",
     "dev": "node scripts/dev.cjs",
     "predev:clean": "node scripts/check-deps.cjs",
-    "dev:clean": "CLEAN_START=1 node scripts/dev.cjs",
+    "dev:clean": "node scripts/dev.cjs --clean",
     "postinstall": "node scripts/save-lockfile-hash.cjs",
     "build": "pnpm -r --workspace-concurrency=1 build",
     "build:desktop": "pnpm -F @accomplish/desktop build",

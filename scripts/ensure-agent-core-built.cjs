@@ -6,7 +6,7 @@ const rootDir = path.join(__dirname, '..');
 const agentCoreDir = path.join(rootDir, 'packages', 'agent-core');
 const agentCorePackageJsonPath = path.join(agentCoreDir, 'package.json');
 const desktopNodeResourcesDir = path.join(rootDir, 'apps', 'desktop', 'resources', 'nodejs');
-const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const isWindows = process.platform === 'win32';
 const mcpDistOutputs = [
   'mcp-tools/file-permission/dist/index.mjs',
   'mcp-tools/ask-user-question/dist/index.mjs',
@@ -81,9 +81,25 @@ function collectOutputPaths(entry, outputs) {
   }
 }
 
+function quoteForPowerShell(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function spawnPnpmSync(args, options) {
+  if (isWindows) {
+    const command = `& pnpm ${args.map(quoteForPowerShell).join(' ')}`;
+    return spawnSync(
+      'powershell',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command],
+      options,
+    );
+  }
+  return spawnSync('pnpm', args, options);
+}
+
 function runPnpm(args, description) {
   console.log(description);
-  const result = spawnSync(pnpmCommand, args, {
+  const result = spawnPnpmSync(args, {
     cwd: rootDir,
     env: process.env,
     stdio: 'inherit',

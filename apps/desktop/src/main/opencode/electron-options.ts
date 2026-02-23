@@ -30,7 +30,7 @@ import {
   syncApiKeysToOpenCodeAuth,
 } from './config-generator';
 import { getExtendedNodePath } from '../utils/system-path';
-import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
+import { getBundledNodePaths, logBundledNodeInfo, getNodePath } from '../utils/bundled-node';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
 const BROWSER_RECOVERY_COOLDOWN_MS = 10000;
@@ -64,6 +64,11 @@ function getCliResolverConfig(): CliResolverConfig {
 export function getOpenCodeCliPath(): { command: string; args: string[] } {
   const resolved = resolveCliPath(getCliResolverConfig());
   if (resolved) {
+    if (process.platform === 'win32' && !resolved.cliPath.toLowerCase().endsWith('.exe')) {
+      // opencode-ai on Windows can resolve to a JS launcher (bin/opencode).
+      // Run it explicitly via bundled node.exe for stable PTY spawning.
+      return { command: getNodePath(), args: [resolved.cliPath] };
+    }
     return { command: resolved.cliPath, args: [] };
   }
   throw new Error(
@@ -140,7 +145,13 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     );
   }
 
-  env.ELECTRON_RUN_AS_NODE = '1';
+  // In packaged builds we rely on Electron's Node mode for runtime consistency.
+  // In development on Windows this can interfere with native CLI execution.
+  if (app.isPackaged) {
+    env.ELECTRON_RUN_AS_NODE = '1';
+  } else if (env.ELECTRON_RUN_AS_NODE) {
+    delete env.ELECTRON_RUN_AS_NODE;
+  }
   logBundledNodeInfo();
 
   const delimiter = process.platform === 'win32' ? ';' : ':';
@@ -336,6 +347,8 @@ export async function onBeforeTaskStart(
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {
+  const maxConcurrentTasks = process.platform === 'win32' ? 1 : 10;
+
   return {
     adapterOptions: {
       platform: process.platform,
@@ -348,7 +361,7 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       buildCliArgs,
     },
     defaultWorkingDirectory: app.getPath('temp'),
-    maxConcurrentTasks: 10,
+    maxConcurrentTasks,
     isCliAvailable,
     onBeforeTaskStart,
   };

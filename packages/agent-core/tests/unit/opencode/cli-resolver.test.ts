@@ -123,6 +123,88 @@ describe('CLI Resolver', () => {
 
       expect(result).toBeNull();
     });
+
+    it('uses opencode-ai fallback on Windows when opencode-windows package is missing', () => {
+      if (process.platform !== 'win32') {
+        return;
+      }
+
+      const appRoot = path.join(testDir, 'app');
+      const cliDir = path.join(appRoot, 'node_modules', 'opencode-ai', 'bin');
+      const cliPath = path.join(cliDir, 'opencode');
+      fs.mkdirSync(cliDir, { recursive: true });
+      fs.writeFileSync(cliPath, 'binary');
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('local');
+      expect(result?.cliPath).toBe(cliPath);
+    });
+
+    it('resolves Windows CLI from pnpm store layout', () => {
+      if (process.platform !== 'win32') {
+        return;
+      }
+
+      const appRoot = path.join(testDir, 'app');
+      const cliPath = path.join(
+        appRoot,
+        'node_modules',
+        '.pnpm',
+        'opencode-windows-x64-baseline@1.2.6',
+        'node_modules',
+        'opencode-windows-x64-baseline',
+        'bin',
+        'opencode.exe',
+      );
+      fs.mkdirSync(path.dirname(cliPath), { recursive: true });
+      fs.writeFileSync(cliPath, 'binary');
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('local');
+      expect(result?.cliPath).toBe(cliPath);
+    });
+
+    it('prefers native Windows binary discovered from opencode-ai wrapper path', () => {
+      if (process.platform !== 'win32') {
+        return;
+      }
+
+      const appRoot = path.join(testDir, 'app');
+      const wrapperPath = path.join(appRoot, 'node_modules', 'opencode-ai', 'bin', 'opencode');
+      fs.mkdirSync(path.dirname(wrapperPath), { recursive: true });
+      fs.writeFileSync(wrapperPath, 'wrapper');
+
+      const nativeCliPath = path.join(
+        appRoot,
+        'node_modules',
+        'opencode-ai',
+        'node_modules',
+        'opencode-windows-x64-baseline',
+        'bin',
+        'opencode.exe',
+      );
+      fs.mkdirSync(path.dirname(nativeCliPath), { recursive: true });
+      fs.writeFileSync(nativeCliPath, 'binary');
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('local');
+      expect(result?.cliPath).toBe(nativeCliPath);
+    });
   });
 
   describe('isCliAvailable', () => {
