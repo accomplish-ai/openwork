@@ -129,6 +129,14 @@ export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';
 export type { ThoughtEvent, CheckpointEvent } from './common/types/thought-stream.js';
 
+// Cloud Provider types
+export type {
+  CloudBrowserProviderId,
+  BrowserbaseConfig,
+  CloudBrowserConfig,
+  CloudProviderAccount,
+} from './common/types/cloudProviders.js';
+
 // === CONSTANTS ===
 export {
   DEV_BROWSER_PORT,

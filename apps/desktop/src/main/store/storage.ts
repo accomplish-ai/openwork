@@ -8,6 +8,8 @@ import { importLegacyElectronStoreData } from './electronStoreImport';
 
 let _storage: StorageAPI | null = null;
 
+import { safeStorage } from 'electron';
+
 export function getDatabasePath(): string {
   const dbName = app.isPackaged ? 'accomplish.db' : 'accomplish-dev.db';
   return path.join(app.getPath('userData'), dbName);
@@ -20,6 +22,15 @@ export function getStorage(): StorageAPI {
       runMigrations: true,
       userDataPath: app.getPath('userData'),
       secureStorageFileName: app.isPackaged ? 'secure-storage.json' : 'secure-storage-dev.json',
+      encryptionAdapter: {
+        encryptString: (text) => safeStorage.encryptString(text),
+        decryptString: (buffer) => safeStorage.decryptString(buffer),
+        isEncryptionAvailable: () => {
+          const available = safeStorage.isEncryptionAvailable();
+          console.log('[SecureStorage] isEncryptionAvailable:', available);
+          return available;
+        },
+      },
     });
   }
   return _storage;

@@ -75,7 +75,9 @@ process.env.APP_ROOT = path.join(__dirname, '../..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
 
-const ROUTER_URL = process.env.ACCOMPLISH_ROUTER_URL;
+const DEV_SERVER_URL = 'http://localhost:5173';
+const ROUTER_URL =
+  process.env.ACCOMPLISH_ROUTER_URL || (!app.isPackaged ? DEV_SERVER_URL : undefined);
 
 // In production, web's build output is packaged as an extraResource.
 const WEB_DIST = app.isPackaged

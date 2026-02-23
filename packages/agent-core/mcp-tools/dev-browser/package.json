@@ -13,6 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@browserbasehq/sdk": "^2.6.0",
     "playwright": "npm:rebrowser-playwright@^1.52.0"
   },
   "devDependencies": {

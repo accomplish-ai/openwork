@@ -115,3 +115,10 @@ export type {
 export type { ThoughtEvent, CheckpointEvent } from './thought-stream.js';
 
 export type { TodoItem } from './todo.js';
+
+export type {
+  CloudBrowserProviderId,
+  BrowserbaseConfig,
+  CloudBrowserConfig,
+  CloudProviderAccount,
+} from './cloudProviders.js';

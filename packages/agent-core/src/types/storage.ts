@@ -12,7 +12,19 @@ import type {
   ProviderSettings,
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
+import type {
+  CloudProviderAccount,
+  CloudBrowserProviderId,
+  CloudBrowserConfig,
+} from '../common/types/cloudProviders.js';
 import type { McpConnector, ConnectorStatus, OAuthTokens } from '../common/types/connector.js';
+
+/** Interface for platform-specific encryption (e.g. Electron safeStorage) */
+export interface EncryptionAdapter {
+  encryptString: (plainText: string) => Buffer;
+  decryptString: (encrypted: Buffer) => string;
+  isEncryptionAvailable: () => boolean;
+}
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -26,6 +38,8 @@ export interface StorageOptions {
   secureStorageAppId?: string;
   /** File name for the encrypted secure storage file */
   secureStorageFileName?: string;
+  /** Encryption adapter for securing sensitive data in the database */
+  encryptionAdapter?: EncryptionAdapter;
 }
 
 /** A persisted task record from the database */
@@ -214,6 +228,21 @@ export interface ConnectorStorageAPI {
   deleteConnectorTokens(connectorId: string): void;
 }
 
+/** API for managing cloud browser providers */
+export interface CloudProviderStorageAPI {
+  /** Get all configured cloud providers */
+  getAllCloudProviders(): CloudProviderAccount[];
+  /** Get a specific cloud provider definition */
+  getCloudProvider(providerId: CloudBrowserProviderId): CloudProviderAccount | null;
+  /** Save configuration for a cloud provider */
+  saveCloudProviderConfig(
+    providerId: CloudBrowserProviderId,
+    config: CloudBrowserConfig['config'],
+  ): void;
+  /** Enable or disable a cloud provider */
+  setCloudProviderEnabled(providerId: CloudBrowserProviderId, enabled: boolean): void;
+}
+
 /** API for database initialization and lifecycle management */
 export interface DatabaseLifecycleAPI {
   /** Initialize the database, creating it if needed and running migrations */
@@ -234,6 +263,7 @@ export interface StorageAPI
     ProviderSettingsAPI,
     SecureStorageAPI,
     ConnectorStorageAPI,
+    CloudProviderStorageAPI,
     DatabaseLifecycleAPI {}
 
 export type {
