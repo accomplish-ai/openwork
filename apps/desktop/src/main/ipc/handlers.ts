@@ -1171,6 +1171,10 @@ export function registerIPCHandlers(): void {
     return skillsManager.getContent(id);
   });
 
+  handle('skills:get-user-skills-path', async () => {
+    return skillsManager.getUserSkillsPath();
+  });
+
   handle('skills:pick-file', async () => {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     const result = await dialog.showOpenDialog(mainWindow, {
