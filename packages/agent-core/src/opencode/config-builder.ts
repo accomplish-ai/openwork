@@ -548,11 +548,14 @@ export async function buildProviderConfigs(
 
     const providerDef = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
     if (!providerDef?.modelsEndpoint) {
+      console.warn(
+        `[config-builder] Skipping provider "${providerId}": missing provider definition or modelsEndpoint`,
+      );
       continue;
     }
 
     const baseURL = providerDef.baseUrl
-      ? `${providerDef.baseUrl.replace(/\/$/, '')}`
+      ? providerDef.baseUrl.replace(/\/$/, '')
       : providerDef.modelsEndpoint.url.replace(/\/models$/, '');
 
     const connectedProvider = providerSettings.connectedProviders[providerId];
