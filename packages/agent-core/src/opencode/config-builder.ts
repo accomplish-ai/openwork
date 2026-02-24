@@ -560,7 +560,8 @@ export async function buildProviderConfigs(
 
     if (connectedProvider?.availableModels && connectedProvider.availableModels.length > 0) {
       for (const model of connectedProvider.availableModels) {
-        const modelId = model.id.replace(new RegExp(`^${providerId}/`), '');
+        const prefix = `${providerId}/`;
+        const modelId = model.id.startsWith(prefix) ? model.id.slice(prefix.length) : model.id;
         models[modelId] = { name: model.name, tools: true };
       }
     } else if (providerDef.models.length > 0) {
