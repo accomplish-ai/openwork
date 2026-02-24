@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Son Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS için İndir" /></a>
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
@@ -24,7 +24,7 @@ Accomplish, bilgisayarınızda yerel olarak dosya yönetimi, belge oluşturma ve
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Mac için İndirin (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg"><strong>Mac için İndirin (Apple Silicon)</strong></a>
   ·
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Windows 11 için İndirin</strong></a>
   ·
@@ -185,7 +185,7 @@ Accomplish bilgisayarınızda yerel olarak çalışır. Dosyalarınız cihazın�
 
 <div align="center">
 
-[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Windows 11 için İndirin**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
+[**Mac için İndirin (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg) · [**Windows 11 için İndirin**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 

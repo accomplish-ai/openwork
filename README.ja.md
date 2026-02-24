@@ -11,7 +11,7 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="最終コミット" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="macOS用ダウンロード" /></a>
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
@@ -24,7 +24,7 @@ Accomplishは、お使いのマシン上でローカルにファイル管理、�
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Mac用ダウンロード（Apple Silicon）</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg"><strong>Mac用ダウンロード（Apple Silicon）</strong></a>
   ·
   <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Windows 11用ダウンロード</strong></a>
   ·
@@ -185,7 +185,7 @@ Accomplishはお使いのマシン上でローカルに実行されます。フ�
 
 <div align="center">
 
-[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Windows 11用ダウンロード**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
+[**Mac用ダウンロード（Apple Silicon）**](https://downloads.accomplish.ai/downloads/0.3.9/macos/Accomplish-0.3.9-mac-arm64.dmg) · [**Windows 11用ダウンロード**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
 
 </div>
 
