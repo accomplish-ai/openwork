@@ -538,14 +538,51 @@ export async function buildProviderConfigs(
     console.log('[OpenCode Config Builder] Z.AI Coding Plan configured, region:', zaiRegion);
   }
 
+  // OpenAI-compatible cloud providers (Nebius, Together, Fireworks, Groq)
+  const openaiCompatibleProviders = ['nebius', 'together', 'fireworks', 'groq'] as const;
+  for (const providerId of openaiCompatibleProviders) {
+    const apiKey = getApiKey(providerId);
+    if (!apiKey) {
+      continue;
+    }
+
+    const providerDef = DEFAULT_PROVIDERS.find((p) => p.id === providerId);
+    if (!providerDef?.modelsEndpoint) {
+      continue;
+    }
+
+    const baseURL = providerDef.baseUrl
+      ? `${providerDef.baseUrl.replace(/\/$/, '')}`
+      : providerDef.modelsEndpoint.url.replace(/\/models$/, '');
+
+    const connectedProvider = providerSettings.connectedProviders[providerId];
+    const models: Record<string, ProviderModelConfig> = {};
+
+    if (connectedProvider?.availableModels && connectedProvider.availableModels.length > 0) {
+      for (const model of connectedProvider.availableModels) {
+        const modelId = model.id.replace(new RegExp(`^${providerId}/`), '');
+        models[modelId] = { name: model.name, tools: true };
+      }
+    } else if (providerDef.models.length > 0) {
+      for (const model of providerDef.models) {
+        models[model.id] = { name: model.displayName, tools: true };
+      }
+    }
+
+    providerConfigs.push({
+      id: providerId,
+      npm: '@ai-sdk/openai-compatible',
+      name: providerDef.name,
+      options: { baseURL, apiKey },
+      ...(Object.keys(models).length > 0 ? { models } : {}),
+    });
+    console.log(`[OpenCode Config Builder] ${providerDef.name} configured`);
+  }
+
   return { providerConfigs, enabledProviders, modelOverride };
 }
 
-/**
- * API key mapping from internal provider IDs to OpenCode auth.json format.
- * Only providers that need special key mapping in auth.json are included here.
- */
-const _AUTH_KEY_MAPPING: Record<string, string> = {
+const AUTH_KEY_MAPPING: Record<string, string> = {
   deepseek: 'deepseek',
   zai: 'zai-coding-plan',
   minimax: 'minimax',
@@ -558,8 +595,7 @@ const _AUTH_KEY_MAPPING: Record<string, string> = {
 /**
  * Syncs API keys to OpenCode auth.json file.
  *
- * This function writes API keys to the OpenCode auth.json file so that the CLI
- * can access them. Only specific providers (deepseek, zai, minimax) are synced.
+ * Uses AUTH_KEY_MAPPING to write provider API keys so the CLI can access them.
  *
  * @param authPath - Path to the auth.json file
  * @param apiKeys - Record of provider IDs to API keys (null values are ignored)
@@ -586,27 +622,12 @@ export async function syncApiKeysToOpenCodeAuth(
 
   let updated = false;
 
-  if (apiKeys.deepseek) {
-    if (!auth['deepseek'] || auth['deepseek'].key !== apiKeys.deepseek) {
-      auth['deepseek'] = { type: 'api', key: apiKeys.deepseek };
+  for (const [internalId, authId] of Object.entries(AUTH_KEY_MAPPING)) {
+    const key = apiKeys[internalId];
+    if (key && (!auth[authId] || auth[authId].key !== key)) {
+      auth[authId] = { type: 'api', key };
       updated = true;
-      console.log('[OpenCode Auth] Synced DeepSeek API key');
-    }
-  }
-
-  if (apiKeys.zai) {
-    if (!auth['zai-coding-plan'] || auth['zai-coding-plan'].key !== apiKeys.zai) {
-      auth['zai-coding-plan'] = { type: 'api', key: apiKeys.zai };
-      updated = true;
-      console.log('[OpenCode Auth] Synced Z.AI Coding Plan API key');
-    }
-  }
-
-  if (apiKeys.minimax) {
-    if (!auth.minimax || auth.minimax.key !== apiKeys.minimax) {
-      auth.minimax = { type: 'api', key: apiKeys.minimax };
-      updated = true;
-      console.log('[OpenCode Auth] Synced MiniMax API key');
+      console.log(`[OpenCode Auth] Synced ${internalId} API key`);
     }
   }
 
