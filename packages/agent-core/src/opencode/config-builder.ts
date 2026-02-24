@@ -599,7 +599,7 @@ const AUTH_KEY_MAPPING: Record<string, string> = {
 /**
  * Syncs API keys to OpenCode auth.json file.
  *
- * Uses AUTH_KEY_MAPPING to write provider API keys so the CLI can access them.
+ * OpenCode auth.json keys must match provider IDs; the mapping bridges internal IDs to those keys.
  *
  * @param authPath - Path to the auth.json file
  * @param apiKeys - Record of provider IDs to API keys (null values are ignored)
