@@ -55,6 +55,9 @@ const state: ServerState = {
   isLoading: false,
 };
 
+// Mutex to prevent concurrent loadModel calls
+let loadModelPromise: Promise<void> | null = null;
+
 /**
  * Load a model into memory using Transformers.js.
  */
@@ -64,58 +67,70 @@ async function loadModel(modelId: string): Promise<void> {
     return;
   }
 
-  state.isLoading = true;
-  console.log(`[HF Server] Loading model: ${modelId}`);
-
-  try {
-    const { env, AutoTokenizer, AutoModelForCausalLM } = await import('@huggingface/transformers');
-
-    const cacheDir = path.join(app.getPath('userData'), 'hf-models');
-    env.cacheDir = cacheDir;
-    env.allowLocalModels = true;
-
-    // Stage new model and tokenizer
-    const tokenizer = await AutoTokenizer.from_pretrained(modelId, {
-      cache_dir: cacheDir,
-      local_files_only: true,
-    });
-
-    let model;
-    try {
-      model = await AutoModelForCausalLM.from_pretrained(modelId, {
-        cache_dir: cacheDir,
-        dtype: 'q4',
-        local_files_only: true,
-      });
-    } catch (err) {
-      console.warn(`[HF Server] Failed to load q4 model, trying fp32: ${err}`);
-      model = await AutoModelForCausalLM.from_pretrained(modelId, {
-        cache_dir: cacheDir,
-        dtype: 'fp32',
-        local_files_only: true,
-      });
-    }
-
-    // Successfully loaded new model, safe to dispose old one
-    if (state.model) {
-      try {
-        await state.model.dispose?.();
-      } catch {
-        // Ignore dispose errors
-      }
-    }
-
-    state.tokenizer = tokenizer;
-    state.model = model;
-
-    state.loadedModelId = modelId;
-    console.log(`[HF Server] Model loaded: ${modelId}`);
-  } catch (error) {
-    console.error(`[HF Server] Failed to load model: ${modelId}`, error);
-    throw error;
-  } finally {
-    state.isLoading = false;
+  // Prevent concurrent loads — queue onto existing promise
+  if (loadModelPromise) {
+    await loadModelPromise;
+    if (state.loadedModelId === modelId && state.tokenizer && state.model) return;
   }
+
+  loadModelPromise = (async () => {
+    state.isLoading = true;
+    console.log(`[HF Server] Loading model: ${modelId}`);
+
+    try {
+      const { env, AutoTokenizer, AutoModelForCausalLM } =
+        await import('@huggingface/transformers');
+
+      const cacheDir = path.join(app.getPath('userData'), 'hf-models');
+      env.cacheDir = cacheDir;
+      env.allowLocalModels = true;
+
+      // Stage new model and tokenizer
+      const tokenizer = await AutoTokenizer.from_pretrained(modelId, {
+        cache_dir: cacheDir,
+        local_files_only: true,
+      });
+
+      let model;
+      try {
+        model = await AutoModelForCausalLM.from_pretrained(modelId, {
+          cache_dir: cacheDir,
+          dtype: 'q4',
+          local_files_only: true,
+        });
+      } catch (err) {
+        console.warn(`[HF Server] Failed to load q4 model, trying fp32: ${err}`);
+        model = await AutoModelForCausalLM.from_pretrained(modelId, {
+          cache_dir: cacheDir,
+          dtype: 'fp32',
+          local_files_only: true,
+        });
+      }
+
+      // Successfully loaded new model, safe to dispose old one
+      if (state.model) {
+        try {
+          await state.model.dispose?.();
+        } catch {
+          // Ignore dispose errors
+        }
+      }
+
+      state.tokenizer = tokenizer;
+      state.model = model;
+
+      state.loadedModelId = modelId;
+      console.log(`[HF Server] Model loaded: ${modelId}`);
+    } catch (error) {
+      console.error(`[HF Server] Failed to load model: ${modelId}`, error);
+      throw error;
+    } finally {
+      state.isLoading = false;
+      loadModelPromise = null;
+    }
+  })();
+
+  return loadModelPromise;
 }
 
 /**
@@ -240,7 +255,10 @@ async function handleStreamingCompletion(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       callback_function: (output: any) => {
         const lastToken = output.slice(null, [-1, null]);
-        const tokenText = state.tokenizer!.decode(lastToken[0], { skip_special_tokens: true });
+        // Capture tokenizer before async generate to avoid null-deref if stopServer fires mid-stream
+        const tokenizer = state.tokenizer;
+        if (!tokenizer) return;
+        const tokenText = tokenizer.decode(lastToken[0], { skip_special_tokens: true });
 
         if (tokenText) {
           const chunk = {
@@ -412,6 +430,7 @@ export async function startServer(
           try {
             chatReq = JSON.parse(body);
           } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(
               JSON.stringify({
                 error: { message: 'Invalid JSON in request body', type: 'invalid_request_error' },
@@ -532,6 +551,23 @@ export async function startServer(
  * Stop the local inference server and unload the model.
  */
 export async function stopServer(): Promise<void> {
+  if (state.server) {
+    await new Promise<void>((resolve) => {
+      // Close all keep-alive connections first so server.close() resolves promptly
+      const srv = state.server!;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ('closeAllConnections' in srv && typeof (srv as any).closeAllConnections === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (srv as any).closeAllConnections();
+      }
+      srv.close(() => {
+        console.log('[HF Server] Server stopped');
+        resolve();
+      });
+    });
+  }
+
+  // Dispose model only after HTTP server is fully closed
   if (state.model) {
     try {
       await state.model.dispose?.();
@@ -540,22 +576,8 @@ export async function stopServer(): Promise<void> {
     }
   }
 
-  if (state.server) {
-    return new Promise((resolve) => {
-      state.server!.close(() => {
-        console.log('[HF Server] Server stopped');
-        state.server = null;
-        state.port = null;
-        state.loadedModelId = null;
-        state.pipeline = null;
-        state.tokenizer = null;
-        state.model = null;
-        state.isLoading = false;
-        resolve();
-      });
-    });
-  }
-
+  state.server = null;
+  state.port = null;
   state.loadedModelId = null;
   state.pipeline = null;
   state.tokenizer = null;

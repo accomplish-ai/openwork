@@ -1369,7 +1369,10 @@ export function registerIPCHandlers(): void {
   // ── HuggingFace Local Provider ──────────────────────────────────────
 
   handle('huggingface-local:start-server', async (_event: IpcMainInvokeEvent, modelId: string) => {
-    return startHuggingFaceServer(modelId);
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return startHuggingFaceServer(modelId.trim());
   });
 
   handle('huggingface-local:stop-server', async () => {
@@ -1386,7 +1389,10 @@ export function registerIPCHandlers(): void {
   });
 
   handle('huggingface-local:download-model', async (event: IpcMainInvokeEvent, modelId: string) => {
-    return hfDownloadModel(modelId, (progress) => {
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return hfDownloadModel(modelId.trim(), (progress) => {
       // Send progress updates back to the renderer
       try {
         event.sender.send('huggingface-local:download-progress', progress);
@@ -1402,7 +1408,10 @@ export function registerIPCHandlers(): void {
   });
 
   handle('huggingface-local:delete-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
-    return hfDeleteModel(modelId);
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return hfDeleteModel(modelId.trim());
   });
 
   handle('huggingface-local:get-config', async () => {
@@ -1412,6 +1421,16 @@ export function registerIPCHandlers(): void {
   handle(
     'huggingface-local:set-config',
     async (_event: IpcMainInvokeEvent, config: HuggingFaceLocalConfig | null) => {
+      if (config !== null) {
+        if (
+          typeof config !== 'object' ||
+          (config.selectedModelId !== null && typeof config.selectedModelId !== 'string') ||
+          (config.serverPort !== null && typeof config.serverPort !== 'number') ||
+          typeof config.enabled !== 'boolean'
+        ) {
+          throw new Error('Invalid HuggingFace config: unexpected field types');
+        }
+      }
       storage.setHuggingFaceLocalConfig(config);
     },
   );

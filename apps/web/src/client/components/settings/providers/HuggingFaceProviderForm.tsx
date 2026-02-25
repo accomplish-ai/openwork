@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getAccomplish } from '@/lib/accomplish';
 import { settingsVariants, settingsTransitions } from '@/lib/animations';
@@ -65,8 +65,6 @@ export function HuggingFaceProviderForm({
   const [isDownloading, setIsDownloading] = useState(false);
   const [suggestedModels, setSuggestedModels] = useState<SuggestedModel[]>([]);
   const [cachedModels, setCachedModels] = useState<SuggestedModel[]>([]);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-
   const isConnected = connectedProvider?.connectionStatus === 'connected';
 
   /** Load model lists on mount */
@@ -85,7 +83,7 @@ export function HuggingFaceProviderForm({
       .catch(() => {
         // Non-fatal: suggested models will still be shown from SUGGESTED_MODELS
       });
-  }, [isConnected]);
+  }, []);
 
   /** Subscribe to download progress IPC events */
   useEffect(() => {
@@ -107,8 +105,9 @@ export function HuggingFaceProviderForm({
         }
       },
     );
-    unsubscribeRef.current = unsub;
-    return () => unsub();
+    return () => {
+      unsub();
+    };
   }, []);
 
   const handleConnect = async () => {
@@ -182,9 +181,9 @@ export function HuggingFaceProviderForm({
     onDisconnect();
   };
 
-  // Build model selector options: cached first, then suggested not yet downloaded
+  // Build model selector options: cached first (raw ID), then suggested not yet downloaded
   const allModels = [
-    ...cachedModels.map((m) => ({ id: `huggingface-local/${m.id}`, name: `${m.displayName} ✓` })),
+    ...cachedModels.map((m) => ({ id: m.id, name: `${m.displayName} ✓` })),
     ...suggestedModels
       .filter((s) => !cachedModels.some((c) => c.id === s.id))
       .map((m) => ({ id: m.id, name: m.displayName })),
