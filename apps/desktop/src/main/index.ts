@@ -36,6 +36,7 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { startHuggingFaceServer } from './providers/huggingface-local';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -284,6 +285,17 @@ if (!gotTheLock) {
             console.log(`[Main] Removed provider ${providerId} due to missing API key`);
           }
         }
+      }
+
+      // Auto-start HuggingFace local server if enabled
+      const hfConfig = storage.getHuggingFaceLocalConfig();
+      if (hfConfig?.enabled && hfConfig.selectedModelId) {
+        console.log(
+          `[Main] Auto-starting HuggingFace server for model: ${hfConfig.selectedModelId}`,
+        );
+        startHuggingFaceServer(hfConfig.selectedModelId).catch((err: unknown) => {
+          console.error('[Main] Failed to auto-start HuggingFace local server:', err);
+        });
       }
     } catch (err) {
       console.error('[Main] Provider validation failed:', err);

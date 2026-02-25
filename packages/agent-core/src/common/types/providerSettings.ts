@@ -13,7 +13,8 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'huggingface-local';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -130,6 +131,13 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
     logoKey: 'lmstudio',
     helpUrl: 'https://lmstudio.ai/',
   },
+  'huggingface-local': {
+    id: 'huggingface-local',
+    name: 'HuggingFace Local',
+    category: 'local',
+    label: 'Local Models',
+    logoKey: 'huggingface',
+  },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -178,6 +186,11 @@ export interface LMStudioCredentials {
   serverUrl: string;
 }
 
+export interface HuggingFaceLocalCredentials {
+  type: 'huggingface-local';
+  modelId: string;
+}
+
 export interface AzureFoundryCredentials {
   type: 'azure-foundry';
   authMethod: 'api-key' | 'entra-id';
@@ -209,7 +222,8 @@ export type ProviderCredentials =
   | ZaiCredentials
   | AzureFoundryCredentials
   | LMStudioCredentials
-  | OAuthCredentials;
+  | OAuthCredentials
+  | HuggingFaceLocalCredentials;
 
 export type ToolSupportStatus = 'supported' | 'unsupported' | 'unknown';
 
@@ -286,4 +300,6 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  // HuggingFace Local exposes an OpenAI-compatible API; opencode connects via OPENAI_API_BASE env var
+  'huggingface-local': 'openai',
 };

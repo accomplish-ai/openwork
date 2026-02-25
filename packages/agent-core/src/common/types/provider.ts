@@ -21,7 +21,8 @@ export type ProviderType =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'huggingface-local';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -174,6 +175,19 @@ export interface LMStudioConfig {
   enabled: boolean;
   lastValidated?: number;
   models?: LMStudioModel[];
+}
+
+export interface HuggingFaceLocalModelInfo {
+  id: string;
+  displayName: string;
+  sizeBytes?: number;
+  downloaded: boolean;
+}
+
+export interface HuggingFaceLocalConfig {
+  selectedModelId: string | null;
+  serverPort: number | null;
+  enabled: boolean;
 }
 
 export const DEFAULT_PROVIDERS: ProviderConfig[] = [

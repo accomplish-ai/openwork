@@ -81,6 +81,7 @@ import type {
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceLocalConfig,
 } from '@accomplish_ai/agent-core';
 import {
   DEFAULT_PROVIDERS,
@@ -1403,6 +1404,17 @@ export function registerIPCHandlers(): void {
   handle('huggingface-local:delete-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
     return hfDeleteModel(modelId);
   });
+
+  handle('huggingface-local:get-config', async () => {
+    return storage.getHuggingFaceLocalConfig();
+  });
+
+  handle(
+    'huggingface-local:set-config',
+    async (_event: IpcMainInvokeEvent, config: HuggingFaceLocalConfig | null) => {
+      storage.setHuggingFaceLocalConfig(config);
+    },
+  );
 }
 
 // In-memory store for pending OAuth flows (keyed by state parameter)
