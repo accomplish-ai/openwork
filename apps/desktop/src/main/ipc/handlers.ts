@@ -1393,7 +1393,6 @@ export function registerIPCHandlers(): void {
       return { success: false, error: 'Invalid model ID' };
     }
     return hfDownloadModel(modelId.trim(), (progress) => {
-      // Send progress updates back to the renderer
       try {
         event.sender.send('huggingface-local:download-progress', progress);
       } catch {

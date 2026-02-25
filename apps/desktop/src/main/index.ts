@@ -36,7 +36,7 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
-import { startHuggingFaceServer } from './providers/huggingface-local';
+import { startHuggingFaceServer, stopHuggingFaceServer } from './providers/huggingface-local';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -352,6 +352,10 @@ app.on('before-quit', () => {
   oauthBrowserFlow.dispose();
   closeStorage();
   shutdownLogCollector();
+  // Stop the HF inference server so its port is released before process exit
+  stopHuggingFaceServer().catch((err: unknown) => {
+    console.warn('[Main] Failed to stop HuggingFace server on quit:', err);
+  });
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {

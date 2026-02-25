@@ -303,13 +303,13 @@ async function handleStreamingCompletion(
     };
     res.write(`data: ${JSON.stringify(errorChunk)}\n\n`);
   } finally {
-    res.end();
+    // Guard against double-end: handleStreamingCompletion may have already ended the stream
+    if (!res.writableEnded) {
+      res.end();
+    }
   }
 }
 
-/**
- * Read the full request body as a string.
- */
 /**
  * Read the full request body as a string.
  * Enforces a max size limit (default 10MB) to prevent OOM.

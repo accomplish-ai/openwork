@@ -176,7 +176,9 @@ export function cancelDownload(modelId: string): void {
  */
 export function listCachedModels(cachePath?: string): HuggingFaceLocalModelInfo[] {
   const cacheDir = cachePath || getDefaultCachePath();
-  if (!fs.existsSync(cacheDir)) return [];
+  if (!fs.existsSync(cacheDir)) {
+    return [];
+  }
 
   const models: HuggingFaceLocalModelInfo[] = [];
 
@@ -185,11 +187,15 @@ export function listCachedModels(cachePath?: string): HuggingFaceLocalModelInfo[
     // Structure: cacheDir/<org>/<model>/
     const entries = fs.readdirSync(cacheDir, { withFileTypes: true });
     for (const orgEntry of entries) {
-      if (!orgEntry.isDirectory()) continue;
+      if (!orgEntry.isDirectory()) {
+        continue;
+      }
       const orgDir = path.join(cacheDir, orgEntry.name);
       const modelEntries = fs.readdirSync(orgDir, { withFileTypes: true });
       for (const modelEntry of modelEntries) {
-        if (!modelEntry.isDirectory()) continue;
+        if (!modelEntry.isDirectory()) {
+          continue;
+        }
         const modelDir = path.join(orgDir, modelEntry.name);
         const modelId = `${orgEntry.name}/${modelEntry.name}`;
         const sizeBytes = getDirSize(modelDir);

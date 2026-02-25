@@ -287,6 +287,7 @@ interface AccomplishAPI {
   stopHuggingFaceServer(): Promise<{ success: boolean; error?: string }>;
   onHuggingFaceDownloadProgress(
     callback: (progress: {
+      modelId: string;
       status: 'downloading' | 'complete' | 'error';
       progress: number;
       error?: string;
@@ -472,6 +473,7 @@ export function getAccomplish() {
 
     onHuggingFaceDownloadProgress: (
       callback: (progress: {
+        modelId: string;
         status: 'downloading' | 'complete' | 'error';
         progress: number;
         error?: string;

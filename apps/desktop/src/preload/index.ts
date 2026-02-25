@@ -474,7 +474,7 @@ const accomplishAPI = {
     modelId: string,
   ): Promise<{ success: boolean; port?: number; error?: string }> =>
     ipcRenderer.invoke('huggingface-local:start-server', modelId),
-  stopHuggingFaceServer: (): Promise<{ success: boolean }> =>
+  stopHuggingFaceServer: (): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('huggingface-local:stop-server'),
   getHuggingFaceServerStatus: (): Promise<{
     running: boolean;
@@ -500,21 +500,26 @@ const accomplishAPI = {
     ipcRenderer.invoke('huggingface-local:download-model', modelId),
   listHuggingFaceModels: (): Promise<{
     cached: Array<{ id: string; displayName: string; sizeBytes?: number; downloaded: boolean }>;
-    suggested: Array<{ id: string; displayName: string; downloaded: boolean }>;
+    suggested: Array<{ id: string; displayName: string; sizeBytes?: number; downloaded: boolean }>;
   }> => ipcRenderer.invoke('huggingface-local:list-models'),
   deleteHuggingFaceModel: (modelId: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('huggingface-local:delete-model', modelId),
   onHuggingFaceDownloadProgress: (
     callback: (progress: {
       modelId: string;
-      status: string;
+      status: 'downloading' | 'complete' | 'error';
       progress: number;
       error?: string;
     }) => void,
   ) => {
     const listener = (
       _: unknown,
-      progress: { modelId: string; status: string; progress: number; error?: string },
+      progress: {
+        modelId: string;
+        status: 'downloading' | 'complete' | 'error';
+        progress: number;
+        error?: string;
+      },
     ) => callback(progress);
     ipcRenderer.on('huggingface-local:download-progress', listener);
     return () => {

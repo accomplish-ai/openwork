@@ -12,7 +12,7 @@ import {
   ModelSelector,
 } from '../shared';
 
-import huggingfaceLogo from '/assets/ai-logos/huggingface.svg';
+const huggingfaceLogo = '/assets/ai-logos/huggingface.svg';
 
 interface SuggestedModel {
   id: string;
@@ -67,7 +67,7 @@ export function HuggingFaceProviderForm({
   const [cachedModels, setCachedModels] = useState<SuggestedModel[]>([]);
   const isConnected = connectedProvider?.connectionStatus === 'connected';
 
-  /** Load model lists on mount */
+  // Populate model selector on mount so users can pick a model before connecting
   useEffect(() => {
     const accomplish = getAccomplish();
     accomplish
@@ -75,36 +75,32 @@ export function HuggingFaceProviderForm({
       .then(({ cached, suggested }) => {
         setCachedModels(cached);
         setSuggestedModels(suggested);
-        // Pre-select first cached model if available
+        // Only pre-select when no explicit choice has been made
         if (cached.length > 0 && cached[0]?.id) {
-          setSelectedModelId(cached[0].id);
+          setSelectedModelId((prev) =>
+            prev === 'onnx-community/Llama-3.2-1B-Instruct-ONNX' ? cached[0].id : prev,
+          );
         }
       })
       .catch(() => {
-        // Non-fatal: suggested models will still be shown from SUGGESTED_MODELS
+        // Non-fatal: suggested models will still be shown
       });
   }, []);
 
-  /** Subscribe to download progress IPC events */
+  // Keep download progress state in sync via IPC events pushed from the main process
   useEffect(() => {
     const accomplish = getAccomplish();
-    const unsub = accomplish.onHuggingFaceDownloadProgress(
-      (progress: {
-        status: 'downloading' | 'complete' | 'error';
-        progress: number;
-        error?: string;
-      }) => {
-        if (progress.status === 'downloading') {
-          setDownloadProgress(progress.progress);
-        } else if (progress.status === 'complete') {
-          setDownloadProgress(100);
-          setIsDownloading(false);
-        } else if (progress.status === 'error') {
-          setIsDownloading(false);
-          setError(progress.error ?? 'Download failed');
-        }
-      },
-    );
+    const unsub = accomplish.onHuggingFaceDownloadProgress((progress) => {
+      if (progress.status === 'downloading') {
+        setDownloadProgress(progress.progress);
+      } else if (progress.status === 'complete') {
+        setDownloadProgress(100);
+        setIsDownloading(false);
+      } else if (progress.status === 'error') {
+        setIsDownloading(false);
+        setError(progress.error ?? 'Download failed');
+      }
+    });
     return () => {
       unsub();
     };
@@ -302,9 +298,9 @@ export function HuggingFaceProviderForm({
               {allModels.length > 1 && (
                 <ModelSelector
                   models={allModels}
-                  value={connectedProvider?.selectedModelId ?? null}
+                  value={connectedModelId ?? null}
                   onChange={onModelChange}
-                  error={showModelError && !connectedProvider?.selectedModelId}
+                  error={showModelError && !connectedModelId}
                 />
               )}
 
