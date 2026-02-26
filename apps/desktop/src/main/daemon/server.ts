@@ -165,7 +165,9 @@ export function startDaemonServer(): void {
 
   server.on('error', (err) => {
     console.error('[Daemon] Server error:', err.message);
-    server = null;
+    if (server && !server.listening) {
+      server = null;
+    }
   });
 
   server.listen(socketPath, () => {

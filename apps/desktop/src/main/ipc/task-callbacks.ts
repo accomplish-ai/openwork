@@ -242,8 +242,15 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
 
   const forwardToRenderer = (channel: string, data: unknown) => {
     const win = getWindow?.() ?? BrowserWindow.getAllWindows()[0];
-    if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-      win.webContents.send(channel, data);
+    if (!win || win.isDestroyed()) {
+      return;
+    }
+    try {
+      if (!win.webContents.isDestroyed()) {
+        win.webContents.send(channel, data);
+      }
+    } catch {
+      // Window or webContents torn down between check and send — safe to ignore
     }
   };
 

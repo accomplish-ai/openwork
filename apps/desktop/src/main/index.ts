@@ -403,7 +403,7 @@ if (!gotTheLock) {
     let daemonPermissionApiReady = false;
 
     registerMethod('task.start', async (params: unknown) => {
-      if (typeof params !== 'object' || params === null) {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
         throw new Error('params must be an object');
       }
 
@@ -412,8 +412,12 @@ if (!gotTheLock) {
         taskId?: string;
       };
 
-      if (!prompt || typeof prompt !== 'string') {
+      if (typeof prompt !== 'string' || prompt.trim() === '') {
         throw new Error('prompt is required');
+      }
+
+      if (requestedTaskId !== undefined && typeof requestedTaskId !== 'string') {
+        throw new Error('taskId must be a string');
       }
 
       const storage = getStorage();
@@ -430,7 +434,10 @@ if (!gotTheLock) {
         daemonPermissionApiReady = true;
       }
 
-      const taskId = requestedTaskId || createTaskId();
+      const taskId =
+        typeof requestedTaskId === 'string' && requestedTaskId.length > 0
+          ? requestedTaskId
+          : createTaskId();
       const taskManager = getTaskManager();
 
       const validatedConfig = validateTaskConfig({ prompt });
@@ -473,7 +480,7 @@ if (!gotTheLock) {
     });
 
     registerMethod('task.stop', async (params: unknown) => {
-      if (typeof params !== 'object' || params === null) {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
         throw new Error('params must be an object');
       }
 
@@ -504,7 +511,7 @@ if (!gotTheLock) {
     });
 
     registerMethod('task.get', (params: unknown) => {
-      if (typeof params !== 'object' || params === null) {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
         throw new Error('params must be an object');
       }
 
