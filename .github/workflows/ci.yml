@@ -157,17 +157,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Cache E2E Docker image
+        id: docker-cache
+        uses: actions/cache@v4
         with:
-          node-version: '20'
-          # Note: No cache here - E2E tests run in Docker so pnpm store isn't on host
+          path: /tmp/e2e-image.tar
+          key: e2e-docker-${{ hashFiles('apps/desktop/e2e/docker/Dockerfile') }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/package.json', 'pnpm-workspace.yaml') }}-${{ hashFiles('scripts/**', 'apps/desktop/scripts/**', 'packages/agent-core/mcp-tools/**') }}
 
-      - name: Run E2E tests in Docker
-        run: pnpm -F @accomplish/desktop test:e2e
+      - name: Load cached Docker image
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/e2e-image.tar
+
+      - name: Build E2E Docker image
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: bash apps/desktop/e2e/docker/run-e2e.sh --build-only
+
+      - name: Save Docker image to cache
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: docker save $(docker images 'accomplish-e2e' --format '{{.Repository}}:{{.Tag}}' | head -1) -o /tmp/e2e-image.tar
+
+      - name: Run E2E tests
+        run: bash apps/desktop/e2e/docker/run-e2e.sh
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
