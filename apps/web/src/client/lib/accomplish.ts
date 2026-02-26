@@ -67,7 +67,11 @@ interface AccomplishAPI {
       | 'bedrock'
       | 'litellm'
       | 'lmstudio'
-      | 'elevenlabs',
+      | 'elevenlabs'
+      | 'nebius'
+      | 'together'
+      | 'fireworks'
+      | 'groq',
     key: string,
     label?: string,
   ): Promise<ApiKeyConfig>;

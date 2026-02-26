@@ -13,7 +13,11 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'nebius'
+  | 'together'
+  | 'fireworks'
+  | 'groq';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -129,6 +133,38 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
     label: 'Local Models',
     logoKey: 'lmstudio',
     helpUrl: 'https://lmstudio.ai/',
+  },
+  nebius: {
+    id: 'nebius',
+    name: 'Nebius AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'nebius', // Assuming logoKey exists or will fall back
+    helpUrl: 'https://studio.nebius.ai/settings/api-keys',
+  },
+  together: {
+    id: 'together',
+    name: 'Together AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'together',
+    helpUrl: 'https://api.together.xyz/settings/api-keys',
+  },
+  fireworks: {
+    id: 'fireworks',
+    name: 'Fireworks AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'fireworks',
+    helpUrl: 'https://fireworks.ai/account/api-keys',
+  },
+  groq: {
+    id: 'groq',
+    name: 'Groq',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'groq',
+    helpUrl: 'https://console.groq.com/keys',
   },
 };
 
@@ -260,6 +296,10 @@ export const DEFAULT_MODELS: Partial<Record<ProviderId, string>> = {
   zai: 'zai/glm-4.7-flashx',
   minimax: 'minimax/MiniMax-M2',
   bedrock: 'amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0',
+  nebius: 'nebius/meta-llama/Meta-Llama-3.1-70B-Instruct',
+  together: 'together/meta-llama/Llama-3.3-70B-Instruct-Turbo',
+  fireworks: 'fireworks/accounts/fireworks/models/llama-v3p1-405b-instruct',
+  groq: 'groq/llama-3.3-70b-versatile',
 };
 
 export function getDefaultModelForProvider(providerId: ProviderId): string | null {
@@ -286,4 +326,8 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };

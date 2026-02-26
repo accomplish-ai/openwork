@@ -68,6 +68,10 @@ export const PROVIDER_PREFIXES = [
   'lmstudio/',
   'azure-foundry/',
   'vertex/',
+  'nebius/',
+  'together/',
+  'fireworks/',
+  'groq/',
 ];
 
 /**
