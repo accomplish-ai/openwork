@@ -19,17 +19,27 @@ export interface DaemonRpcMethod {
     params: Record<string, never>;
     result: { running: boolean; version: string; activeTasks: number };
   };
+  'daemon.health': {
+    params: Record<string, never>;
+    result: { version: string; uptime: number; activeTasks: number; memoryUsage: number };
+  };
   'task.list': { params: Record<string, never>; result: { tasks: string[] } };
   'task.start': { params: { prompt: string; taskId?: string }; result: { taskId: string } };
   'task.stop': { params: { taskId: string }; result: { ok: boolean } };
   'task.get': { params: { taskId: string }; result: { task: unknown } };
+  'task.schedule': {
+    params: { cron: string; prompt: string };
+    result: { id: string; cron: string; prompt: string; nextRunAt?: string };
+  };
+  'task.listScheduled': { params: Record<string, never>; result: { schedules: unknown[] } };
+  'task.cancelScheduled': { params: { scheduleId: string }; result: { ok: boolean } };
 }
 
 export type DaemonMethod = keyof DaemonRpcMethod;
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
-  id: string | number | null;
+  id?: string | number | null;
   method: string;
   params?: unknown;
 }
@@ -58,14 +68,14 @@ export function registerMethod(method: DaemonMethod | string, handler: MethodHan
 }
 
 function isNotification(request: JsonRpcRequest): boolean {
-  return request.id === undefined || request.id === null;
+  return typeof request.id === 'undefined';
 }
 
 function handleLine(line: string, socket: net.Socket): void {
-  let request: JsonRpcRequest;
+  let parsed: unknown;
 
   try {
-    request = JSON.parse(line) as JsonRpcRequest;
+    parsed = JSON.parse(line);
   } catch {
     const errResponse: JsonRpcResponse = {
       jsonrpc: '2.0',
@@ -76,6 +86,17 @@ function handleLine(line: string, socket: net.Socket): void {
     return;
   }
 
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    const response: JsonRpcResponse = {
+      jsonrpc: '2.0',
+      id: null,
+      error: { code: -32600, message: 'Invalid Request' },
+    };
+    socket.write(JSON.stringify(response) + '\n');
+    return;
+  }
+
+  const request = parsed as JsonRpcRequest;
   const { id, method, params } = request;
   const notification = isNotification(request);
 

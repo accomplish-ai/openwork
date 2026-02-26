@@ -97,6 +97,15 @@ export function DaemonPanel() {
               : `echo '{"jsonrpc":"2.0","id":1,"method":"task.start","params":{"prompt":"List files in /tmp"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
           </pre>
         </div>
+
+        <div className="mt-4 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            Example: Schedule a recurring task
+          </p>
+          <pre className="overflow-x-auto max-w-full rounded-md bg-muted px-3 py-2 text-xs font-mono text-foreground whitespace-pre-wrap break-all">
+            {`echo '{"jsonrpc":"2.0","id":1,"method":"task.schedule","params":{"cron":"0 9 * * 1-5","prompt":"Check email and summarize"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
+          </pre>
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
@@ -118,6 +127,13 @@ export function DaemonPanel() {
             <p className="text-xs text-muted-foreground">
               JSON-RPC 2.0 over a local Unix socket. Allows CLI tools and other apps to dispatch
               tasks.
+            </p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="text-xs font-semibold text-foreground mb-1">Task Scheduler</div>
+            <p className="text-xs text-muted-foreground">
+              Schedule recurring tasks with cron expressions. Tasks fire automatically even when the
+              UI is closed.
             </p>
           </div>
           <div className="rounded-lg bg-muted/50 p-3">

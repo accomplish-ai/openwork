@@ -49,6 +49,11 @@ import {
   createMessageId,
   validateTaskConfig,
   generateTaskSummary,
+  addScheduledTask,
+  listScheduledTasks,
+  cancelScheduledTask,
+  onScheduledTaskFire,
+  disposeScheduler,
 } from '@accomplish_ai/agent-core';
 import { createDaemonTaskCallbacks } from './ipc/task-callbacks';
 import {
@@ -263,7 +268,9 @@ if (!gotTheLock) {
 
   app.on('second-instance', (_event, commandLine) => {
     if (mainWindow) {
-      if (!mainWindow.isVisible()) mainWindow.show();
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
       console.log('[Main] Focused existing instance after second-instance event');
@@ -376,8 +383,37 @@ if (!gotTheLock) {
       },
     });
 
+    // Crash recovery: mark stale running tasks as failed
+    try {
+      const storage = getStorage();
+      const allTasks = storage.getTasks();
+      for (const task of allTasks) {
+        if (task.status === 'running') {
+          console.warn(`[Daemon] Crash recovery: marking stale task ${task.id} as failed`);
+          storage.updateTaskStatus(task.id, 'failed', new Date().toISOString());
+        }
+      }
+    } catch (err) {
+      console.warn('[Daemon] Crash recovery check failed:', err);
+    }
+
     // Start daemon socket server for external triggers
+    const daemonStartTime = Date.now();
+
     registerMethod('daemon.ping', () => ({ pong: true }));
+
+    registerMethod('daemon.health', () => ({
+      version: app.getVersion(),
+      uptime: Math.floor((Date.now() - daemonStartTime) / 1000),
+      activeTasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      })(),
+      memoryUsage: process.memoryUsage().heapUsed,
+    }));
 
     registerMethod('daemon.status', () => ({
       running: true,
@@ -531,6 +567,94 @@ if (!gotTheLock) {
       return { task };
     });
 
+    // ── Scheduling ───────────────────────────────────────────────────
+
+    registerMethod('task.schedule', (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { cron, prompt } = params as { cron: string; prompt: string };
+
+      if (typeof cron !== 'string' || cron.trim() === '') {
+        throw new Error('cron expression is required');
+      }
+      if (typeof prompt !== 'string' || prompt.trim() === '') {
+        throw new Error('prompt is required');
+      }
+
+      return addScheduledTask(cron.trim(), prompt.trim());
+    });
+
+    registerMethod('task.listScheduled', () => ({
+      schedules: listScheduledTasks(),
+    }));
+
+    registerMethod('task.cancelScheduled', (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { scheduleId } = params as { scheduleId: string };
+
+      if (typeof scheduleId !== 'string' || scheduleId.trim() === '') {
+        throw new Error('scheduleId is required');
+      }
+
+      cancelScheduledTask(scheduleId);
+      return { ok: true };
+    });
+
+    // Wire scheduler: when a scheduled task fires, start a real task
+    onScheduledTaskFire((scheduled) => {
+      console.log('[Daemon] Scheduled task firing:', scheduled.id, scheduled.prompt.slice(0, 50));
+
+      const storage = getStorage();
+      if (!storage.hasReadyProvider()) {
+        console.warn('[Daemon] Scheduled task skipped — no provider ready');
+        return;
+      }
+
+      const taskId = createTaskId();
+      const taskManager = getTaskManager();
+      const validatedConfig = validateTaskConfig({ prompt: scheduled.prompt });
+
+      const activeModel = storage.getActiveProviderModel();
+      const selectedModel = activeModel || storage.getSelectedModel();
+      if (selectedModel?.model) {
+        validatedConfig.modelId = selectedModel.model;
+      }
+
+      const callbacks = createDaemonTaskCallbacks({
+        taskId,
+        getWindow: () => mainWindow,
+      });
+
+      taskManager
+        .startTask(taskId, validatedConfig, callbacks)
+        .then((task) => {
+          const initialUserMessage = {
+            id: createMessageId(),
+            type: 'user' as const,
+            content: `[Scheduled: ${scheduled.cron}] ${scheduled.prompt}`,
+            timestamp: new Date().toISOString(),
+          };
+          task.messages = [initialUserMessage];
+          storage.saveTask(task);
+
+          generateTaskSummary(scheduled.prompt, getApiKey)
+            .then((summary) => {
+              storage.updateTaskSummary(taskId, summary);
+            })
+            .catch(() => {});
+
+          console.log('[Daemon] Scheduled task started:', taskId);
+        })
+        .catch((err) => {
+          console.error('[Daemon] Failed to start scheduled task:', err);
+        });
+    });
+
     startDaemonServer();
     console.log('[Main] Daemon socket server started at:', getSocketPath());
 
@@ -555,6 +679,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   quitableApp.isQuitting = true;
+  disposeScheduler();
   stopDaemonServer();
   destroyTray();
   disposeTaskManager(); // Also cleans up proxies internally
