@@ -43,6 +43,8 @@ interface ServerState {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: Record<string, any> | null;
   isLoading: boolean;
+  /** Set by stopServer() so an in-flight load can abort before mutating shared state. */
+  isStopping: boolean;
 }
 
 const state: ServerState = {
@@ -53,6 +55,7 @@ const state: ServerState = {
   tokenizer: null,
   model: null,
   isLoading: false,
+  isStopping: false,
 };
 
 // Mutex to prevent concurrent loadModel calls
@@ -70,11 +73,15 @@ async function loadModel(modelId: string): Promise<void> {
   // Prevent concurrent loads — queue onto existing promise
   if (loadModelPromise) {
     await loadModelPromise;
-    if (state.loadedModelId === modelId && state.tokenizer && state.model) return;
+    if (state.loadedModelId === modelId && state.tokenizer && state.model) {
+      return;
+    }
   }
 
   loadModelPromise = (async () => {
     state.isLoading = true;
+    // Capture stop flag at start so we can detect a concurrent stopServer() call
+    const stoppedAtStart = state.isStopping;
     console.log(`[HF Server] Loading model: ${modelId}`);
 
     try {
@@ -105,6 +112,18 @@ async function loadModel(modelId: string): Promise<void> {
           dtype: 'fp32',
           local_files_only: true,
         });
+      }
+
+      // If stopServer() was called while we were loading, dispose the freshly
+      // created resources and skip state mutation to avoid stale references.
+      if (state.isStopping || stoppedAtStart) {
+        console.log(`[HF Server] Stop requested during load of ${modelId}; discarding.`);
+        try {
+          await model.dispose?.();
+        } catch {
+          // Ignore dispose errors
+        }
+        return;
       }
 
       // Successfully loaded new model, safe to dispose old one
@@ -513,17 +532,19 @@ export async function startServer(
           return;
         }
 
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
+        if (!res.writableEnded) {
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+          }
+          res.end(
+            JSON.stringify({
+              error: {
+                message: error instanceof Error ? error.message : 'Internal server error',
+                type: 'server_error',
+              },
+            }),
+          );
         }
-        res.end(
-          JSON.stringify({
-            error: {
-              message: error instanceof Error ? error.message : 'Internal server error',
-              type: 'server_error',
-            },
-          }),
-        );
       }
     });
 
@@ -551,6 +572,9 @@ export async function startServer(
  * Stop the local inference server and unload the model.
  */
 export async function stopServer(): Promise<void> {
+  // Signal any in-flight loadModel IIFE to abort state mutation
+  state.isStopping = true;
+
   if (state.server) {
     await new Promise<void>((resolve) => {
       // Close all keep-alive connections first so server.close() resolves promptly
@@ -583,6 +607,7 @@ export async function stopServer(): Promise<void> {
   state.tokenizer = null;
   state.model = null;
   state.isLoading = false;
+  state.isStopping = false;
 }
 
 /**

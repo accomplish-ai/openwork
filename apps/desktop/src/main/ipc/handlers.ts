@@ -1424,7 +1424,13 @@ export function registerIPCHandlers(): void {
         if (
           typeof config !== 'object' ||
           (config.selectedModelId !== null && typeof config.selectedModelId !== 'string') ||
-          (config.serverPort !== null && typeof config.serverPort !== 'number') ||
+          (config.serverPort !== null &&
+            !(
+              Number.isInteger(config.serverPort) &&
+              isFinite(config.serverPort) &&
+              config.serverPort >= 1 &&
+              config.serverPort <= 65535
+            )) ||
           typeof config.enabled !== 'boolean'
         ) {
           throw new Error('Invalid HuggingFace config: unexpected field types');

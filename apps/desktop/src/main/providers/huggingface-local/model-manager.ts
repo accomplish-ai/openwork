@@ -223,7 +223,19 @@ export function deleteModel(
 ): { success: boolean; error?: string } {
   const cacheDir = cachePath || getDefaultCachePath();
   const resolvedCache = path.resolve(cacheDir);
-  const modelDir = path.resolve(resolvedCache, modelId);
+
+  // Normalize and pre-validate modelId to block path-traversal sequences
+  const normalizedId = path.normalize(modelId);
+  if (
+    !normalizedId ||
+    normalizedId.includes('\0') ||
+    path.isAbsolute(normalizedId) ||
+    normalizedId.split(path.sep).includes('..')
+  ) {
+    return { success: false, error: 'Invalid model ID' };
+  }
+
+  const modelDir = path.resolve(resolvedCache, normalizedId);
 
   // Guard against path traversal: modelDir must be strictly inside cacheDir
   const rel = path.relative(resolvedCache, modelDir);
