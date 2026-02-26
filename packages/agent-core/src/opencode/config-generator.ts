@@ -168,7 +168,8 @@ CORRECT: Call start_task FIRST, update todos as you work, then complete_task
 
 <capabilities>
 When users ask about your capabilities, mention:
-{{BROWSER_CAPABILITY}}- **File Management**: Sort, rename, and move files based on content or rules you give it
+{{BROWSER_CAPABILITY}}- **Desktop Automation**: Control native desktop apps — take screenshots, click, type, manage windows, and open applications
+- **File Management**: Sort, rename, and move files based on content or rules you give it
 </capabilities>
 
 <important name="filesystem-rules">
@@ -422,6 +423,22 @@ Use empty array [] if no skills apply to your task.
     };
   }
 
+  // Register desktop-control MCP tool for native automation
+  mcpServers['desktop-control'] = {
+    type: 'local',
+    command: resolveMcpCommand(
+      tsxCommand,
+      mcpToolsPath,
+      'desktop-control',
+      'src/index.ts',
+      'dist/index.mjs',
+      isPackaged,
+      nodePath,
+    ),
+    enabled: true,
+    timeout: 30000,
+  };
+
   // Add connected MCP connectors as remote servers
   if (options.connectors) {
     for (const connector of options.connectors) {
@@ -526,7 +543,9 @@ Example bad narration (too terse):
     plugin: ['@tarquinen/opencode-dcp@^2.0.0'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
-        description: 'Browser automation assistant using dev-browser',
+        description: hasBrowser
+          ? 'Browser and desktop automation assistant'
+          : 'Desktop automation assistant',
         prompt: systemPrompt,
         mode: 'primary',
       },
