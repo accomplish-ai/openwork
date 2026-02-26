@@ -51,7 +51,7 @@
     "@azure/identity": "^4.13.0",
     "better-sqlite3": "catalog:",
     "dotenv": "^17.2.3",
-    "electron-store": "^8.2.0",
+    "electron-store": "^11.0.2",
     "gray-matter": "^4.0.3",
     "node-pty": "catalog:",
     "opencode-ai": "1.2.10",
