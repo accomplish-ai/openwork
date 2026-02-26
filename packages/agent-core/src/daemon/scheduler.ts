@@ -73,12 +73,20 @@ export function matchesCron(cron: string, date: Date): boolean {
   const months = parseCronField(monthField, 1, 12);
   const dows = parseCronField(dowField, 0, 6);
 
+  // POSIX cron: when both dom and dow are restricted (not *), use OR semantics.
+  // When either is *, use AND semantics (the * field always matches).
+  const domRestricted = domField !== '*';
+  const dowRestricted = dowField !== '*';
+  const domMatches = doms.includes(date.getDate());
+  const dowMatches = dows.includes(date.getDay());
+  const dayMatches =
+    domRestricted && dowRestricted ? domMatches || dowMatches : domMatches && dowMatches;
+
   return (
     minutes.includes(date.getMinutes()) &&
     hours.includes(date.getHours()) &&
-    doms.includes(date.getDate()) &&
-    months.includes(date.getMonth() + 1) &&
-    dows.includes(date.getDay())
+    dayMatches &&
+    months.includes(date.getMonth() + 1)
   );
 }
 

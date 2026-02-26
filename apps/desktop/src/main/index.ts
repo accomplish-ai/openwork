@@ -440,6 +440,15 @@ if (!gotTheLock) {
 
     let daemonPermissionApiReady = false;
 
+    const ensureDaemonPermissionApisReady = (): void => {
+      if (!daemonPermissionApiReady && mainWindow && !mainWindow.isDestroyed()) {
+        initPermissionApi(mainWindow, () => getTaskManager().getActiveTaskId());
+        startPermissionApiServer();
+        startQuestionApiServer();
+        daemonPermissionApiReady = true;
+      }
+    };
+
     registerMethod('task.start', async (params: unknown) => {
       if (typeof params !== 'object' || params === null || Array.isArray(params)) {
         throw new Error('params must be an object');
@@ -464,13 +473,7 @@ if (!gotTheLock) {
         throw new Error('No provider is ready. Configure a provider in Settings first.');
       }
 
-      // Ensure permission API is initialized for MCP tool requests
-      if (!daemonPermissionApiReady && mainWindow && !mainWindow.isDestroyed()) {
-        initPermissionApi(mainWindow, () => getTaskManager().getActiveTaskId());
-        startPermissionApiServer();
-        startQuestionApiServer();
-        daemonPermissionApiReady = true;
-      }
+      ensureDaemonPermissionApisReady();
 
       const taskId =
         typeof requestedTaskId === 'string' && requestedTaskId.length > 0
@@ -617,6 +620,8 @@ if (!gotTheLock) {
         return;
       }
 
+      ensureDaemonPermissionApisReady();
+
       const taskId = createTaskId();
       const taskManager = getTaskManager();
       const validatedConfig = validateTaskConfig({ prompt: scheduled.prompt });
@@ -659,8 +664,12 @@ if (!gotTheLock) {
         });
     });
 
-    startDaemonServer();
-    console.log('[Main] Daemon socket server started at:', getSocketPath());
+    try {
+      startDaemonServer();
+      console.log('[Main] Daemon socket server started at:', getSocketPath());
+    } catch (err) {
+      console.error('[Main] Failed to start daemon server:', err);
+    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

@@ -179,6 +179,14 @@ export function startDaemonServer(): void {
       }
     });
 
+    socket.on('end', () => {
+      const trimmed = buffer.trim();
+      if (trimmed) {
+        handleLine(trimmed, socket);
+      }
+      buffer = '';
+    });
+
     socket.on('error', (err) => {
       console.error('[Daemon] Socket error:', err.message);
     });

@@ -77,6 +77,29 @@ describe('daemon/scheduler', () => {
       expect(matchesCron('* * *', date)).toBe(false);
       expect(matchesCron('* * * * * *', date)).toBe(false);
     });
+
+    it('uses OR semantics when both dom and dow are restricted', () => {
+      // Jan 15, 2025 is a Wednesday (dow=3). Cron: 1st of month OR Friday (dow=5)
+      const wed15 = new Date(2025, 0, 15, 9, 0);
+      // "0 9 1 * 5" = 1st of month OR every Friday — Wednesday the 15th matches neither
+      expect(matchesCron('0 9 1 * 5', wed15)).toBe(false);
+
+      // Jan 1, 2025 is a Wednesday (dow=3). Matches dom=1 via OR
+      const wed1 = new Date(2025, 0, 1, 9, 0);
+      expect(matchesCron('0 9 1 * 5', wed1)).toBe(true);
+
+      // Jan 17, 2025 is a Friday (dow=5). Matches dow=5 via OR
+      const fri17 = new Date(2025, 0, 17, 9, 0);
+      expect(matchesCron('0 9 1 * 5', fri17)).toBe(true);
+    });
+
+    it('uses AND semantics when dom is * (only dow restricts)', () => {
+      // Weekday check: * for dom, 1-5 for dow — Wednesday matches, Saturday doesn't
+      const wednesday = new Date(2025, 0, 15, 9, 0);
+      const saturday = new Date(2025, 0, 18, 9, 0);
+      expect(matchesCron('0 9 * * 1-5', wednesday)).toBe(true);
+      expect(matchesCron('0 9 * * 1-5', saturday)).toBe(false);
+    });
   });
 
   describe('addScheduledTask', () => {
