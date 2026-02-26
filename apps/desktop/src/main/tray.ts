@@ -43,7 +43,8 @@ function buildContextMenu(): Electron.Menu {
       if (!w) {
         return;
       }
-      if (isVisible) {
+      // Re-check visibility at click time to avoid stale state
+      if (w.isVisible() && !w.isMinimized()) {
         w.hide();
       } else {
         w.show();

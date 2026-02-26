@@ -9,8 +9,14 @@ export function DaemonPanel() {
   const accomplish = useAccomplish();
 
   useEffect(() => {
-    accomplish.getRunInBackground().then(setRunInBackground);
-    accomplish.getDaemonSocketPath().then(setSocketPath);
+    accomplish
+      .getRunInBackground()
+      .then(setRunInBackground)
+      .catch(() => {});
+    accomplish
+      .getDaemonSocketPath()
+      .then(setSocketPath)
+      .catch(() => {});
   }, [accomplish]);
 
   const handleToggle = async () => {
@@ -86,7 +92,9 @@ export function DaemonPanel() {
         <div className="mt-4 space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Example: Send a task via CLI</p>
           <pre className="overflow-x-auto max-w-full rounded-md bg-muted px-3 py-2 text-xs font-mono text-foreground whitespace-pre-wrap break-all">
-            {`echo '{"jsonrpc":"2.0","id":1,"method":"task.start","params":{"prompt":"List files in /tmp"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
+            {navigator.platform?.startsWith('Win')
+              ? `echo {"jsonrpc":"2.0","id":1,"method":"task.start","params":{"prompt":"List files"}} | npx json-rpc-pipe "\\\\.\\pipe\\accomplish-daemon"`
+              : `echo '{"jsonrpc":"2.0","id":1,"method":"task.start","params":{"prompt":"List files in /tmp"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
           </pre>
         </div>
       </div>

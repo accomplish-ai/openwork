@@ -263,6 +263,7 @@ if (!gotTheLock) {
 
   app.on('second-instance', (_event, commandLine) => {
     if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
       console.log('[Main] Focused existing instance after second-instance event');
@@ -376,6 +377,8 @@ if (!gotTheLock) {
     });
 
     // Start daemon socket server for external triggers
+    registerMethod('daemon.ping', () => ({ pong: true }));
+
     registerMethod('daemon.status', () => ({
       running: true,
       version: app.getVersion(),
@@ -400,6 +403,10 @@ if (!gotTheLock) {
     let daemonPermissionApiReady = false;
 
     registerMethod('task.start', async (params: unknown) => {
+      if (typeof params !== 'object' || params === null) {
+        throw new Error('params must be an object');
+      }
+
       const { prompt, taskId: requestedTaskId } = params as {
         prompt: string;
         taskId?: string;
@@ -466,6 +473,10 @@ if (!gotTheLock) {
     });
 
     registerMethod('task.stop', async (params: unknown) => {
+      if (typeof params !== 'object' || params === null) {
+        throw new Error('params must be an object');
+      }
+
       const { taskId } = params as { taskId: string };
 
       if (!taskId || typeof taskId !== 'string') {
@@ -493,6 +504,10 @@ if (!gotTheLock) {
     });
 
     registerMethod('task.get', (params: unknown) => {
+      if (typeof params !== 'object' || params === null) {
+        throw new Error('params must be an object');
+      }
+
       const { taskId } = params as { taskId: string };
 
       if (!taskId || typeof taskId !== 'string') {

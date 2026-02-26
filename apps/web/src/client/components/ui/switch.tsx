@@ -6,7 +6,15 @@ interface SwitchProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onC
   ariaLabel?: string;
 }
 
-export function Switch({ checked, onChange, disabled, ariaLabel, ...props }: SwitchProps) {
+export function Switch({
+  checked,
+  onChange,
+  disabled,
+  ariaLabel,
+  className: _className,
+  onClick: _onClick,
+  ...props
+}: SwitchProps) {
   return (
     <button
       type="button"

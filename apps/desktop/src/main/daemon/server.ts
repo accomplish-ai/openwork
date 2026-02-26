@@ -14,14 +14,15 @@ import fs from 'fs';
 import { app } from 'electron';
 
 export interface DaemonRpcMethod {
-  'task.list': { params: Record<string, never>; result: { tasks: string[] } };
-  'task.start': { params: { prompt: string; taskId?: string }; result: { taskId: string } };
-  'task.stop': { params: { taskId: string }; result: { ok: boolean } };
-  'task.get': { params: { taskId: string }; result: { task: unknown } };
+  'daemon.ping': { params: Record<string, never>; result: { pong: boolean } };
   'daemon.status': {
     params: Record<string, never>;
     result: { running: boolean; version: string; activeTasks: number };
   };
+  'task.list': { params: Record<string, never>; result: { tasks: string[] } };
+  'task.start': { params: { prompt: string; taskId?: string }; result: { taskId: string } };
+  'task.stop': { params: { taskId: string }; result: { ok: boolean } };
+  'task.get': { params: { taskId: string }; result: { task: unknown } };
 }
 
 export type DaemonMethod = keyof DaemonRpcMethod;
@@ -56,6 +57,10 @@ export function registerMethod(method: DaemonMethod | string, handler: MethodHan
   methodHandlers.set(method, handler);
 }
 
+function isNotification(request: JsonRpcRequest): boolean {
+  return request.id === undefined || request.id === null;
+}
+
 function handleLine(line: string, socket: net.Socket): void {
   let request: JsonRpcRequest;
 
@@ -72,9 +77,14 @@ function handleLine(line: string, socket: net.Socket): void {
   }
 
   const { id, method, params } = request;
+  const notification = isNotification(request);
 
   const handler = methodHandlers.get(method);
   if (!handler) {
+    // Per JSON-RPC 2.0 spec, notifications must not receive a response
+    if (notification) {
+      return;
+    }
     const errResponse: JsonRpcResponse = {
       jsonrpc: '2.0',
       id: id ?? null,
@@ -87,6 +97,9 @@ function handleLine(line: string, socket: net.Socket): void {
   Promise.resolve()
     .then(() => handler(params ?? {}))
     .then((result) => {
+      if (notification) {
+        return;
+      }
       const response: JsonRpcResponse = {
         jsonrpc: '2.0',
         id: id ?? null,
@@ -95,6 +108,9 @@ function handleLine(line: string, socket: net.Socket): void {
       socket.write(JSON.stringify(response) + '\n');
     })
     .catch((err: unknown) => {
+      if (notification) {
+        return;
+      }
       const response: JsonRpcResponse = {
         jsonrpc: '2.0',
         id: id ?? null,
@@ -116,8 +132,14 @@ export function startDaemonServer(): void {
   const socketPath = getSocketPath();
 
   // Remove stale socket file on unix
-  if (process.platform !== 'win32' && fs.existsSync(socketPath)) {
-    fs.unlinkSync(socketPath);
+  if (process.platform !== 'win32') {
+    try {
+      if (fs.existsSync(socketPath)) {
+        fs.unlinkSync(socketPath);
+      }
+    } catch (err) {
+      console.warn('[Daemon] Failed to remove stale socket file:', err);
+    }
   }
 
   server = net.createServer((socket) => {
@@ -143,6 +165,7 @@ export function startDaemonServer(): void {
 
   server.on('error', (err) => {
     console.error('[Daemon] Server error:', err.message);
+    server = null;
   });
 
   server.listen(socketPath, () => {

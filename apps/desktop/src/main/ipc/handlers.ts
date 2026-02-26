@@ -1223,6 +1223,9 @@ export function registerIPCHandlers(): void {
   });
 
   handle('daemon:set-run-in-background', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid value: enabled must be a boolean');
+    }
     storage.setRunInBackground(enabled);
   });
 

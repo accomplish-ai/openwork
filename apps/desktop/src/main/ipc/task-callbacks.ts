@@ -1,10 +1,22 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, Notification } from 'electron';
 import type { TaskMessage, TaskResult, TaskStatus, TodoItem } from '@accomplish_ai/agent-core';
 import { mapResultToStatus } from '@accomplish_ai/agent-core';
 import { getTaskManager, recoverDevBrowserServer } from '../opencode';
 import type { TaskCallbacks } from '../opencode';
 import { getStorage } from '../store/storage';
 import { updateTray } from '../tray';
+
+function isWindowHidden(): boolean {
+  const windows = BrowserWindow.getAllWindows();
+  return windows.length === 0 || windows.every((w) => !w.isVisible() || w.isMinimized());
+}
+
+function sendBackgroundNotification(title: string, body: string): void {
+  if (!isWindowHidden() || !Notification.isSupported()) {
+    return;
+  }
+  new Notification({ title, body }).show();
+}
 
 const DEV_BROWSER_TOOL_PREFIXES = ['dev-browser-mcp_', 'dev_browser_mcp_', 'browser_'];
 const BROWSER_FAILURE_WINDOW_MS = 12000;
@@ -230,7 +242,7 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
 
   const forwardToRenderer = (channel: string, data: unknown) => {
     const win = getWindow?.() ?? BrowserWindow.getAllWindows()[0];
-    if (win && !win.isDestroyed()) {
+    if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
       win.webContents.send(channel, data);
     }
   };
@@ -264,6 +276,15 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
 
       if (result.status === 'success') {
         storage.clearTodosForTask(taskId);
+        sendBackgroundNotification(
+          'Task Completed',
+          `Task ${taskId.slice(0, 8)} finished successfully.`,
+        );
+      } else {
+        sendBackgroundNotification(
+          'Task Finished',
+          `Task ${taskId.slice(0, 8)} finished with status: ${result.status}`,
+        );
       }
 
       updateTray();
@@ -272,6 +293,10 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
     onError: (error: Error) => {
       forwardToRenderer('task:update', { taskId, type: 'error', error: error.message });
       storage.updateTaskStatus(taskId, 'failed', new Date().toISOString());
+      sendBackgroundNotification(
+        'Task Failed',
+        `Task ${taskId.slice(0, 8)} failed: ${error.message}`,
+      );
       updateTray();
     },
 
