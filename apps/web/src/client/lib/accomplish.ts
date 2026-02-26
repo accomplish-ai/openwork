@@ -350,6 +350,7 @@ interface AccomplishAPI {
   getEnabledSkills(): Promise<Skill[]>;
   setSkillEnabled(id: string, enabled: boolean): Promise<void>;
   getSkillContent(id: string): Promise<string | null>;
+  getUserSkillsPath(): Promise<string>;
   pickSkillFile(): Promise<string | null>;
   addSkillFromFile(filePath: string): Promise<Skill>;
   addSkillFromGitHub(rawUrl: string): Promise<Skill>;
