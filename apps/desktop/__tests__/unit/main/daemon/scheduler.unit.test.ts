@@ -93,6 +93,14 @@ describe('daemon/scheduler', () => {
       const task = addScheduledTask('* * * * *', 'Every minute');
       expect(task.nextRunAt).toBeDefined();
     });
+
+    it('rejects invalid cron expressions', () => {
+      expect(() => addScheduledTask('70 * * * *', 'Bad minute')).toThrow('Invalid cron expression');
+      expect(() => addScheduledTask('* * *', 'Too few fields')).toThrow('Invalid cron expression');
+      expect(() => addScheduledTask('abc def ghi jkl mno', 'Non-numeric')).toThrow(
+        'Invalid cron expression',
+      );
+    });
   });
 
   describe('listScheduledTasks', () => {

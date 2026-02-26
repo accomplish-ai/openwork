@@ -82,9 +82,26 @@ export function matchesCron(cron: string, date: Date): boolean {
   );
 }
 
+function isValidCronExpression(cron: string): boolean {
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length !== 5) {
+    return false;
+  }
+  const ranges: Array<[number, number]> = [
+    [0, 59],
+    [0, 23],
+    [1, 31],
+    [1, 12],
+    [0, 6],
+  ];
+  return parts.every(
+    (field, idx) => parseCronField(field, ranges[idx][0], ranges[idx][1]).length > 0,
+  );
+}
+
 /**
  * Calculate the next run time for a cron expression.
- * Returns ISO string or undefined if can't determine within 7 days.
+ * Returns ISO string or undefined if can't determine within 366 days.
  */
 function getNextRunTime(cron: string): string | undefined {
   const now = new Date();
@@ -93,7 +110,7 @@ function getNextRunTime(cron: string): string | undefined {
   check.setMilliseconds(0);
   check.setMinutes(check.getMinutes() + 1);
 
-  const maxMinutes = 7 * 24 * 60;
+  const maxMinutes = 366 * 24 * 60;
   for (let i = 0; i < maxMinutes; i++) {
     if (matchesCron(cron, check)) {
       return check.toISOString();
@@ -107,6 +124,10 @@ function getNextRunTime(cron: string): string | undefined {
  * Add a scheduled task. Returns the created ScheduledTask.
  */
 export function addScheduledTask(cron: string, prompt: string): ScheduledTask {
+  if (!isValidCronExpression(cron)) {
+    throw new Error(`Invalid cron expression: ${cron}`);
+  }
+
   const id = `sched-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const task: ScheduledTask = {
     id,
@@ -197,11 +218,11 @@ function tick(): void {
       task.nextRunAt = getNextRunTime(task.cron);
 
       if (onFireCallback) {
-        try {
-          onFireCallback(task);
-        } catch (err) {
-          console.error('[Scheduler] Callback error for task', task.id, err);
-        }
+        void Promise.resolve()
+          .then(() => onFireCallback?.(task))
+          .catch((err) => {
+            console.error('[Scheduler] Callback error for task', task.id, err);
+          });
       }
     }
   }

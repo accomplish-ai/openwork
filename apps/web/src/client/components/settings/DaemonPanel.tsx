@@ -77,7 +77,9 @@ export function DaemonPanel() {
               </code>
               <button
                 type="button"
-                onClick={() => navigator.clipboard.writeText(socketPath)}
+                onClick={() => {
+                  void navigator.clipboard.writeText(socketPath).catch(() => {});
+                }}
                 className="flex-shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 title="Copy to clipboard"
               >
@@ -103,7 +105,9 @@ export function DaemonPanel() {
             Example: Schedule a recurring task
           </p>
           <pre className="overflow-x-auto max-w-full rounded-md bg-muted px-3 py-2 text-xs font-mono text-foreground whitespace-pre-wrap break-all">
-            {`echo '{"jsonrpc":"2.0","id":1,"method":"task.schedule","params":{"cron":"0 9 * * 1-5","prompt":"Check email and summarize"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
+            {navigator.platform?.startsWith('Win')
+              ? `echo {"jsonrpc":"2.0","id":1,"method":"task.schedule","params":{"cron":"0 9 * * 1-5","prompt":"Check email and summarize"}} | npx json-rpc-pipe "\\\\.\\pipe\\accomplish-daemon"`
+              : `echo '{"jsonrpc":"2.0","id":1,"method":"task.schedule","params":{"cron":"0 9 * * 1-5","prompt":"Check email and summarize"}}' | nc -U "${socketPath ?? '/path/to/daemon.sock'}"`}
           </pre>
         </div>
       </div>

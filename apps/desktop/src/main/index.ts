@@ -646,7 +646,9 @@ if (!gotTheLock) {
             .then((summary) => {
               storage.updateTaskSummary(taskId, summary);
             })
-            .catch(() => {});
+            .catch((err) => {
+              console.warn('[Daemon] Failed to generate scheduled task summary:', err);
+            });
 
           console.log('[Daemon] Scheduled task started:', taskId);
         })

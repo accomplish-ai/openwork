@@ -23,12 +23,11 @@ function getDefaultSocketPath(): string {
   if (process.platform === 'win32') {
     return '\\\\.\\pipe\\accomplish-daemon';
   }
-  // Match the path used by the daemon server
-  const appData =
-    process.platform === 'darwin'
-      ? path.join(os.homedir(), 'Library', 'Application Support', 'Accomplish')
-      : path.join(os.homedir(), '.config', 'Accomplish');
-  return path.join(appData, 'daemon.sock');
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'Accomplish', 'daemon.sock');
+  }
+  const xdgConfigHome = process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), '.config');
+  return path.join(xdgConfigHome, 'Accomplish', 'daemon.sock');
 }
 
 function sendRpc(
@@ -52,15 +51,22 @@ function sendRpc(
       for (const line of lines) {
         if (line.trim()) {
           client.destroy();
-          const response = JSON.parse(line) as {
+          let response: {
             result?: unknown;
             error?: { code: number; message: string; data?: unknown };
           };
+          try {
+            response = JSON.parse(line) as typeof response;
+          } catch {
+            reject(new Error('Invalid JSON response from daemon'));
+            return;
+          }
           if (response.error) {
             reject(new Error(`RPC error ${response.error.code}: ${response.error.message}`));
           } else {
             resolve(response.result);
           }
+          return;
         }
       }
     });
