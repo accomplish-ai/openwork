@@ -5,6 +5,7 @@ import type {
   AzureFoundryConfig,
   LMStudioConfig,
 } from '../../common/types/provider.js';
+import type { CloudBrowserConfig } from '../../common/types/cloud-browser.js';
 import type { ThemePreference } from '../../types/storage.js';
 import { getDatabase } from '../database.js';
 import { safeParseJsonWithFallback } from '../../utils/json.js';
@@ -20,6 +21,7 @@ interface AppSettingsRow {
   lmstudio_config: string | null;
   openai_base_url: string | null;
   theme: string;
+  cloud_browser_config: string | null;
 }
 
 export interface AppSettings {
@@ -32,6 +34,7 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  cloudBrowserConfig: CloudBrowserConfig | null;
 }
 
 function getRow(): AppSettingsRow {
@@ -169,6 +172,18 @@ export function setTheme(theme: ThemePreference): void {
   db.prepare('UPDATE app_settings SET theme = ? WHERE id = 1').run(theme);
 }
 
+export function getCloudBrowserConfig(): CloudBrowserConfig | null {
+  const row = getRow();
+  return safeParseJsonWithFallback<CloudBrowserConfig>(row.cloud_browser_config);
+}
+
+export function setCloudBrowserConfig(config: CloudBrowserConfig | null): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET cloud_browser_config = ? WHERE id = 1').run(
+    config ? JSON.stringify(config) : null,
+  );
+}
+
 export function getAppSettings(): AppSettings {
   const row = getRow();
   return {
@@ -183,6 +198,7 @@ export function getAppSettings(): AppSettings {
     theme: VALID_THEMES.includes(row.theme as ThemePreference)
       ? (row.theme as ThemePreference)
       : 'system',
+    cloudBrowserConfig: safeParseJsonWithFallback<CloudBrowserConfig>(row.cloud_browser_config),
   };
 }
 
@@ -198,7 +214,8 @@ export function clearAppSettings(): void {
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
       openai_base_url = '',
-      theme = 'system'
+      theme = 'system',
+      cloud_browser_config = NULL
     WHERE id = 1`,
   ).run();
 }
