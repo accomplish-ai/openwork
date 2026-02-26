@@ -44,6 +44,18 @@ import {
   getSocketPath,
 } from './daemon/server';
 import { getTaskManager } from './opencode';
+import {
+  createTaskId,
+  createMessageId,
+  validateTaskConfig,
+  generateTaskSummary,
+} from '@accomplish_ai/agent-core';
+import { createDaemonTaskCallbacks } from './ipc/task-callbacks';
+import {
+  initPermissionApi,
+  startPermissionApiServer,
+  startQuestionApiServer,
+} from './permission-api';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -384,6 +396,101 @@ if (!gotTheLock) {
         }
       })(),
     }));
+
+    let daemonPermissionApiReady = false;
+
+    registerMethod('task.start', async (params: unknown) => {
+      const { prompt, taskId: requestedTaskId } = params as {
+        prompt: string;
+        taskId?: string;
+      };
+
+      if (!prompt || typeof prompt !== 'string') {
+        throw new Error('prompt is required');
+      }
+
+      const storage = getStorage();
+
+      if (!storage.hasReadyProvider()) {
+        throw new Error('No provider is ready. Configure a provider in Settings first.');
+      }
+
+      // Ensure permission API is initialized for MCP tool requests
+      if (!daemonPermissionApiReady && mainWindow && !mainWindow.isDestroyed()) {
+        initPermissionApi(mainWindow, () => getTaskManager().getActiveTaskId());
+        startPermissionApiServer();
+        startQuestionApiServer();
+        daemonPermissionApiReady = true;
+      }
+
+      const taskId = requestedTaskId || createTaskId();
+      const taskManager = getTaskManager();
+
+      const validatedConfig = validateTaskConfig({ prompt });
+      const activeModel = storage.getActiveProviderModel();
+      const selectedModel = activeModel || storage.getSelectedModel();
+      if (selectedModel?.model) {
+        validatedConfig.modelId = selectedModel.model;
+      }
+
+      const callbacks = createDaemonTaskCallbacks({
+        taskId,
+        getWindow: () => mainWindow,
+      });
+
+      const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
+
+      const initialUserMessage = {
+        id: createMessageId(),
+        type: 'user' as const,
+        content: prompt,
+        timestamp: new Date().toISOString(),
+      };
+      task.messages = [initialUserMessage];
+      storage.saveTask(task);
+
+      // Generate summary async
+      generateTaskSummary(prompt, getApiKey)
+        .then((summary) => {
+          storage.updateTaskSummary(taskId, summary);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('task:summary', { taskId, summary });
+          }
+        })
+        .catch((err) => {
+          console.warn('[Daemon] Failed to generate task summary:', err);
+        });
+
+      console.log('[Daemon] Task started via socket:', taskId);
+      return { taskId };
+    });
+
+    registerMethod('task.stop', async (params: unknown) => {
+      const { taskId } = params as { taskId: string };
+
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('taskId is required');
+      }
+
+      const taskManager = getTaskManager();
+      const storage = getStorage();
+
+      if (taskManager.isTaskQueued(taskId)) {
+        taskManager.cancelQueuedTask(taskId);
+        storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+        console.log('[Daemon] Queued task cancelled:', taskId);
+        return { ok: true };
+      }
+
+      if (taskManager.hasActiveTask(taskId)) {
+        await taskManager.cancelTask(taskId);
+        storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+        console.log('[Daemon] Active task stopped:', taskId);
+        return { ok: true };
+      }
+
+      throw new Error(`Task ${taskId} not found or not active`);
+    });
 
     startDaemonServer();
     console.log('[Main] Daemon socket server started at:', getSocketPath());
