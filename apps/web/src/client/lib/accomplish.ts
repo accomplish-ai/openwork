@@ -263,6 +263,40 @@ interface AccomplishAPI {
     } | null,
   ): Promise<void>;
 
+  // HuggingFace configuration
+  getHuggingFaceLocalConfig(): Promise<{
+    selectedModelId: string | null;
+    serverPort: number | null;
+    enabled: boolean;
+  } | null>;
+  setHuggingFaceLocalConfig(
+    config: {
+      selectedModelId: string | null;
+      serverPort: number | null;
+      enabled: boolean;
+    } | null,
+  ): Promise<void>;
+  listHuggingFaceModels(): Promise<{
+    cached: Array<{ id: string; displayName: string; sizeBytes?: number; downloaded: boolean }>;
+    suggested: Array<{ id: string; displayName: string; sizeBytes?: number; downloaded: boolean }>;
+  }>;
+  downloadHuggingFaceModel(modelId: string): Promise<{ success: boolean; error?: string }>;
+  startHuggingFaceServer(
+    modelId: string,
+  ): Promise<{ success: boolean; port?: number; error?: string }>;
+  stopHuggingFaceServer(): Promise<{ success: boolean; error?: string }>;
+  getHuggingFaceServerStatus(): Promise<{ running: boolean; port?: number }>;
+  testHuggingFaceConnection(): Promise<{ success: boolean; error?: string }>;
+  deleteHuggingFaceModel(modelId: string): Promise<{ success: boolean; error?: string }>;
+  onHuggingFaceDownloadProgress(
+    callback: (progress: {
+      modelId: string;
+      status: 'downloading' | 'complete' | 'error';
+      progress: number;
+      error?: string;
+    }) => void,
+  ): () => void;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
@@ -430,6 +464,24 @@ export function getAccomplish() {
     detectVertexProject: () => window.accomplish!.detectVertexProject(),
 
     listVertexProjects: () => window.accomplish!.listVertexProjects(),
+
+    listHuggingFaceModels: () => window.accomplish!.listHuggingFaceModels(),
+
+    downloadHuggingFaceModel: (modelId: string) =>
+      window.accomplish!.downloadHuggingFaceModel(modelId),
+
+    startHuggingFaceServer: (modelId: string) => window.accomplish!.startHuggingFaceServer(modelId),
+
+    stopHuggingFaceServer: () => window.accomplish!.stopHuggingFaceServer(),
+
+    onHuggingFaceDownloadProgress: (
+      callback: (progress: {
+        modelId: string;
+        status: 'downloading' | 'complete' | 'error';
+        progress: number;
+        error?: string;
+      }) => void,
+    ) => window.accomplish!.onHuggingFaceDownloadProgress(callback),
   };
 }
 

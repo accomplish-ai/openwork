@@ -109,6 +109,25 @@ vi.mock('@main/opencode/auth', () => ({
   loginOpenAiWithChatGpt: vi.fn(() => Promise.resolve({ openedUrl: undefined })),
 }));
 
+// Mock HuggingFace Local provider - used by handlers.ts for local inference
+vi.mock('@main/providers/huggingface-local', () => ({
+  startHuggingFaceServer: vi.fn(() => Promise.resolve({ success: true, port: 8080 })),
+  stopHuggingFaceServer: vi.fn(() => Promise.resolve()),
+  getHuggingFaceServerStatus: vi.fn(() => ({
+    running: false,
+    port: null,
+    loadedModel: null,
+    isLoading: false,
+  })),
+  testHuggingFaceConnection: vi.fn(() =>
+    Promise.resolve({ success: false, error: 'Server is not running' }),
+  ),
+  downloadModel: vi.fn(() => Promise.resolve({ success: true })),
+  listCachedModels: vi.fn(() => []),
+  deleteModel: vi.fn(() => Promise.resolve({ success: true })),
+  SUGGESTED_MODELS: [],
+}));
+
 // Mock task history (stored in test state)
 const mockTasks: Array<{
   id: string;
@@ -481,6 +500,15 @@ describe('IPC Handlers Integration', () => {
 
       // Shell handler
       expect(handlers.has('shell:open-external')).toBe(true);
+
+      // HuggingFace Local handlers
+      expect(handlers.has('huggingface-local:start-server')).toBe(true);
+      expect(handlers.has('huggingface-local:stop-server')).toBe(true);
+      expect(handlers.has('huggingface-local:server-status')).toBe(true);
+      expect(handlers.has('huggingface-local:test-connection')).toBe(true);
+      expect(handlers.has('huggingface-local:download-model')).toBe(true);
+      expect(handlers.has('huggingface-local:list-models')).toBe(true);
+      expect(handlers.has('huggingface-local:delete-model')).toBe(true);
 
       // Log handler
       expect(handlers.has('log:event')).toBe(true);

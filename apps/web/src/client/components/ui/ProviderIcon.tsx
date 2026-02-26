@@ -30,6 +30,7 @@ const PROVIDER_COLORS: Record<string, string> = {
   minimax: 'bg-[#EF4444]', // Red
   lmstudio: 'bg-[#3B82F6]', // Blue
   'azure-foundry': 'bg-[#0078D4]', // Azure blue
+  'huggingface-local': 'bg-[#FF9D00]', // HuggingFace yellow-orange
   custom: 'bg-[#6B7280]', // Gray
 };
 
@@ -51,6 +52,7 @@ const PROVIDER_INITIALS: Record<string, string> = {
   minimax: 'M',
   lmstudio: 'L',
   'azure-foundry': 'A',
+  'huggingface-local': 'H',
   custom: 'C',
 };
 

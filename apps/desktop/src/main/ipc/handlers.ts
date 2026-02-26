@@ -81,6 +81,7 @@ import type {
   AzureFoundryConfig,
   LiteLLMConfig,
   LMStudioConfig,
+  HuggingFaceLocalConfig,
 } from '@accomplish_ai/agent-core';
 import {
   DEFAULT_PROVIDERS,
@@ -98,6 +99,16 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import {
+  startHuggingFaceServer,
+  stopHuggingFaceServer,
+  getHuggingFaceServerStatus,
+  testHuggingFaceConnection,
+  downloadModel as hfDownloadModel,
+  listCachedModels as hfListCachedModels,
+  deleteModel as hfDeleteModel,
+  SUGGESTED_MODELS as HF_SUGGESTED_MODELS,
+} from '../providers/huggingface-local';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -1171,10 +1182,6 @@ export function registerIPCHandlers(): void {
     return skillsManager.getContent(id);
   });
 
-  handle('skills:get-user-skills-path', async () => {
-    return skillsManager.getUserSkillsPath();
-  });
-
   handle('skills:pick-file', async () => {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -1358,6 +1365,80 @@ export function registerIPCHandlers(): void {
     storage.deleteConnectorTokens(connectorId);
     storage.setConnectorStatus(connectorId, 'disconnected');
   });
+
+  // ── HuggingFace Local Provider ──────────────────────────────────────
+
+  handle('huggingface-local:start-server', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return startHuggingFaceServer(modelId.trim());
+  });
+
+  handle('huggingface-local:stop-server', async () => {
+    await stopHuggingFaceServer();
+    return { success: true };
+  });
+
+  handle('huggingface-local:server-status', async () => {
+    return getHuggingFaceServerStatus();
+  });
+
+  handle('huggingface-local:test-connection', async () => {
+    return testHuggingFaceConnection();
+  });
+
+  handle('huggingface-local:download-model', async (event: IpcMainInvokeEvent, modelId: string) => {
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return hfDownloadModel(modelId.trim(), (progress) => {
+      try {
+        event.sender.send('huggingface-local:download-progress', progress);
+      } catch {
+        // Window may have been closed
+      }
+    });
+  });
+
+  handle('huggingface-local:list-models', async () => {
+    const cached = hfListCachedModels();
+    return { cached, suggested: HF_SUGGESTED_MODELS };
+  });
+
+  handle('huggingface-local:delete-model', async (_event: IpcMainInvokeEvent, modelId: string) => {
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      return { success: false, error: 'Invalid model ID' };
+    }
+    return hfDeleteModel(modelId.trim());
+  });
+
+  handle('huggingface-local:get-config', async () => {
+    return storage.getHuggingFaceLocalConfig();
+  });
+
+  handle(
+    'huggingface-local:set-config',
+    async (_event: IpcMainInvokeEvent, config: HuggingFaceLocalConfig | null) => {
+      if (config !== null) {
+        if (
+          typeof config !== 'object' ||
+          (config.selectedModelId !== null && typeof config.selectedModelId !== 'string') ||
+          (config.serverPort !== null &&
+            !(
+              Number.isInteger(config.serverPort) &&
+              isFinite(config.serverPort) &&
+              config.serverPort >= 1 &&
+              config.serverPort <= 65535
+            )) ||
+          typeof config.enabled !== 'boolean'
+        ) {
+          throw new Error('Invalid HuggingFace config: unexpected field types');
+        }
+      }
+      storage.setHuggingFaceLocalConfig(config);
+    },
+  );
 }
 
 // In-memory store for pending OAuth flows (keyed by state parameter)

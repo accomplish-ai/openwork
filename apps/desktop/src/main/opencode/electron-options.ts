@@ -16,6 +16,7 @@ import {
   type CliResolverConfig,
   type EnvironmentConfig,
 } from '@accomplish_ai/agent-core';
+import { getHuggingFaceServerStatus } from '../providers/huggingface-local';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
 import type {
   AzureFoundryCredentials,
@@ -33,9 +34,6 @@ import { getExtendedNodePath } from '../utils/system-path';
 import { getBundledNodePaths, logBundledNodeInfo } from '../utils/bundled-node';
 
 const VERTEX_SA_KEY_FILENAME = 'vertex-sa-key.json';
-const BROWSER_RECOVERY_COOLDOWN_MS = 10000;
-let browserEnsurePromise: Promise<void> | null = null;
-let lastBrowserRecoveryAt = 0;
 
 /**
  * Removes the Vertex AI service account key file from disk if it exists.
@@ -66,19 +64,19 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
   if (resolved) {
     return { command: resolved.cliPath, args: [] };
   }
-  throw new Error(
-    '[CLI Path] OpenCode CLI executable not found. Reinstall dependencies to restore platform binaries.',
-  );
+  console.log('[CLI Path] Falling back to opencode command on PATH');
+  return { command: 'opencode', args: [] };
 }
 
-export function isOpenCodeCliAvailable(): boolean {
+export function isOpenCodeBundled(): boolean {
   return coreIsCliAvailable(getCliResolverConfig());
 }
 
 export function getBundledOpenCodeVersion(): string | null {
+  const { command } = getOpenCodeCliPath();
   if (app.isPackaged) {
     try {
-      const packageName = 'opencode-ai';
+      const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';
       const packageJsonPath = path.join(
         process.resourcesPath,
         'app.asar.unpacked',
@@ -97,7 +95,6 @@ export function getBundledOpenCodeVersion(): string | null {
   }
 
   try {
-    const { command } = getOpenCodeCliPath();
     const fullCommand = `"${command}" --version`;
     const output = execSync(fullCommand, {
       encoding: 'utf-8',
@@ -115,52 +112,36 @@ export function getBundledOpenCodeVersion(): string | null {
 export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEnv> {
   // Start with base environment
   let env: NodeJS.ProcessEnv = { ...process.env };
-  const bundledNode = getBundledNodePaths();
 
-  if (!bundledNode) {
-    throw new Error(
-      '[OpenCode CLI] Bundled Node.js path is missing. ' +
-        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
-    );
-  }
+  // Handle Electron-specific environment setup for packaged app
+  if (app.isPackaged) {
+    env.ELECTRON_RUN_AS_NODE = '1';
 
-  if (!fs.existsSync(bundledNode.nodePath)) {
-    throw new Error(
-      `[OpenCode CLI] Bundled Node.js executable not found at ${bundledNode.nodePath}. ` +
-        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
-    );
-  }
+    logBundledNodeInfo();
 
-  try {
-    fs.accessSync(bundledNode.nodePath, fs.constants.X_OK);
-  } catch {
-    throw new Error(
-      `[OpenCode CLI] Bundled Node.js executable is not executable at ${bundledNode.nodePath}. ` +
-        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
-    );
-  }
+    const bundledNode = getBundledNodePaths();
+    if (bundledNode) {
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const existingPath = env.PATH ?? env.Path ?? '';
+      const combinedPath = existingPath
+        ? `${bundledNode.binDir}${delimiter}${existingPath}`
+        : bundledNode.binDir;
+      env.PATH = combinedPath;
+      if (process.platform === 'win32') {
+        env.Path = combinedPath;
+      }
+      console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
+    }
 
-  env.ELECTRON_RUN_AS_NODE = '1';
-  logBundledNodeInfo();
-
-  const delimiter = process.platform === 'win32' ? ';' : ':';
-  const existingPath = env.PATH ?? env.Path ?? '';
-  const combinedPath = existingPath
-    ? `${bundledNode.binDir}${delimiter}${existingPath}`
-    : bundledNode.binDir;
-  env.PATH = combinedPath;
-  if (process.platform === 'win32') {
-    env.Path = combinedPath;
-  }
-  console.log('[OpenCode CLI] Added bundled Node.js to PATH:', bundledNode.binDir);
-
-  if (process.platform === 'darwin') {
-    env.PATH = getExtendedNodePath(env.PATH);
+    if (process.platform === 'darwin') {
+      env.PATH = getExtendedNodePath(env.PATH);
+    }
   }
 
   // Gather configuration for the reusable environment builder
   const apiKeys = await getAllApiKeys();
   const bedrockCredentials = getBedrockCredentials() as BedrockCredentials | null;
+  const bundledNode = getBundledNodePaths();
 
   // Determine OpenAI base URL
   const storage = getStorage();
@@ -174,6 +155,18 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     ollamaHost = activeModel.baseUrl;
   } else if (selectedModel?.provider === 'ollama' && selectedModel.baseUrl) {
     ollamaHost = selectedModel.baseUrl;
+  }
+
+  // Determine HuggingFace Local server URL
+  const hfProvider =
+    activeModel?.provider === 'huggingface-local' ||
+    selectedModel?.provider === 'huggingface-local';
+  let hfBaseUrl: string | undefined;
+  if (hfProvider) {
+    const hfStatus = getHuggingFaceServerStatus();
+    if (hfStatus.running && hfStatus.port) {
+      hfBaseUrl = `http://127.0.0.1:${hfStatus.port}/v1`;
+    }
   }
 
   // Handle Vertex AI credentials
@@ -200,9 +193,9 @@ export async function buildEnvironment(taskId: string): Promise<NodeJS.ProcessEn
     bedrockCredentials: bedrockCredentials || undefined,
     vertexCredentials,
     vertexServiceAccountKeyPath,
-    bundledNodeBinPath: bundledNode.binDir,
+    bundledNodeBinPath: bundledNode?.binDir,
     taskId: taskId || undefined,
-    openAiBaseUrl: configuredOpenAiBaseUrl || undefined,
+    openAiBaseUrl: hfProvider ? hfBaseUrl : configuredOpenAiBaseUrl || undefined,
     ollamaHost,
   };
 
@@ -238,7 +231,7 @@ export function getCliCommand(): { command: string; args: string[] } {
 }
 
 export async function isCliAvailable(): Promise<boolean> {
-  return isOpenCodeCliAvailable();
+  return isOpenCodeBundled();
 }
 
 export async function onBeforeStart(): Promise<void> {
@@ -272,54 +265,11 @@ export async function onBeforeStart(): Promise<void> {
 
 function getBrowserServerConfig(): BrowserServerConfig {
   const bundledPaths = getBundledNodePaths();
-  if (!bundledPaths) {
-    throw new Error(
-      '[Browser] Bundled Node.js path is missing. ' +
-        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild before launching.',
-    );
-  }
   return {
     mcpToolsPath: getMcpToolsPath(),
-    bundledNodeBinPath: bundledPaths.binDir,
+    bundledNodeBinPath: bundledPaths?.binDir,
     devBrowserPort: DEV_BROWSER_PORT,
   };
-}
-
-async function ensureBrowserServer(callbacks?: Pick<TaskCallbacks, 'onProgress'>): Promise<void> {
-  if (browserEnsurePromise) {
-    return browserEnsurePromise;
-  }
-
-  const browserConfig = getBrowserServerConfig();
-  browserEnsurePromise = ensureDevBrowserServer(browserConfig, callbacks?.onProgress)
-    .then(() => undefined)
-    .finally(() => {
-      browserEnsurePromise = null;
-    });
-
-  return browserEnsurePromise;
-}
-
-export async function recoverDevBrowserServer(
-  callbacks?: Pick<TaskCallbacks, 'onProgress'>,
-  options?: { reason?: string; force?: boolean },
-): Promise<boolean> {
-  const now = Date.now();
-  const force = options?.force === true;
-
-  if (!force && now - lastBrowserRecoveryAt < BROWSER_RECOVERY_COOLDOWN_MS) {
-    console.log(`[Browser] Recovery skipped due to cooldown (${BROWSER_RECOVERY_COOLDOWN_MS}ms)`);
-    return false;
-  }
-
-  const reason = options?.reason || 'Browser connection issue detected. Reconnecting browser...';
-  callbacks?.onProgress({ stage: 'browser-recovery', message: reason });
-
-  await ensureBrowserServer(callbacks);
-  lastBrowserRecoveryAt = Date.now();
-  callbacks?.onProgress({ stage: 'browser-recovery', message: 'Browser reconnected.' });
-
-  return true;
 }
 
 export async function onBeforeTaskStart(
@@ -330,7 +280,8 @@ export async function onBeforeTaskStart(
     callbacks.onProgress({ stage: 'browser', message: 'Preparing browser...', isFirstTask });
   }
 
-  await ensureBrowserServer(callbacks);
+  const browserConfig = getBrowserServerConfig();
+  await ensureDevBrowserServer(browserConfig, callbacks.onProgress);
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {
