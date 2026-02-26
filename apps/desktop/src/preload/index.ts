@@ -7,6 +7,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import type { ProviderType, Skill, TodoItem, McpConnector } from '@accomplish_ai/agent-core';
+import type { CloudBrowserConfig } from '@accomplish_ai/agent-core/common';
 
 // Expose the accomplish API to the renderer
 const accomplishAPI = {
@@ -54,6 +55,10 @@ const accomplishAPI = {
   },
   getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean; theme: string }> =>
     ipcRenderer.invoke('settings:app-settings'),
+  getCloudBrowserConfig: (): Promise<CloudBrowserConfig | null> =>
+    ipcRenderer.invoke('settings:cloud-browser-config:get'),
+  setCloudBrowserConfig: (config: CloudBrowserConfig | null): Promise<void> =>
+    ipcRenderer.invoke('settings:cloud-browser-config:set', config ? JSON.stringify(config) : null),
   getOpenAiBaseUrl: (): Promise<string> => ipcRenderer.invoke('settings:openai-base-url:get'),
   setOpenAiBaseUrl: (baseUrl: string): Promise<void> =>
     ipcRenderer.invoke('settings:openai-base-url:set', baseUrl),
