@@ -345,6 +345,13 @@ interface AccomplishAPI {
   }): Promise<unknown>;
   exportLogs(): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
 
+  // Debug: Bug Report and Task Repeat
+  generateBugReport(
+    taskId: string,
+    debugLogs?: Array<{ timestamp: string; type: string; message: string; data?: unknown }>,
+  ): Promise<{ success: boolean; path?: string; error?: string; reason?: string }>;
+  repeatTask(taskId: string): Promise<Task>;
+
   // Skills management
   getSkills(): Promise<Skill[]>;
   getEnabledSkills(): Promise<Skill[]>;
