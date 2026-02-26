@@ -1,6 +1,7 @@
 {
   "name": "accomplish",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "The open source AI coworker that lives on your desktop",
   "author": "Accomplish Inc",
