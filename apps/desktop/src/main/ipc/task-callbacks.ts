@@ -4,6 +4,7 @@ import { mapResultToStatus } from '@accomplish_ai/agent-core';
 import { getTaskManager, recoverDevBrowserServer } from '../opencode';
 import type { TaskCallbacks } from '../opencode';
 import { getStorage } from '../store/storage';
+import { updateTray } from '../tray';
 
 const DEV_BROWSER_TOOL_PREFIXES = ['dev-browser-mcp_', 'dev_browser_mcp_', 'browser_'];
 const BROWSER_FAILURE_WINDOW_MS = 12000;
@@ -264,11 +265,14 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
       if (result.status === 'success') {
         storage.clearTodosForTask(taskId);
       }
+
+      updateTray();
     },
 
     onError: (error: Error) => {
       forwardToRenderer('task:update', { taskId, type: 'error', error: error.message });
       storage.updateTaskStatus(taskId, 'failed', new Date().toISOString());
+      updateTray();
     },
 
     onDebug: (log: { type: string; message: string; data?: unknown }) => {
@@ -280,6 +284,7 @@ export function createDaemonTaskCallbacks(options: DaemonTaskCallbacksOptions): 
     onStatusChange: (status: TaskStatus) => {
       forwardToRenderer('task:status-change', { taskId, status });
       storage.updateTaskStatus(taskId, status, new Date().toISOString());
+      updateTray();
     },
 
     onTodoUpdate: (todos: TodoItem[]) => {

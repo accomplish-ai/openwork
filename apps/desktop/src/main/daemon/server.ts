@@ -17,6 +17,7 @@ export interface DaemonRpcMethod {
   'task.list': { params: Record<string, never>; result: { tasks: string[] } };
   'task.start': { params: { prompt: string; taskId?: string }; result: { taskId: string } };
   'task.stop': { params: { taskId: string }; result: { ok: boolean } };
+  'task.get': { params: { taskId: string }; result: { task: unknown } };
   'daemon.status': {
     params: Record<string, never>;
     result: { running: boolean; version: string; activeTasks: number };

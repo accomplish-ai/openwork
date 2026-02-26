@@ -492,6 +492,23 @@ if (!gotTheLock) {
       throw new Error(`Task ${taskId} not found or not active`);
     });
 
+    registerMethod('task.get', (params: unknown) => {
+      const { taskId } = params as { taskId: string };
+
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('taskId is required');
+      }
+
+      const storage = getStorage();
+      const task = storage.getTask(taskId);
+
+      if (!task) {
+        throw new Error(`Task ${taskId} not found`);
+      }
+
+      return { task };
+    });
+
     startDaemonServer();
     console.log('[Main] Daemon socket server started at:', getSocketPath());
 
@@ -509,7 +526,7 @@ if (!gotTheLock) {
 
 app.on('window-all-closed', () => {
   // When runInBackground is enabled, keep the app alive (it lives in the system tray)
-  if (!getRunInBackgroundSafely() && process.platform !== 'darwin') {
+  if (!getRunInBackgroundSafely()) {
     app.quit();
   }
 });
