@@ -271,7 +271,9 @@ if (!gotTheLock) {
       if (!mainWindow.isVisible()) {
         mainWindow.show();
       }
-      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
       mainWindow.focus();
       console.log('[Main] Focused existing instance after second-instance event');
 
