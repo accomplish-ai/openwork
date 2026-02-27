@@ -87,6 +87,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
   const [savingOllama, setSavingOllama] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
   const [allowMouseControl, setAllowMouseControl] = useState(false);
+  const [desktopControlPreflight, setDesktopControlPreflight] = useState(false);
+  const [liveScreenSampling, setLiveScreenSampling] = useState(false);
   const [loadingMouseControl, setLoadingMouseControl] = useState(true);
 
   useEffect(() => {
@@ -115,6 +117,8 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     setSelectedOllamaModel('');
     setSavingOllama(false);
     setAllowMouseControl(false);
+    setDesktopControlPreflight(false);
+    setLiveScreenSampling(false);
     setLoadingMouseControl(true);
 
     const accomplish = getAccomplish();
@@ -180,14 +184,18 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
       }
     };
 
-    const fetchMouseControlSetting = async () => {
+    const fetchDesktopControlSettings = async () => {
       try {
         const settings = await accomplish.getAppSettings() as unknown as {
           allowMouseControl?: boolean;
+          desktopControlPreflight?: boolean;
+          liveScreenSampling?: boolean;
         };
         setAllowMouseControl(Boolean(settings.allowMouseControl));
+        setDesktopControlPreflight(Boolean(settings.desktopControlPreflight));
+        setLiveScreenSampling(Boolean(settings.liveScreenSampling));
       } catch (err) {
-        console.error('Failed to fetch mouse control setting:', err);
+        console.error('Failed to fetch desktop control settings:', err);
       } finally {
         setLoadingMouseControl(false);
       }
@@ -198,7 +206,7 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     fetchVersion();
     fetchSelectedModel();
     fetchOllamaConfig();
-    fetchMouseControlSetting();
+    fetchDesktopControlSettings();
   }, [open]);
 
   const handleDebugToggle = async () => {
@@ -224,6 +232,30 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
     } catch (err) {
       console.error('Failed to save mouse control setting:', err);
       setAllowMouseControl(!newValue);
+    }
+  };
+
+  const handleDesktopControlPreflightToggle = async () => {
+    const accomplish = getAccomplish();
+    const newValue = !desktopControlPreflight;
+    setDesktopControlPreflight(newValue);
+    try {
+      await accomplish.setDesktopControlPreflight?.(newValue);
+    } catch (err) {
+      console.error('Failed to save desktop control preflight setting:', err);
+      setDesktopControlPreflight(!newValue);
+    }
+  };
+
+  const handleLiveScreenSamplingToggle = async () => {
+    const accomplish = getAccomplish();
+    const newValue = !liveScreenSampling;
+    setLiveScreenSampling(newValue);
+    try {
+      await accomplish.setLiveScreenSampling?.(newValue);
+    } catch (err) {
+      console.error('Failed to save live screen sampling setting:', err);
+      setLiveScreenSampling(!newValue);
     }
   };
 
@@ -792,6 +824,41 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="font-medium text-foreground">
+                    Enable desktop control preflight
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                    Runs readiness checks before desktop actions and screenshots so the agent can
+                    explain missing permissions or unhealthy services.
+                  </p>
+                </div>
+                <div className="ml-4">
+                  {loadingMouseControl ? (
+                    <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+                  ) : (
+                    <button
+                      onClick={handleDesktopControlPreflightToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${
+                        desktopControlPreflight ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${
+                          desktopControlPreflight ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {desktopControlPreflight && (
+                <StatusMessage variant="warning">
+                  Preflight checks are enabled. The app will surface permission and readiness blockers
+                  before running desktop control tasks.
+                </StatusMessage>
+              )}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">
                     Allow agent to control mouse &amp; keyboard
                   </div>
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
@@ -825,6 +892,41 @@ export default function SettingsDialog({ open, onOpenChange, onApiKeySaved }: Se
                   Agent input control is enabled. Make sure you trust the tasks you run,
                   and review macOS Privacy &amp; Security settings if anything behaves
                   unexpectedly.
+                </StatusMessage>
+              )}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">
+                    Enable live screen sampling
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                    Allows sampled live-view sessions so the agent can refresh screen context while
+                    you work. Intended for short, on-demand sessions only.
+                  </p>
+                </div>
+                <div className="ml-4">
+                  {loadingMouseControl ? (
+                    <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+                  ) : (
+                    <button
+                      onClick={handleLiveScreenSamplingToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${
+                        liveScreenSampling ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-accomplish ${
+                          liveScreenSampling ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {liveScreenSampling && (
+                <StatusMessage variant="warning">
+                  Live screen sampling is enabled. Use short sessions and disable if you notice
+                  higher CPU usage.
                 </StatusMessage>
               )}
             </div>

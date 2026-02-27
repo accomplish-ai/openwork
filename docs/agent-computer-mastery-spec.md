@@ -132,6 +132,7 @@ Best practices:
 - Request verification commands explicitly.
 - Ask for a short diff summary if speed matters.
 - For Codex chat tasks: open the target thread first, type in the bottom message composer, then send and verify.
+- On Codex new-thread screens, do not click starter suggestion cards unless the user explicitly requested that exact card.
 - Use `Shift+Enter` for newline and `Enter` to send unless the UI says otherwise.
 
 ## 6) Cursor Workflow (How to write to Cursor)
@@ -484,6 +485,7 @@ Required sequence:
 
 1. Confirm correct thread is open (context/title matches mission).
 2. Focus the message composer field (bottom input area of the active thread).
+   - Prefer accessibility/text-input discovery when available; click the center of the returned composer frame.
 3. Check whether composer already contains text.
 4. If text exists and overwrite behavior is ambiguous, ask one short clarification:
 - `replace draft`,
@@ -492,6 +494,7 @@ Required sequence:
 5. If user provided exact text to send, use that exact text and do not improvise.
 6. Enter text into composer:
 - click composer once,
+- if focus is not visible, click the same center point once more (do not drift to nearby cards),
 - confirm caret is in composer,
 - paste/type message.
 7. Send message (`Enter` or Send button).
@@ -502,6 +505,13 @@ Required sequence:
 - response-in-progress indicator appears.
 10. If evidence is incomplete, re-focus composer and retry send once.
 11. If still not verified, report blocker with exact observed UI state.
+
+Starter-card guardrail:
+
+- In a new thread, treat suggestion cards/chips (for example "Create a one-page $pdf...") as non-target UI.
+- Never click a suggestion card as a workaround for failed send.
+- If composer send fails, retry once per step 10, then report blocker.
+- If additional project context is needed, gather it from local files/tools, not from suggestion cards.
 
 Truthfulness guardrail:
 
@@ -605,6 +615,8 @@ Where to type:
 2. Click the target thread title.
 3. Locate the composer at the bottom of that thread (single-line or multi-line input field).
 4. Click inside the composer until a caret appears.
+   - If the first click misses, click the same center point again rather than a nearby random point.
+5. Ignore starter/suggestion cards unless the user explicitly asks to run one of them.
 
 How to write outbound messages:
 
@@ -619,3 +631,4 @@ How to send safely:
 2. If you need a newline before sending, use `Shift+Enter`.
 3. Verify the message appears in the thread and composer clears.
 4. If no send evidence appears, retry once, then report blocker.
+5. Do not click starter suggestions as a send fallback.

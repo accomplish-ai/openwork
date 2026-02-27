@@ -85,9 +85,9 @@ if distance <= 18.0:
     Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
     sys.exit(0)
 
-# Keep cursor motion visible without making the interaction feel sluggish.
-duration_ms = max(120.0, min(450.0, distance * 0.55))
-steps = int(max(6, min(45, round(distance / 22.0))))
+# Keep cursor motion visible, but prioritize responsiveness for UI automation.
+duration_ms = max(35.0, min(180.0, distance * 0.22))
+steps = int(max(3, min(20, round(distance / 38.0))))
 sleep_seconds = (duration_ms / 1000.0) / steps
 
 for step in range(1, steps + 1):

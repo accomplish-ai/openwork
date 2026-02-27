@@ -168,7 +168,7 @@ export function startPermissionApiServer(port = PERMISSION_API_PORT): http.Serve
     }
 
     // Validate operation type
-    const validOperations = ['create', 'delete', 'rename', 'move', 'modify', 'overwrite'];
+    const validOperations = ['read', 'create', 'delete', 'rename', 'move', 'modify', 'overwrite'];
     if (!validOperations.includes(data.operation)) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: `Invalid operation. Must be one of: ${validOperations.join(', ')}` }));

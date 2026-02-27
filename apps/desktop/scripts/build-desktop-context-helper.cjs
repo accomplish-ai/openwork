@@ -8,6 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execFileSync } = require('child_process');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -18,8 +19,11 @@ function ensureParentDir(targetPath) {
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
 }
 
-function compileWith(command, args) {
-  execFileSync(command, args, { stdio: 'inherit' });
+function compileWith(command, args, envOverrides = {}) {
+  execFileSync(command, args, {
+    stdio: 'inherit',
+    env: { ...process.env, ...envOverrides },
+  });
 }
 
 function main() {
@@ -34,11 +38,21 @@ function main() {
 
   ensureParentDir(OUTPUT_FILE);
 
+  const moduleCacheDir = path.join(os.tmpdir(), 'openwork-clang-module-cache');
+  fs.mkdirSync(moduleCacheDir, { recursive: true });
+
+  const sdkRoot = process.env.DESKTOP_CONTEXT_SDKROOT?.trim()
+    || execFileSync('xcrun', ['--sdk', 'macosx', '--show-sdk-path'], { encoding: 'utf8' }).trim();
+
   const compileArgs = [
     'swiftc',
     '-o',
     OUTPUT_FILE,
     SOURCE_FILE,
+    '-sdk',
+    sdkRoot,
+    '-module-cache-path',
+    moduleCacheDir,
     '-framework',
     'Foundation',
     '-framework',
@@ -54,10 +68,10 @@ function main() {
   ];
 
   try {
-    compileWith('xcrun', compileArgs);
+    compileWith('xcrun', compileArgs, { SDKROOT: sdkRoot });
   } catch (error) {
     console.warn('[desktop-context-helper-build] xcrun swiftc failed, retrying with swiftc directly.');
-    compileWith('swiftc', compileArgs.slice(1));
+    compileWith('swiftc', compileArgs.slice(1), { SDKROOT: sdkRoot });
   }
 
   fs.chmodSync(OUTPUT_FILE, 0o755);

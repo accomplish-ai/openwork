@@ -29,6 +29,10 @@ import {
   setOllamaConfig,
   getAllowMouseControl,
   setAllowMouseControl,
+  getDesktopControlPreflight,
+  setDesktopControlPreflight,
+  getLiveScreenSampling,
+  setLiveScreenSampling,
   getAllowDesktopContext,
   setAllowDesktopContext,
   getDesktopContextBackgroundPolling,
@@ -60,8 +64,20 @@ import {
   ollamaTagsResponseSchema,
   desktopControlStatusRequestSchema,
   desktopControlStatusResponseSchema,
+  liveScreenStartOptionsSchema,
+  liveScreenSessionStartResponseSchema,
+  liveScreenFrameRequestSchema,
+  liveScreenFrameResponseSchema,
+  liveScreenStopRequestSchema,
+  liveScreenStopResponseSchema,
 } from './validation';
-import { getDesktopControlStatus } from '../desktop-control/preflight';
+import {
+  createMessageBatcher,
+  flushAndCleanupBatcher,
+  queueMessage,
+  type MessageBatcher,
+} from './messageBatching';
+import { getDesktopControlService } from '../desktop-control/service';
 import {
   getScreenSources,
   getPrimaryDisplay,
@@ -128,78 +144,6 @@ async function fetchWithTimeout(
     return response;
   } finally {
     clearTimeout(timeoutId);
-  }
-}
-
-// Message batching configuration
-const MESSAGE_BATCH_DELAY_MS = 50;
-
-// Per-task message batching state
-interface MessageBatcher {
-  pendingMessages: TaskMessage[];
-  timeout: NodeJS.Timeout | null;
-  taskId: string;
-  flush: () => void;
-}
-
-const messageBatchers = new Map<string, MessageBatcher>();
-
-function createMessageBatcher(
-  taskId: string,
-  forwardToRenderer: (channel: string, data: unknown) => void
-): MessageBatcher {
-  const batcher: MessageBatcher = {
-    pendingMessages: [],
-    timeout: null,
-    taskId,
-    flush: () => {
-      if (batcher.pendingMessages.length === 0) return;
-
-      // Send all pending messages in one IPC call
-      forwardToRenderer('task:update:batch', {
-        taskId,
-        messages: batcher.pendingMessages,
-      });
-
-      batcher.pendingMessages = [];
-      if (batcher.timeout) {
-        clearTimeout(batcher.timeout);
-        batcher.timeout = null;
-      }
-    },
-  };
-
-  messageBatchers.set(taskId, batcher);
-  return batcher;
-}
-
-function queueMessage(
-  taskId: string,
-  message: TaskMessage,
-  forwardToRenderer: (channel: string, data: unknown) => void
-): void {
-  let batcher = messageBatchers.get(taskId);
-  if (!batcher) {
-    batcher = createMessageBatcher(taskId, forwardToRenderer);
-  }
-
-  batcher.pendingMessages.push(message);
-
-  // Set up or reset the batch timer
-  if (batcher.timeout) {
-    clearTimeout(batcher.timeout);
-  }
-
-  batcher.timeout = setTimeout(() => {
-    batcher.flush();
-  }, MESSAGE_BATCH_DELAY_MS);
-}
-
-function flushAndCleanupBatcher(taskId: string): void {
-  const batcher = messageBatchers.get(taskId);
-  if (batcher) {
-    batcher.flush();
-    messageBatchers.delete(taskId);
   }
 }
 
@@ -295,8 +239,44 @@ export function registerIPCHandlers(): void {
       options?: { forceRefresh?: boolean }
     ) => {
       const request = validate(desktopControlStatusRequestSchema, options ?? {});
-      const status = await getDesktopControlStatus(request);
+      const status = await getDesktopControlService().getReadinessStatus(request);
       return validate(desktopControlStatusResponseSchema, status);
+    }
+  );
+
+  handle(
+    'desktopControl:startLiveScreenSession',
+    async (_event: IpcMainInvokeEvent, options?: unknown) => {
+      const request = validate(liveScreenStartOptionsSchema, options);
+      const payload = await getDesktopControlService().startLiveScreenSession(request);
+      return validate(liveScreenSessionStartResponseSchema, payload);
+    }
+  );
+
+  handle(
+    'desktopControl:getLiveScreenFrame',
+    async (_event: IpcMainInvokeEvent, request?: unknown) => {
+      const payload = validate(liveScreenFrameRequestSchema, request ?? {});
+      const frame = await getDesktopControlService().getLiveScreenFrame(payload.sessionId);
+      return validate(liveScreenFrameResponseSchema, frame);
+    }
+  );
+
+  handle(
+    'desktopControl:refreshLiveScreenFrame',
+    async (_event: IpcMainInvokeEvent, request?: unknown) => {
+      const payload = validate(liveScreenFrameRequestSchema, request ?? {});
+      const frame = await getDesktopControlService().refreshLiveScreenFrame(payload.sessionId);
+      return validate(liveScreenFrameResponseSchema, frame);
+    }
+  );
+
+  handle(
+    'desktopControl:stopLiveScreenSession',
+    async (_event: IpcMainInvokeEvent, request?: unknown) => {
+      const payload = validate(liveScreenStopRequestSchema, request ?? {});
+      const result = await getDesktopControlService().stopLiveScreenSession(payload.sessionId);
+      return validate(liveScreenStopResponseSchema, result);
     }
   );
 
@@ -924,6 +904,32 @@ export function registerIPCHandlers(): void {
   // Settings: Get all app settings
   handle('settings:app-settings', async (_event: IpcMainInvokeEvent) => {
     return getAppSettings();
+  });
+
+  // Settings: Get desktopControlPreflight flag
+  handle('settings:get-desktop-control-preflight', async (_event: IpcMainInvokeEvent) => {
+    return getDesktopControlPreflight();
+  });
+
+  // Settings: Set desktopControlPreflight flag
+  handle('settings:set-desktop-control-preflight', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid desktopControlPreflight flag');
+    }
+    setDesktopControlPreflight(enabled);
+  });
+
+  // Settings: Get liveScreenSampling flag
+  handle('settings:get-live-screen-sampling', async (_event: IpcMainInvokeEvent) => {
+    return getLiveScreenSampling();
+  });
+
+  // Settings: Set liveScreenSampling flag
+  handle('settings:set-live-screen-sampling', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid liveScreenSampling flag');
+    }
+    setLiveScreenSampling(enabled);
   });
 
   // Settings: Set allowMouseControl flag

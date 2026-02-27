@@ -1,176 +1,260 @@
 /**
  * ScreenViewer Component
  *
- * Provides live screen capture and display functionality.
- * Uses Electron's desktopCapturer API to stream the user's screen
- * and displays it in real-time using a video element.
+ * Uses desktop-control sampled live-screen sessions from the Electron bridge.
+ * This keeps renderer UI aligned with main-process session/state handling.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type KeyboardEvent } from 'react';
 import { Button } from '../ui/button';
 import { Monitor, MonitorOff, RefreshCw } from 'lucide-react';
+import { getAccomplish } from '../../lib/accomplish';
+import type {
+  LiveScreenFramePayload,
+  LiveScreenSessionStartPayload,
+} from '@accomplish/shared';
 
 interface ScreenSource {
   id: string;
   name: string;
   thumbnailDataUrl: string;
   displayId: string;
-  appIconDataUrl?: string;
 }
 
 interface ScreenViewerProps {
   className?: string;
   autoStart?: boolean;
   showControls?: boolean;
+  defaultSampleFps?: number;
+  defaultDurationSeconds?: number;
+}
+
+function toImageSrc(imagePath: string | undefined): string | null {
+  if (!imagePath) return null;
+  if (
+    imagePath.startsWith('file://') ||
+    imagePath.startsWith('http://') ||
+    imagePath.startsWith('https://') ||
+    imagePath.startsWith('data:')
+  ) {
+    return imagePath;
+  }
+  return `file://${encodeURI(imagePath)}`;
 }
 
 export function ScreenViewer({
   className = '',
   autoStart = false,
   showControls = true,
+  defaultSampleFps = 2,
+  defaultDurationSeconds = 300,
 }: ScreenViewerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sources, setSources] = useState<ScreenSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [activeSession, setActiveSession] = useState<LiveScreenSessionStartPayload | null>(null);
+  const [activeFrame, setActiveFrame] = useState<LiveScreenFramePayload | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasAutoStartedRef = useRef(false);
 
-  // Fetch available screen sources
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  const clearLocalSessionState = useCallback(() => {
+    clearPollTimer();
+    sessionIdRef.current = null;
+    setActiveSession(null);
+    setActiveFrame(null);
+    setIsStreaming(false);
+  }, [clearPollTimer]);
+
   const fetchSources = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       setError(null);
-      // We rely on getDisplayMedia for actual source selection.
-      // Keep a single virtual source entry so the UI can stay enabled.
       const screenSources: ScreenSource[] = [
         {
-          id: 'display-media',
+          id: 'live-screen-session',
           name: 'Screen',
           thumbnailDataUrl: '',
           displayId: 'default',
         },
       ];
       setSources(screenSources);
-
-      // Auto-select first source if none selected
-      if (screenSources.length > 0 && !selectedSourceId) {
+      if (!selectedSourceId) {
         setSelectedSourceId(screenSources[0].id);
       }
-    } catch (err) {
-      console.error('Failed to fetch screen sources:', err);
-      setError('Failed to get screen sources. Screen sharing may not be supported.');
     } finally {
       setIsLoading(false);
     }
   }, [selectedSourceId]);
 
-  // Start screen capture
-  const startCapture = useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const pullFrame = useCallback(async (refresh: boolean): Promise<void> => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+
+    const api = getAccomplish();
+    const liveScreenApi = api.desktopControl?.liveScreen;
+    if (!liveScreenApi) {
+      throw new Error('Live screen bridge is unavailable.');
+    }
+
+    const frame = refresh
+      ? await liveScreenApi.refreshFrame?.(sessionId)
+      : await liveScreenApi.getFrame?.(sessionId);
+
+    if (!frame) {
+      throw new Error('Live frame payload is missing.');
+    }
+
+    setActiveFrame(frame);
+    if (frame.captureWarning) {
+      setError(frame.captureWarning);
+    } else {
       setError(null);
+    }
+  }, []);
 
-      // Stop any existing stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+  const stopCapture = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    clearLocalSessionState();
 
-      // Use getDisplayMedia which works with Electron's setDisplayMediaRequestHandler
-      // This automatically handles the screen selection
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 },
-          frameRate: { ideal: 30, max: 60 },
-        },
-        audio: false,
-      });
+    if (!sessionId) {
+      return;
+    }
 
-      streamRef.current = stream;
-
-      // Handle stream ending (user stops sharing)
-      stream.getVideoTracks()[0]?.addEventListener('ended', () => {
-        setIsStreaming(false);
-        streamRef.current = null;
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
-        }
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      setIsStreaming(true);
+    try {
+      const api = getAccomplish();
+      await api.desktopControl?.liveScreen?.stopSession?.(sessionId);
     } catch (err) {
-      console.error('Failed to start screen capture:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      if (errorMessage.includes('Permission denied') || errorMessage.includes('NotAllowedError')) {
-        setError('Screen capture permission denied. Please grant access in System Preferences.');
-      } else {
-        setError('Failed to start screen capture. Please try again.');
+      console.warn('[ScreenViewer] Failed to stop live session:', err);
+    }
+  }, [clearLocalSessionState]);
+
+  const stopSessionOnly = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+    try {
+      const api = getAccomplish();
+      await api.desktopControl?.liveScreen?.stopSession?.(sessionId);
+    } catch (err) {
+      console.warn('[ScreenViewer] Failed to stop previous live session:', err);
+    }
+  }, []);
+
+  const startCapture = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    // Optimistic state to keep the UI responsive while session starts.
+    setIsStreaming(true);
+
+    try {
+      await stopSessionOnly();
+      clearPollTimer();
+      sessionIdRef.current = null;
+      setActiveSession(null);
+      setActiveFrame(null);
+
+      const api = getAccomplish();
+      const liveScreenApi = api.desktopControl?.liveScreen;
+      if (!liveScreenApi) {
+        throw new Error('Live screen bridge is unavailable.');
       }
-      setIsStreaming(false);
+
+      const session = await liveScreenApi.startSession?.({
+        sampleFps: defaultSampleFps,
+        durationSeconds: defaultDurationSeconds,
+        includeCursor: true,
+      });
+      if (!session) {
+        throw new Error('Live screen session did not start.');
+      }
+
+      sessionIdRef.current = session.sessionId;
+      setActiveSession(session);
+
+      await pullFrame(false);
+
+      const pollIntervalMs = Math.max(300, Math.round(session.sampleIntervalMs));
+      clearPollTimer();
+      pollTimerRef.current = setInterval(() => {
+        void pullFrame(true).catch((frameError) => {
+          console.warn('[ScreenViewer] Failed to refresh live frame:', frameError);
+          setError(
+            frameError instanceof Error
+              ? frameError.message
+              : 'Failed to refresh live frame.'
+          );
+        });
+      }, pollIntervalMs);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start live screen session.';
+      setError(message);
+      clearLocalSessionState();
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [
+    clearLocalSessionState,
+    clearPollTimer,
+    defaultDurationSeconds,
+    defaultSampleFps,
+    pullFrame,
+    stopSessionOnly,
+  ]);
 
-  // Stop screen capture
-  const stopCapture = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    setIsStreaming(false);
-  }, []);
-
-  // Toggle capture
   const toggleCapture = useCallback(async () => {
     if (isStreaming) {
-      stopCapture();
-    } else {
-      await startCapture();
+      await stopCapture();
+      return;
     }
+    await startCapture();
   }, [isStreaming, startCapture, stopCapture]);
 
-  // Auto-start if configured
   useEffect(() => {
-    if (autoStart && !hasAutoStartedRef.current && !isStreaming) {
+    if (autoStart && !hasAutoStartedRef.current && !isStreaming && !isLoading) {
       hasAutoStartedRef.current = true;
       void startCapture();
     }
+  }, [autoStart, isStreaming, isLoading, startCapture]);
 
-    return () => {
-      stopCapture();
-    };
-  }, [autoStart, isStreaming, startCapture, stopCapture]);
+  useEffect(() => {
+    void fetchSources();
+  }, [fetchSources]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopCapture();
+      void stopCapture();
     };
   }, [stopCapture]);
 
-  // Initial fetch of sources
-  useEffect(() => {
-    fetchSources();
-  }, [fetchSources]);
+  const frameSrc = toImageSrc(activeFrame?.imagePath);
+  const handleKeyboardToggle = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+    event.preventDefault();
+    void toggleCapture();
+  };
 
   return (
-    <div className={`relative rounded-lg border border-zinc-800 bg-zinc-900 overflow-hidden ${className}`}>
-      {/* Header */}
+    <div
+      className={`relative rounded-lg border border-zinc-800 bg-zinc-900 overflow-hidden ${className}`}
+      data-testid="screen-viewer"
+      role="region"
+      tabIndex={0}
+      aria-label="Live screen viewer"
+      aria-describedby="screen-viewer-defaults"
+      onKeyDown={handleKeyboardToggle}
+    >
       {showControls && (
         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -179,28 +263,40 @@ export function ScreenViewer({
                 isStreaming ? 'bg-green-500 animate-pulse' : 'bg-zinc-600'
               }`}
             />
-            <span className="text-xs text-zinc-400">
-              {isStreaming ? 'Live' : 'Screen Capture'}
+            <span className="text-xs text-zinc-300">
+              {isStreaming ? 'Live' : 'Live view stopped'}
+            </span>
+            <span
+              id="screen-viewer-defaults"
+              className="text-[10px] text-zinc-400"
+            >
+              Default {defaultSampleFps}fps for {Math.round(defaultDurationSeconds / 60)}m
             </span>
           </div>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={fetchSources}
+              onClick={() => {
+                void fetchSources();
+              }}
               disabled={isLoading}
               className="h-6 w-6 p-0 hover:bg-zinc-800"
               title="Refresh sources"
+              aria-label="Refresh live view sources"
             >
               <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleCapture}
+              onClick={() => {
+                void toggleCapture();
+              }}
               disabled={isLoading || (!selectedSourceId && sources.length === 0)}
               className="h-6 w-6 p-0 hover:bg-zinc-800"
               title={isStreaming ? 'Stop capture' : 'Start capture'}
+              aria-label={isStreaming ? 'Stop live view capture' : 'Start live view capture'}
             >
               {isStreaming ? (
                 <MonitorOff className="h-3 w-3 text-red-500" />
@@ -212,30 +308,35 @@ export function ScreenViewer({
         </div>
       )}
 
-      {/* Video element for screen capture */}
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain bg-black"
-        autoPlay
-        playsInline
-        muted
-        style={{ minHeight: '200px' }}
-      />
+      {frameSrc ? (
+        <img
+          src={frameSrc}
+          alt="Live desktop frame"
+          className="w-full h-full object-contain bg-black"
+          style={{ minHeight: '200px' }}
+        />
+      ) : (
+        <div className="w-full h-full min-h-[200px] bg-black" />
+      )}
 
-      {/* Placeholder when not streaming */}
       {!isStreaming && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90">
           <Monitor className="h-12 w-12 text-zinc-600 mb-2" />
-          <p className="text-sm text-zinc-500 text-center px-4">
+          <p className="text-sm text-zinc-400 text-center px-4">
             {isLoading
-              ? 'Loading...'
+              ? 'Starting live view...'
               : sources.length === 0
-              ? 'No screens available'
-              : 'Click to start screen capture'}
+                ? 'No screens available'
+                : 'Start live view to stream desktop snapshots'}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500 text-center px-4" aria-live="polite">
+            Press Enter or Space while focused here to toggle live view.
           </p>
           {sources.length > 0 && !isLoading && (
             <Button
-              onClick={startCapture}
+              onClick={() => {
+                void startCapture();
+              }}
               className="mt-4"
               variant="outline"
               size="sm"
@@ -247,45 +348,27 @@ export function ScreenViewer({
         </div>
       )}
 
-      {/* Error state */}
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90">
           <MonitorOff className="h-12 w-12 text-red-500 mb-2" />
           <p className="text-sm text-red-400 text-center px-4">{error}</p>
           <Button
-            onClick={fetchSources}
+            onClick={() => {
+              void startCapture();
+            }}
             className="mt-4"
             variant="outline"
             size="sm"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
+            Retry live view
           </Button>
         </div>
       )}
 
-      {/* Source selector (when multiple screens available) */}
-      {sources.length > 1 && !isStreaming && showControls && (
-        <div className="absolute bottom-2 left-2 right-2">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {sources.map((source) => (
-              <button
-                key={source.id}
-                onClick={() => setSelectedSourceId(source.id)}
-                className={`flex-shrink-0 rounded border ${
-                  selectedSourceId === source.id
-                    ? 'border-blue-500 ring-1 ring-blue-500'
-                    : 'border-zinc-700 hover:border-zinc-600'
-                } overflow-hidden bg-zinc-800`}
-              >
-                <img
-                  src={source.thumbnailDataUrl}
-                  alt={source.name}
-                  className="w-20 h-12 object-cover"
-                />
-              </button>
-            ))}
-          </div>
+      {isStreaming && activeSession && (
+        <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1 text-[11px] text-zinc-200">
+          Frame {activeFrame?.frameSequence ?? activeSession.initialFrameSequence}
         </div>
       )}
     </div>

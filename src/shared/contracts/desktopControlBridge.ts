@@ -1,3 +1,39 @@
+export interface LiveScreenStartOptions {
+  sampleFps?: number;
+  durationSeconds?: number;
+  includeCursor?: boolean;
+  activeWindowOnly?: boolean;
+}
+
+export interface LiveScreenSessionStartPayload {
+  sessionId: string;
+  sampleFps: number;
+  sampleIntervalMs: number;
+  startedAt: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+  maxLifetimeSeconds: number;
+  initialFrameSequence: number;
+  initialFrameCapturedAt: string;
+}
+
+export interface LiveScreenFramePayload {
+  sessionId: string;
+  frameSequence: number;
+  capturedAt: string;
+  staleMs: number;
+  expiresAt: string;
+  sampleFps: number;
+  imagePath?: string;
+  captureWarning?: string;
+}
+
+export interface LiveScreenStopPayload {
+  sessionId: string;
+  status: 'stopped';
+  stoppedAt: string;
+}
+
 export const DESKTOP_CONTROL_BRIDGE_CHANNELS = {
   getStatus: 'desktopControl:getStatus',
 } as const;
@@ -57,6 +93,12 @@ export interface DesktopControlStatusRequest {
 
 export interface DesktopControlBridgeNamespace {
   getStatus(options?: DesktopControlStatusRequest): Promise<DesktopControlStatusSnapshot>;
+  liveScreen: {
+    startSession(options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload>;
+    getFrame(sessionId: string): Promise<LiveScreenFramePayload>;
+    refreshFrame(sessionId: string): Promise<LiveScreenFramePayload>;
+    stopSession(sessionId: string): Promise<LiveScreenStopPayload>;
+  };
 }
 
 export interface DesktopControlBridgeAPI {

@@ -22,18 +22,21 @@ import {
   MonitorOff,
   Workflow,
   Square,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -42,13 +45,14 @@ import {
 import { cn } from '../lib/utils';
 import {
   getAccomplish,
-  getDesktopControlStatus,
   type DesktopControlCapability,
   type DesktopControlStatusPayload,
 } from '../lib/accomplish';
 import { DEFAULT_PROVIDERS, type SelectedModel, type Task, type TaskMessage } from '@accomplish/shared';
 import ReactMarkdown from 'react-markdown';
-import { DiagnosticsPanel } from './desktop-control/DiagnosticsPanel';
+import { DesktopControlShell } from './desktop-control/DesktopControlShell';
+import { useDesktopControlPreferences } from './desktop-control/useDesktopControlPreferences';
+import { useDesktopControlStatus } from './desktop-control/useDesktopControlStatus';
 import {
   buildDesktopControlBlockedMessage,
   createDesktopControlBlockerKey,
@@ -56,6 +60,15 @@ import {
   shouldEmitDesktopControlFallback,
   type DesktopControlRequirement,
 } from './desktop-control/fallbackGuard';
+import {
+  ACTION_EXECUTION_HINTS,
+  LIVE_GUIDANCE_PROMPT_APPEND,
+  LIVE_VIEW_HINTS,
+  SCREEN_CAPTURE_HINTS,
+  SCREEN_CAPTURE_PROMPT_APPEND,
+  appendWorkWithContext,
+  inferDesktopControlRequirement,
+} from '../lib/desktopControlPrompt';
 import { DICTATION_FALLBACK_HINT, useSpeechDictation } from '../hooks/useSpeechDictation';
 import { ScreenViewer } from './screen-viewer';
 
@@ -76,93 +89,13 @@ const SCREEN_CAPTURE_REQUIREMENT: DesktopControlRequirement = {
   capabilities: ['screen_capture', 'mcp_health'],
 };
 
-const LIVE_VIEW_HINTS = /\b(live\s*(view|stream)|livestream|real[-\s]?time|watch\s+my\s+screen|monitor\s+my\s+screen|film(?:ing)?\s+my\s+(screen|computer)|record(?:ing)?\s+my\s+(screen|computer))\b/i;
-const SCREEN_CAPTURE_HINTS = /\b(screenshot|screen\s?shot|capture\s+(?:my\s+)?screen|what(?:'| i)?s on my screen|look at my screen|see my screen)\b/i;
-const ACTION_EXECUTION_HINTS = /\b(click|double[-\s]?click|move\s+(?:my\s+|the\s+)?mouse|drag|drop|scroll|press\s+(?:the\s+)?(?:key|button)|type(?:\s+text)?|keyboard|mouse\s+(?:to|over|onto)|shortcut)\b/i;
-const LIVE_GUIDANCE_PROMPT_APPEND = `
-
-LIVE GUIDANCE MODE REQUIREMENTS:
-- Start by calling start_live_view with sample_fps=2, duration_seconds=300, include_cursor=true.
-- Use get_live_frame repeatedly during this same turn after each meaningful user interaction to track changes.
-- Guide the user one step at a time with precise location instructions (top-left, button labels, nearby landmarks).
-- Keep each step short and actionable. If the UI changed unexpectedly, adapt immediately.
-- Follow the user's exact request and app context. Do not switch tasks unless asked.
-- If they ask to commit code changes, inspect current git changes first, then commit only what they asked for.
-- If commit details are missing, ask one short clarification (for example: commit message).
-- If they ask you to perform actions, execute only safe non-destructive actions unless they explicitly confirm risky actions.
-- Before ending your response, report what changed on-screen most recently and what exact next click/keypress to do.
-`;
-
-const SCREEN_CAPTURE_PROMPT_APPEND = `
-
-SCREEN CAPTURE MODE:
-- Before answering, capture a fresh screenshot of the user's current screen.
-- Base your guidance on that latest screenshot and mention what you can currently see.
-`;
-
 const WORK_WITH_APPS = [
-  'Cursor',
-  'Chrome',
-  'Slack',
-  'VS Code',
-  'Terminal',
-  'Notion',
-  'Figma',
+  'Codex',
 ];
 
 const MINIMIZED_ICON_SCALE = 4;
 const BASE_MINIMIZED_BUTTON_SIZE = 112;
 const BASE_MINIMIZED_ICON_SIZE = 96;
-
-function appendWorkWithContext(prompt: string, workWithApp: string | null): string {
-  if (!workWithApp) {
-    return prompt;
-  }
-
-  return `${prompt}
-
-WORK WITH APP CONTEXT:
-- The user is working inside ${workWithApp}.
-- Prioritize guidance that matches ${workWithApp} UI, messages, and workflows.
-- If you need fresher context from ${workWithApp}, ask for a new screenshot or live view frame.`;
-}
-
-function inferDesktopControlRequirement(prompt: string): DesktopControlRequirement | null {
-  const normalizedPrompt = prompt.trim();
-  if (!normalizedPrompt) return null;
-
-  const needsLiveView = LIVE_VIEW_HINTS.test(normalizedPrompt);
-  const needsActionExecution = ACTION_EXECUTION_HINTS.test(normalizedPrompt);
-  const needsScreenCapture = needsLiveView || SCREEN_CAPTURE_HINTS.test(normalizedPrompt);
-
-  if (!needsActionExecution && !needsScreenCapture) {
-    return null;
-  }
-
-  const capabilities = new Set<DesktopControlCapability>(['mcp_health']);
-  if (needsScreenCapture) {
-    capabilities.add('screen_capture');
-  }
-  if (needsActionExecution) {
-    capabilities.add('action_execution');
-  }
-
-  let blockedAction = 'desktop control actions';
-  if (needsLiveView) {
-    blockedAction = 'live screen capture';
-  } else if (needsScreenCapture && needsActionExecution) {
-    blockedAction = 'desktop actions and screenshots';
-  } else if (needsActionExecution) {
-    blockedAction = 'desktop actions';
-  } else if (needsScreenCapture) {
-    blockedAction = 'screenshots';
-  }
-
-  return {
-    blockedAction,
-    capabilities: Array.from(capabilities),
-  };
-}
 
 function mergeConsecutiveAssistantMessages(source: Message[]): Message[] {
   const merged: Message[] = [];
@@ -213,18 +146,15 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const [showMenuPanel, setShowMenuPanel] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [showLiveViewer, setShowLiveViewer] = useState(false);
+  const [recentlyHidLiveViewer, setRecentlyHidLiveViewer] = useState(false);
   const [selectedModel, setSelectedModel] = useState<SelectedModel | null>(null);
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
   const [selectedWorkWithApp, setSelectedWorkWithApp] = useState<string | null>(null);
   const [speakRepliesEnabled] = useState(true);
-  const [liveGuidanceByDefault] = useState(false);
   const [liveGuidanceEnabled, setLiveGuidanceEnabled] = useState(false);
   const [screenCaptureQueued, setScreenCaptureQueued] = useState(false);
   const [pendingVoiceSend, setPendingVoiceSend] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
-  const [desktopControlStatus, setDesktopControlStatus] = useState<DesktopControlStatusPayload | null>(null);
-  const [desktopControlError, setDesktopControlError] = useState<string | null>(null);
-  const [isCheckingDesktopControl, setIsCheckingDesktopControl] = useState(false);
   const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -245,9 +175,22 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     () => new Map(availableModels.map((model) => [model.fullId, model.displayName])),
     [availableModels]
   );
+  const { preferences: desktopControlPreferences, setPreferences: setDesktopControlPreferences } =
+    useDesktopControlPreferences();
+  const {
+    liveGuidanceByDefault,
+    screenCaptureByDefault,
+    keepDiagnosticsPanelVisible,
+  } = desktopControlPreferences;
   const selectedModelLabel = selectedModel?.model
     ? (modelLabelById.get(selectedModel.model) ?? selectedModel.model)
     : 'Choose model';
+  const {
+    status: desktopControlStatus,
+    errorMessage: desktopControlError,
+    isChecking: isCheckingDesktopControl,
+    checkStatus: checkDesktopControlStatus,
+  } = useDesktopControlStatus();
   const filteredTaskHistory = useMemo(() => {
     const normalizedQuery = menuSearchQuery.trim().toLowerCase();
     const ordered = taskHistory.slice().reverse();
@@ -261,6 +204,20 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       return label.includes(normalizedQuery);
     });
   }, [menuSearchQuery, taskHistory]);
+
+  useEffect(() => {
+    if (!recentlyHidLiveViewer) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentlyHidLiveViewer(false);
+    }, 7000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [recentlyHidLiveViewer]);
 
   const refreshTaskHistory = useCallback(async () => {
     try {
@@ -306,6 +263,12 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
     return () => clearTimeout(timeout);
   }, [dictationError]);
+
+  useEffect(() => {
+    if (keepDiagnosticsPanelVisible) {
+      setShowDiagnosticsPanel(true);
+    }
+  }, [keepDiagnosticsPanelVisible]);
 
   useEffect(() => {
     if (typeof accomplish.onToggleDictationRequested !== 'function') {
@@ -369,33 +332,32 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   ): Promise<DesktopControlStatusPayload | null> => {
     const { revealIfBlocked = false, forceRefresh = false } = options;
 
-    setIsCheckingDesktopControl(true);
-    setDesktopControlError(null);
-
     try {
-      const status = await getDesktopControlStatus({ forceRefresh });
-      setDesktopControlStatus(status);
+      const status = await checkDesktopControlStatus({ forceRefresh });
+
+      if (!status) {
+        if (revealIfBlocked) {
+          setShowDiagnosticsPanel(true);
+        }
+        return null;
+      }
 
       if (status.status === 'ready') {
-        setShowDiagnosticsPanel(false);
+        if (!keepDiagnosticsPanelVisible) {
+          setShowDiagnosticsPanel(false);
+        }
       } else if (revealIfBlocked) {
         setShowDiagnosticsPanel(true);
       }
 
       return status;
-    } catch (error) {
-      const message = error instanceof Error
-        ? error.message
-        : 'Desktop control readiness check failed.';
-      setDesktopControlError(message);
+    } catch {
       if (revealIfBlocked) {
         setShowDiagnosticsPanel(true);
       }
       return null;
-    } finally {
-      setIsCheckingDesktopControl(false);
     }
-  }, []);
+  }, [checkDesktopControlStatus, keepDiagnosticsPanelVisible]);
 
   const ensureDesktopControlReady = useCallback(async (
     requirement: DesktopControlRequirement
@@ -660,10 +622,11 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     const armedLiveGuidance = liveGuidanceEnabled;
     const shouldUseLiveGuidance =
       armedLiveGuidance || liveGuidanceByDefault || LIVE_VIEW_HINTS.test(prompt);
+    const shouldIncludeScreenCapture = screenCaptureQueued || screenCaptureByDefault;
     let basePrompt = shouldUseLiveGuidance
       ? `${prompt}\n${LIVE_GUIDANCE_PROMPT_APPEND}`
       : prompt;
-    if (screenCaptureQueued) {
+    if (shouldIncludeScreenCapture) {
       basePrompt = `${basePrompt}\n${SCREEN_CAPTURE_PROMPT_APPEND}`;
     }
     const effectivePrompt = applyWorkWithContext(basePrompt);
@@ -757,6 +720,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     onOpenSettings,
     ensureDesktopControlReady,
     refreshTaskHistory,
+    screenCaptureByDefault,
     screenCaptureQueued,
   ]);
 
@@ -906,6 +870,59 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     inputRef.current?.focus();
   }, [isDictationSupported, isDictating, isLoading, startDictation, stopDictation]);
 
+  useEffect(() => {
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      const hasShortcutModifier = event.metaKey || event.ctrlKey;
+      if (!hasShortcutModifier || !event.shiftKey) {
+        return;
+      }
+
+      const normalizedKey = event.key.toLowerCase();
+      if (normalizedKey === 'l') {
+        event.preventDefault();
+        if (isLoading) {
+          return;
+        }
+        setShowMenuPanel(false);
+        setLiveGuidanceEnabled((value) => !value);
+        setShowLiveViewer(true);
+        inputRef.current?.focus();
+        return;
+      }
+
+      if (normalizedKey === 's') {
+        event.preventDefault();
+        if (isLoading) {
+          return;
+        }
+        setShowMenuPanel(false);
+        setScreenCaptureQueued((value) => !value);
+        inputRef.current?.focus();
+        return;
+      }
+
+      if (normalizedKey === 'd') {
+        event.preventDefault();
+        void checkDesktopControl({
+          revealIfBlocked: true,
+          forceRefresh: true,
+        });
+        return;
+      }
+
+      if (normalizedKey === ',') {
+        event.preventDefault();
+        onOpenSettings?.();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalShortcut);
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalShortcut);
+    };
+  }, [checkDesktopControl, isLoading, onOpenSettings]);
+
   const stopCurrentTask = useCallback(async () => {
     const activeTaskId = currentTaskIdRef.current;
     if (!activeTaskId) {
@@ -940,11 +957,12 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     void sendMessage();
   }, [pendingVoiceSend, isDictating, input, isLoading, sendMessage]);
 
-  const shouldShowDiagnostics =
-    showDiagnosticsPanel &&
-    (desktopControlStatus?.status !== 'ready' ||
-      Boolean(desktopControlError) ||
-      isCheckingDesktopControl);
+  const shouldShowDesktopControlShell =
+    keepDiagnosticsPanelVisible ||
+    showDiagnosticsPanel ||
+    isCheckingDesktopControl ||
+    !desktopControlStatus ||
+    Boolean(desktopControlError);
 
   // Select a previous chat by task ID
   const handleSelectTask = useCallback(
@@ -1021,7 +1039,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
   const headerStatus = isLoading
     ? 'Thinking...'
-    : shouldShowDiagnostics
+    : shouldShowDesktopControlShell
       ? 'Desktop control setup needed'
       : 'Ready to help';
 
@@ -1181,7 +1199,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate" aria-live="polite">
                 {selectedWorkWithApp ? `Working with ${selectedWorkWithApp}` : headerStatus}
               </p>
             </div>
@@ -1283,14 +1301,14 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
           <div className="flex flex-1 flex-col min-w-0">
             <AnimatePresence initial={false}>
-              {shouldShowDiagnostics && (
+              {shouldShowDesktopControlShell && (
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   className="border-b border-border/70 p-3"
                 >
-                  <DiagnosticsPanel
+                  <DesktopControlShell
                     status={desktopControlStatus}
                     isChecking={isCheckingDesktopControl}
                     errorMessage={desktopControlError}
@@ -1312,7 +1330,10 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2"
-                    onClick={() => setShowLiveViewer(false)}
+                    onClick={() => {
+                      setShowLiveViewer(false);
+                      setRecentlyHidLiveViewer(true);
+                    }}
                     title="Hide live viewer"
                   >
                     <MonitorOff className="h-3.5 w-3.5 mr-1.5" />
@@ -1320,6 +1341,25 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                   </Button>
                 </div>
                 <ScreenViewer autoStart={true} className="h-56" />
+              </div>
+            )}
+
+            {!showLiveViewer && recentlyHidLiveViewer && (
+              <div className="border-b border-border/70 px-3 py-2 bg-muted/10 text-xs flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">
+                  Live viewer hidden. You can bring it back if you still need on-screen guidance.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => {
+                    setRecentlyHidLiveViewer(false);
+                    setShowLiveViewer(true);
+                  }}
+                >
+                  Undo
+                </Button>
               </div>
             )}
 
@@ -1428,7 +1468,8 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                       size="icon"
                       className="shrink-0"
                       disabled={isLoading}
-                      title="Open quick actions"
+                      title="Open quick actions and defaults"
+                      aria-label="Open quick actions and defaults"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -1441,6 +1482,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                     >
                       <Monitor className="h-4 w-4" />
                       Guide me live (next message)
+                      <DropdownMenuShortcut>Ctrl+Shift+L</DropdownMenuShortcut>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() => {
@@ -1451,6 +1493,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                     >
                       <Camera className="h-4 w-4" />
                       Add screen capture
+                      <DropdownMenuShortcut>Ctrl+Shift+S</DropdownMenuShortcut>
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
@@ -1484,6 +1527,58 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                         Clear screen capture
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        recheckDesktopControl();
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Recheck diagnostics
+                      <DropdownMenuShortcut>Ctrl+Shift+D</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        onOpenSettings?.();
+                      }}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Open settings
+                      <DropdownMenuShortcut>Ctrl+Shift+,</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Desktop control defaults</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                      checked={liveGuidanceByDefault}
+                      onCheckedChange={(checked) =>
+                        setDesktopControlPreferences({
+                          liveGuidanceByDefault: Boolean(checked),
+                        })
+                      }
+                    >
+                      Live guidance by default
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={screenCaptureByDefault}
+                      onCheckedChange={(checked) =>
+                        setDesktopControlPreferences({
+                          screenCaptureByDefault: Boolean(checked),
+                        })
+                      }
+                    >
+                      Screen capture by default
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={keepDiagnosticsPanelVisible}
+                      onCheckedChange={(checked) =>
+                        setDesktopControlPreferences({
+                          keepDiagnosticsPanelVisible: Boolean(checked),
+                        })
+                      }
+                    >
+                      Keep diagnostics visible
+                      <DropdownMenuShortcut>Ctrl+Shift+D</DropdownMenuShortcut>
+                    </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Input
@@ -1498,6 +1593,8 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                   onKeyDown={handleKeyDown}
                   placeholder={selectedWorkWithApp ? `Ask about ${selectedWorkWithApp}...` : 'Ask me anything...'}
                   disabled={isLoading}
+                  aria-label="Chat message input"
+                  aria-describedby="floating-chat-shortcuts"
                   className="flex-1"
                 />
                 <Button
@@ -1559,6 +1656,12 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
                   <p className="text-[11px] text-muted-foreground">{DICTATION_FALLBACK_HINT}</p>
                 </div>
               )}
+              <p id="floating-chat-shortcuts" className="sr-only">
+                Keyboard shortcuts: Control or Command plus Shift plus L toggles live guidance mode.
+                Control or Command plus Shift plus S toggles screen capture mode.
+                Control or Command plus Shift plus D runs desktop diagnostics.
+                Control or Command plus Shift plus comma opens settings.
+              </p>
             </div>
           </div>
         </div>

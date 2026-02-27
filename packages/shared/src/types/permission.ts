@@ -3,7 +3,7 @@
  */
 
 /** File operation types for RequestFilePermission tool */
-export type FileOperation = 'create' | 'delete' | 'rename' | 'move' | 'modify' | 'overwrite';
+export type FileOperation = 'read' | 'create' | 'delete' | 'rename' | 'move' | 'modify' | 'overwrite';
 
 export interface PermissionRequest {
   id: string;

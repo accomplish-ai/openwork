@@ -1,6 +1,6 @@
 # Code Quality Status
 
-Last updated: 2026-02-25
+Last updated: 2026-02-27
 Owner: automated refactor agent
 
 ## Current State
@@ -50,6 +50,10 @@ Owner: automated refactor agent
 - Keep public contracts/import paths stable.
 - Prefer facade re-exports when splitting files.
 
-## Validation Baseline
-- `pnpm -C apps/desktop typecheck`: pass (2026-02-25)
-- `pnpm run cq:check`: missing script in root package.json (2026-02-25)
+## Validation Baseline (2026-02-25)
+- `pnpm -C apps/desktop typecheck`: pass
+- `pnpm run cq:check`: missing script in root package.json
+
+## Validation Baseline (2026-02-27)
+- `pnpm lint`: pass
+- `pnpm build:desktop`: pass (desktop main/preload/renderer build and skills installs)

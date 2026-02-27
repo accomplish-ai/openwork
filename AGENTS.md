@@ -14,6 +14,7 @@ Purpose: keep agent behavior consistent for computer/system tasks without adding
 - For Codex UI tasks, enforce section `12.9` (self-UI filtering) and section `12.10` (conversation continuity).
 - For Codex chat-send tasks, enforce section `12.13` (thread send-and-verify protocol).
 - For Codex typing/conversation tasks, enforce section `12.16` (compose-and-talk protocol).
+- For Codex new-thread chat tasks, never click starter suggestion cards unless the user explicitly asks for that exact card.
 - For iterative Codex bug-chat tasks, enforce section `12.14` (multi-turn bug-resolution loop).
 - For autonomous AI-chat tasks (agent writes its own outbound prompts or runs unattended), enforce section `12.15` (autonomous outbound messaging and unattended-mode guardrails).
 - For commit/push tasks, enforce section `12.11` (commit/push anti-stall guardrail).

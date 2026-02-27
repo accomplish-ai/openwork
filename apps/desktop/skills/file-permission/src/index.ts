@@ -19,7 +19,7 @@ const PERMISSION_API_PORT = process.env.PERMISSION_API_PORT || '9226';
 const PERMISSION_API_URL = `http://localhost:${PERMISSION_API_PORT}/permission`;
 
 interface FilePermissionInput {
-  operation: 'create' | 'delete' | 'rename' | 'move' | 'modify' | 'overwrite';
+  operation: 'read' | 'create' | 'delete' | 'rename' | 'move' | 'modify' | 'overwrite';
   filePath: string;
   targetPath?: string;
   contentPreview?: string;
@@ -36,13 +36,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'request_file_permission',
       description:
-        'Request user permission before performing file operations (create, delete, rename, move, modify, overwrite). Always call this tool BEFORE executing any file modification. Returns "allowed" or "denied".',
+        'Request user permission before performing file operations (read, create, delete, rename, move, modify, overwrite). Always call this tool BEFORE executing any write/destructive file modification. Returns "allowed" or "denied".',
       inputSchema: {
         type: 'object',
         properties: {
           operation: {
             type: 'string',
-            enum: ['create', 'delete', 'rename', 'move', 'modify', 'overwrite'],
+            enum: ['read', 'create', 'delete', 'rename', 'move', 'modify', 'overwrite'],
             description: 'The type of file operation to perform',
           },
           filePath: {

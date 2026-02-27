@@ -99,6 +99,52 @@ export const desktopControlStatusRequestSchema = z.object({
   forceRefresh: z.boolean().optional(),
 });
 
+export const liveScreenStartOptionsSchema = z
+  .object({
+    sampleFps: z.number().finite().positive().optional(),
+    durationSeconds: z.number().finite().positive().optional(),
+    includeCursor: z.boolean().optional(),
+    activeWindowOnly: z.boolean().optional(),
+  })
+  .optional();
+
+export const liveScreenSessionStartResponseSchema = z.object({
+  sessionId: z.string().min(1, 'Live screen sessionId is required'),
+  sampleFps: z.number().finite().positive(),
+  sampleIntervalMs: z.number().int().positive(),
+  startedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  expiresInSeconds: z.number().int().positive(),
+  maxLifetimeSeconds: z.number().int().positive(),
+  initialFrameSequence: z.number().int().positive(),
+  initialFrameCapturedAt: z.string().datetime(),
+});
+
+export const liveScreenFrameRequestSchema = z.object({
+  sessionId: z.string().min(1, 'Live screen sessionId is required'),
+});
+
+export const liveScreenFrameResponseSchema = z.object({
+  sessionId: z.string().min(1, 'Live screen sessionId is required'),
+  frameSequence: z.number().int().positive(),
+  capturedAt: z.string().datetime(),
+  staleMs: z.number().int().nonnegative(),
+  expiresAt: z.string().datetime(),
+  sampleFps: z.number().finite().positive(),
+  imagePath: z.string().min(1).optional(),
+  captureWarning: z.string().optional(),
+});
+
+export const liveScreenStopRequestSchema = z.object({
+  sessionId: z.string().min(1, 'Live screen sessionId is required'),
+});
+
+export const liveScreenStopResponseSchema = z.object({
+  sessionId: z.string().min(1, 'Live screen sessionId is required'),
+  status: z.literal('stopped'),
+  stoppedAt: z.string().datetime(),
+});
+
 export function validate<TSchema extends z.ZodTypeAny>(
   schema: TSchema,
   payload: unknown

@@ -11,6 +11,12 @@ import type {
   DesktopControlStatusRequest,
   DesktopControlStatusSnapshot,
 } from '../../../../src/shared/contracts/desktopControlBridge';
+import type {
+  LiveScreenFramePayload,
+  LiveScreenSessionStartPayload,
+  LiveScreenStartOptions,
+  LiveScreenStopPayload,
+} from '@accomplish/shared';
 import {
   createDesktopControlBridgeUnavailableSnapshot,
   createDesktopControlIpcFailureSnapshot,
@@ -64,6 +70,16 @@ async function invokeDesktopControlStatus(
 const desktopControlBridge: DesktopControlBridgeNamespace = {
   getStatus: (options?: DesktopControlStatusRequest) =>
     invokeDesktopControlStatus(options ?? {}),
+  liveScreen: {
+    startSession: (options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload> =>
+      ipcRenderer.invoke('desktopControl:startLiveScreenSession', options ?? {}),
+    getFrame: (sessionId: string): Promise<LiveScreenFramePayload> =>
+      ipcRenderer.invoke('desktopControl:getLiveScreenFrame', { sessionId }),
+    refreshFrame: (sessionId: string): Promise<LiveScreenFramePayload> =>
+      ipcRenderer.invoke('desktopControl:refreshLiveScreenFrame', { sessionId }),
+    stopSession: (sessionId: string): Promise<LiveScreenStopPayload> =>
+      ipcRenderer.invoke('desktopControl:stopLiveScreenSession', { sessionId }),
+  },
 };
 
 // Expose the accomplish API to the renderer
@@ -112,8 +128,22 @@ const accomplishAPI = {
     ipcRenderer.invoke('settings:debug-mode'),
   setDebugMode: (enabled: boolean): Promise<void> =>
     ipcRenderer.invoke('settings:set-debug-mode', enabled),
-  getAppSettings: (): Promise<{ debugMode: boolean; onboardingComplete: boolean }> =>
+  getAppSettings: (): Promise<{
+    debugMode: boolean;
+    onboardingComplete: boolean;
+    desktopControlPreflight?: boolean;
+    liveScreenSampling?: boolean;
+    allowMouseControl?: boolean;
+  }> =>
     ipcRenderer.invoke('settings:app-settings'),
+  getDesktopControlPreflight: (): Promise<boolean> =>
+    ipcRenderer.invoke('settings:get-desktop-control-preflight'),
+  setDesktopControlPreflight: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('settings:set-desktop-control-preflight', enabled),
+  getLiveScreenSampling: (): Promise<boolean> =>
+    ipcRenderer.invoke('settings:get-live-screen-sampling'),
+  setLiveScreenSampling: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('settings:set-live-screen-sampling', enabled),
   setAllowMouseControl: (enabled: boolean): Promise<void> =>
     ipcRenderer.invoke('settings:set-allow-mouse-control', enabled),
   getAllowDesktopContext: (): Promise<boolean> =>

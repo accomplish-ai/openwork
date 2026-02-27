@@ -20,55 +20,26 @@ import type {
   DesktopScreenshot,
   DesktopContextOptions,
   DesktopContextSnapshot,
+  DesktopControlStatus,
+  DesktopControlStatusSnapshot,
+  LiveScreenFramePayload,
+  LiveScreenSessionStartPayload,
+  LiveScreenStartOptions,
+  LiveScreenStopPayload,
 } from '@accomplish/shared';
 import type { MouseMovePayload, MouseClickPayload } from '@accomplish/shared';
 
-export type DesktopControlOverallStatus =
-  | 'ready'
-  | 'needs_screen_recording_permission'
-  | 'needs_accessibility_permission'
-  | 'mcp_unhealthy'
-  | 'unknown';
-
-export type DesktopControlCapability = 'screen_capture' | 'action_execution' | 'mcp_health';
-export type DesktopControlCheckStatus = 'ready' | 'blocked' | 'unknown';
-
-export interface DesktopControlRemediation {
-  title: string;
-  steps: string[];
-  systemSettingsPath?: string;
-}
-
-export interface DesktopControlCapabilityStatus {
-  capability: DesktopControlCapability;
-  status: DesktopControlCheckStatus;
-  errorCode: string | null;
-  message: string;
-  remediation: DesktopControlRemediation;
-  checkedAt: string;
-  details?: Record<string, unknown>;
-}
-
-export interface DesktopControlStatusSnapshot {
-  status: DesktopControlOverallStatus;
-  errorCode: string | null;
-  message: string;
-  remediation: DesktopControlRemediation;
-  checkedAt: string;
-  cache: {
-    ttlMs: number;
-    expiresAt: string;
-    fromCache: boolean;
-  };
-  checks: {
-    screen_capture: DesktopControlCapabilityStatus;
-    action_execution: DesktopControlCapabilityStatus;
-    mcp_health: DesktopControlCapabilityStatus;
-  };
-}
+export type {
+  DesktopControlCapability,
+  DesktopControlCapabilityStatus,
+  DesktopControlCheckStatus,
+  DesktopControlRemediation,
+  DesktopControlStatus,
+  DesktopControlStatusSnapshot,
+} from '@accomplish/shared';
 
 export interface LegacyDesktopControlStatusSnapshot {
-  status: DesktopControlOverallStatus;
+  status: DesktopControlStatus;
   capabilities: {
     screen_capture: string;
     action_execution: string;
@@ -88,6 +59,12 @@ interface AccomplishDesktopControlAPI {
   desktopControlGetStatus?(options?: { forceRefresh?: boolean }): Promise<DesktopControlStatusPayload>;
   desktopControl?: {
     getStatus?(options?: { forceRefresh?: boolean }): Promise<DesktopControlStatusPayload>;
+    liveScreen?: {
+      startSession?(options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload>;
+      getFrame?(sessionId: string): Promise<LiveScreenFramePayload>;
+      refreshFrame?(sessionId: string): Promise<LiveScreenFramePayload>;
+      stopSession?(sessionId: string): Promise<LiveScreenStopPayload>;
+    };
   };
 }
 
@@ -175,7 +152,17 @@ interface AccomplishAPI {
   removeApiKey(id: string): Promise<void>;
   getDebugMode(): Promise<boolean>;
   setDebugMode(enabled: boolean): Promise<void>;
-  getAppSettings(): Promise<{ debugMode: boolean; onboardingComplete: boolean }>;
+  getAppSettings(): Promise<{
+    debugMode: boolean;
+    onboardingComplete: boolean;
+    desktopControlPreflight?: boolean;
+    liveScreenSampling?: boolean;
+    allowMouseControl?: boolean;
+  }>;
+  getDesktopControlPreflight?(): Promise<boolean>;
+  setDesktopControlPreflight?(enabled: boolean): Promise<void>;
+  getLiveScreenSampling?(): Promise<boolean>;
+  setLiveScreenSampling?(enabled: boolean): Promise<void>;
   setAllowMouseControl?(enabled: boolean): Promise<void>;
   getAllowDesktopContext?(): Promise<boolean>;
   setAllowDesktopContext?(enabled: boolean): Promise<void>;
@@ -256,6 +243,12 @@ interface AccomplishAPI {
   desktopControlGetStatus?(options?: { forceRefresh?: boolean }): Promise<DesktopControlStatusPayload>;
   desktopControl?: {
     getStatus?(options?: { forceRefresh?: boolean }): Promise<DesktopControlStatusPayload>;
+    liveScreen?: {
+      startSession?(options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload>;
+      getFrame?(sessionId: string): Promise<LiveScreenFramePayload>;
+      refreshFrame?(sessionId: string): Promise<LiveScreenFramePayload>;
+      stopSession?(sessionId: string): Promise<LiveScreenStopPayload>;
+    };
   };
 
   // Mouse control

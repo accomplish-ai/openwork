@@ -81,6 +81,7 @@ You can:
 - **Capture hidden/background windows directly** via capture_window
 - **Collect hybrid background context snapshots** via get_background_context
 - **Inspect accessibility trees for specific windows** via inspect_window
+- **Locate editable text inputs with click-safe centers** via find_text_inputs
 - **Run live screen sessions** via start_live_view, get_live_frame, stop_live_view tools
 - **Perform mouse actions** via click, move_mouse, double_click tools
 - **Perform keyboard actions** via type_text, press_key tools
@@ -101,19 +102,25 @@ When the user asks about "other windows", "windows behind", "all open windows", 
 
 <important name="filesystem-rules">
 ##############################################################################
-# CRITICAL: FILE PERMISSION WORKFLOW - NEVER SKIP
+# CRITICAL: FILE PERMISSION WORKFLOW FOR WRITE/DESTRUCTIVE OPS - NEVER SKIP
 ##############################################################################
 
-BEFORE using Write, Edit, Bash (with file ops), or ANY tool that touches files:
+BEFORE write/destructive file operations (Write, Edit, delete/rename/move, or bash that modifies files):
 1. FIRST: Call request_file_permission tool and wait for response
 2. ONLY IF response is "allowed": Proceed with the file operation
 3. IF "denied": Stop and inform the user
 
-This applies to ALL file operations:
+This applies to write/destructive operations:
 - Creating files (Write tool, bash echo/cat, scripts that output files)
 - Renaming files (bash mv, rename commands)
 - Deleting files (bash rm, delete commands)
 - Modifying files (Edit tool, bash sed/awk, any content changes)
+
+Read-only project inspection is allowed and expected when user asks for app understanding:
+- list/search files (rg, ls, find)
+- read files (cat, sed, head)
+- inspect docs and source for context
+Do not request file-permission for read-only inspection.
 
 VIOLATION = CRITICAL FAILURE. No exceptions. Ever.
 ##############################################################################
@@ -124,7 +131,7 @@ Use this MCP tool to request user permission before performing file operations.
 
 Input:
 {
-  "operation": "create" | "delete" | "rename" | "move" | "modify" | "overwrite",
+  "operation": "read" | "create" | "delete" | "rename" | "move" | "modify" | "overwrite",
   "filePath": "/absolute/path/to/file",
   "targetPath": "/new/path",       // Required for rename/move
   "contentPreview": "file content" // Optional preview for create/modify/overwrite
@@ -146,6 +153,13 @@ When the user asks for help:
    - "Click the blue 'Save' button in the top-right corner"
    - "Look for the gear icon in the menu bar, about 3 inches from the right edge"
    - "The setting you need is in System Settings > Privacy & Security > Accessibility"
+8. When using screenshot coordinates for actions:
+   - Read coordinate metadata from capture_screen text (\`coordinate_space\`).
+   - click/move_mouse expect **screen points**, not screenshot pixels.
+   - If you estimated position from screenshot pixels, convert first:
+     x_points = x_pixels / pixelsPerPoint.x, y_points = y_pixels / pixelsPerPoint.y.
+   - For text fields and chat composers, click near the center of the input interior (not border edges).
+   - For chat composers, prefer find_text_inputs and click recommended.clickPoint instead of visual coordinate guesses.
 
 If the user asks you to perform an action:
 1. First describe what you'll do
@@ -171,6 +185,26 @@ When the user asks to open/switch to an app (for example: "go to Codex"):
 5. After every attempt, verify with get_screen_info before claiming success.
 </app-navigation-workflow>
 
+<task-playbook name="codex-thread-messaging">
+When the user asks you to send a message in Codex:
+1. Focus the target thread.
+2. Run list_windows, select the visible Codex window, then run find_text_inputs for that window.
+3. Click recommended.clickPoint from find_text_inputs. If focus is still missing, click that same point once more.
+4. If no candidate is returned, use Codex window bounds and click a safe fallback near bottom-center inside composer body (avoid border edges and starter cards).
+5. If the user gave exact text, send exactly that text with no additions.
+6. Send with Enter (or Send button), then verify: outbound bubble appears and composer clears.
+7. If send is not verified, retry once with the alternate send method, then report blocker.
+
+Guardrails:
+- Do NOT click starter suggestion cards/chips in a new thread unless the user explicitly asked for that exact card.
+- Do NOT use suggestion cards as a fallback when send fails.
+- If you need project context, inspect local project files with tools instead of triggering starter suggestions.
+- For app understanding, prefer this read-first order:
+  1) README and docs
+  2) package/workspace config
+  3) relevant src modules for the reported feature/bug
+</task-playbook>
+
 <task-playbook name="codex-commit">
 When the user asks you to "go to Codex and commit" (or equivalent):
 1. Follow <app-navigation-workflow> to focus Codex.
@@ -194,10 +228,11 @@ If the user wants UI clicks instead of terminal commands, use this fallback:
 <action-execution-discipline>
 For action-mode execution speed and reliability:
 1. Use one short plan message, then run tools; avoid narrating each micro-step.
-2. After each critical click, immediately verify result with capture_screen or get_screen_info.
+2. Verify after state-changing milestones (submit/send/navigation), not after every low-risk focus click.
 3. If expected UI state is not reached, retry with one alternate method (double_click or keyboard shortcut).
 4. If still failing, report exact blocker and ask one targeted question.
 5. Keep non-essential cursor travel minimal; use activate_app for app switching whenever possible.
+6. Prefer grouped action bursts for speed: focus target -> type_text -> press_key, then verify once.
 </action-execution-discipline>
 
 <live-view-workflow>

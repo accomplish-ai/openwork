@@ -135,6 +135,79 @@ struct AccessibleNode: Codable {
     }
 }
 
+private func windowTitle(for element: AXUIElement) -> String? {
+    var titleRef: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &titleRef) == .success else {
+        return nil
+    }
+    let title = (titleRef as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let title, !title.isEmpty else {
+        return nil
+    }
+    return title
+}
+
+private func windowFrame(for element: AXUIElement) -> CGRect? {
+    var positionRef: CFTypeRef?
+    var sizeRef: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &positionRef) == .success,
+          AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeRef) == .success,
+          let positionRef,
+          let sizeRef else {
+        return nil
+    }
+
+    let position = positionRef as! AXValue
+    let size = sizeRef as! AXValue
+    var pos = CGPoint.zero
+    var sz = CGSize.zero
+    guard AXValueGetValue(position, .cgPoint, &pos),
+          AXValueGetValue(size, .cgSize, &sz) else {
+        return nil
+    }
+
+    return CGRect(origin: pos, size: sz)
+}
+
+private func normalizedTitle(_ title: String?) -> String? {
+    guard let title else { return nil }
+    let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    return normalized.isEmpty ? nil : normalized
+}
+
+private func scoreWindowMatch(
+    targetTitle: String?,
+    targetBounds: CGRect?,
+    candidateTitle: String?,
+    candidateFrame: CGRect?
+) -> Int {
+    var score = 0
+
+    let targetNormalized = normalizedTitle(targetTitle)
+    let candidateNormalized = normalizedTitle(candidateTitle)
+
+    if let targetNormalized, let candidateNormalized {
+        if targetNormalized == candidateNormalized {
+            score += 140
+        } else if targetNormalized.contains(candidateNormalized) || candidateNormalized.contains(targetNormalized) {
+            score += 80
+        }
+    }
+
+    if let frame = candidateFrame, let targetBounds {
+        let frameCenter = CGPoint(x: frame.midX, y: frame.midY)
+        let targetCenter = CGPoint(x: targetBounds.midX, y: targetBounds.midY)
+        let centerDistance = hypot(frameCenter.x - targetCenter.x, frameCenter.y - targetCenter.y)
+        score += max(0, 120 - Int(centerDistance / 8.0))
+
+        let widthDelta = abs(frame.width - targetBounds.width)
+        let heightDelta = abs(frame.height - targetBounds.height)
+        score += max(0, 80 - Int((widthDelta + heightDelta) / 8.0))
+    }
+
+    return score
+}
+
 // MARK: - Window Enumeration
 
 func listWindows() throws -> [WindowInfo] {
@@ -224,6 +297,18 @@ func inspectWindow(windowId: Int, maxDepth: Int = 10, maxNodes: Int = 1000) thro
           let pid = windowDict[kCGWindowOwnerPID as String] as? Int32 else {
         throw HelperError.windowNotFound(windowId)
     }
+
+    let targetTitle = windowDict[kCGWindowName as String] as? String
+    let targetBounds: CGRect? = {
+        guard let boundsDict = windowDict[kCGWindowBounds as String] as? [String: Any],
+              let x = boundsDict["X"] as? Double,
+              let y = boundsDict["Y"] as? Double,
+              let width = boundsDict["Width"] as? Double,
+              let height = boundsDict["Height"] as? Double else {
+            return nil
+        }
+        return CGRect(x: x, y: y, width: width, height: height)
+    }()
     
     // Check accessibility permissions
     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
@@ -242,19 +327,27 @@ func inspectWindow(windowId: Int, maxDepth: Int = 10, maxNodes: Int = 1000) thro
         throw HelperError.windowNotFound(windowId)
     }
     
-    // Find the window matching our windowId
-    var targetWindow: AXUIElement?
+    // Match AX window against the requested CG window by title and bounds.
+    var bestWindow: AXUIElement?
+    var bestScore = Int.min
+
     for window in windows {
-        var windowIdRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(window, kAXWindowAttribute as CFString, &windowIdRef) == .success {
-            // Note: AX doesn't directly give us CGWindowID, so we'll use the first window
-            // In practice, you might need to match by title or other attributes
-            targetWindow = window
-            break
+        let candidateTitle = windowTitle(for: window)
+        let candidateFrame = windowFrame(for: window)
+        let score = scoreWindowMatch(
+            targetTitle: targetTitle,
+            targetBounds: targetBounds,
+            candidateTitle: candidateTitle,
+            candidateFrame: candidateFrame
+        )
+
+        if score > bestScore {
+            bestScore = score
+            bestWindow = window
         }
     }
-    
-    guard let window = targetWindow ?? windows.first else {
+
+    guard let window = bestWindow ?? windows.first else {
         throw HelperError.windowNotFound(windowId)
     }
     
