@@ -55,11 +55,17 @@ function frameIntersectsWindow(
   return frameRight >= left && frame.x <= right && frameBottom >= top && frame.y <= bottom;
 }
 
-function safeClickPointForFrame(frame: AccessibleNodeFrame): { x: number; y: number } {
+function safeClickPointForFrame(
+  frame: AccessibleNodeFrame,
+  options?: { preferLowerHalf?: boolean }
+): { x: number; y: number } {
   const insetX = Math.min(16, Math.max(4, frame.width * 0.12));
   const insetY = Math.min(12, Math.max(4, frame.height * 0.2));
   const x = clamp(frame.x + frame.width / 2, frame.x + insetX, frame.x + frame.width - insetX);
-  const y = clamp(frame.y + frame.height / 2, frame.y + insetY, frame.y + frame.height - insetY);
+  const preferredY = options?.preferLowerHalf
+    ? frame.y + frame.height * 0.6
+    : frame.y + frame.height / 2;
+  const y = clamp(preferredY, frame.y + insetY, frame.y + frame.height - insetY);
   return { x: Math.round(x), y: Math.round(y) };
 }
 
@@ -161,6 +167,8 @@ export function collectTextInputCandidates(tree: unknown, window: DesktopContext
 
         const hintText = `${title ?? ''} ${description ?? ''} ${value ?? ''}`.toLowerCase();
         const { score, reasons } = scoreTextInputCandidate(role, frame, window, focused, hintText);
+        const preferLowerHalf =
+          reasons.includes('codex-bottom-composer-shape') || reasons.includes('composer-hint');
 
         candidates.push({
           role,
@@ -168,7 +176,7 @@ export function collectTextInputCandidates(tree: unknown, window: DesktopContext
           description,
           valuePreview: sanitizeValuePreview(value),
           frame,
-          clickPoint: safeClickPointForFrame(frame),
+          clickPoint: safeClickPointForFrame(frame, { preferLowerHalf }),
           enabled,
           focused,
           score,

@@ -21,8 +21,16 @@ describe('Composer Targeting Reliability', () => {
 
   it('system prompt requires accessibility-driven composer targeting before send', () => {
     expect(configGeneratorSource).toContain('find_text_inputs');
+    expect(configGeneratorSource).toContain('/Users/hareli/Projects/openwork/docs/codex-desktop-map.md');
     expect(configGeneratorSource).toContain('Run list_windows, select the visible Codex window');
-    expect(configGeneratorSource).toContain('safe fallback near bottom-center inside composer body');
+    expect(configGeneratorSource).toContain('lower-middle interior of the composer body');
+    expect(configGeneratorSource).toContain('The send button is the circular up-arrow at the far-right end of the composer');
+    expect(configGeneratorSource).toContain('button area often turns darker/gray');
+    expect(configGeneratorSource).toContain('left sidebar = roughly x 0% to 24% of the window width');
+    expect(configGeneratorSource).toContain('Button meaning quick map');
+    expect(configGeneratorSource).toContain('Continue this verify-and-correct loop until send is verified');
+    expect(configGeneratorSource).toContain('up to 90 seconds total for the full send attempt');
+    expect(configGeneratorSource).toContain('Do not stop the turn after a miss while the retry budget remains');
   });
 
   it('desktop context helper uses scored matching for inspect_window', () => {

@@ -288,6 +288,49 @@ Use the smallest navigation that solves the task:
 - Thread review/respond: use Threads.
 - Sending a chat message: open Threads, select the correct thread, then use the bottom composer field.
 
+Codex thread screen map:
+
+- Left sidebar: the leftmost vertical panel, usually about the left quarter of the window.
+- Treat the full Codex window as a layout grid:
+- left sidebar: roughly x 0% to 24% of the window width.
+- main thread pane: roughly x 24% to 100%.
+- top toolbar: roughly y 0% to 7%.
+- conversation body: roughly y 7% to 80%.
+- composer band: roughly y 80% to 95%.
+- footer/status row: roughly y 95% to 100%.
+- `New thread`: near the top of the left sidebar as a row with a pencil/edit icon. Click the center of that row label, not the macOS window controls above it.
+- `Automations`: second row in that top sidebar group.
+- `Skills`: third row in that top sidebar group.
+- Thread list: below the `Threads` heading in the left sidebar. Click the thread title row to open that conversation.
+- Main thread pane: the large right-side area that shows the active conversation.
+- New-thread screen landmarks:
+- `New thread` row: around x 2% to 16%, y 5% to 10% of the full window.
+- Thread rows: around x 2% to 22%, y 28% to 82%.
+- Hero text/logo block: centered in main pane around x 45% to 60%, y 34% to 52%; not a send target.
+- Suggestion cards: above the composer around x 30% to 88%, y 70% to 82%; non-target UI unless explicitly requested.
+- Composer: around x 30% to 88%, y 84% to 95%, directly below the suggestion cards and directly above the footer row.
+- Messages and replies: appear in the main pane above the composer; the newest visible content is nearest the bottom of the conversation area.
+- Starter cards/suggestion chips: rectangular cards above the composer on empty/new-thread screens. Treat them as non-target UI unless the user explicitly asked for that exact card.
+- Composer: the widest rounded text field anchored at the bottom of the main pane, directly above the footer/status row (`Local`, permission label such as `Full access`, branch name).
+- Footer landmark rule: find the row that shows `Local`, access status, and branch name; the composer is the large rounded field immediately above that row.
+- Composer safe click zone: the lower-middle interior of that rounded field. Aim around the horizontal center and slightly below the field midpoint. Avoid the top border, placeholder-text band, and the cards above it.
+- Send button: the circular arrow button inside the far-right end of the composer. Click the center of the circle. Do not click slightly above it, and do not confuse it with the microphone icon just to its left.
+- Microphone button: the small mic icon immediately left of the send button. It starts voice input and does not send the typed message.
+- Hover confirmation cue: when the cursor is truly on a clickable Codex button, the button area often turns darker/gray or shows a stronger highlight. Treat that hover-state change as evidence that the pointer is on target before clicking.
+- Composer utility controls: the `+` button at the far-left interior opens attach/insert options; the model picker (for example `GPT-5.3-Codex`) and effort picker (for example `Low`) sit along the lower-left interior of the composer and are not the typing target.
+- Top bar title: top-left of the main pane shows the current thread title (for example `New thread`).
+- Workspace selector: project/workspace label under hero text or in the footer (for example `openwork` or `Local`); useful for verification, not for sending.
+- Top-right controls: `Open` opens or switches repo context; `Commit` opens the commit flow. These are unrelated to chat send unless the user asked for repo/source-control actions.
+- Button meaning quick map:
+- `New thread`: open a blank conversation.
+- Thread row: open that existing conversation.
+- `Open`: choose or switch repo/workspace context.
+- `Commit`: open source-control commit flow.
+- Composer body: put caret here and type.
+- Send up-arrow: submit the typed message.
+- Microphone: start voice input; not send.
+- Starter card: run a canned task prompt; ignore unless explicitly requested.
+
 Wrong-panel guardrail:
 
 - Do not enter Threads/other panels if user asked for commit/push.
@@ -306,6 +349,8 @@ Required verification after final-action click:
 - Button state changes, modal closes, or progress indicator appears.
 - Success/failure toast, sync indicator, or changed git status is visible.
 - If nothing changes, retry once and investigate blocker.
+- If visual verification is available, capture a fresh screenshot/live frame after a failed attempt and correct the miss direction instead of stopping at one retry.
+- Do not end the turn while retry budget remains and no hard blocker is present.
 
 ### 12.5 Codex commit and push SOP (all changes, blank message)
 
@@ -456,9 +501,19 @@ Target-lock click protocol:
 
 1. Bring target button fully into view (no overlap, no clipping).
 2. Pause for visual confirmation of exact label text.
-3. Click the center area of the target button, not near edges.
-4. Confirm pressed state immediately (highlight/ripple/pressed state).
+3. Move to the center area of the target button, not near edges.
+4. Wait briefly for hover confirmation when available (button darkens, turns gray, or shows a stronger highlight).
+5. Click only after hover confirmation or after a brief settle when hover is subtle.
+6. Confirm pressed state immediately (highlight/ripple/pressed state).
 5. If no pressed state, click center once more.
+
+Adaptive retry rule:
+
+1. If the click does not change UI state, do not stop immediately.
+2. Capture a fresh screenshot/live frame when available.
+3. Classify the miss as `high`, `low`, `left`, `right`, `overlay`, or `uncertain`.
+4. Retry with a small correction, usually 6-16 screen points in the needed direction.
+5. Repeat until verified or the mission-specific retry budget is exhausted.
 
 Near-miss prevention:
 
@@ -486,6 +541,7 @@ Required sequence:
 1. Confirm correct thread is open (context/title matches mission).
 2. Focus the message composer field (bottom input area of the active thread).
    - Prefer accessibility/text-input discovery when available; click the center of the returned composer frame.
+   - If visual fallback is required, target the widest rounded input above the footer row and click its lower-middle interior, not the top half.
 3. Check whether composer already contains text.
 4. If text exists and overwrite behavior is ambiguous, ask one short clarification:
 - `replace draft`,
@@ -494,17 +550,29 @@ Required sequence:
 5. If user provided exact text to send, use that exact text and do not improvise.
 6. Enter text into composer:
 - click composer once,
-- if focus is not visible, click the same center point once more (do not drift to nearby cards),
+- if focus is not visible, click the same center point once more and slightly lower if needed (do not drift upward to nearby cards),
 - confirm caret is in composer,
 - paste/type message.
 7. Send message (`Enter` or Send button).
+   - If using the Send button, hover-confirm the circular arrow first: the button should darken or highlight under the cursor before click.
 8. If multi-line text is needed before send, use `Shift+Enter` for line breaks.
 9. Verify send within 3 seconds using visible evidence:
 - outbound message bubble appears in thread,
 - composer clears/resets, and
 - response-in-progress indicator appears.
-10. If evidence is incomplete, re-focus composer and retry send once.
-11. If still not verified, report blocker with exact observed UI state.
+10. If evidence is incomplete, capture a fresh screenshot/live frame and inspect the miss before retrying.
+11. Correct based on observed miss direction:
+- if the pointer/click landed high, retry lower,
+- if low, retry higher,
+- if left/right, correct horizontally,
+- use small corrections first, usually 6-16 screen points.
+12. Continue the verify-and-correct loop until send is verified or the retry budget is exhausted.
+13. Retry budget:
+- up to `90` seconds total for the send attempt,
+- up to `8` corrected attempts,
+- fresh visual verification after each failed attempt.
+14. If still not verified after the budget is exhausted, report blocker with exact observed UI state.
+15. Do not end the turn after a miss while retry budget remains.
 
 Starter-card guardrail:
 
@@ -615,7 +683,7 @@ Where to type:
 2. Click the target thread title.
 3. Locate the composer at the bottom of that thread (single-line or multi-line input field).
 4. Click inside the composer until a caret appears.
-   - If the first click misses, click the same center point again rather than a nearby random point.
+   - If the first click misses, click the same lower-middle point again rather than a nearby random point.
 5. Ignore starter/suggestion cards unless the user explicitly asks to run one of them.
 
 How to write outbound messages:

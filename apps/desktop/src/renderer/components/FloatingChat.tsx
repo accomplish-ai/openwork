@@ -143,7 +143,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [taskHistory, setTaskHistory] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [showMenuPanel, setShowMenuPanel] = useState(false);
+  const [showMenuPanel, setShowMenuPanel] = useState(true);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [showLiveViewer, setShowLiveViewer] = useState(false);
   const [recentlyHidLiveViewer, setRecentlyHidLiveViewer] = useState(false);
@@ -472,6 +472,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       try {
         const tasks = await accomplish.listTasks();
         setTaskHistory(tasks);
+        setShowMenuPanel(tasks.length > 0);
 
         if (tasks.length > 0) {
           const latestTask = tasks[tasks.length - 1];
@@ -971,7 +972,6 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       selectedTaskIdRef.current = taskId;
       isLoadingRef.current = false;
       setIsLoading(false);
-      setShowMenuPanel(false);
 
       try {
         const task = await accomplish.getTask(taskId);
@@ -1157,13 +1157,16 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
           <div className="flex items-center gap-2 min-w-0">
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
+              className="h-8 shrink-0 gap-2 px-2"
               onClick={() => setShowMenuPanel((value) => !value)}
-              title="Open menu"
-              aria-label="Open menu"
+              title={showMenuPanel ? 'Hide past chats' : 'Show past chats'}
+              aria-label={showMenuPanel ? 'Hide past chats' : 'Show past chats'}
+              aria-pressed={showMenuPanel}
             >
               <Menu className="h-4 w-4" />
+              <span className="text-xs font-medium">
+                {showMenuPanel ? 'Hide chats' : 'Past chats'}
+              </span>
             </Button>
             <div className="min-w-0">
               <DropdownMenu>

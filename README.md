@@ -219,6 +219,16 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
 </details>
 
+<details>
+<summary><strong>Bounded Agent Manager Scaffold</strong></summary>
+
+- Queue, prompt, policy, and run-report templates for safe one-task autonomous runs:
+  [`ops/agent-manager/README.md`](ops/agent-manager/README.md)
+- Suggested recurring prompt for one-task unattended runs:
+  [`docs/automation/project-manager-automation-prompt.md`](docs/automation/project-manager-automation-prompt.md)
+
+</details>
+
 <br />
 
 ---

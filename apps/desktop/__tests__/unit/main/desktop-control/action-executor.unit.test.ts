@@ -59,6 +59,11 @@ describe('executeDesktopAction', () => {
       expect(result.message).toContain('200');
       expect(result.executedAt).toBeTruthy();
       expect(mocks.execFileAsync).toHaveBeenCalled();
+      expect(mocks.execFileAsync).toHaveBeenCalledWith(
+        'python3',
+        expect.arrayContaining(['100', '214']),
+        expect.any(Object)
+      );
     });
 
     it('clamps coordinates to valid range', async () => {

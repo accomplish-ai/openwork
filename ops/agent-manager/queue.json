@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "updatedAt": "2026-02-28",
+  "defaults": {
+    "maxAutonomousTurns": 6,
+    "maxIdleSecondsPerTurn": 120,
+    "stopOnSendVerificationFailure": true,
+    "requireValidation": true,
+    "requireRunReport": true
+  },
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Example queued task",
+      "type": "bug",
+      "status": "todo",
+      "priority": "medium",
+      "repoPaths": [
+        "apps/desktop/src/main/agents/screen-agent",
+        "apps/desktop/src/main/desktop-control"
+      ],
+      "summary": "Replace this example with a real bug, feature, or maintenance task.",
+      "definitionOfDone": [
+        "Behavior is implemented or fixed.",
+        "Relevant tests or checks have been run.",
+        "A short run report is produced."
+      ],
+      "validation": [
+        "pnpm lint",
+        "pnpm typecheck"
+      ],
+      "riskLevel": "medium",
+      "requiresDesktopControl": false,
+      "canRunUnattended": false,
+      "allowCommit": false,
+      "allowPush": false,
+      "notes": "Set canRunUnattended to true only for bounded tasks with clear validation."
+    }
+  ]
+}

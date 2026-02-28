@@ -28,6 +28,8 @@ const DEFAULT_SCROLL_AMOUNT = 3;
 const MIN_SCROLL_AMOUNT = 0;
 const MAX_SCROLL_AMOUNT = 100;
 const EXECUTION_TIMEOUT_MS = 10_000;
+const POINTER_SETTLE_DELAY_MS = 80;
+const POINTER_Y_CALIBRATION_OFFSET = 14;
 
 const PERMISSION_ERROR_PATTERNS = [
   'accessibility',
@@ -305,12 +307,24 @@ function validateCoordinate(value: unknown, field: 'x' | 'y'): number {
   return clamp(Math.round(value), MIN_COORDINATE, MAX_COORDINATE);
 }
 
+function waitForPointerSettle(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, POINTER_SETTLE_DELAY_MS));
+}
+
+function applyPointerCalibration(x: number, y: number): { x: number; y: number } {
+  return {
+    x,
+    y: clamp(y + POINTER_Y_CALIBRATION_OFFSET, MIN_COORDINATE, MAX_COORDINATE),
+  };
+}
+
 // --- Action dispatch ---
 
 async function executeMoveMouse(x: number, y: number): Promise<DesktopActionResponse> {
   const cx = validateCoordinate(x, 'x');
   const cy = validateCoordinate(y, 'y');
-  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(cx), String(cy)]);
+  const calibrated = applyPointerCalibration(cx, cy);
+  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)]);
   return {
     action: { type: 'move_mouse', x: cx, y: cy },
     message: `Moved mouse to (${cx}, ${cy}).`,
@@ -325,12 +339,14 @@ async function executeClick(
 ): Promise<DesktopActionResponse> {
   const cx = validateCoordinate(x, 'x');
   const cy = validateCoordinate(y, 'y');
+  const calibrated = applyPointerCalibration(cx, cy);
   if (!VALID_BUTTONS.has(button)) {
     throw buildFailure('ERR_VALIDATION_ERROR', `Unsupported button: ${button}`);
   }
   // Move to target first, then click
-  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(cx), String(cy)]);
-  await runPython(PYTHON_CLICK_SCRIPT, [String(cx), String(cy), button]);
+  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)]);
+  await waitForPointerSettle();
+  await runPython(PYTHON_CLICK_SCRIPT, [String(calibrated.x), String(calibrated.y), button]);
   return {
     action: { type: 'click', x: cx, y: cy, button },
     message: `Clicked ${button} at (${cx}, ${cy}).`,
@@ -341,8 +357,10 @@ async function executeClick(
 async function executeDoubleClick(x: number, y: number): Promise<DesktopActionResponse> {
   const cx = validateCoordinate(x, 'x');
   const cy = validateCoordinate(y, 'y');
-  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(cx), String(cy)]);
-  await runPython(PYTHON_DOUBLE_CLICK_SCRIPT, [String(cx), String(cy)]);
+  const calibrated = applyPointerCalibration(cx, cy);
+  await runPython(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)]);
+  await waitForPointerSettle();
+  await runPython(PYTHON_DOUBLE_CLICK_SCRIPT, [String(calibrated.x), String(calibrated.y)]);
   return {
     action: { type: 'double_click', x: cx, y: cy },
     message: `Double-clicked at (${cx}, ${cy}).`,

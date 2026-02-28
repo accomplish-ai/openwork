@@ -4,7 +4,10 @@ Last updated: 2026-02-25
 
 ## Core References
 - docs/agent-computer-mastery-spec.md: agent runtime and UI execution playbooks
+- docs/codex-desktop-map.md: persistent Codex desktop layout, landmarks, controls, and retry rules
 - docs/agent-parallel-worklist.md: parallel task guidance
+- ops/agent-manager/README.md: bounded-autonomy manager loop, queue, and safety files
+- docs/automation/project-manager-automation-prompt.md: recurring one-task autonomous run prompt
 - docs/packaging-verification-checklist.md: release packaging checklist
 
 ## Desktop Skills
