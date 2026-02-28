@@ -1,4 +1,6 @@
 import type {
+  DesktopActionRequest,
+  DesktopActionResponse,
   DesktopContextOptions,
   DesktopContextSnapshot,
   DesktopControlStatusSnapshot,
@@ -16,17 +18,25 @@ import {
   type DesktopControlDataAccess,
 } from './data-access';
 import {
+  ACTION_HISTORY_MAX_LENGTH,
   createInitialDesktopControlState,
   type DesktopControlDomainState,
+  type DesktopControlEvent,
+  type DesktopControlEventListener,
+  type DesktopControlEventType,
 } from './domain';
 import type { LiveScreenSessionSnapshot } from './live-screen';
+import { AuditLog, getAuditLog, type AuditAction, type AuditOutcome } from './audit-log';
+import { RateLimiter, getRateLimiter, type RateLimitBucket } from './rate-limiter';
 
 export interface DesktopControlServiceDependencies {
   dataAccess?: DesktopControlDataAccess;
+  auditLog?: AuditLog;
+  rateLimiter?: RateLimiter;
   now?: () => number;
 }
 
-const LIVE_SCREEN_RETRY_ATTEMPTS = 2;
+const RETRY_ATTEMPTS = 2;
 const MAX_ALLOWED_SAMPLE_FPS = 10;
 const MAX_ALLOWED_DURATION_SECONDS = 300;
 
@@ -36,15 +46,123 @@ export class DesktopControlService {
   private state: DesktopControlDomainState;
   private readonly completedStopPayloadBySessionId = new Map<string, LiveScreenStopPayload>();
   private readonly deletedSessionIds = new Set<string>();
+  private readonly auditLog: AuditLog;
+  private readonly rateLimiter: RateLimiter;
+  private readonly eventListeners: Set<DesktopControlEventListener> = new Set();
 
-  constructor({ dataAccess, now }: DesktopControlServiceDependencies = {}) {
+  constructor({ dataAccess, auditLog, rateLimiter, now }: DesktopControlServiceDependencies = {}) {
     this.dataAccess = dataAccess ?? createDesktopControlDataAccess();
+    this.auditLog = auditLog ?? getAuditLog();
+    this.rateLimiter = rateLimiter ?? getRateLimiter();
     this.now = now ?? (() => Date.now());
     this.state = createInitialDesktopControlState(this.now());
   }
 
+  getAuditLog(): AuditLog {
+    return this.auditLog;
+  }
+
+  getRateLimiter(): RateLimiter {
+    return this.rateLimiter;
+  }
+
   getState(): DesktopControlDomainState {
     return this.state;
+  }
+
+  onEvent(listener: DesktopControlEventListener): () => void {
+    this.eventListeners.add(listener);
+    return () => this.eventListeners.delete(listener);
+  }
+
+  private emitEvent(type: DesktopControlEventType, details?: Record<string, unknown>): void {
+    const event: DesktopControlEvent = {
+      type,
+      timestamp: this.now(),
+      details,
+    };
+    for (const listener of this.eventListeners) {
+      try {
+        listener(event);
+      } catch {
+        // Event listeners should not throw, but swallow errors to protect the service
+      }
+    }
+  }
+
+  clearSensitiveData(): void {
+    this.state.liveScreen = {
+      phase: 'idle',
+      session: null,
+      lastFrame: null,
+      lastFailure: null,
+      lastUpdatedAt: this.now(),
+    };
+    this.state.actionExecution = {
+      lastAction: null,
+      lastFailure: null,
+      executionCount: 0,
+      lastUpdatedAt: this.now(),
+      history: [],
+    };
+    this.state.context = {
+      snapshot: null,
+      lastUpdatedAt: this.now(),
+    };
+    this.completedStopPayloadBySessionId.clear();
+    this.deletedSessionIds.clear();
+    this.rateLimiter.reset();
+    this.auditLog.record({
+      timestamp: this.now(),
+      action: 'clear_sensitive_data',
+      outcome: 'success',
+    });
+    this.emitEvent('sensitive_data_cleared');
+  }
+
+  async undoLastAction(): Promise<DesktopActionResponse | null> {
+    const history = this.state.actionExecution.history;
+    if (history.length === 0) return null;
+
+    const lastEntry = history[history.length - 1];
+    if (!lastEntry.response || lastEntry.failure) return null;
+
+    // For move_mouse: find the previous position and move back
+    if (lastEntry.request.type === 'move_mouse') {
+      // Find the last successful move_mouse before this one
+      for (let i = history.length - 2; i >= 0; i--) {
+        const prev = history[i];
+        if (prev.request.type === 'move_mouse' && prev.response) {
+          return this.executeAction({ type: 'move_mouse', x: prev.request.x, y: prev.request.y });
+        }
+      }
+    }
+
+    // For other action types, undo is not straightforward — return null
+    return null;
+  }
+
+  async restartLiveScreenSession(
+    options?: LiveScreenStartOptions,
+  ): Promise<LiveScreenSessionStartPayload> {
+    // Clean up any active session first
+    const currentSession = this.state.liveScreen.session;
+    if (currentSession) {
+      try {
+        await this.stopLiveScreenSession(currentSession.sessionId);
+      } catch {
+        // If stop fails, force-clear the state and continue
+      }
+    }
+    // Reset live screen state
+    this.state.liveScreen = {
+      phase: 'idle',
+      session: null,
+      lastFrame: null,
+      lastFailure: null,
+      lastUpdatedAt: this.now(),
+    };
+    return this.startLiveScreenSession(options);
   }
 
   setDataAccess(dataAccess: DesktopControlDataAccess): void {
@@ -54,16 +172,36 @@ export class DesktopControlService {
   async getReadinessStatus(
     options?: { forceRefresh?: boolean }
   ): Promise<DesktopControlStatusSnapshot> {
-    const snapshot = await this.withLiveScreenRetry(() => this.dataAccess.getReadinessStatus(options));
-    this.state.readiness = {
-      snapshot,
-      lastUpdatedAt: this.now(),
-    };
-    return snapshot;
+    this.rateLimiter.acquireOrThrow('readiness_check');
+    const start = this.now();
+    try {
+      const snapshot = await this.withRetry(() => this.dataAccess.getReadinessStatus(options));
+      this.state.readiness = {
+        snapshot,
+        lastUpdatedAt: this.now(),
+      };
+      this.auditLog.record({
+        timestamp: this.now(),
+        action: 'readiness_check',
+        outcome: 'success',
+        durationMs: this.now() - start,
+      });
+      this.emitEvent('readiness_checked', { status: snapshot.status });
+      return snapshot;
+    } catch (error) {
+      this.auditLog.record({
+        timestamp: this.now(),
+        action: 'readiness_check',
+        outcome: 'failure',
+        durationMs: this.now() - start,
+        details: { error: String(error) },
+      });
+      throw error;
+    }
   }
 
   async captureDesktopContext(options?: DesktopContextOptions): Promise<DesktopContextSnapshot> {
-    const snapshot = await this.withLiveScreenRetry(() => this.dataAccess.captureDesktopContext(options));
+    const snapshot = await this.withRetry(() => this.dataAccess.captureDesktopContext(options));
     this.state.context = {
       snapshot,
       lastUpdatedAt: this.now(),
@@ -71,9 +209,62 @@ export class DesktopControlService {
     return snapshot;
   }
 
+  async executeAction(request: DesktopActionRequest): Promise<DesktopActionResponse> {
+    this.rateLimiter.acquireOrThrow('mouse_action');
+    this.emitEvent('action_started', { type: request.type });
+    const start = this.now();
+    try {
+      const response = await this.withRetry(() => this.dataAccess.executeAction(request));
+      const now = this.now();
+      this.state.actionExecution = {
+        lastAction: response,
+        lastFailure: null,
+        executionCount: this.state.actionExecution.executionCount + 1,
+        lastUpdatedAt: now,
+        history: [
+          ...this.state.actionExecution.history.slice(-(ACTION_HISTORY_MAX_LENGTH - 1)),
+          { request, response, failure: null, executedAt: now },
+        ],
+      };
+      this.auditLog.record({
+        timestamp: now,
+        action: 'action_execute',
+        outcome: 'success',
+        durationMs: now - start,
+        details: { type: request.type },
+      });
+      this.emitEvent('action_completed', { type: request.type, durationMs: now - start });
+      return response;
+    } catch (error) {
+      const now = this.now();
+      const failure = normalizeToolFailure(error, 'action_execution');
+      const outcome: AuditOutcome = failure.code === 'ERR_PERMISSION_DENIED' ? 'permission_denied' : 'failure';
+      this.state.actionExecution = {
+        ...this.state.actionExecution,
+        lastFailure: failure,
+        lastUpdatedAt: now,
+        history: [
+          ...this.state.actionExecution.history.slice(-(ACTION_HISTORY_MAX_LENGTH - 1)),
+          { request, response: null, failure, executedAt: now },
+        ],
+      };
+      this.auditLog.record({
+        timestamp: now,
+        action: 'action_execute',
+        outcome,
+        durationMs: now - start,
+        details: { type: request.type, error: failure.message },
+      });
+      const eventType = failure.code === 'ERR_PERMISSION_DENIED' ? 'permission_blocked' as const : 'action_failed' as const;
+      this.emitEvent(eventType, { type: request.type, error: failure.message });
+      throw error;
+    }
+  }
+
   async startLiveScreenSession(
     options?: LiveScreenStartOptions
   ): Promise<LiveScreenSessionStartPayload> {
+    this.rateLimiter.acquireOrThrow('live_screen_start');
     const sanitizedOptions = sanitizeLiveScreenStartOptions(options);
     const previousState = this.state.liveScreen;
     this.state.liveScreen = {
@@ -83,7 +274,7 @@ export class DesktopControlService {
     };
 
     try {
-      const session = await this.withLiveScreenRetry(() =>
+      const session = await this.withRetry(() =>
         this.dataAccess.startLiveScreenSession(sanitizedOptions)
       );
       this.state.liveScreen = {
@@ -93,6 +284,12 @@ export class DesktopControlService {
         lastFailure: null,
         lastUpdatedAt: this.now(),
       };
+      this.auditLog.record({
+        timestamp: this.now(),
+        action: 'live_screen_start',
+        outcome: 'success',
+        sessionId: session.sessionId,
+      });
       return session;
     } catch (error) {
       const failure = normalizeToolFailure(error, 'live_screen');
@@ -108,7 +305,7 @@ export class DesktopControlService {
 
   async getLiveScreenFrame(sessionId: string): Promise<LiveScreenFramePayload> {
     const normalizedSessionId = normalizeSessionIdOrThrow(sessionId);
-    const frame = await this.withLiveScreenRetry(() =>
+    const frame = await this.withRetry(() =>
       this.dataAccess.getLiveScreenFrame(normalizedSessionId)
     );
     this.state.liveScreen = {
@@ -121,7 +318,7 @@ export class DesktopControlService {
 
   async refreshLiveScreenFrame(sessionId: string): Promise<LiveScreenFramePayload> {
     const normalizedSessionId = normalizeSessionIdOrThrow(sessionId);
-    const frame = await this.withLiveScreenRetry(() =>
+    const frame = await this.withRetry(() =>
       this.dataAccess.refreshLiveScreenFrame(normalizedSessionId)
     );
     this.state.liveScreen = {
@@ -134,7 +331,7 @@ export class DesktopControlService {
 
   async updateLiveScreenSession(sessionId: string): Promise<LiveScreenFramePayload> {
     const normalizedSessionId = normalizeSessionIdOrThrow(sessionId);
-    const frame = await this.withLiveScreenRetry(() =>
+    const frame = await this.withRetry(() =>
       this.dataAccess.updateLiveScreenSession(normalizedSessionId)
     );
     this.state.liveScreen = {
@@ -147,7 +344,7 @@ export class DesktopControlService {
 
   async getLiveScreenSession(sessionId: string): Promise<LiveScreenSessionSnapshot | null> {
     const normalizedSessionId = normalizeSessionIdOrThrow(sessionId);
-    const snapshot = await this.withLiveScreenRetry(() =>
+    const snapshot = await this.withRetry(() =>
       this.dataAccess.getLiveScreenSession(normalizedSessionId)
     );
     if (snapshot) {
@@ -162,7 +359,7 @@ export class DesktopControlService {
   }
 
   async listLiveScreenSessions(): Promise<LiveScreenSessionSnapshot[]> {
-    return await this.withLiveScreenRetry(() => this.dataAccess.listLiveScreenSessions());
+    return await this.withRetry(() => this.dataAccess.listLiveScreenSessions());
   }
 
   async stopLiveScreenSession(sessionId: string): Promise<LiveScreenStopPayload> {
@@ -180,7 +377,7 @@ export class DesktopControlService {
     };
 
     try {
-      const payload = await this.withLiveScreenRetry(() =>
+      const payload = await this.withRetry(() =>
         this.dataAccess.stopLiveScreenSession(normalizedSessionId)
       );
       this.completedStopPayloadBySessionId.set(normalizedSessionId, payload);
@@ -219,7 +416,7 @@ export class DesktopControlService {
     };
 
     try {
-      const payload = await this.withLiveScreenRetry(() =>
+      const payload = await this.withRetry(() =>
         this.dataAccess.closeLiveScreenSession(normalizedSessionId)
       );
       this.completedStopPayloadBySessionId.set(normalizedSessionId, payload);
@@ -257,7 +454,7 @@ export class DesktopControlService {
     };
 
     try {
-      await this.withLiveScreenRetry(() => this.dataAccess.deleteLiveScreenSession(normalizedSessionId));
+      await this.withRetry(() => this.dataAccess.deleteLiveScreenSession(normalizedSessionId));
       this.deletedSessionIds.add(normalizedSessionId);
       this.completedStopPayloadBySessionId.delete(normalizedSessionId);
 
@@ -288,15 +485,15 @@ export class DesktopControlService {
     }
   }
 
-  private async withLiveScreenRetry<T>(operation: () => Promise<T>): Promise<T> {
+  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
     let attempt = 0;
     let lastError: unknown;
-    while (attempt < LIVE_SCREEN_RETRY_ATTEMPTS) {
+    while (attempt < RETRY_ATTEMPTS) {
       try {
         return await operation();
       } catch (error) {
         const normalized = normalizeToolFailure(error, 'live_screen');
-        if (!shouldRetryFailure(normalized) || attempt + 1 >= LIVE_SCREEN_RETRY_ATTEMPTS) {
+        if (!shouldRetryFailure(normalized) || attempt + 1 >= RETRY_ATTEMPTS) {
           throw error;
         }
         lastError = error;

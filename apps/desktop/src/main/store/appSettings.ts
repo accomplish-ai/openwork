@@ -1,5 +1,5 @@
 import Store from 'electron-store';
-import type { SelectedModel, OllamaConfig } from '@accomplish/shared';
+import type { SelectedModel, OllamaConfig, DesktopControlStatusSnapshot } from '@accomplish/shared';
 
 export interface ScreenAgentLifecycleState {
   /** Unique ID for the current process run */
@@ -49,6 +49,10 @@ interface AppSettingsSchema {
   ollamaConfig: OllamaConfig | null;
   /** Screen Agent lifecycle metadata for deterministic restart/recheck flow */
   screenAgentLifecycle: ScreenAgentLifecycleState;
+  /** Cached readiness snapshot for instant UI on app restart */
+  cachedReadinessSnapshot: DesktopControlStatusSnapshot | null;
+  /** ISO timestamp of when cachedReadinessSnapshot was stored */
+  cachedReadinessSnapshotAt: string | null;
 }
 
 const appSettingsStore = new Store<AppSettingsSchema>({
@@ -68,6 +72,8 @@ const appSettingsStore = new Store<AppSettingsSchema>({
     },
     ollamaConfig: null,
     screenAgentLifecycle: { ...DEFAULT_SCREEN_AGENT_LIFECYCLE_STATE },
+    cachedReadinessSnapshot: null,
+    cachedReadinessSnapshotAt: null,
   },
 });
 
@@ -220,6 +226,36 @@ export function recordScreenAgentRestart(
  */
 export function clearScreenAgentLifecycleState(): void {
   appSettingsStore.set('screenAgentLifecycle', { ...DEFAULT_SCREEN_AGENT_LIFECYCLE_STATE });
+}
+
+/**
+ * Get the cached readiness snapshot (if any).
+ */
+export function getCachedReadinessSnapshot(): DesktopControlStatusSnapshot | null {
+  return appSettingsStore.get('cachedReadinessSnapshot');
+}
+
+/**
+ * Get the ISO timestamp of the cached readiness snapshot.
+ */
+export function getCachedReadinessSnapshotAt(): string | null {
+  return appSettingsStore.get('cachedReadinessSnapshotAt');
+}
+
+/**
+ * Persist a readiness snapshot for instant UI on next app launch.
+ */
+export function setCachedReadinessSnapshot(snapshot: DesktopControlStatusSnapshot): void {
+  appSettingsStore.set('cachedReadinessSnapshot', snapshot);
+  appSettingsStore.set('cachedReadinessSnapshotAt', new Date().toISOString());
+}
+
+/**
+ * Clear the cached readiness snapshot.
+ */
+export function clearCachedReadinessSnapshot(): void {
+  appSettingsStore.set('cachedReadinessSnapshot', null);
+  appSettingsStore.set('cachedReadinessSnapshotAt', null);
 }
 
 /**

@@ -1,4 +1,6 @@
 import type {
+  DesktopActionRequest,
+  DesktopActionResponse,
   DesktopContextOptions,
   DesktopContextSnapshot,
   DesktopControlStatusSnapshot,
@@ -9,17 +11,20 @@ import type {
   ToolFailure,
 } from '@accomplish/shared';
 import { getDesktopControlStatus } from './preflight';
+import { executeDesktopAction } from './action-executor';
 import {
   createLiveScreenSessionManager,
   type LiveScreenSessionManager,
   type LiveScreenSessionSnapshot,
 } from './live-screen';
+import { systemPreferences } from 'electron';
 import { getDesktopContextService } from '../services/desktop-context-service';
-import { getLiveScreenSampling } from '../store/appSettings';
+import { getAllowMouseControl, getLiveScreenSampling } from '../store/appSettings';
 
 export interface DesktopControlDataAccess {
   getReadinessStatus(options?: { forceRefresh?: boolean }): Promise<DesktopControlStatusSnapshot>;
   captureDesktopContext(options?: DesktopContextOptions): Promise<DesktopContextSnapshot>;
+  executeAction(request: DesktopActionRequest): Promise<DesktopActionResponse>;
   startLiveScreenSession(options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload>;
   getLiveScreenFrame(sessionId: string): Promise<LiveScreenFramePayload>;
   updateLiveScreenSession(sessionId: string): Promise<LiveScreenFramePayload>;
@@ -39,6 +44,33 @@ export function createDesktopControlDataAccess(): DesktopControlDataAccess {
   return {
     getReadinessStatus: async (options?: { forceRefresh?: boolean }) => {
       return await getDesktopControlStatus(options);
+    },
+    executeAction: async (request: DesktopActionRequest) => {
+      if (!getAllowMouseControl()) {
+        const failure: ToolFailure = {
+          code: 'ERR_PERMISSION_DENIED',
+          category: 'permission',
+          source: 'action_execution',
+          message: 'Mouse/keyboard control is disabled in settings.',
+          retryable: false,
+        };
+        throw failure;
+      }
+      // Re-verify accessibility permission at runtime (not just the toggle)
+      if (
+        process.platform === 'darwin' &&
+        !systemPreferences.isTrustedAccessibilityClient(false)
+      ) {
+        const failure: ToolFailure = {
+          code: 'ERR_PERMISSION_DENIED',
+          category: 'permission',
+          source: 'action_execution',
+          message: 'Accessibility permission required. Grant access in System Settings > Privacy & Security > Accessibility.',
+          retryable: false,
+        };
+        throw failure;
+      }
+      return await executeDesktopAction(request);
     },
     captureDesktopContext: async (options?: DesktopContextOptions) => {
       const service = getDesktopContextService();

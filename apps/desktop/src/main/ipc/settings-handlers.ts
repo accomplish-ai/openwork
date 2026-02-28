@@ -15,38 +15,33 @@ import {
   setSelectedModel,
   getOllamaConfig,
   setOllamaConfig,
+  getDesktopControlPreflight,
+  setDesktopControlPreflight,
+  getLiveScreenSampling,
+  setLiveScreenSampling,
+  setAllowMouseControl,
+  getAllowDesktopContext,
+  setAllowDesktopContext,
+  getDesktopContextBackgroundPolling,
+  setDesktopContextBackgroundPolling,
 } from '../store/appSettings';
+import {
+  initializeDesktopContextPolling,
+} from '../services/desktop-context-polling';
 import type {
   SelectedModel,
   OllamaConfig,
 } from '@accomplish/shared';
 import { handle, sanitizeString } from './message-utils';
-
-const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
+import {
+  fetchWithTimeout,
+  API_KEY_VALIDATION_TIMEOUT_MS,
+} from './api-key-validation';
 
 interface OllamaModel {
   id: string;
   displayName: string;
   size: number;
-}
-
-/**
- * Fetch with timeout using AbortController
- */
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 /**
@@ -186,6 +181,70 @@ export function registerSettingsHandlers(): void {
     return getAppSettings();
   });
 
+  // Settings: Get desktopControlPreflight flag
+  handle('settings:get-desktop-control-preflight', async (_event: IpcMainInvokeEvent) => {
+    return getDesktopControlPreflight();
+  });
+
+  // Settings: Set desktopControlPreflight flag
+  handle('settings:set-desktop-control-preflight', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid desktopControlPreflight flag');
+    }
+    setDesktopControlPreflight(enabled);
+  });
+
+  // Settings: Get liveScreenSampling flag
+  handle('settings:get-live-screen-sampling', async (_event: IpcMainInvokeEvent) => {
+    return getLiveScreenSampling();
+  });
+
+  // Settings: Set liveScreenSampling flag
+  handle('settings:set-live-screen-sampling', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid liveScreenSampling flag');
+    }
+    setLiveScreenSampling(enabled);
+  });
+
+  // Settings: Set allowMouseControl flag
+  handle('settings:set-allow-mouse-control', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid allowMouseControl flag');
+    }
+    setAllowMouseControl(enabled);
+  });
+
+  // Settings: Get allowDesktopContext flag
+  handle('settings:get-allow-desktop-context', async (_event: IpcMainInvokeEvent) => {
+    return getAllowDesktopContext();
+  });
+
+  // Settings: Set allowDesktopContext flag
+  handle('settings:set-allow-desktop-context', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid allowDesktopContext flag');
+    }
+    setAllowDesktopContext(enabled);
+    // Initialize or stop polling based on new setting
+    initializeDesktopContextPolling();
+  });
+
+  // Settings: Get desktopContextBackgroundPolling flag
+  handle('settings:get-desktop-context-background-polling', async (_event: IpcMainInvokeEvent) => {
+    return getDesktopContextBackgroundPolling();
+  });
+
+  // Settings: Set desktopContextBackgroundPolling flag
+  handle('settings:set-desktop-context-background-polling', async (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('Invalid desktopContextBackgroundPolling flag');
+    }
+    setDesktopContextBackgroundPolling(enabled);
+    // Initialize or stop polling based on new setting
+    initializeDesktopContextPolling();
+  });
+
   // Onboarding: Get onboarding complete status
   handle('onboarding:complete', async (_event: IpcMainInvokeEvent) => {
     return getOnboardingComplete();
@@ -209,4 +268,16 @@ export function registerSettingsHandlers(): void {
       throw error;
     }
   });
+
+  // Log event handler - now just returns ok (no external logging)
+  handle(
+    'log:event',
+    async (
+      _event: IpcMainInvokeEvent,
+      _payload: { level?: string; message?: string; context?: Record<string, unknown> }
+    ) => {
+      // No-op: external logging removed
+      return { ok: true };
+    }
+  );
 }

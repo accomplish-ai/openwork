@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
+  DesktopActionResponse,
   DesktopContextSnapshot,
   DesktopControlStatusSnapshot,
   LiveScreenFramePayload,
@@ -13,6 +14,8 @@ import {
 } from '@main/desktop-control/service';
 import type { DesktopControlDataAccess } from '@main/desktop-control/data-access';
 import type { LiveScreenSessionSnapshot } from '@main/desktop-control/live-screen';
+import { RateLimiter } from '@main/desktop-control/rate-limiter';
+import { AuditLog } from '@main/desktop-control/audit-log';
 
 function createDataAccessMock(overrides: Partial<DesktopControlDataAccess> = {}): DesktopControlDataAccess {
   const readiness: DesktopControlStatusSnapshot = {
@@ -89,9 +92,16 @@ function createDataAccessMock(overrides: Partial<DesktopControlDataAccess> = {})
     lastCaptureError: null,
   };
 
+  const actionResponse: DesktopActionResponse = {
+    action: { type: 'move_mouse', x: 100, y: 200 },
+    message: 'Moved mouse to (100, 200).',
+    executedAt: new Date().toISOString(),
+  };
+
   return {
     getReadinessStatus: vi.fn(async () => readiness),
     captureDesktopContext: vi.fn(async () => context),
+    executeAction: vi.fn(async () => actionResponse),
     startLiveScreenSession: vi.fn(async () => session),
     getLiveScreenFrame: vi.fn(async () => frame),
     updateLiveScreenSession: vi.fn(async () => frame),
@@ -113,9 +123,17 @@ function createDataAccessMock(overrides: Partial<DesktopControlDataAccess> = {})
   };
 }
 
+// Use permissive rate-limiter (high limits) so tests don't hit rate limits
 function createService(dataAccess: DesktopControlDataAccess): DesktopControlService {
   const deps: DesktopControlServiceDependencies = {
     dataAccess,
+    auditLog: new AuditLog(),
+    rateLimiter: new RateLimiter({
+      mouse_action: { maxRequests: 10000, windowMs: 1_000 },
+      live_screen_start: { maxRequests: 10000, windowMs: 1_000 },
+      readiness_check: { maxRequests: 10000, windowMs: 1_000 },
+      context_capture: { maxRequests: 10000, windowMs: 1_000 },
+    }),
     now: () => 1_000_000,
   };
   return new DesktopControlService(deps);

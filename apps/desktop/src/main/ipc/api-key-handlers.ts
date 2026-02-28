@@ -8,50 +8,12 @@ import {
   listStoredCredentials,
 } from '../store/secureStorage';
 import { handle, sanitizeString } from './message-utils';
-
-const ALLOWED_API_KEY_PROVIDERS = new Set([
-  'anthropic',
-  'openai',
-  'google',
-  'xai',
-  'openrouter',
-  'custom',
-]);
-const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
-
-interface MaskedApiKeyPayload {
-  exists: boolean;
-  prefix?: string;
-}
-
-function toMaskedApiKeyPayload(apiKey: string | null): MaskedApiKeyPayload {
-  if (!apiKey) {
-    return { exists: false };
-  }
-  return {
-    exists: true,
-    prefix: `${apiKey.substring(0, 8)}...`,
-  };
-}
-
-/**
- * Fetch with timeout using AbortController
- */
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+import {
+  ALLOWED_API_KEY_PROVIDERS,
+  toMaskedApiKeyPayload,
+  validateAnthropicApiKey,
+  validateProviderApiKey,
+} from './api-key-validation';
 
 /**
  * Register all API key related IPC handlers
@@ -136,149 +98,31 @@ export function registerApiKeyHandlers(): void {
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
     console.log('[API Key] Validation requested');
 
-    try {
-      const response = await fetchWithTimeout(
-        'https://api.anthropic.com/v1/messages',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': sanitizedKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }],
-          }),
-        },
-        API_KEY_VALIDATION_TIMEOUT_MS
-      );
+    const result = await validateAnthropicApiKey(sanitizedKey);
 
-      if (response.ok) {
-        console.log('[API Key] Validation succeeded');
-        return { valid: true };
-      }
-
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-
-      console.warn('[API Key] Validation failed', { status: response.status, error: errorMessage });
-
-      return { valid: false, error: errorMessage };
-    } catch (error) {
-      console.error('[API Key] Validation error', { error: error instanceof Error ? error.message : String(error) });
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { valid: false, error: 'Request timed out. Please check your internet connection and try again.' };
-      }
-      return { valid: false, error: 'Failed to validate API key. Check your internet connection.' };
+    if (result.valid) {
+      console.log('[API Key] Validation succeeded');
+    } else {
+      console.warn('[API Key] Validation failed', { error: result.error });
     }
+
+    return result;
   });
 
   // API Key: Validate API key for any provider
   handle('api-key:validate-provider', async (_event: IpcMainInvokeEvent, provider: string, key: string) => {
-    if (!ALLOWED_API_KEY_PROVIDERS.has(provider)) {
-      return { valid: false, error: 'Unsupported provider' };
-    }
     const sanitizedKey = sanitizeString(key, 'apiKey', 256);
     console.log(`[API Key] Validation requested for provider: ${provider}`);
 
-    try {
-      let response: Response;
+    const result = await validateProviderApiKey(provider, sanitizedKey);
 
-      switch (provider) {
-        case 'anthropic':
-          response = await fetchWithTimeout(
-            'https://api.anthropic.com/v1/messages',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': sanitizedKey,
-                'anthropic-version': '2023-06-01',
-              },
-              body: JSON.stringify({
-                model: 'claude-3-haiku-20240307',
-                max_tokens: 1,
-                messages: [{ role: 'user', content: 'test' }],
-              }),
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'openai':
-          response = await fetchWithTimeout(
-            'https://api.openai.com/v1/models',
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${sanitizedKey}`,
-              },
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'google':
-          response = await fetchWithTimeout(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${sanitizedKey}`,
-            {
-              method: 'GET',
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'xai':
-          response = await fetchWithTimeout(
-            'https://api.x.ai/v1/models',
-            {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${sanitizedKey}`,
-              },
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        case 'openrouter':
-          response = await fetchWithTimeout(
-            'https://openrouter.ai/api/v1/models',
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${sanitizedKey}`,
-              },
-            },
-            API_KEY_VALIDATION_TIMEOUT_MS
-          );
-          break;
-
-        default:
-          // For 'custom' provider, skip validation
-          console.log('[API Key] Skipping validation for custom provider');
-          return { valid: true };
-      }
-
-      if (response.ok) {
-        console.log(`[API Key] Validation succeeded for ${provider}`);
-        return { valid: true };
-      }
-
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = (errorData as { error?: { message?: string } })?.error?.message || `API returned status ${response.status}`;
-
-      console.warn(`[API Key] Validation failed for ${provider}`, { status: response.status, error: errorMessage });
-      return { valid: false, error: errorMessage };
-    } catch (error) {
-      console.error(`[API Key] Validation error for ${provider}`, { error: error instanceof Error ? error.message : String(error) });
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { valid: false, error: 'Request timed out. Please check your internet connection and try again.' };
-      }
-      return { valid: false, error: 'Failed to validate API key. Check your internet connection.' };
+    if (result.valid) {
+      console.log(`[API Key] Validation succeeded for ${provider}`);
+    } else {
+      console.warn(`[API Key] Validation failed for ${provider}`, { error: result.error });
     }
+
+    return result;
   });
 
   // API Key: Clear API key
