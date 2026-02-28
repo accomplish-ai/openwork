@@ -9,101 +9,22 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import type { Task, TaskStatus, TaskMessage, PermissionRequest } from '@accomplish/shared';
+import {
+  createMockAccomplish,
+  createMockStoreState,
+  createMockTask,
+  createMockMessage,
+  framerMotionMock,
+} from '../test-utils';
 
-// Create mock functions
-const mockLoadTaskById = vi.fn();
-const mockAddTaskUpdate = vi.fn();
-const mockAddTaskUpdateBatch = vi.fn();
-const mockUpdateTaskStatus = vi.fn();
-const mockSetPermissionRequest = vi.fn();
-const mockRespondToPermission = vi.fn();
-const mockSendFollowUp = vi.fn();
-const mockCancelTask = vi.fn();
-const mockInterruptTask = vi.fn();
-const mockOnTaskUpdate = vi.fn();
-const mockOnTaskUpdateBatch = vi.fn();
-const mockOnPermissionRequest = vi.fn();
-const mockOnTaskStatusChange = vi.fn();
-
-// Helper to create mock task
-function createMockTask(
-  id: string,
-  prompt: string = 'Test task',
-  status: TaskStatus = 'running',
-  messages: TaskMessage[] = []
-): Task {
-  return {
-    id,
-    prompt,
-    status,
-    messages,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-// Helper to create mock message
-function createMockMessage(
-  id: string,
-  type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
-  content: string = 'Test message'
-): TaskMessage {
-  return {
-    id,
-    type,
-    content,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-// Mock accomplish API
-const mockAccomplish = {
-  onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
-  onTaskUpdateBatch: mockOnTaskUpdateBatch.mockReturnValue(() => {}),
-  onPermissionRequest: mockOnPermissionRequest.mockReturnValue(() => {}),
-  onTaskStatusChange: mockOnTaskStatusChange.mockReturnValue(() => {}),
-};
+// Create mock objects at module level
+const mockAccomplish = createMockAccomplish();
+let mockStoreState = createMockStoreState();
 
 // Mock the accomplish module
 vi.mock('@/lib/accomplish', () => ({
   getAccomplish: () => mockAccomplish,
 }));
-
-// Mock store state holder
-let mockStoreState: {
-  currentTask: Task | null;
-  loadTaskById: typeof mockLoadTaskById;
-  isLoading: boolean;
-  error: string | null;
-  addTaskUpdate: typeof mockAddTaskUpdate;
-  addTaskUpdateBatch: typeof mockAddTaskUpdateBatch;
-  updateTaskStatus: typeof mockUpdateTaskStatus;
-  setPermissionRequest: typeof mockSetPermissionRequest;
-  permissionRequest: PermissionRequest | null;
-  respondToPermission: typeof mockRespondToPermission;
-  sendFollowUp: typeof mockSendFollowUp;
-  cancelTask: typeof mockCancelTask;
-  interruptTask: typeof mockInterruptTask;
-  setupProgress: string | null;
-  setupProgressTaskId: string | null;
-  setupDownloadStep: number;
-} = {
-  currentTask: null,
-  loadTaskById: mockLoadTaskById,
-  isLoading: false,
-  error: null,
-  addTaskUpdate: mockAddTaskUpdate,
-  addTaskUpdateBatch: mockAddTaskUpdateBatch,
-  updateTaskStatus: mockUpdateTaskStatus,
-  setPermissionRequest: mockSetPermissionRequest,
-  permissionRequest: null,
-  respondToPermission: mockRespondToPermission,
-  sendFollowUp: mockSendFollowUp,
-  cancelTask: mockCancelTask,
-  interruptTask: mockInterruptTask,
-  setupProgress: null,
-  setupProgressTaskId: null,
-  setupDownloadStep: 1,
-};
 
 // Mock the task store
 vi.mock('@/stores/taskStore', () => ({
@@ -111,17 +32,26 @@ vi.mock('@/stores/taskStore', () => ({
 }));
 
 // Mock framer-motion for simpler testing
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <div {...props}>{children}</div>
-    ),
-    button: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <button {...props}>{children}</button>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => framerMotionMock);
+
+// Local helpers that adapt the positional-argument calling convention
+// used throughout this test file to the shared factory's object signature
+function makeMockTask(
+  id: string,
+  prompt: string = 'Test task',
+  status: TaskStatus = 'running',
+  messages: TaskMessage[] = []
+): Task {
+  return createMockTask({ id, prompt, status, messages });
+}
+
+function makeMockMessage(
+  id: string,
+  type: 'assistant' | 'user' | 'tool' | 'system' = 'assistant',
+  content: string = 'Test message'
+): TaskMessage {
+  return createMockMessage({ id, type, content });
+}
 
 // Mock StreamingText component
 vi.mock('@/components/ui/streaming-text', () => ({
@@ -152,36 +82,19 @@ describe('Execution Page Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state
-    mockStoreState = {
-      currentTask: null,
-      loadTaskById: mockLoadTaskById,
-      isLoading: false,
-      error: null,
-      addTaskUpdate: mockAddTaskUpdate,
-      addTaskUpdateBatch: mockAddTaskUpdateBatch,
-      updateTaskStatus: mockUpdateTaskStatus,
-      setPermissionRequest: mockSetPermissionRequest,
-      permissionRequest: null,
-      respondToPermission: mockRespondToPermission,
-      sendFollowUp: mockSendFollowUp,
-      cancelTask: mockCancelTask,
-      interruptTask: mockInterruptTask,
-      setupProgress: null,
-      setupProgressTaskId: null,
-      setupDownloadStep: 1,
-    };
+    mockStoreState = createMockStoreState();
   });
 
   describe('rendering with active task', () => {
     it('should call loadTaskById on mount', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
 
       // Assert
-      expect(mockLoadTaskById).toHaveBeenCalledWith('task-123');
+      expect(mockStoreState.loadTaskById).toHaveBeenCalledWith('task-123');
     });
 
     it('should display loading spinner when no task loaded yet', () => {
@@ -197,7 +110,7 @@ describe('Execution Page Integration', () => {
 
     it('should display task prompt in header', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Review my email inbox');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Review my email inbox');
 
       // Act
       renderWithRouter('task-123');
@@ -208,7 +121,7 @@ describe('Execution Page Integration', () => {
 
     it('should display running status badge for running task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Running task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Running task', 'running');
 
       // Act
       renderWithRouter('task-123');
@@ -219,7 +132,7 @@ describe('Execution Page Integration', () => {
 
     it('should display completed status badge for completed task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Done task', 'completed');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Done task', 'completed');
 
       // Act
       renderWithRouter('task-123');
@@ -230,7 +143,7 @@ describe('Execution Page Integration', () => {
 
     it('should display failed status badge for failed task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Failed task', 'failed');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Failed task', 'failed');
 
       // Act
       renderWithRouter('task-123');
@@ -241,7 +154,7 @@ describe('Execution Page Integration', () => {
 
     it('should display cancelled status badge for cancelled task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Cancelled task', 'cancelled');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Cancelled task', 'cancelled');
 
       // Act
       renderWithRouter('task-123');
@@ -252,7 +165,7 @@ describe('Execution Page Integration', () => {
 
     it('should display queued status badge for queued task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Queued task', 'queued');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Queued task', 'queued');
 
       // Act
       renderWithRouter('task-123');
@@ -263,7 +176,7 @@ describe('Execution Page Integration', () => {
 
     it('should display stopped status badge for interrupted task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Stopped task', 'interrupted');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Stopped task', 'interrupted');
 
       // Act
       renderWithRouter('task-123');
@@ -274,7 +187,7 @@ describe('Execution Page Integration', () => {
 
     it('should render back button', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
@@ -287,7 +200,7 @@ describe('Execution Page Integration', () => {
 
     it('should not render cancel button (removed from UI)', () => {
       // Arrange - Cancel button was removed, only Stop button remains
-      mockStoreState.currentTask = createMockTask('task-123', 'Running', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Running', 'running');
 
       // Act
       renderWithRouter('task-123');
@@ -301,9 +214,9 @@ describe('Execution Page Integration', () => {
     it('should display user messages', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'user', 'Check my inbox'),
+        makeMockMessage('msg-1', 'user', 'Check my inbox'),
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -315,9 +228,9 @@ describe('Execution Page Integration', () => {
     it('should display assistant messages', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'I will check your inbox now.'),
+        makeMockMessage('msg-1', 'assistant', 'I will check your inbox now.'),
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -337,7 +250,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -349,11 +262,11 @@ describe('Execution Page Integration', () => {
     it('should display multiple messages in order', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'user', 'First message'),
-        createMockMessage('msg-2', 'assistant', 'Second message'),
-        createMockMessage('msg-3', 'user', 'Third message'),
+        makeMockMessage('msg-1', 'user', 'First message'),
+        makeMockMessage('msg-2', 'assistant', 'Second message'),
+        makeMockMessage('msg-3', 'user', 'Third message'),
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -366,7 +279,7 @@ describe('Execution Page Integration', () => {
 
     it('should show "Thinking..." indicator when running without tool', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', []);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', []);
 
       // Act
       renderWithRouter('task-123');
@@ -386,7 +299,7 @@ describe('Execution Page Integration', () => {
           timestamp,
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'completed', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'completed', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -401,7 +314,7 @@ describe('Execution Page Integration', () => {
   describe('permission dialog', () => {
     it('should display permission dialog when permission request exists', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -420,7 +333,7 @@ describe('Execution Page Integration', () => {
 
     it('should display tool name in permission dialog', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -438,7 +351,7 @@ describe('Execution Page Integration', () => {
 
     it('should render Allow and Deny buttons in permission dialog', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -457,7 +370,7 @@ describe('Execution Page Integration', () => {
 
     it('should call respondToPermission with allow when Allow is clicked', async () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -474,7 +387,7 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockRespondToPermission).toHaveBeenCalledWith({
+        expect(mockStoreState.respondToPermission).toHaveBeenCalledWith({
           requestId: 'perm-1',
           taskId: 'task-123',
           decision: 'allow',
@@ -484,7 +397,7 @@ describe('Execution Page Integration', () => {
 
     it('should call respondToPermission with deny when Deny is clicked', async () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -501,7 +414,7 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockRespondToPermission).toHaveBeenCalledWith({
+        expect(mockStoreState.respondToPermission).toHaveBeenCalledWith({
           requestId: 'perm-1',
           taskId: 'task-123',
           decision: 'deny',
@@ -511,7 +424,7 @@ describe('Execution Page Integration', () => {
 
     it('should display file permission specific UI for file type', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -558,7 +471,7 @@ describe('Execution Page Integration', () => {
   describe('task controls', () => {
     it('should call interruptTask when Stop button is clicked', async () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Running', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Running', 'running');
 
       renderWithRouter('task-123');
 
@@ -568,7 +481,7 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockInterruptTask).toHaveBeenCalled();
+        expect(mockStoreState.interruptTask).toHaveBeenCalled();
       });
     });
   });
@@ -576,7 +489,7 @@ describe('Execution Page Integration', () => {
   describe('follow-up input', () => {
     it('should show follow-up input for completed task with session', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -589,7 +502,7 @@ describe('Execution Page Integration', () => {
 
     it('should show follow-up input for interrupted task with session', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Stopped', 'interrupted');
+      const task = makeMockTask('task-123', 'Stopped', 'interrupted');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -602,7 +515,7 @@ describe('Execution Page Integration', () => {
 
     it('should show "Start New Task" button for completed task without session', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Done', 'completed');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Done', 'completed');
 
       // Act
       renderWithRouter('task-123');
@@ -613,7 +526,7 @@ describe('Execution Page Integration', () => {
 
     it('should call sendFollowUp when follow-up is submitted', async () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -628,13 +541,13 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Continue with the next step');
+        expect(mockStoreState.sendFollowUp).toHaveBeenCalledWith('Continue with the next step');
       });
     });
 
     it('should call sendFollowUp when Enter is pressed', async () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -647,13 +560,13 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Do more work');
+        expect(mockStoreState.sendFollowUp).toHaveBeenCalledWith('Do more work');
       });
     });
 
     it('should disable follow-up input when loading', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
       mockStoreState.isLoading = true;
@@ -668,7 +581,7 @@ describe('Execution Page Integration', () => {
 
     it('should disable send button when follow-up is empty', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -684,7 +597,7 @@ describe('Execution Page Integration', () => {
   describe('queued state', () => {
     it('should show waiting message for queued task without messages', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Queued task', 'queued');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Queued task', 'queued');
 
       // Act
       renderWithRouter('task-123');
@@ -696,9 +609,9 @@ describe('Execution Page Integration', () => {
     it('should show inline waiting indicator for queued task with messages', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'user', 'Previous message'),
+        makeMockMessage('msg-1', 'user', 'Previous message'),
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Queued', 'queued', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Queued', 'queued', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -712,53 +625,53 @@ describe('Execution Page Integration', () => {
   describe('event subscriptions', () => {
     it('should subscribe to task updates on mount', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
 
       // Assert
-      expect(mockOnTaskUpdate).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskUpdate).toHaveBeenCalled();
     });
 
     it('should subscribe to task update batches on mount', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
 
       // Assert
-      expect(mockOnTaskUpdateBatch).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskUpdateBatch).toHaveBeenCalled();
     });
 
     it('should subscribe to permission requests on mount', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
 
       // Assert
-      expect(mockOnPermissionRequest).toHaveBeenCalled();
+      expect(mockAccomplish.onPermissionRequest).toHaveBeenCalled();
     });
 
     it('should subscribe to task status changes on mount', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123');
+      mockStoreState.currentTask = makeMockTask('task-123');
 
       // Act
       renderWithRouter('task-123');
 
       // Assert
-      expect(mockOnTaskStatusChange).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskStatusChange).toHaveBeenCalled();
     });
   });
 
   describe('browser installation modal', () => {
     it('should show download modal when setupProgress contains "download"', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading Chromium 50%';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 1;
@@ -774,7 +687,7 @@ describe('Execution Page Integration', () => {
 
     it('should show download modal when setupProgress contains "% of"', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = '50% of 160 MB';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 1;
@@ -788,7 +701,7 @@ describe('Execution Page Integration', () => {
 
     it('should calculate overall progress for step 1 (Chromium)', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading 50%';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 1;
@@ -802,7 +715,7 @@ describe('Execution Page Integration', () => {
 
     it('should calculate overall progress for step 2 (FFMPEG)', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading 50%';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 2;
@@ -816,7 +729,7 @@ describe('Execution Page Integration', () => {
 
     it('should calculate overall progress for step 3 (Headless)', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading 50%';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 3;
@@ -830,7 +743,7 @@ describe('Execution Page Integration', () => {
 
     it('should not show download modal for different task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading 50%';
       mockStoreState.setupProgressTaskId = 'different-task';
       mockStoreState.setupDownloadStep = 1;
@@ -844,7 +757,7 @@ describe('Execution Page Integration', () => {
 
     it('should not show download modal when setupProgress is null', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = null;
       mockStoreState.setupProgressTaskId = 'task-123';
 
@@ -857,7 +770,7 @@ describe('Execution Page Integration', () => {
 
     it('should show one-time setup message', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.setupProgress = 'Downloading 50%';
       mockStoreState.setupProgressTaskId = 'task-123';
       mockStoreState.setupDownloadStep = 1;
@@ -874,7 +787,7 @@ describe('Execution Page Integration', () => {
   describe('file permission dialog details', () => {
     it('should show target path for rename/move operations', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -895,7 +808,7 @@ describe('Execution Page Integration', () => {
 
     it('should show content preview for file operations', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -915,7 +828,7 @@ describe('Execution Page Integration', () => {
 
     it('should show delete operation badge', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -934,7 +847,7 @@ describe('Execution Page Integration', () => {
 
     it('should show overwrite operation badge', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -953,7 +866,7 @@ describe('Execution Page Integration', () => {
 
     it('should show modify operation badge', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -972,7 +885,7 @@ describe('Execution Page Integration', () => {
 
     it('should show move operation badge', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -992,7 +905,7 @@ describe('Execution Page Integration', () => {
 
     it('should show question in tool permission dialog when provided', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
         id: 'perm-1',
         taskId: 'task-123',
@@ -1013,7 +926,7 @@ describe('Execution Page Integration', () => {
   describe('task complete states', () => {
     it('should navigate home when clicking Start New Task for failed task without session', async () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Failed', 'failed');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Failed', 'failed');
 
       // Act
       renderWithRouter('task-123');
@@ -1033,7 +946,7 @@ describe('Execution Page Integration', () => {
 
     it('should show follow-up input for interrupted task', () => {
       // Arrange - interrupted task without session still shows follow-up
-      mockStoreState.currentTask = createMockTask('task-123', 'Stopped', 'interrupted');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Stopped', 'interrupted');
 
       // Act
       renderWithRouter('task-123');
@@ -1045,7 +958,7 @@ describe('Execution Page Integration', () => {
 
     it('should show task cancelled message for cancelled task', () => {
       // Arrange
-      mockStoreState.currentTask = createMockTask('task-123', 'Cancelled', 'cancelled');
+      mockStoreState.currentTask = makeMockTask('task-123', 'Cancelled', 'cancelled');
 
       // Act
       renderWithRouter('task-123');
@@ -1057,9 +970,9 @@ describe('Execution Page Integration', () => {
     it('should show Continue button for interrupted task with session and messages', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
+        makeMockMessage('msg-1', 'assistant', 'I was working on something'),
       ];
-      const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
+      const task = makeMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -1073,9 +986,9 @@ describe('Execution Page Integration', () => {
     it('should show Done Continue button for completed task with session when waiting for user', () => {
       // Arrange - message must contain a "waiting for user" pattern to show Done, Continue button
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'Please log in to your account. Let me know when you are done.'),
+        makeMockMessage('msg-1', 'assistant', 'Please log in to your account. Let me know when you are done.'),
       ];
-      const task = createMockTask('task-123', 'Done', 'completed', messages);
+      const task = makeMockTask('task-123', 'Done', 'completed', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -1089,9 +1002,9 @@ describe('Execution Page Integration', () => {
     it('should call sendFollowUp with continue when Continue button is clicked', async () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'assistant', 'I was working on something'),
+        makeMockMessage('msg-1', 'assistant', 'I was working on something'),
       ];
-      const task = createMockTask('task-123', 'Stopped', 'interrupted', messages);
+      const task = makeMockTask('task-123', 'Stopped', 'interrupted', messages);
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -1103,7 +1016,7 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('continue');
+        expect(mockStoreState.sendFollowUp).toHaveBeenCalledWith('continue');
       });
     });
   });
@@ -1112,9 +1025,9 @@ describe('Execution Page Integration', () => {
     it('should display system messages with System label', () => {
       // Arrange
       const messages = [
-        createMockMessage('msg-1', 'system', 'System initialization complete'),
+        makeMockMessage('msg-1', 'system', 'System initialization complete'),
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1128,7 +1041,7 @@ describe('Execution Page Integration', () => {
   describe('default status badge', () => {
     it('should display raw status for unknown status', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Task', 'unknown' as TaskStatus);
+      const task = makeMockTask('task-123', 'Task', 'unknown' as TaskStatus);
       mockStoreState.currentTask = task;
 
       // Act
@@ -1151,7 +1064,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1171,7 +1084,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1191,7 +1104,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1211,7 +1124,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1231,7 +1144,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1251,7 +1164,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1271,7 +1184,7 @@ describe('Execution Page Integration', () => {
           timestamp: new Date().toISOString(),
         },
       ];
-      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running', messages);
+      mockStoreState.currentTask = makeMockTask('task-123', 'Task', 'running', messages);
 
       // Act
       renderWithRouter('task-123');
@@ -1285,7 +1198,7 @@ describe('Execution Page Integration', () => {
   describe('follow-up placeholder text variations', () => {
     it('should show follow-up input for interrupted task even without session', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Stopped', 'interrupted');
+      const task = makeMockTask('task-123', 'Stopped', 'interrupted');
       // No sessionId - but canFollowUp is true for interrupted status
       mockStoreState.currentTask = task;
 
@@ -1300,7 +1213,7 @@ describe('Execution Page Integration', () => {
 
     it('should show retry placeholder for interrupted task with session', () => {
       // Arrange
-      const task = createMockTask('task-123', 'Stopped', 'interrupted');
+      const task = makeMockTask('task-123', 'Stopped', 'interrupted');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -1334,7 +1247,7 @@ describe('Execution Page Integration', () => {
   describe('follow-up input empty check', () => {
     it('should not call sendFollowUp when follow-up is only whitespace', async () => {
       // Arrange
-      const task = createMockTask('task-123', 'Done', 'completed');
+      const task = makeMockTask('task-123', 'Done', 'completed');
       task.sessionId = 'session-abc';
       mockStoreState.currentTask = task;
 
@@ -1347,7 +1260,7 @@ describe('Execution Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSendFollowUp).not.toHaveBeenCalled();
+        expect(mockStoreState.sendFollowUp).not.toHaveBeenCalled();
       });
     });
   });

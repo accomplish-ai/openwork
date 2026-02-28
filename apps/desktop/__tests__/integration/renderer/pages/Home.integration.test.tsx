@@ -225,7 +225,7 @@ describe('Home Page Integration', () => {
 
     it('should start task when API key exists', async () => {
       // Arrange
-      const mockTask = createMockTask('task-123', 'My task', 'running');
+      const mockTask = createMockTask({ id: 'task-123', prompt: 'My task', status: 'running' });
       mockStoreState.startTask.mockResolvedValue(mockTask);
       mockAccomplish.hasAnyApiKey.mockResolvedValue(true);
 
@@ -292,7 +292,7 @@ describe('Home Page Integration', () => {
     it('should execute task after saving API key in settings', async () => {
       // Arrange
       mockAccomplish.hasAnyApiKey.mockResolvedValue(false);
-      const mockTask = createMockTask('task-123', 'My task', 'running');
+      const mockTask = createMockTask({ id: 'task-123', prompt: 'My task', status: 'running' });
       mockStoreState.startTask.mockResolvedValue(mockTask);
 
       render(
