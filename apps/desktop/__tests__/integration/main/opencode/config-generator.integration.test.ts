@@ -258,6 +258,19 @@ describe('OpenCode Config Generator Integration', () => {
       expect(prompt.toLowerCase()).toContain('playwright');
     });
 
+    it('should include multi-turn AI chat guidance', async () => {
+      const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');
+      const configPath = await generateOpenCodeConfig();
+
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const prompt = config.agent['accomplish'].prompt as string;
+
+      expect(prompt).toContain('<task-playbook name="multi-turn-ai-chat">');
+      expect(prompt).toContain('Treat it as a multi-turn conversation loop, not a single send.');
+      expect(prompt).toContain('Stay in the same app and the same thread unless the user explicitly asks for a new thread.');
+      expect(prompt).toContain('Never claim the conversation continued unless the next outbound send was visually verified.');
+    });
+
     it('should include file permission rules', async () => {
       // Act
       const { generateOpenCodeConfig } = await import('@main/opencode/config-generator');

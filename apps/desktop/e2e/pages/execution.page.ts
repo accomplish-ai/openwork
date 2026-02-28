@@ -4,48 +4,37 @@ import { TEST_TIMEOUTS } from '../config';
 export class ExecutionPage {
   constructor(private page: Page) {}
 
-  get statusBadge() {
-    return this.page.getByTestId('execution-status-badge');
-  }
-
-  get cancelButton() {
-    return this.page.getByTestId('execution-cancel-button');
-  }
-
   get thinkingIndicator() {
-    return this.page.getByTestId('execution-thinking-indicator');
+    return this.page.locator('span').filter({ hasText: 'Thinking...' }).first();
   }
 
   get followUpInput() {
-    return this.page.getByTestId('execution-follow-up-input');
+    return this.page.getByLabel('Chat message input');
   }
 
   get stopButton() {
-    return this.page.getByTestId('execution-stop-button');
+    return this.page.getByRole('button', { name: 'Stop agent' });
   }
 
-  get permissionModal() {
-    return this.page.getByTestId('execution-permission-modal');
+  get sendButton() {
+    return this.page.getByRole('button', { name: 'Send message' });
   }
 
-  get allowButton() {
-    return this.page.getByTestId('permission-allow-button');
+  get readyStatus() {
+    return this.page.getByText('Ready to help');
   }
 
-  get denyButton() {
-    return this.page.getByTestId('permission-deny-button');
+  async waitForRunning() {
+    await Promise.race([
+      this.stopButton.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.PERMISSION_MODAL }),
+      this.thinkingIndicator.waitFor({ state: 'visible', timeout: TEST_TIMEOUTS.PERMISSION_MODAL }),
+    ]);
   }
 
   async waitForComplete() {
-    // Wait for status badge to show a completed state (not running)
-    await this.page.waitForFunction(
-      () => {
-        const badge = document.querySelector('[data-testid="execution-status-badge"]');
-        if (!badge) return false;
-        const text = badge.textContent?.toLowerCase() || '';
-        return text.includes('completed') || text.includes('failed') || text.includes('stopped') || text.includes('cancelled');
-      },
-      { timeout: TEST_TIMEOUTS.PERMISSION_MODAL }
-    );
+    await this.sendButton.waitFor({
+      state: 'visible',
+      timeout: TEST_TIMEOUTS.PERMISSION_MODAL,
+    });
   }
 }

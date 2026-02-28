@@ -4,27 +4,43 @@ export class HomePage {
   constructor(private page: Page) {}
 
   get title() {
-    return this.page.getByTestId('home-title');
+    return this.page.getByRole('heading', { name: 'Hi! I can see your screen.' });
   }
 
   get taskInput() {
-    return this.page.getByTestId('task-input-textarea');
+    return this.page.getByLabel('Chat message input');
   }
 
   get submitButton() {
-    return this.page.getByTestId('task-input-submit');
+    return this.page.getByRole('button', { name: 'Send message' });
   }
 
-  get examplesToggle() {
-    return this.page.getByText('Example prompts');
+  get stopButton() {
+    return this.page.getByRole('button', { name: 'Stop agent' });
   }
 
-  getExampleCard(index: number) {
-    return this.page.getByTestId(`home-example-${index}`);
+  get quickActionsButton() {
+    return this.page.getByRole('button', { name: 'Open quick actions and defaults' });
   }
 
-  async expandExamples() {
-    await this.examplesToggle.click();
+  get menuButton() {
+    return this.page.getByRole('button', { name: 'Open menu' });
+  }
+
+  get whatsOnMyScreenButton() {
+    return this.page.getByRole('button', { name: "What's on my screen?" });
+  }
+
+  get guideMeLiveButton() {
+    return this.page.getByRole('button', { name: 'Guide me live' });
+  }
+
+  async openQuickActions() {
+    await this.quickActionsButton.click();
+  }
+
+  async openMenu() {
+    await this.menuButton.click();
   }
 
   async enterTask(text: string) {

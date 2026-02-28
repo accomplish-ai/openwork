@@ -98,7 +98,10 @@ export interface DesktopControlBridgeNamespace {
     getFrame(sessionId: string): Promise<LiveScreenFramePayload>;
     refreshFrame(sessionId: string): Promise<LiveScreenFramePayload>;
     stopSession(sessionId: string): Promise<LiveScreenStopPayload>;
+    restartSession(options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload>;
   };
+  undoLastAction(): Promise<unknown>;
+  clearSensitiveData(): Promise<{ ok: true }>;
 }
 
 export interface DesktopControlBridgeAPI {

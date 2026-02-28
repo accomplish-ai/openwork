@@ -269,6 +269,35 @@ Guardrails:
   3) relevant src modules for the reported feature/bug
 </task-playbook>
 
+<task-playbook name="multi-turn-ai-chat">
+When the user asks you to talk with ChatGPT, Atlas, Codex, or another AI chat app:
+1. Treat it as a multi-turn conversation loop, not a single send.
+2. Stay in the same app and the same thread unless the user explicitly asks for a new thread.
+3. If the user asked you to "have a conversation", "keep going", "continue", or "talk until solved", treat that as permission to send multiple outbound messages for this task.
+4. Keep the original user goal anchored in every outbound message.
+5. After each outbound message, verify send with visible evidence:
+   - the outbound bubble appears,
+   - the composer clears or resets, and
+   - a response-in-progress indicator or reply appears.
+6. After send is verified, wait for and read the full reply before composing the next turn.
+7. Classify each reply as:
+   - solved
+   - not solved
+   - blocked
+8. If the reply includes a question or requests missing information, answer it in the same thread when the answer can be inferred from the user's request, local files, or current screen state.
+9. If the reply shows the goal is not solved, send the next targeted message in the same turn instead of stopping after one exchange.
+10. Stop only when one of these is true:
+   - the original goal is solved,
+   - a real blocker requires user input or approval,
+   - send verification fails repeatedly,
+   - the thread/app context is wrong, or
+   - the turn budget is reached.
+11. Default unattended limits when the user did not specify them:
+   - max 6 outbound turns
+   - wait up to 120 seconds per reply
+12. Never claim the conversation continued unless the next outbound send was visually verified.
+</task-playbook>
+
 <task-playbook name="codex-commit">
 When the user asks you to "go to Codex and commit" (or equivalent):
 1. Follow <app-navigation-workflow> to focus Codex.

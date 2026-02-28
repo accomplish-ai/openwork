@@ -17,24 +17,17 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import {
+  createMockAccomplish,
+  createMockStoreState,
+  framerMotionMock,
+  analyticsMock,
+  animationsMock,
+} from './test-utils';
 
-// Create mock functions for accomplish API
-const mockSetOnboardingComplete = vi.fn();
-const mockLogEvent = vi.fn();
-const mockListTasks = vi.fn();
-const mockOnTaskStatusChange = vi.fn();
-const mockOnTaskUpdate = vi.fn();
-const mockGetTask = vi.fn();
-
-// Mock accomplish API
-const mockAccomplish = {
-  setOnboardingComplete: mockSetOnboardingComplete,
-  logEvent: mockLogEvent.mockResolvedValue(undefined),
-  listTasks: mockListTasks.mockResolvedValue([]),
-  onTaskStatusChange: mockOnTaskStatusChange.mockReturnValue(() => {}),
-  onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
-  getTask: mockGetTask.mockResolvedValue(null),
-};
+// Create mock objects at module level (before vi.mock calls for hoisting)
+const mockAccomplish = createMockAccomplish();
+let mockStoreState = createMockStoreState();
 
 // Mock the accomplish module - always return true for isRunningInElectron for most tests
 vi.mock('@/lib/accomplish', () => ({
@@ -43,64 +36,15 @@ vi.mock('@/lib/accomplish', () => ({
 }));
 
 // Mock analytics
-vi.mock('@/lib/analytics', () => ({
-  analytics: {
-    trackPageView: vi.fn(),
-    trackNewTask: vi.fn(),
-    trackOpenSettings: vi.fn(),
-  },
-}));
+vi.mock('@/lib/analytics', () => analyticsMock);
 
 // Mock framer-motion to simplify testing animations
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div className={className} {...domProps}>{children}</div>;
-    },
-    p: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, ...domProps } = props;
-      return <p className={className} {...domProps}>{children}</p>;
-    },
-    button: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <button className={className} {...domProps}>{children}</button>;
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => framerMotionMock);
 
 // Mock animation utilities
-vi.mock('@/lib/animations', () => ({
-  springs: {
-    bouncy: { type: 'spring', stiffness: 300 },
-    gentle: { type: 'spring', stiffness: 200 },
-  },
-  variants: {
-    fadeUp: {
-      initial: { opacity: 0, y: 20 },
-      animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: -20 },
-    },
-  },
-  staggerContainer: {},
-  staggerItem: {},
-}));
+vi.mock('@/lib/animations', () => animationsMock);
 
 // Mock the task store
-const mockLoadTasks = vi.fn();
-const mockReset = vi.fn();
-let mockStoreState = {
-  tasks: [],
-  currentTask: null,
-  isLoading: false,
-  loadTasks: mockLoadTasks,
-  reset: mockReset,
-  loadTaskById: vi.fn(),
-  updateTaskStatus: vi.fn(),
-  addTaskUpdate: vi.fn(),
-};
-
 vi.mock('@/stores/taskStore', () => ({
   useTaskStore: () => mockStoreState,
 }));
@@ -127,17 +71,8 @@ describe('App Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state
-    mockStoreState = {
-      tasks: [],
-      currentTask: null,
-      isLoading: false,
-      loadTasks: mockLoadTasks,
-      reset: mockReset,
-      loadTaskById: vi.fn(),
-      updateTaskStatus: vi.fn(),
-      addTaskUpdate: vi.fn(),
-    };
-    mockSetOnboardingComplete.mockResolvedValue(undefined);
+    mockStoreState = createMockStoreState();
+    mockAccomplish.setOnboardingComplete.mockResolvedValue(undefined);
   });
 
   // Helper to render App with router

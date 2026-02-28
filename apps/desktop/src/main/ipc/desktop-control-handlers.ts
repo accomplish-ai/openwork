@@ -1,4 +1,6 @@
 import type { IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow } from 'electron';
+import type { LiveScreenStartOptions } from '@accomplish/shared';
 import {
   validate,
   desktopControlStatusRequestSchema,
@@ -65,4 +67,35 @@ export function registerDesktopControlHandlers(): void {
       return validate(liveScreenStopResponseSchema, result);
     }
   );
+
+  // Undo last action (mouse move only)
+  handle('desktopControl:undoLastAction', async () => {
+    const result = await getDesktopControlService().undoLastAction();
+    return result ?? { undone: false };
+  });
+
+  // Restart live screen session (cleanup + fresh start)
+  handle(
+    'desktopControl:restartLiveScreenSession',
+    async (_event: IpcMainInvokeEvent, options?: LiveScreenStartOptions) => {
+      const payload = await getDesktopControlService().restartLiveScreenSession(options);
+      return validate(liveScreenSessionStartResponseSchema, payload);
+    }
+  );
+
+  // Clear sensitive data
+  handle('desktopControl:clearSensitiveData', async () => {
+    getDesktopControlService().clearSensitiveData();
+    return { ok: true };
+  });
+
+  // Subscribe renderer to desktop control events via IPC push
+  const service = getDesktopControlService();
+  service.onEvent((event) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('desktopControl:event', event);
+      }
+    }
+  });
 }

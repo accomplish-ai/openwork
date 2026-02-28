@@ -273,6 +273,8 @@ export function getAppSettings(): AppSettingsSchema {
     selectedModel: appSettingsStore.get('selectedModel'),
     ollamaConfig: appSettingsStore.get('ollamaConfig'),
     screenAgentLifecycle: cloneLifecycleState(appSettingsStore.get('screenAgentLifecycle')),
+    cachedReadinessSnapshot: appSettingsStore.get('cachedReadinessSnapshot'),
+    cachedReadinessSnapshotAt: appSettingsStore.get('cachedReadinessSnapshotAt'),
   };
 }
 

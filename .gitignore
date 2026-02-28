@@ -21,6 +21,7 @@ out/
 
 # Editor
 .vscode/
+.cursor/
 .idea/
 *.swp
 *.swo
@@ -42,6 +43,7 @@ test-results/
 apps/desktop/e2e/test-results/
 apps/desktop/e2e/html-report/
 apps/desktop/e2e/test-results.json
+tests/desktop-control/artifacts/
 
 # Test coverage
 coverage/
@@ -53,6 +55,7 @@ prisma/*.db-journal
 # Misc
 *.pem
 .turbo/
+output/
 
 # Bundled Node.js binaries (downloaded via `pnpm -F @accomplish/desktop download:nodejs`)
 apps/desktop/resources/nodejs/

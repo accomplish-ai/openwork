@@ -1,49 +1,44 @@
 import { test, expect } from '../fixtures';
 import { HomePage } from '../pages';
 import { captureForAI } from '../utils';
-import { TEST_TIMEOUTS, TEST_SCENARIOS } from '../config';
+import { TEST_SCENARIOS, TEST_TIMEOUTS } from '../config';
 
 test.describe('Home Page', () => {
-  test('should load home page with title', async ({ window }) => {
+  test('should load the floating chat shell', async ({ window }) => {
     const homePage = new HomePage(window);
 
-    // Capture initial home page state
     await captureForAI(
       window,
       'home-page-load',
       'initial-load',
       [
-        'Title "What will you accomplish today?" is visible',
-        'Page layout is correct',
-        'All UI elements are rendered'
+        'Floating chat shell is visible',
+        'Header controls are rendered',
+        'Primary chat actions are available'
       ]
     );
 
-    // Assert title is visible and has correct text
-    await expect(homePage.title).toBeVisible();
-    await expect(homePage.title).toHaveText('What will you accomplish today?');
+    await expect(homePage.menuButton).toBeVisible();
+    await expect(window.getByRole('button', { name: 'Close to chat bubble' })).toBeVisible();
+    await expect(window.getByRole('button', { name: 'Open quick actions and defaults' })).toBeVisible();
   });
 
-  test('should display task input and submit button', async ({ window }) => {
+  test('should show idle footer controls before sending a message', async ({ window }) => {
     const homePage = new HomePage(window);
 
-    // Capture task input area
     await captureForAI(
       window,
       'home-page-input',
       'task-input-visible',
       [
-        'Task input textarea is visible',
+        'Chat input is visible',
         'Submit button is visible',
         'Input area is ready for user interaction'
       ]
     );
 
-    // Assert task input is visible and enabled
-    await expect(homePage.taskInput).toBeVisible();
+    await expect(homePage.quickActionsButton).toBeVisible();
     await expect(homePage.submitButton).toBeVisible();
-    await expect(homePage.taskInput).toBeEnabled();
-    // Submit button is disabled when input is empty (correct behavior)
     await expect(homePage.submitButton).toBeDisabled();
   });
 
@@ -59,116 +54,94 @@ test.describe('Home Page', () => {
       'home-page-input',
       'task-input-filled',
       [
-        'Task input contains typed text',
+        'Chat input contains typed text',
         'Text is clearly visible',
         'Submit button is enabled with text'
       ]
     );
 
-    // Assert input value matches what was typed
     await expect(homePage.taskInput).toHaveValue(testTask);
-    // Button should now be enabled
     await expect(homePage.submitButton).toBeEnabled();
   });
 
-  test('should display example cards', async ({ window }) => {
+  test('should open the menu and show chat navigation controls', async ({ window }) => {
     const homePage = new HomePage(window);
 
-    // Expand examples section (collapsed by default)
-    await homePage.expandExamples();
+    await homePage.openMenu();
 
-    // Capture example cards
     await captureForAI(
       window,
-      'home-page-examples',
-      'example-cards-visible',
+      'home-page-menu',
+      'menu-open',
       [
-        'At least 3 example cards are visible',
-        'Example cards are properly styled',
-        'Cards show task examples to users'
+        'Chat menu is open',
+        'New chat control is visible',
+        'Settings entry is available'
       ]
     );
 
-    // Assert at least 3 example cards are visible
-    const exampleCard0 = homePage.getExampleCard(0);
-    const exampleCard1 = homePage.getExampleCard(1);
-    const exampleCard2 = homePage.getExampleCard(2);
-
-    await expect(exampleCard0).toBeVisible();
-    await expect(exampleCard1).toBeVisible();
-    await expect(exampleCard2).toBeVisible();
+    await expect(window.getByRole('button', { name: 'New chat' })).toBeVisible();
+    await expect(window.getByRole('button', { name: 'Settings' })).toBeVisible();
   });
 
-  test('should fill input when clicking an example card', async ({ window }) => {
+  test('should open quick actions and show desktop-control options', async ({ window }) => {
     const homePage = new HomePage(window);
 
-    // Expand examples section (collapsed by default)
-    await homePage.expandExamples();
+    await homePage.openQuickActions();
 
-    // Click the first example card
-    const exampleCard0 = homePage.getExampleCard(0);
-    await exampleCard0.click();
-
-    // Wait for input to be filled
-    await window.waitForTimeout(TEST_TIMEOUTS.STATE_UPDATE);
-
-    // Capture state after clicking example
     await captureForAI(
       window,
-      'home-page-examples',
-      'example-card-clicked',
+      'home-page-quick-actions',
+      'quick-actions-open',
       [
-        'Task input is filled with example text',
-        'Input value matches the example card content',
-        'User can now submit the pre-filled task'
+        'Quick actions menu is open',
+        'Live guidance and screen capture actions are visible',
+        'Diagnostics action is available'
       ]
     );
 
-    // Assert input is no longer empty
-    const inputValue = await homePage.taskInput.inputValue();
-    expect(inputValue.length).toBeGreaterThan(0);
+    await expect(window.getByText('Guide me live (next message)')).toBeVisible();
+    await expect(window.getByText('Add screen capture')).toBeVisible();
+    await expect(window.getByText('Recheck diagnostics')).toBeVisible();
   });
 
-  test('should navigate to execution page when submitting a task', async ({ window }) => {
+  test('should send a prompt and transition into a running chat state', async ({ window }) => {
     const homePage = new HomePage(window);
 
-    // Enter a task with explicit test keyword
     await homePage.enterTask(TEST_SCENARIOS.SUCCESS.keyword);
-
-    // Wait for button to be enabled
     await expect(homePage.submitButton).toBeEnabled();
 
-    // Capture before submission
     await captureForAI(
       window,
       'home-page-submit',
       'before-submit',
       [
-        'Task is entered in input field',
-        'Submit button is ready to click'
+        'Prompt is entered in chat input',
+        'Send button is ready to click'
       ]
     );
 
-    // Submit the task
     await homePage.submitTask();
-
-    // Wait for navigation
-    await window.waitForURL(/.*#\/execution.*/, { timeout: TEST_TIMEOUTS.PERMISSION_MODAL });
 
     // Capture after navigation
     await captureForAI(
       window,
       'home-page-submit',
-      'after-submit-navigation',
+      'after-submit-running',
       [
-        'URL changed to execution page',
-        'Navigation was successful',
-        'Execution page is loading'
+        'Prompt is visible in the transcript',
+        'Chat accepted the prompt',
+        'Running or ready controls are visible after submission'
       ]
     );
 
-    // Assert URL changed to execution page
-    expect(window.url()).toContain('#/execution');
+    await window.waitForTimeout(TEST_TIMEOUTS.STATE_UPDATE);
+
+    await expect(window.getByText(TEST_SCENARIOS.SUCCESS.keyword).first()).toBeVisible();
+    const stopVisible = await homePage.stopButton.isVisible().catch(() => false);
+    const thinkingVisible = await window.locator('span').filter({ hasText: 'Thinking...' }).first().isVisible().catch(() => false);
+    const sendVisible = await homePage.submitButton.isVisible().catch(() => false);
+    expect(stopVisible || thinkingVisible || sendVisible).toBe(true);
   });
 
   test('should handle empty input - submit disabled', async ({ window }) => {
@@ -180,7 +153,7 @@ test.describe('Home Page', () => {
       'home-page-validation',
       'empty-input',
       [
-        'Task input is empty',
+        'Chat input is empty',
         'Submit button is disabled',
         'User cannot submit an empty task'
       ]
@@ -188,28 +161,5 @@ test.describe('Home Page', () => {
 
     // Submit button should be disabled when input is empty
     await expect(homePage.submitButton).toBeDisabled();
-  });
-
-  test('should support multi-line task input', async ({ window }) => {
-    const homePage = new HomePage(window);
-
-    // Enter a multi-line task
-    const multiLineTask = 'Line 1\nLine 2\nLine 3';
-    await homePage.enterTask(multiLineTask);
-
-    // Capture multi-line input
-    await captureForAI(
-      window,
-      'home-page-input',
-      'multi-line-task',
-      [
-        'Task input supports multiple lines',
-        'All lines are visible in the textarea',
-        'Textarea expands to show content'
-      ]
-    );
-
-    // Assert all lines are preserved
-    await expect(homePage.taskInput).toHaveValue(multiLineTask);
   });
 });

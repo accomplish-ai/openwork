@@ -28,6 +28,10 @@ import {
 import type { LiveScreenSessionSnapshot } from './live-screen';
 import { AuditLog, getAuditLog, type AuditAction, type AuditOutcome } from './audit-log';
 import { RateLimiter, getRateLimiter, type RateLimitBucket } from './rate-limiter';
+import {
+  getCachedReadinessSnapshot,
+  setCachedReadinessSnapshot,
+} from '../store/appSettings';
 
 export interface DesktopControlServiceDependencies {
   dataAccess?: DesktopControlDataAccess;
@@ -56,6 +60,19 @@ export class DesktopControlService {
     this.rateLimiter = rateLimiter ?? getRateLimiter();
     this.now = now ?? (() => Date.now());
     this.state = createInitialDesktopControlState(this.now());
+
+    // Load cached readiness snapshot for instant UI on startup
+    try {
+      const cached = getCachedReadinessSnapshot();
+      if (cached) {
+        this.state.readiness = {
+          snapshot: cached,
+          lastUpdatedAt: this.now(),
+        };
+      }
+    } catch {
+      // Ignore cache read errors — will fetch fresh on first request
+    }
   }
 
   getAuditLog(): AuditLog {
@@ -187,6 +204,12 @@ export class DesktopControlService {
         durationMs: this.now() - start,
       });
       this.emitEvent('readiness_checked', { status: snapshot.status });
+      // Persist to electron-store for instant UI on next app launch
+      try {
+        setCachedReadinessSnapshot(snapshot);
+      } catch {
+        // Non-critical — cache write failure should not break the flow
+      }
       return snapshot;
     } catch (error) {
       this.auditLog.record({

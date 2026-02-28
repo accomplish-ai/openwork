@@ -9,34 +9,26 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Task, TaskStatus } from '@accomplish/shared';
-
-// Create mock functions for task store
-const mockLoadTasks = vi.fn();
-const mockDeleteTask = vi.fn();
-const mockClearHistory = vi.fn();
+import { createMockStoreState, createMockTask } from '../test-utils';
 
 // Create a store state holder for testing
-let mockStoreState = {
-  tasks: [] as Task[],
-  loadTasks: mockLoadTasks,
-  deleteTask: mockDeleteTask,
-  clearHistory: mockClearHistory,
-};
+let mockStoreState = createMockStoreState();
 
 // Mock the task store
 vi.mock('@/stores/taskStore', () => ({
   useTaskStore: () => mockStoreState,
 }));
 
-// Helper to create mock tasks
-function createMockTask(
+// Helper to create mock tasks with the legacy positional-argument signature
+// used throughout this test file
+function makeMockTask(
   id: string,
   prompt: string = 'Test task',
   status: TaskStatus = 'completed',
   createdAt?: string,
   messageCount: number = 0
 ): Task {
-  return {
+  return createMockTask({
     id,
     prompt,
     status,
@@ -47,7 +39,7 @@ function createMockTask(
       timestamp: new Date().toISOString(),
     }),
     createdAt: createdAt || new Date().toISOString(),
-  };
+  });
 }
 
 // Need to import after mocks are set up
@@ -57,12 +49,7 @@ describe('TaskHistory Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state
-    mockStoreState = {
-      tasks: [],
-      loadTasks: mockLoadTasks,
-      deleteTask: mockDeleteTask,
-      clearHistory: mockClearHistory,
-    };
+    mockStoreState = createMockStoreState();
     // Mock window.confirm
     vi.spyOn(window, 'confirm').mockImplementation(() => true);
   });
@@ -122,8 +109,8 @@ describe('TaskHistory Integration', () => {
     it('should render task list when tasks exist', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Send email to John'),
-        createMockTask('task-2', 'Create report'),
+        makeMockTask('task-1', 'Send email to John'),
+        makeMockTask('task-2', 'Create report'),
       ];
 
       // Act
@@ -140,7 +127,7 @@ describe('TaskHistory Integration', () => {
 
     it('should render Recent Tasks title when showTitle is true', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
 
       // Act
       render(
@@ -155,7 +142,7 @@ describe('TaskHistory Integration', () => {
 
     it('should not render title when showTitle is false', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
 
       // Act
       render(
@@ -170,7 +157,7 @@ describe('TaskHistory Integration', () => {
 
     it('should render task status indicator', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'My test task', 'completed')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'My test task', 'completed')];
 
       // Act
       render(
@@ -186,7 +173,7 @@ describe('TaskHistory Integration', () => {
 
     it('should render message count for each task', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Task with messages', 'completed', undefined, 5)];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Task with messages', 'completed', undefined, 5)];
 
       // Act
       render(
@@ -208,14 +195,14 @@ describe('TaskHistory Integration', () => {
       );
 
       // Assert
-      expect(mockLoadTasks).toHaveBeenCalled();
+      expect(mockStoreState.loadTasks).toHaveBeenCalled();
     });
   });
 
   describe('task status indicators', () => {
     it('should show green indicator for completed tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Completed task', 'completed')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Completed task', 'completed')];
 
       // Act
       render(
@@ -231,7 +218,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show blue indicator for running tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Running task', 'running')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Running task', 'running')];
 
       // Act
       render(
@@ -247,7 +234,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show red indicator for failed tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Failed task', 'failed')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Failed task', 'failed')];
 
       // Act
       render(
@@ -263,7 +250,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show grey indicator for cancelled tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Cancelled task', 'cancelled')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Cancelled task', 'cancelled')];
 
       // Act
       render(
@@ -279,7 +266,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show yellow indicator for pending tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Pending task', 'pending')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Pending task', 'pending')];
 
       // Act
       render(
@@ -295,7 +282,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show yellow indicator for waiting permission tasks', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'My test task', 'waiting_permission')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'My test task', 'waiting_permission')];
 
       // Act
       render(
@@ -315,7 +302,7 @@ describe('TaskHistory Integration', () => {
   describe('task selection', () => {
     it('should render tasks as clickable links', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-123', 'Clickable task')];
+      mockStoreState.tasks = [makeMockTask('task-123', 'Clickable task')];
 
       // Act
       render(
@@ -333,8 +320,8 @@ describe('TaskHistory Integration', () => {
     it('should navigate to correct task execution page', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'First task'),
-        createMockTask('task-2', 'Second task'),
+        makeMockTask('task-1', 'First task'),
+        makeMockTask('task-2', 'Second task'),
       ];
 
       // Act
@@ -355,7 +342,7 @@ describe('TaskHistory Integration', () => {
   describe('task deletion', () => {
     it('should render delete button for each task', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Deletable task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Deletable task')];
 
       // Act
       render(
@@ -371,7 +358,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show confirmation dialog when delete is clicked', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Deletable task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Deletable task')];
       const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       // Act
@@ -393,7 +380,7 @@ describe('TaskHistory Integration', () => {
 
     it('should call deleteTask when confirmation is accepted', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Deletable task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Deletable task')];
       vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       // Act
@@ -410,12 +397,12 @@ describe('TaskHistory Integration', () => {
       }
 
       // Assert
-      expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
+      expect(mockStoreState.deleteTask).toHaveBeenCalledWith('task-1');
     });
 
     it('should not call deleteTask when confirmation is cancelled', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Deletable task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Deletable task')];
       vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       // Act
@@ -432,12 +419,12 @@ describe('TaskHistory Integration', () => {
       }
 
       // Assert
-      expect(mockDeleteTask).not.toHaveBeenCalled();
+      expect(mockStoreState.deleteTask).not.toHaveBeenCalled();
     });
 
     it('should prevent navigation when delete button is clicked', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Deletable task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Deletable task')];
       vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       // Act
@@ -454,14 +441,14 @@ describe('TaskHistory Integration', () => {
       }
 
       // Assert - Delete should be called but no navigation
-      expect(mockDeleteTask).toHaveBeenCalled();
+      expect(mockStoreState.deleteTask).toHaveBeenCalled();
     });
   });
 
   describe('clear history', () => {
     it('should render Clear all button when tasks exist and no limit', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
 
       // Act
       render(
@@ -476,7 +463,7 @@ describe('TaskHistory Integration', () => {
 
     it('should not render Clear all button when limit is set', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
 
       // Act
       render(
@@ -491,7 +478,7 @@ describe('TaskHistory Integration', () => {
 
     it('should show confirmation dialog when Clear all is clicked', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
       const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       // Act
@@ -509,7 +496,7 @@ describe('TaskHistory Integration', () => {
 
     it('should call clearHistory when confirmation is accepted', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
       vi.spyOn(window, 'confirm').mockReturnValue(true);
 
       // Act
@@ -522,12 +509,12 @@ describe('TaskHistory Integration', () => {
       fireEvent.click(screen.getByText(/clear all/i));
 
       // Assert
-      expect(mockClearHistory).toHaveBeenCalled();
+      expect(mockStoreState.clearHistory).toHaveBeenCalled();
     });
 
     it('should not call clearHistory when confirmation is cancelled', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Test task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Test task')];
       vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       // Act
@@ -540,7 +527,7 @@ describe('TaskHistory Integration', () => {
       fireEvent.click(screen.getByText(/clear all/i));
 
       // Assert
-      expect(mockClearHistory).not.toHaveBeenCalled();
+      expect(mockStoreState.clearHistory).not.toHaveBeenCalled();
     });
   });
 
@@ -548,11 +535,11 @@ describe('TaskHistory Integration', () => {
     it('should limit displayed tasks when limit prop is provided', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
-        createMockTask('task-3', 'Task 3'),
-        createMockTask('task-4', 'Task 4'),
-        createMockTask('task-5', 'Task 5'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
+        makeMockTask('task-3', 'Task 3'),
+        makeMockTask('task-4', 'Task 4'),
+        makeMockTask('task-5', 'Task 5'),
       ];
 
       // Act
@@ -573,10 +560,10 @@ describe('TaskHistory Integration', () => {
     it('should show View all link when more tasks exist than limit', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
-        createMockTask('task-3', 'Task 3'),
-        createMockTask('task-4', 'Task 4'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
+        makeMockTask('task-3', 'Task 3'),
+        makeMockTask('task-4', 'Task 4'),
       ];
 
       // Act
@@ -593,9 +580,9 @@ describe('TaskHistory Integration', () => {
     it('should link to history page in View all link', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
-        createMockTask('task-3', 'Task 3'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
+        makeMockTask('task-3', 'Task 3'),
       ];
 
       // Act
@@ -613,8 +600,8 @@ describe('TaskHistory Integration', () => {
     it('should not show View all link when tasks fit within limit', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
       ];
 
       // Act
@@ -631,11 +618,11 @@ describe('TaskHistory Integration', () => {
     it('should show all tasks when no limit is provided', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
-        createMockTask('task-3', 'Task 3'),
-        createMockTask('task-4', 'Task 4'),
-        createMockTask('task-5', 'Task 5'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
+        makeMockTask('task-3', 'Task 3'),
+        makeMockTask('task-4', 'Task 4'),
+        makeMockTask('task-5', 'Task 5'),
       ];
 
       // Act
@@ -658,7 +645,7 @@ describe('TaskHistory Integration', () => {
     it('should show "just now" for recent tasks', () => {
       // Arrange
       const now = new Date().toISOString();
-      mockStoreState.tasks = [createMockTask('task-1', 'Recent task', 'completed', now)];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Recent task', 'completed', now)];
 
       // Act
       render(
@@ -674,7 +661,7 @@ describe('TaskHistory Integration', () => {
     it('should show minutes ago for tasks within an hour', () => {
       // Arrange
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      mockStoreState.tasks = [createMockTask('task-1', 'Old task', 'completed', thirtyMinutesAgo)];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Old task', 'completed', thirtyMinutesAgo)];
 
       // Act
       render(
@@ -690,7 +677,7 @@ describe('TaskHistory Integration', () => {
     it('should show hours ago for tasks within a day', () => {
       // Arrange
       const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
-      mockStoreState.tasks = [createMockTask('task-1', 'Older task', 'completed', fiveHoursAgo)];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Older task', 'completed', fiveHoursAgo)];
 
       // Act
       render(
@@ -706,7 +693,7 @@ describe('TaskHistory Integration', () => {
     it('should show days ago for tasks older than a day', () => {
       // Arrange
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-      mockStoreState.tasks = [createMockTask('task-1', 'Very old task', 'completed', threeDaysAgo)];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Very old task', 'completed', threeDaysAgo)];
 
       // Act
       render(
@@ -723,7 +710,7 @@ describe('TaskHistory Integration', () => {
   describe('styling and layout', () => {
     it('should render tasks with card styling', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Styled task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Styled task')];
 
       // Act
       render(
@@ -739,7 +726,7 @@ describe('TaskHistory Integration', () => {
 
     it('should render tasks with hover effect', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Hover task')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'Hover task')];
 
       // Act
       render(
@@ -755,7 +742,7 @@ describe('TaskHistory Integration', () => {
 
     it('should truncate long task prompts', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'This is a very long task prompt that should be truncated')];
+      mockStoreState.tasks = [makeMockTask('task-1', 'This is a very long task prompt that should be truncated')];
 
       // Act
       render(
@@ -772,8 +759,8 @@ describe('TaskHistory Integration', () => {
     it('should render tasks in a vertical list', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'Task 1'),
-        createMockTask('task-2', 'Task 2'),
+        makeMockTask('task-1', 'Task 1'),
+        makeMockTask('task-2', 'Task 2'),
       ];
 
       // Act

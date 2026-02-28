@@ -12,6 +12,7 @@ import type {
   DesktopControlStatusSnapshot,
 } from '../../../../src/shared/contracts/desktopControlBridge';
 import type {
+  DesktopActionResponse,
   LiveScreenFramePayload,
   LiveScreenSessionStartPayload,
   LiveScreenStartOptions,
@@ -79,7 +80,13 @@ const desktopControlBridge: DesktopControlBridgeNamespace = {
       ipcRenderer.invoke('desktopControl:refreshLiveScreenFrame', { sessionId }),
     stopSession: (sessionId: string): Promise<LiveScreenStopPayload> =>
       ipcRenderer.invoke('desktopControl:stopLiveScreenSession', { sessionId }),
+    restartSession: (options?: LiveScreenStartOptions): Promise<LiveScreenSessionStartPayload> =>
+      ipcRenderer.invoke('desktopControl:restartLiveScreenSession', options),
   },
+  undoLastAction: (): Promise<DesktopActionResponse | { undone: false }> =>
+    ipcRenderer.invoke('desktopControl:undoLastAction'),
+  clearSensitiveData: (): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('desktopControl:clearSensitiveData'),
 };
 
 // Expose the accomplish API to the renderer

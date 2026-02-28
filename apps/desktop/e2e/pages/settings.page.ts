@@ -5,7 +5,7 @@ export class SettingsPage {
   constructor(private page: Page) {}
 
   get title() {
-    return this.page.getByTestId('settings-title');
+    return this.page.getByRole('heading', { name: 'Settings' });
   }
 
   get debugModeToggle() {
@@ -40,13 +40,20 @@ export class SettingsPage {
     return this.page.getByTestId('settings-back-button');
   }
 
-  get sidebarSettingsButton() {
-    return this.page.getByTestId('sidebar-settings-button');
+  get menuButton() {
+    return this.page.getByRole('button', { name: 'Open menu' });
+  }
+
+  get menuSettingsButton() {
+    return this.page.getByRole('button', { name: 'Settings' });
   }
 
   async navigateToSettings() {
-    // Click the settings button in sidebar to navigate
-    await this.sidebarSettingsButton.click();
+    if (await this.title.isVisible().catch(() => false)) {
+      return;
+    }
+    await this.menuButton.click();
+    await this.menuSettingsButton.click();
     await this.page.waitForTimeout(TEST_TIMEOUTS.STATE_UPDATE);
   }
 

@@ -8,46 +8,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ApiKeyConfig } from '@accomplish/shared';
+import { createMockAccomplish, framerMotionMock, analyticsMock } from '../test-utils';
 
 // Mock analytics to prevent tracking calls
-vi.mock('@/lib/analytics', () => ({
-  analytics: {
-    trackToggleDebugMode: vi.fn(),
-    trackSelectModel: vi.fn(),
-    trackSaveApiKey: vi.fn(),
-    trackSelectProvider: vi.fn(),
-  },
-}));
+vi.mock('@/lib/analytics', () => analyticsMock);
 
-// Create mock functions for accomplish API
-const mockGetApiKeys = vi.fn();
-const mockGetDebugMode = vi.fn();
-const mockGetVersion = vi.fn();
-const mockGetSelectedModel = vi.fn();
-const mockSetDebugMode = vi.fn();
-const mockSetSelectedModel = vi.fn();
-const mockAddApiKey = vi.fn();
-const mockRemoveApiKey = vi.fn();
-const mockValidateApiKeyForProvider = vi.fn();
-const mockGetOllamaConfig = vi.fn();
-const mockTestOllamaConnection = vi.fn();
-const mockSetOllamaConfig = vi.fn();
-
-// Mock accomplish API
-const mockAccomplish = {
-  getApiKeys: mockGetApiKeys,
-  getDebugMode: mockGetDebugMode,
-  getVersion: mockGetVersion,
-  getSelectedModel: mockGetSelectedModel,
-  setDebugMode: mockSetDebugMode,
-  setSelectedModel: mockSetSelectedModel,
-  addApiKey: mockAddApiKey,
-  removeApiKey: mockRemoveApiKey,
-  validateApiKeyForProvider: mockValidateApiKeyForProvider,
-  getOllamaConfig: mockGetOllamaConfig,
-  testOllamaConnection: mockTestOllamaConnection,
-  setOllamaConfig: mockSetOllamaConfig,
-};
+// Create mock accomplish API from shared factory
+const mockAccomplish = createMockAccomplish();
 
 // Mock the accomplish module
 vi.mock('@/lib/accomplish', () => ({
@@ -55,16 +22,7 @@ vi.mock('@/lib/accomplish', () => ({
 }));
 
 // Mock framer-motion to simplify testing animations
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => {
-      // Filter out motion-specific props
-      const { initial, animate, exit, transition, variants, whileHover, ...domProps } = props;
-      return <div {...domProps}>{children}</div>;
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => framerMotionMock);
 
 // Mock Radix Dialog to simplify testing
 vi.mock('@radix-ui/react-dialog', () => ({
@@ -98,19 +56,19 @@ describe('SettingsDialog Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default mock implementations
-    mockGetApiKeys.mockResolvedValue([]);
-    mockGetDebugMode.mockResolvedValue(false);
-    mockGetVersion.mockResolvedValue('1.0.0');
-    mockGetSelectedModel.mockResolvedValue({ provider: 'anthropic', model: 'anthropic/claude-opus-4-5' });
-    mockSetDebugMode.mockResolvedValue(undefined);
-    mockSetSelectedModel.mockResolvedValue(undefined);
-    mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-    mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
-    mockRemoveApiKey.mockResolvedValue(undefined);
-    mockGetOllamaConfig.mockResolvedValue(null);
-    mockTestOllamaConnection.mockResolvedValue({ success: false, error: 'Not configured' });
-    mockSetOllamaConfig.mockResolvedValue(undefined);
+    // Default mock implementations (override shared factory defaults where needed)
+    mockAccomplish.getApiKeys.mockResolvedValue([]);
+    mockAccomplish.getDebugMode.mockResolvedValue(false);
+    mockAccomplish.getVersion.mockResolvedValue('1.0.0');
+    mockAccomplish.getSelectedModel.mockResolvedValue({ provider: 'anthropic', model: 'anthropic/claude-opus-4-5' });
+    mockAccomplish.setDebugMode.mockResolvedValue(undefined);
+    mockAccomplish.setSelectedModel.mockResolvedValue(undefined);
+    mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+    mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+    mockAccomplish.removeApiKey.mockResolvedValue(undefined);
+    mockAccomplish.getOllamaConfig.mockResolvedValue(null);
+    mockAccomplish.testOllamaConnection.mockResolvedValue({ success: false, error: 'Not configured' });
+    mockAccomplish.setOllamaConfig.mockResolvedValue(undefined);
   });
 
   describe('dialog rendering', () => {
@@ -148,10 +106,10 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockGetApiKeys).toHaveBeenCalled();
-        expect(mockGetDebugMode).toHaveBeenCalled();
-        expect(mockGetVersion).toHaveBeenCalled();
-        expect(mockGetSelectedModel).toHaveBeenCalled();
+        expect(mockAccomplish.getApiKeys).toHaveBeenCalled();
+        expect(mockAccomplish.getDebugMode).toHaveBeenCalled();
+        expect(mockAccomplish.getVersion).toHaveBeenCalled();
+        expect(mockAccomplish.getSelectedModel).toHaveBeenCalled();
       });
     });
 
@@ -160,8 +118,8 @@ describe('SettingsDialog Integration', () => {
       render(<SettingsDialog {...defaultProps} open={false} />);
 
       // Assert
-      expect(mockGetApiKeys).not.toHaveBeenCalled();
-      expect(mockGetDebugMode).not.toHaveBeenCalled();
+      expect(mockAccomplish.getApiKeys).not.toHaveBeenCalled();
+      expect(mockAccomplish.getDebugMode).not.toHaveBeenCalled();
     });
 
     it('should reset API key input and validation errors after closing and reopening', async () => {
@@ -334,8 +292,8 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByText(/this key looks like anthropic/i)).toBeInTheDocument();
       });
-      expect(mockValidateApiKeyForProvider).not.toHaveBeenCalled();
-      expect(mockAddApiKey).not.toHaveBeenCalled();
+      expect(mockAccomplish.validateApiKeyForProvider).not.toHaveBeenCalled();
+      expect(mockAccomplish.addApiKey).not.toHaveBeenCalled();
     });
 
     it('should reject incomplete keys that only include the provider prefix', async () => {
@@ -353,14 +311,14 @@ describe('SettingsDialog Integration', () => {
       await waitFor(() => {
         expect(screen.getByText(/api key looks incomplete/i)).toBeInTheDocument();
       });
-      expect(mockValidateApiKeyForProvider).not.toHaveBeenCalled();
-      expect(mockAddApiKey).not.toHaveBeenCalled();
+      expect(mockAccomplish.validateApiKeyForProvider).not.toHaveBeenCalled();
+      expect(mockAccomplish.addApiKey).not.toHaveBeenCalled();
     });
 
     it('should validate and save valid API key', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+      mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -372,14 +330,14 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockValidateApiKeyForProvider).toHaveBeenCalledWith('anthropic', 'sk-ant-test123');
-        expect(mockAddApiKey).toHaveBeenCalledWith('anthropic', 'sk-ant-test123');
+        expect(mockAccomplish.validateApiKeyForProvider).toHaveBeenCalledWith('anthropic', 'sk-ant-test123');
+        expect(mockAccomplish.addApiKey).toHaveBeenCalledWith('anthropic', 'sk-ant-test123');
       });
     });
 
     it('should show error when API key validation fails', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: false, error: 'Invalid API key' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: false, error: 'Invalid API key' });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -397,7 +355,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should use a fallback validation error message when validator does not return one', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: false });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: false });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -415,8 +373,8 @@ describe('SettingsDialog Integration', () => {
 
     it('should trim whitespace before validating and saving API keys', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+      mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -428,15 +386,15 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockValidateApiKeyForProvider).toHaveBeenCalledWith('anthropic', 'sk-ant-trimmed123');
-        expect(mockAddApiKey).toHaveBeenCalledWith('anthropic', 'sk-ant-trimmed123');
+        expect(mockAccomplish.validateApiKeyForProvider).toHaveBeenCalledWith('anthropic', 'sk-ant-trimmed123');
+        expect(mockAccomplish.addApiKey).toHaveBeenCalledWith('anthropic', 'sk-ant-trimmed123');
       });
     });
 
     it('should show success message after saving API key', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+      mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -457,8 +415,8 @@ describe('SettingsDialog Integration', () => {
     it('should call onApiKeySaved callback after saving', async () => {
       // Arrange
       const onApiKeySaved = vi.fn();
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+      mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
       render(<SettingsDialog {...defaultProps} onApiKeySaved={onApiKeySaved} />);
 
       // Act
@@ -476,7 +434,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should show Saving... while saving is in progress', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockImplementation(
+      mockAccomplish.validateApiKeyForProvider.mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve({ valid: true }), 100))
       );
       render(<SettingsDialog {...defaultProps} />);
@@ -497,8 +455,8 @@ describe('SettingsDialog Integration', () => {
 
     it('should clear previous success feedback before showing empty-key validation', async () => {
       // Arrange
-      mockValidateApiKeyForProvider.mockResolvedValue({ valid: true });
-      mockAddApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
+      mockAccomplish.validateApiKeyForProvider.mockResolvedValue({ valid: true });
+      mockAccomplish.addApiKey.mockResolvedValue({ id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' });
       render(<SettingsDialog {...defaultProps} />);
 
       // Act - Save valid key first
@@ -561,7 +519,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should clear stale debug warning immediately on reopen', async () => {
       // Arrange
-      mockGetDebugMode
+      mockAccomplish.getDebugMode
         .mockResolvedValueOnce(true)
         .mockImplementationOnce(() => new Promise((resolve) => setTimeout(() => resolve(false), 25)));
       const { rerender } = render(<SettingsDialog {...defaultProps} />);
@@ -577,7 +535,7 @@ describe('SettingsDialog Integration', () => {
       // Assert
       expect(screen.queryByText(/debug mode is enabled/i)).not.toBeInTheDocument();
       await waitFor(() => {
-        expect(mockGetDebugMode).toHaveBeenCalledTimes(2);
+        expect(mockAccomplish.getDebugMode).toHaveBeenCalledTimes(2);
       });
     });
   });
@@ -589,7 +547,7 @@ describe('SettingsDialog Integration', () => {
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-abc...' },
         { id: 'key-2', provider: 'openai', keyPrefix: 'sk-xyz...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -605,7 +563,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-abc...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -619,7 +577,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-abc...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Act - Click delete button to show confirmation
@@ -636,7 +594,7 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockRemoveApiKey).toHaveBeenCalledWith('key-1');
+        expect(mockAccomplish.removeApiKey).toHaveBeenCalledWith('key-1');
       });
     });
 
@@ -645,7 +603,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-abc...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Act - Click delete button to show confirmation
@@ -661,7 +619,7 @@ describe('SettingsDialog Integration', () => {
       fireEvent.click(screen.getByRole('button', { name: /no/i }));
 
       // Assert - Should not delete, confirmation should be hidden
-      expect(mockRemoveApiKey).not.toHaveBeenCalled();
+      expect(mockAccomplish.removeApiKey).not.toHaveBeenCalled();
       await waitFor(() => {
         expect(screen.queryByText('Are you sure?')).not.toBeInTheDocument();
       });
@@ -672,7 +630,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-abc...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       const { rerender } = render(<SettingsDialog {...defaultProps} />);
 
       // Act - Open confirmation and then close/reopen dialog
@@ -695,7 +653,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should show loading skeleton while fetching keys', async () => {
       // Arrange
-      mockGetApiKeys.mockImplementation(
+      mockAccomplish.getApiKeys.mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve([]), 500))
       );
       render(<SettingsDialog {...defaultProps} />);
@@ -724,7 +682,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -739,7 +697,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert - Check for Anthropic group
@@ -754,7 +712,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -769,7 +727,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -780,7 +738,7 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSetSelectedModel).toHaveBeenCalledWith({
+        expect(mockAccomplish.setSelectedModel).toHaveBeenCalledWith({
           provider: 'anthropic',
           model: 'anthropic/claude-sonnet-4-5',
         });
@@ -792,7 +750,7 @@ describe('SettingsDialog Integration', () => {
       const savedKeys: ApiKeyConfig[] = [
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ];
-      mockGetApiKeys.mockResolvedValue(savedKeys);
+      mockAccomplish.getApiKeys.mockResolvedValue(savedKeys);
       render(<SettingsDialog {...defaultProps} />);
 
       // Act
@@ -811,8 +769,8 @@ describe('SettingsDialog Integration', () => {
 
     it('should show warning when selected model has no API key', async () => {
       // Arrange - Selected Google AI model but no Google AI key
-      mockGetSelectedModel.mockResolvedValue({ provider: 'google', model: 'google/gemini-3-pro-preview' });
-      mockGetApiKeys.mockResolvedValue([
+      mockAccomplish.getSelectedModel.mockResolvedValue({ provider: 'google', model: 'google/gemini-3-pro-preview' });
+      mockAccomplish.getApiKeys.mockResolvedValue([
         { id: 'key-1', provider: 'anthropic', keyPrefix: 'sk-ant-...' },
       ]);
       render(<SettingsDialog {...defaultProps} />);
@@ -849,7 +807,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should show debug mode as disabled initially', async () => {
       // Arrange
-      mockGetDebugMode.mockResolvedValue(false);
+      mockAccomplish.getDebugMode.mockResolvedValue(false);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -861,7 +819,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should toggle debug mode when clicked', async () => {
       // Arrange
-      mockGetDebugMode.mockResolvedValue(false);
+      mockAccomplish.getDebugMode.mockResolvedValue(false);
       render(<SettingsDialog {...defaultProps} />);
 
       // Find the toggle button in the Developer section
@@ -878,13 +836,13 @@ describe('SettingsDialog Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockSetDebugMode).toHaveBeenCalledWith(true);
+        expect(mockAccomplish.setDebugMode).toHaveBeenCalledWith(true);
       });
     });
 
     it('should show debug mode warning when enabled', async () => {
       // Arrange
-      mockGetDebugMode.mockResolvedValue(true);
+      mockAccomplish.getDebugMode.mockResolvedValue(true);
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -895,7 +853,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should show loading skeleton while fetching debug setting', async () => {
       // Arrange
-      mockGetDebugMode.mockImplementation(
+      mockAccomplish.getDebugMode.mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(false), 500))
       );
       render(<SettingsDialog {...defaultProps} />);
@@ -909,8 +867,8 @@ describe('SettingsDialog Integration', () => {
 
     it('should revert toggle state on save error', async () => {
       // Arrange
-      mockGetDebugMode.mockResolvedValue(false);
-      mockSetDebugMode.mockRejectedValue(new Error('Save failed'));
+      mockAccomplish.getDebugMode.mockResolvedValue(false);
+      mockAccomplish.setDebugMode.mockRejectedValue(new Error('Save failed'));
       render(<SettingsDialog {...defaultProps} />);
 
       await waitFor(() => {
@@ -926,7 +884,7 @@ describe('SettingsDialog Integration', () => {
 
       // Assert - Mock should have been called and error handled
       await waitFor(() => {
-        expect(mockSetDebugMode).toHaveBeenCalled();
+        expect(mockAccomplish.setDebugMode).toHaveBeenCalled();
       });
     });
   });
@@ -954,7 +912,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should render app version', async () => {
       // Arrange
-      mockGetVersion.mockResolvedValue('2.0.0');
+      mockAccomplish.getVersion.mockResolvedValue('2.0.0');
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert
@@ -976,7 +934,7 @@ describe('SettingsDialog Integration', () => {
 
     it('should show default version when fetch fails', async () => {
       // Arrange
-      mockGetVersion.mockRejectedValue(new Error('Fetch failed'));
+      mockAccomplish.getVersion.mockRejectedValue(new Error('Fetch failed'));
       render(<SettingsDialog {...defaultProps} />);
 
       // Assert

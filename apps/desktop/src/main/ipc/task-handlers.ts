@@ -35,6 +35,17 @@ import {
   createMessageId,
   toTaskMessage,
 } from './message-utils';
+import {
+  addTaskMessage,
+  clearHistory,
+  deleteTask,
+  getTask,
+  getTasks,
+  saveTask,
+  updateTaskResult,
+  updateTaskSessionId,
+  updateTaskStatus,
+} from '../store/taskHistory';
 
 let permissionApiInitialized = false;
 
@@ -70,6 +81,7 @@ function createTaskCallbacksForTask(
     onMessage: (message: OpenCodeMessage) => {
       const taskMessage = toTaskMessage(message);
       if (!taskMessage) return;
+      addTaskMessage(taskId, taskMessage);
       queueMessage(taskId, taskMessage, forwardToRenderer);
     },
 
@@ -86,6 +98,11 @@ function createTaskCallbacksForTask(
     },
 
     onComplete: (result: TaskResult) => {
+      updateTaskResult(taskId, result);
+      updateTaskStatus(taskId, 'completed', new Date().toISOString());
+      if (result.sessionId) {
+        updateTaskSessionId(taskId, result.sessionId);
+      }
       flushAndCleanupBatcher(taskId);
       forwardToRenderer('task:update', {
         taskId,
@@ -95,6 +112,7 @@ function createTaskCallbacksForTask(
     },
 
     onError: (error: Error) => {
+      updateTaskStatus(taskId, 'failed', new Date().toISOString());
       flushAndCleanupBatcher(taskId);
       forwardToRenderer('task:update', {
         taskId,
@@ -114,6 +132,7 @@ function createTaskCallbacksForTask(
     },
 
     onStatusChange: (status: TaskStatus) => {
+      updateTaskStatus(taskId, status);
       forwardToRenderer('task:status-change', {
         taskId,
         status,
@@ -126,6 +145,7 @@ function createTaskCallbacksForTask(
  * Register task lifecycle IPC handlers
  */
 export function registerTaskHandlers(): void {
+  permissionApiInitialized = false;
   const taskManager = getTaskManager();
 
   // Task: Start a new task (send message to agent)
@@ -156,6 +176,7 @@ export function registerTaskHandlers(): void {
       timestamp: new Date().toISOString(),
     };
     task.messages = [initialUserMessage];
+    saveTask(task);
 
     return task;
   });
@@ -167,12 +188,14 @@ export function registerTaskHandlers(): void {
     // Check if it's a queued task first
     if (taskManager.isTaskQueued(taskId)) {
       taskManager.cancelQueuedTask(taskId);
+      updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
       return;
     }
 
     // Otherwise cancel the running task
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.cancelTask(taskId);
+      updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
     }
   });
 
@@ -182,6 +205,7 @@ export function registerTaskHandlers(): void {
 
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.interruptTask(taskId);
+      updateTaskStatus(taskId, 'interrupted', new Date().toISOString());
       console.log(`[IPC] Task ${taskId} interrupted`);
     }
   });
@@ -221,13 +245,21 @@ export function registerTaskHandlers(): void {
   });
 
   // Session: Resume (continue conversation)
-  handle('session:resume', async (event: IpcMainInvokeEvent, sessionId: string, prompt: string) => {
+  handle(
+    'session:resume',
+    async (
+      event: IpcMainInvokeEvent,
+      sessionId: string,
+      prompt: string,
+      existingTaskId?: string
+    ) => {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
     const validatedSessionId = sanitizeString(sessionId, 'sessionId', 128);
     const validatedPrompt = sanitizeString(prompt, 'prompt');
-
-    const taskId = createTaskId();
+    const taskId = existingTaskId
+      ? sanitizeString(existingTaskId, 'taskId', 128)
+      : createTaskId();
     const forwardToRenderer = createForwardToRenderer(window, sender);
     const callbacks = createTaskCallbacksForTask(taskId, forwardToRenderer);
 
@@ -238,6 +270,40 @@ export function registerTaskHandlers(): void {
       taskId,
     }, callbacks);
 
+    const initialUserMessage: TaskMessage = {
+      id: createMessageId(),
+      type: 'user',
+      content: validatedPrompt,
+      timestamp: new Date().toISOString(),
+    };
+    task.sessionId = validatedSessionId;
+
+    if (existingTaskId) {
+      addTaskMessage(taskId, initialUserMessage);
+      updateTaskSessionId(taskId, validatedSessionId);
+      updateTaskStatus(taskId, 'running', new Date().toISOString());
+    } else {
+      task.messages = [initialUserMessage];
+      saveTask(task);
+    }
+
     return task;
+    }
+  );
+
+  handle('task:get', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    return getTask(sanitizeString(taskId, 'taskId', 128)) ?? null;
+  });
+
+  handle('task:list', async () => {
+    return getTasks();
+  });
+
+  handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
+    deleteTask(sanitizeString(taskId, 'taskId', 128));
+  });
+
+  handle('task:clear-history', async () => {
+    clearHistory();
   });
 }

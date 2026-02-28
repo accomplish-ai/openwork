@@ -272,4 +272,89 @@ describe('DiagnosticsPanel Integration', () => {
       expect(floatingChatMocks.accomplishApi.interruptTask).toHaveBeenCalledWith('task-1');
     });
   });
+
+  it('hydrates the newest saved chat on mount', async () => {
+    floatingChatMocks.getDesktopControlStatus.mockResolvedValueOnce(readyStatus);
+    floatingChatMocks.accomplishApi.listTasks.mockResolvedValueOnce([
+      {
+        id: 'task-newest',
+        prompt: 'Newest prompt',
+        status: 'completed',
+        sessionId: 'session-newest',
+        createdAt: new Date().toISOString(),
+        messages: [
+          {
+            id: 'msg-newest',
+            type: 'assistant',
+            content: 'Newest chat message',
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+      {
+        id: 'task-oldest',
+        prompt: 'Old prompt',
+        status: 'completed',
+        sessionId: 'session-oldest',
+        createdAt: new Date(Date.now() - 1000).toISOString(),
+        messages: [
+          {
+            id: 'msg-oldest',
+            type: 'assistant',
+            content: 'Old chat message',
+            timestamp: new Date(Date.now() - 1000).toISOString(),
+          },
+        ],
+      },
+    ]);
+
+    render(<FloatingChat />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Newest chat message')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Old chat message')).not.toBeInTheDocument();
+  });
+
+  it('resumes the active session for same-chat follow-up messages', async () => {
+    floatingChatMocks.getDesktopControlStatus.mockResolvedValueOnce(readyStatus);
+    floatingChatMocks.accomplishApi.listTasks.mockResolvedValueOnce([
+      {
+        id: 'task-existing',
+        prompt: 'Existing prompt',
+        status: 'completed',
+        sessionId: 'session-existing',
+        createdAt: new Date().toISOString(),
+        messages: [
+          {
+            id: 'msg-existing',
+            type: 'assistant',
+            content: 'Existing assistant reply',
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+    ]);
+
+    render(<FloatingChat />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Existing assistant reply')).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText('Ask me anything...');
+    fireEvent.change(input, { target: { value: 'continue' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+    await waitFor(() => {
+      expect(floatingChatMocks.accomplishApi.resumeSession).toHaveBeenCalledWith(
+        'session-existing',
+        'continue',
+        'task-existing'
+      );
+    });
+
+    expect(floatingChatMocks.accomplishApi.startTask).not.toHaveBeenCalled();
+  });
 });

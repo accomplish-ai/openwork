@@ -21,8 +21,9 @@ describe('Action Executor Security Regression', () => {
   it('routes move_mouse coordinates through Python argv values', () => {
     expect(actionExecutorSource).toContain('target_x = float(sys.argv[1])');
     expect(actionExecutorSource).toContain('target_y = float(sys.argv[2])');
+    expect(actionExecutorSource).toContain('const calibrated = applyPointerCalibration(x, y);');
     expect(actionExecutorSource).toContain(
-      'await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(x), String(y)], {'
+      'await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)], {'
     );
   });
 

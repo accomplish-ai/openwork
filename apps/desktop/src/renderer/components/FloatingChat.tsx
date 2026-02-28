@@ -4,52 +4,20 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import {
-  Send,
   Camera,
-  AudioLines,
-  ChevronDown,
-  Menu,
-  Settings,
-  Minimize2,
   Loader2,
   Bot,
-  Image as ImageIcon,
-  Search,
-  Plus,
-  Mic,
-  MicOff,
   Monitor,
   MonitorOff,
-  Workflow,
-  Square,
-  RefreshCw,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Card } from './ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
 import { cn } from '../lib/utils';
 import {
   getAccomplish,
-  type DesktopControlCapability,
   type DesktopControlStatusPayload,
 } from '../lib/accomplish';
 import { DEFAULT_PROVIDERS, type SelectedModel, type Task, type TaskMessage } from '@accomplish/shared';
-import ReactMarkdown from 'react-markdown';
 import { DesktopControlShell } from './desktop-control/DesktopControlShell';
 import { useDesktopControlPreferences } from './desktop-control/useDesktopControlPreferences';
 import { useDesktopControlStatus } from './desktop-control/useDesktopControlStatus';
@@ -61,24 +29,24 @@ import {
   type DesktopControlRequirement,
 } from './desktop-control/fallbackGuard';
 import {
-  ACTION_EXECUTION_HINTS,
   LIVE_GUIDANCE_PROMPT_APPEND,
   LIVE_VIEW_HINTS,
-  SCREEN_CAPTURE_HINTS,
   SCREEN_CAPTURE_PROMPT_APPEND,
   appendWorkWithContext,
   inferDesktopControlRequirement,
 } from '../lib/desktopControlPrompt';
-import { DICTATION_FALLBACK_HINT, useSpeechDictation } from '../hooks/useSpeechDictation';
+import { useSpeechDictation } from '../hooks/useSpeechDictation';
+import { useActivityTracking } from '../hooks/useActivityTracking';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import { useChatGlobalShortcuts } from '../hooks/useChatGlobalShortcuts';
 import { ScreenViewer } from './screen-viewer';
+import type { Message } from './chat/types';
+import { MessageBubble } from './chat/MessageBubble';
+import { ChatHeader } from './chat/ChatHeader';
+import { ChatMenuPanel } from './chat/ChatMenuPanel';
+import { ChatInputToolbar } from './chat/ChatInputToolbar';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'tool';
-  content: string;
-  timestamp: Date;
-  attachments?: Array<{ type: 'screenshot'; data: string }>;
-}
+export type { Message } from './chat/types';
 
 interface FloatingChatProps {
   onOpenSettings?: () => void;
@@ -88,10 +56,6 @@ const SCREEN_CAPTURE_REQUIREMENT: DesktopControlRequirement = {
   blockedAction: 'screenshots',
   capabilities: ['screen_capture', 'mcp_health'],
 };
-
-const WORK_WITH_APPS = [
-  'Codex',
-];
 
 const MINIMIZED_ICON_SCALE = 4;
 const BASE_MINIMIZED_BUTTON_SIZE = 112;
@@ -143,14 +107,13 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [taskHistory, setTaskHistory] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [showMenuPanel, setShowMenuPanel] = useState(true);
+  const [showMenuPanel, setShowMenuPanel] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [showLiveViewer, setShowLiveViewer] = useState(false);
   const [recentlyHidLiveViewer, setRecentlyHidLiveViewer] = useState(false);
   const [selectedModel, setSelectedModel] = useState<SelectedModel | null>(null);
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
   const [selectedWorkWithApp, setSelectedWorkWithApp] = useState<string | null>(null);
-  const [speakRepliesEnabled] = useState(true);
   const [liveGuidanceEnabled, setLiveGuidanceEnabled] = useState(false);
   const [screenCaptureQueued, setScreenCaptureQueued] = useState(false);
   const [pendingVoiceSend, setPendingVoiceSend] = useState(false);
@@ -164,7 +127,6 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const currentTaskIdRef = useRef<string | null>(currentTaskId);
   const sessionIdRef = useRef<string | null>(sessionId);
   const selectedTaskIdRef = useRef<string | null>(selectedTaskId);
-  const spokenAssistantMessageIdsRef = useRef<Set<string>>(new Set());
   const accomplish = getAccomplish();
   const displayMessages = useMemo(() => mergeConsecutiveAssistantMessages(messages), [messages]);
   const availableModels = useMemo(
@@ -205,6 +167,10 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     });
   }, [menuSearchQuery, taskHistory]);
 
+  // Extracted hooks
+  useActivityTracking();
+  useTextToSpeech({ messages, isLoadingRef });
+
   useEffect(() => {
     if (!recentlyHidLiveViewer) {
       return;
@@ -240,6 +206,36 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     ]);
   }, []);
 
+  const hydrateFromTask = useCallback((task: Task) => {
+    if (task.messages && task.messages.length > 0) {
+      const loadedMessages: Message[] = task.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.type as 'user' | 'assistant' | 'tool',
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+        attachments: msg.attachments
+          ?.filter((a) => a.type === 'screenshot')
+          .map((a) => ({
+            type: 'screenshot' as const,
+            data: a.data,
+          })),
+      }));
+
+      setMessages(loadedMessages);
+    } else {
+      setMessages([]);
+    }
+
+    setCurrentTaskId(task.id);
+    currentTaskIdRef.current = task.id;
+    setSelectedTaskId(task.id);
+    selectedTaskIdRef.current = task.id;
+
+    const session = task.sessionId || task.result?.sessionId || null;
+    sessionIdRef.current = session;
+    setSessionId(session);
+  }, []);
+
   const {
     isSupported: isDictationSupported,
     isListening: isDictating,
@@ -269,63 +265,6 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       setShowDiagnosticsPanel(true);
     }
   }, [keepDiagnosticsPanelVisible]);
-
-  useEffect(() => {
-    if (typeof accomplish.onToggleDictationRequested !== 'function') {
-      return;
-    }
-
-    const unsubscribe = accomplish.onToggleDictationRequested(() => {
-      if (isLoadingRef.current || !isDictationSupported) {
-        return;
-      }
-
-      setDictationError(null);
-      toggleDictation();
-      inputRef.current?.focus();
-    });
-
-    return () => {
-      unsubscribe?.();
-    };
-  }, [accomplish, isDictationSupported, toggleDictation]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      return;
-    }
-
-    if (!speakRepliesEnabled) {
-      window.speechSynthesis.cancel();
-      return;
-    }
-
-    const latestMessage = messages[messages.length - 1];
-    if (!latestMessage || latestMessage.role !== 'assistant') {
-      return;
-    }
-
-    if (spokenAssistantMessageIdsRef.current.has(latestMessage.id)) {
-      return;
-    }
-
-    if (!isLoadingRef.current) {
-      return;
-    }
-
-    const text = latestMessage.content.trim();
-    if (!text) {
-      return;
-    }
-
-    spokenAssistantMessageIdsRef.current.add(latestMessage.id);
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }, [messages, speakRepliesEnabled]);
 
   const checkDesktopControl = useCallback(async (
     options: { revealIfBlocked?: boolean; forceRefresh?: boolean } = {}
@@ -358,6 +297,21 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       return null;
     }
   }, [checkDesktopControlStatus, keepDiagnosticsPanelVisible]);
+
+  // Extracted global shortcuts hook
+  useChatGlobalShortcuts({
+    isLoading,
+    isDictationSupported,
+    toggleDictation,
+    inputRef,
+    setShowMenuPanel,
+    setLiveGuidanceEnabled,
+    setShowLiveViewer,
+    setScreenCaptureQueued,
+    setDictationError,
+    checkDesktopControl,
+    onOpenSettings,
+  });
 
   const ensureDesktopControlReady = useCallback(async (
     requirement: DesktopControlRequirement
@@ -441,41 +395,12 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
   // Load conversation history on mount
   useEffect(() => {
-    const hydrateFromTask = (task: Task) => {
-      if (!task.messages || task.messages.length === 0) return;
-
-      const loadedMessages: Message[] = task.messages.map((msg) => ({
-        id: msg.id,
-        role: msg.type as 'user' | 'assistant' | 'tool',
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        attachments: msg.attachments
-          ?.filter((a) => a.type === 'screenshot')
-          .map((a) => ({
-            type: 'screenshot' as const,
-            data: a.data,
-          })),
-      }));
-
-      setMessages(loadedMessages);
-      setCurrentTaskId(task.id);
-      setSelectedTaskId(task.id);
-
-      const session = task.sessionId || task.result?.sessionId || null;
-      if (session) {
-        sessionIdRef.current = session;
-        setSessionId(session);
-      }
-    };
-
     const loadHistory = async () => {
       try {
         const tasks = await accomplish.listTasks();
         setTaskHistory(tasks);
-        setShowMenuPanel(tasks.length > 0);
-
         if (tasks.length > 0) {
-          const latestTask = tasks[tasks.length - 1];
+          const latestTask = tasks[0];
           hydrateFromTask(latestTask);
         }
       } catch (error) {
@@ -484,25 +409,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     };
 
     void loadHistory();
-  }, [accomplish]);
-
-  // Notify activity on user interaction
-  useEffect(() => {
-    const handleActivity = () => {
-      accomplish.notifyActivity?.();
-    };
-
-    // Track mouse and keyboard activity
-    window.addEventListener('mousemove', handleActivity, { passive: true });
-    window.addEventListener('keydown', handleActivity, { passive: true });
-    window.addEventListener('click', handleActivity, { passive: true });
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-    };
-  }, [accomplish]);
+  }, [accomplish, hydrateFromTask]);
 
   // Subscribe to task events
   useEffect(() => {
@@ -514,7 +421,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
       if (event.type === 'message' && event.message) {
         const msg = event.message as TaskMessage;
-        
+
         // Convert to our message format
         if (msg.type === 'assistant' && msg.content) {
           setMessages(prev => [...prev, {
@@ -544,7 +451,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
           }
         }
       }
-      
+
       if (event.type === 'complete') {
         // Ignore completion events from tasks being cancelled (a new task is starting)
         if (isCancellingRef.current) return;
@@ -581,7 +488,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
 
       if (event.messages?.length) {
         const newMessages: Message[] = [];
-        
+
         for (const msg of event.messages) {
           if (msg.type === 'assistant' && msg.content) {
             newMessages.push({
@@ -596,7 +503,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
             });
           }
         }
-        
+
         if (newMessages.length > 0) {
           setMessages(prev => [...prev, ...newMessages]);
         }
@@ -613,6 +520,34 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     (prompt: string) => appendWorkWithContext(prompt, selectedWorkWithApp),
     [selectedWorkWithApp]
   );
+
+  const launchTaskForPrompt = useCallback(async (effectivePrompt: string) => {
+    const resumeSessionId = sessionIdRef.current;
+    const existingTaskId = currentTaskIdRef.current ?? selectedTaskIdRef.current ?? undefined;
+
+    if (resumeSessionId) {
+      const task = await accomplish.resumeSession(resumeSessionId, effectivePrompt, existingTaskId);
+      currentTaskIdRef.current = task.id;
+      setCurrentTaskId(task.id);
+      setSelectedTaskId(task.id);
+      sessionIdRef.current = resumeSessionId;
+      setSessionId(resumeSessionId);
+      return task;
+    }
+
+    const nextTaskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    currentTaskIdRef.current = nextTaskId;
+    const task = await accomplish.startTask({
+      prompt: effectivePrompt,
+      taskId: nextTaskId,
+    });
+    currentTaskIdRef.current = task.id;
+    setCurrentTaskId(task.id);
+    setSelectedTaskId(task.id);
+    sessionIdRef.current = null;
+    setSessionId(null);
+    return task;
+  }, [accomplish]);
 
   // Send message
   const sendMessage = useCallback(async () => {
@@ -686,17 +621,9 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
         }
       }
 
-      // Start a new task (don't auto-resume old sessions)
-      const nextTaskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      currentTaskIdRef.current = nextTaskId;
-      const task = await accomplish.startTask({
-        prompt: effectivePrompt,
-        taskId: nextTaskId,
-      });
+      const task = await launchTaskForPrompt(effectivePrompt);
       currentTaskIdRef.current = task.id;
       setCurrentTaskId(task.id);
-      // Clear sessionId to avoid auto-resuming in next message
-      setSessionId(null);
       setSelectedTaskId(task.id);
 
       void refreshTaskHistory();
@@ -771,17 +698,9 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
         }
       }
 
-      // Start a new task (don't auto-resume old sessions)
-      const nextTaskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      currentTaskIdRef.current = nextTaskId;
-      const task = await accomplish.startTask({
-        prompt: effectivePrompt,
-        taskId: nextTaskId,
-      });
+      const task = await launchTaskForPrompt(effectivePrompt);
       currentTaskIdRef.current = task.id;
       setCurrentTaskId(task.id);
-      // Clear sessionId to avoid auto-resuming in next message
-      setSessionId(null);
       setSelectedTaskId(task.id);
 
       void refreshTaskHistory();
@@ -871,59 +790,6 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     inputRef.current?.focus();
   }, [isDictationSupported, isDictating, isLoading, startDictation, stopDictation]);
 
-  useEffect(() => {
-    const handleGlobalShortcut = (event: KeyboardEvent) => {
-      const hasShortcutModifier = event.metaKey || event.ctrlKey;
-      if (!hasShortcutModifier || !event.shiftKey) {
-        return;
-      }
-
-      const normalizedKey = event.key.toLowerCase();
-      if (normalizedKey === 'l') {
-        event.preventDefault();
-        if (isLoading) {
-          return;
-        }
-        setShowMenuPanel(false);
-        setLiveGuidanceEnabled((value) => !value);
-        setShowLiveViewer(true);
-        inputRef.current?.focus();
-        return;
-      }
-
-      if (normalizedKey === 's') {
-        event.preventDefault();
-        if (isLoading) {
-          return;
-        }
-        setShowMenuPanel(false);
-        setScreenCaptureQueued((value) => !value);
-        inputRef.current?.focus();
-        return;
-      }
-
-      if (normalizedKey === 'd') {
-        event.preventDefault();
-        void checkDesktopControl({
-          revealIfBlocked: true,
-          forceRefresh: true,
-        });
-        return;
-      }
-
-      if (normalizedKey === ',') {
-        event.preventDefault();
-        onOpenSettings?.();
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalShortcut);
-
-    return () => {
-      window.removeEventListener('keydown', handleGlobalShortcut);
-    };
-  }, [checkDesktopControl, isLoading, onOpenSettings]);
-
   const stopCurrentTask = useCallback(async () => {
     const activeTaskId = currentTaskIdRef.current;
     if (!activeTaskId) {
@@ -972,46 +838,17 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       selectedTaskIdRef.current = taskId;
       isLoadingRef.current = false;
       setIsLoading(false);
+      setShowMenuPanel(false);
 
       try {
         const task = await accomplish.getTask(taskId);
         if (!task) return;
-
-        if (task.messages && task.messages.length > 0) {
-          const loadedMessages: Message[] = task.messages.map((msg) => ({
-            id: msg.id,
-            role: msg.type as 'user' | 'assistant' | 'tool',
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            attachments: msg.attachments
-              ?.filter((a) => a.type === 'screenshot')
-              .map((a) => ({
-                type: 'screenshot' as const,
-                data: a.data,
-              })),
-          }));
-
-          setMessages(loadedMessages);
-        } else {
-          setMessages([]);
-        }
-
-        setCurrentTaskId(task.id);
-        currentTaskIdRef.current = task.id;
-
-        const session = task.sessionId || task.result?.sessionId || null;
-        if (session) {
-          sessionIdRef.current = session;
-          setSessionId(session);
-        } else {
-          sessionIdRef.current = null;
-          setSessionId(null);
-        }
+        hydrateFromTask(task);
       } catch (error) {
         console.error('[FloatingChat] Failed to load task for history selection:', error);
       }
     },
-    [accomplish]
+    [accomplish, hydrateFromTask]
   );
 
   // Start a brand new chat without any previous context
@@ -1153,152 +990,31 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
     >
       <Card className="flex flex-col h-[600px] shadow-2xl border-border/50 overflow-hidden bg-background/95 backdrop-blur-xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-          <div className="flex items-center gap-2 min-w-0">
-            <Button
-              variant="ghost"
-              className="h-8 shrink-0 gap-2 px-2"
-              onClick={() => setShowMenuPanel((value) => !value)}
-              title={showMenuPanel ? 'Hide past chats' : 'Show past chats'}
-              aria-label={showMenuPanel ? 'Hide past chats' : 'Show past chats'}
-              aria-pressed={showMenuPanel}
-            >
-              <Menu className="h-4 w-4" />
-              <span className="text-xs font-medium">
-                {showMenuPanel ? 'Hide chats' : 'Past chats'}
-              </span>
-            </Button>
-            <div className="min-w-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="h-8 px-2 gap-1.5 font-semibold text-sm max-w-[220px]"
-                    disabled={isUpdatingModel}
-                    title="Change model"
-                  >
-                    <span className="truncate">{selectedModelLabel}</span>
-                    {isUpdatingModel ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  <DropdownMenuLabel>Choose model</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={selectedModel?.model ?? ''}
-                    onValueChange={(value) => {
-                      void handleModelChange(value);
-                    }}
-                  >
-                    {availableModels.map((model) => (
-                      <DropdownMenuRadioItem key={model.fullId} value={model.fullId}>
-                        {model.displayName}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <p className="text-xs text-muted-foreground truncate" aria-live="polite">
-                {selectedWorkWithApp ? `Working with ${selectedWorkWithApp}` : headerStatus}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => void collapseToIcon()}
-              title="Close to chat bubble"
-              aria-label="Close to chat bubble"
-            >
-              <Minimize2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <ChatHeader
+          selectedModel={selectedModel}
+          selectedModelLabel={selectedModelLabel}
+          isUpdatingModel={isUpdatingModel}
+          availableModels={availableModels}
+          selectedWorkWithApp={selectedWorkWithApp}
+          headerStatus={headerStatus}
+          showMenuPanel={showMenuPanel}
+          onToggleMenuPanel={() => setShowMenuPanel((value) => !value)}
+          onModelChange={handleModelChange}
+          onCollapse={() => void collapseToIcon()}
+        />
 
         <div className="flex flex-1 min-h-0">
           <AnimatePresence initial={false}>
             {showMenuPanel && (
-              <motion.div
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                className="w-64 border-r border-border bg-muted/20 p-3 flex flex-col gap-3"
-              >
-                <div className="relative">
-                  <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <Input
-                    value={menuSearchQuery}
-                    onChange={(event) => setMenuSearchQuery(event.target.value)}
-                    placeholder="Search chats"
-                    className="h-8 pl-8 text-xs"
-                  />
-                </div>
-
-                <Button
-                  size="sm"
-                  className="w-full justify-start gap-2 mb-3"
-                  onClick={() => void handleNewChat()}
-                >
-                  <Plus className="h-4 w-4" />
-                  New chat
-                </Button>
-
-                <p className="text-xs font-medium text-foreground">Past chats</p>
-                <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-                  {filteredTaskHistory.length === 0 ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      {menuSearchQuery.trim() ? 'No chats match your search.' : 'No previous chats yet.'}
-                    </p>
-                  ) : (
-                    filteredTaskHistory.map((task) => {
-                      const label = task.summary || task.prompt || 'Untitled chat';
-                      const created = task.createdAt
-                        ? new Date(task.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '';
-
-                      return (
-                        <button
-                          key={task.id}
-                          type="button"
-                          onClick={() => void handleSelectTask(task.id)}
-                          className={cn(
-                            'w-full text-left px-2 py-1.5 rounded-md text-[11px] flex items-center justify-between gap-2 hover:bg-muted',
-                            selectedTaskId === task.id && 'bg-primary/10 text-primary'
-                          )}
-                        >
-                          <span className="truncate flex-1">{label}</span>
-                          {created && (
-                            <span className="shrink-0 text-[10px] text-muted-foreground">
-                              {created}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-
-                <div className="border-t border-border/70 pt-3 space-y-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    onClick={onOpenSettings}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </Button>
-                </div>
-              </motion.div>
+              <ChatMenuPanel
+                filteredTaskHistory={filteredTaskHistory}
+                menuSearchQuery={menuSearchQuery}
+                selectedTaskId={selectedTaskId}
+                onSearchChange={setMenuSearchQuery}
+                onNewChat={() => void handleNewChat()}
+                onSelectTask={handleSelectTask}
+                onOpenSettings={onOpenSettings}
+              />
             )}
           </AnimatePresence>
 
@@ -1417,327 +1133,40 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-border bg-muted/20 space-y-2">
-              {selectedWorkWithApp && (
-                <div className="flex items-center justify-between rounded-md border border-border/70 bg-background/80 px-2.5 py-1.5 text-xs">
-                  <span className="inline-flex items-center gap-1.5 text-foreground truncate">
-                    <Workflow className="h-3.5 w-3.5 text-primary shrink-0" />
-                    Work with: {selectedWorkWithApp}
-                  </span>
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setSelectedWorkWithApp(null)}
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-              {screenCaptureQueued && (
-                <div className="flex items-center justify-between rounded-md border border-border/70 bg-background/80 px-2.5 py-1.5 text-xs">
-                  <span className="inline-flex items-center gap-1.5 text-foreground truncate">
-                    <Camera className="h-3.5 w-3.5 text-primary shrink-0" />
-                    Next message will include screen capture mode
-                  </span>
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setScreenCaptureQueued(false)}
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-              {liveGuidanceEnabled && (
-                <div className="flex items-center justify-between rounded-md border border-border/70 bg-background/80 px-2.5 py-1.5 text-xs">
-                  <span className="inline-flex items-center gap-1.5 text-foreground truncate">
-                    <Monitor className="h-3.5 w-3.5 text-primary shrink-0" />
-                    Next message will include live guidance mode
-                  </span>
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => setLiveGuidanceEnabled(false)}
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="shrink-0"
-                      disabled={isLoading}
-                      title="Open quick actions and defaults"
-                      aria-label="Open quick actions and defaults"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" side="top" className="w-56">
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        armLiveGuidanceForNextMessage();
-                      }}
-                    >
-                      <Monitor className="h-4 w-4" />
-                      Guide me live (next message)
-                      <DropdownMenuShortcut>Ctrl+Shift+L</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        setScreenCaptureQueued(true);
-                        setShowMenuPanel(false);
-                        inputRef.current?.focus();
-                      }}
-                    >
-                      <Camera className="h-4 w-4" />
-                      Add screen capture
-                      <DropdownMenuShortcut>Ctrl+Shift+S</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Workflow className="h-4 w-4" />
-                        Work with:
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-44">
-                        {WORK_WITH_APPS.map((appName) => (
-                          <DropdownMenuItem
-                            key={appName}
-                            onSelect={() => handleSelectWorkWithApp(appName)}
-                          >
-                            {appName}
-                            {selectedWorkWithApp === appName && (
-                              <span className="ml-auto text-[10px] text-primary">Active</span>
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    {selectedWorkWithApp && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => setSelectedWorkWithApp(null)}>
-                          Clear work with app
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {screenCaptureQueued && (
-                      <DropdownMenuItem onSelect={() => setScreenCaptureQueued(false)}>
-                        Clear screen capture
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        recheckDesktopControl();
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Recheck diagnostics
-                      <DropdownMenuShortcut>Ctrl+Shift+D</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        onOpenSettings?.();
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Open settings
-                      <DropdownMenuShortcut>Ctrl+Shift+,</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Desktop control defaults</DropdownMenuLabel>
-                    <DropdownMenuCheckboxItem
-                      checked={liveGuidanceByDefault}
-                      onCheckedChange={(checked) =>
-                        setDesktopControlPreferences({
-                          liveGuidanceByDefault: Boolean(checked),
-                        })
-                      }
-                    >
-                      Live guidance by default
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem
-                      checked={screenCaptureByDefault}
-                      onCheckedChange={(checked) =>
-                        setDesktopControlPreferences({
-                          screenCaptureByDefault: Boolean(checked),
-                        })
-                      }
-                    >
-                      Screen capture by default
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem
-                      checked={keepDiagnosticsPanelVisible}
-                      onCheckedChange={(checked) =>
-                        setDesktopControlPreferences({
-                          keepDiagnosticsPanelVisible: Boolean(checked),
-                        })
-                      }
-                    >
-                      Keep diagnostics visible
-                      <DropdownMenuShortcut>Ctrl+Shift+D</DropdownMenuShortcut>
-                    </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => {
-                    if (dictationError) {
-                      setDictationError(null);
-                    }
-                    setInput(e.target.value);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={selectedWorkWithApp ? `Ask about ${selectedWorkWithApp}...` : 'Ask me anything...'}
-                  disabled={isLoading}
-                  aria-label="Chat message input"
-                  aria-describedby="floating-chat-shortcuts"
-                  className="flex-1"
-                />
-                <Button
-                  variant={isDictating ? 'default' : 'outline'}
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => {
-                    setDictationError(null);
-                    toggleDictation();
-                  }}
-                  disabled={isLoading || !isDictationSupported}
-                  title={
-                    !isDictationSupported
-                      ? 'Dictation is unavailable on this device'
-                      : isDictating
-                        ? 'Stop dictation'
-                        : 'Start dictation'
-                  }
-                  aria-label={isDictating ? 'Stop dictation' : 'Start dictation'}
-                >
-                  {isDictating ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                <Button
-                  variant={pendingVoiceSend || isDictating ? 'default' : 'outline'}
-                  size="icon"
-                  className="shrink-0"
-                  onClick={handleTalkToAgent}
-                  disabled={isLoading || !isDictationSupported}
-                  title={
-                    !isDictationSupported
-                      ? 'Voice chat is unavailable on this device'
-                      : isDictating
-                        ? 'Finish and send to agent'
-                        : 'Talk to agent'
-                  }
-                  aria-label={isDictating ? 'Finish and send to agent' : 'Talk to agent'}
-                >
-                  <AudioLines className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={isLoading ? () => void stopCurrentTask() : sendMessage}
-                  disabled={isLoading ? false : (!input.trim() || isDictating)}
-                  size="icon"
-                  className="shrink-0"
-                  variant={isLoading ? 'outline' : 'default'}
-                  title={isLoading ? 'Stop agent (Esc)' : 'Send message'}
-                  aria-label={isLoading ? 'Stop agent' : 'Send message'}
-                >
-                  {isLoading ? (
-                    <Square className="h-4 w-4 fill-current" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              {dictationError && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs text-destructive">{dictationError}</p>
-                  <p className="text-[11px] text-muted-foreground">{DICTATION_FALLBACK_HINT}</p>
-                </div>
-              )}
-              <p id="floating-chat-shortcuts" className="sr-only">
-                Keyboard shortcuts: Control or Command plus Shift plus L toggles live guidance mode.
-                Control or Command plus Shift plus S toggles screen capture mode.
-                Control or Command plus Shift plus D runs desktop diagnostics.
-                Control or Command plus Shift plus comma opens settings.
-              </p>
-            </div>
+            <ChatInputToolbar
+              input={input}
+              isLoading={isLoading}
+              isDictating={isDictating}
+              isDictationSupported={isDictationSupported}
+              pendingVoiceSend={pendingVoiceSend}
+              dictationError={dictationError}
+              selectedWorkWithApp={selectedWorkWithApp}
+              screenCaptureQueued={screenCaptureQueued}
+              liveGuidanceEnabled={liveGuidanceEnabled}
+              liveGuidanceByDefault={liveGuidanceByDefault}
+              screenCaptureByDefault={screenCaptureByDefault}
+              keepDiagnosticsPanelVisible={keepDiagnosticsPanelVisible}
+              inputRef={inputRef}
+              onInputChange={setInput}
+              onKeyDown={handleKeyDown}
+              onSendMessage={sendMessage}
+              onStopCurrentTask={stopCurrentTask}
+              onToggleDictation={toggleDictation}
+              onTalkToAgent={handleTalkToAgent}
+              onArmLiveGuidance={armLiveGuidanceForNextMessage}
+              onRecheckDesktopControl={recheckDesktopControl}
+              onSelectWorkWithApp={handleSelectWorkWithApp}
+              onClearWorkWithApp={() => setSelectedWorkWithApp(null)}
+              onSetScreenCaptureQueued={setScreenCaptureQueued}
+              onSetLiveGuidanceEnabled={setLiveGuidanceEnabled}
+              onSetDictationError={setDictationError}
+              setDesktopControlPreferences={setDesktopControlPreferences}
+              setShowMenuPanel={setShowMenuPanel}
+              onOpenSettings={onOpenSettings}
+            />
           </div>
         </div>
       </Card>
-    </motion.div>
-  );
-}
-
-// Message bubble component
-function MessageBubble({ message }: { message: Message }) {
-  const isUser = message.role === 'user';
-  const isTool = message.role === 'tool';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn('flex', isUser ? 'justify-end' : 'justify-start')}
-    >
-      <div
-        className={cn(
-          'max-w-[85%] rounded-2xl px-4 py-2.5',
-          isUser
-            ? 'bg-primary text-primary-foreground'
-            : isTool
-              ? 'bg-muted/50 border border-border'
-              : 'bg-card border border-border'
-        )}
-      >
-        {/* Role indicator for non-user messages */}
-        {!isUser && (
-          <div className="flex items-center gap-1.5 mb-1.5">
-            {isTool ? (
-              <ImageIcon className="h-3 w-3 text-muted-foreground" />
-            ) : (
-              <Bot className="h-3 w-3 text-primary" />
-            )}
-            <span className="text-xs text-muted-foreground">
-              {isTool ? 'Screenshot' : 'Agent'}
-            </span>
-          </div>
-        )}
-
-        {/* Message content */}
-        {isUser ? (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        ) : (
-          <div className="text-sm prose prose-sm max-w-none prose-p:my-1 prose-headings:text-foreground prose-p:text-foreground">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        )}
-
-        {/* Screenshots */}
-        {message.attachments?.map((attachment, i) => (
-          <div key={i} className="mt-2">
-            <img
-              src={attachment.data}
-              alt="Screenshot"
-              className="rounded-lg max-w-full max-h-64 object-contain border border-border"
-            />
-          </div>
-        ))}
-
-        {/* Timestamp */}
-        <p
-          className={cn(
-            'text-xs mt-1.5',
-            isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-          )}
-        >
-          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      </div>
     </motion.div>
   );
 }

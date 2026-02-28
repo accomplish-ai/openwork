@@ -4,13 +4,12 @@ import { captureForAI } from '../utils';
 import { TEST_TIMEOUTS } from '../config';
 
 test.describe('Settings Dialog', () => {
-  test('should open settings dialog when clicking settings button', async ({ window }) => {
+  test('should open settings dialog from the chat menu', async ({ window }) => {
     const settingsPage = new SettingsPage(window);
 
     await window.waitForLoadState('domcontentloaded');
     await window.waitForTimeout(TEST_TIMEOUTS.HYDRATION);
 
-    // Click the settings button in sidebar
     await settingsPage.navigateToSettings();
 
     // Capture settings dialog
@@ -25,7 +24,7 @@ test.describe('Settings Dialog', () => {
       ]
     );
 
-    // Verify dialog opened by checking for model select
+    await expect(settingsPage.title).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
     await expect(settingsPage.modelSelect).toBeVisible({ timeout: TEST_TIMEOUTS.NAVIGATION });
   });
 

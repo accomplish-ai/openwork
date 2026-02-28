@@ -9,57 +9,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Task, TaskStatus } from '@accomplish/shared';
+import {
+  createMockAccomplish,
+  createMockStoreState,
+  createMockTask,
+  framerMotionMock,
+  analyticsMock,
+} from '../test-utils';
 
 // Mock analytics to prevent tracking calls
-vi.mock('@/lib/analytics', () => ({
-  analytics: {
-    trackNewTask: vi.fn(),
-    trackOpenSettings: vi.fn(),
-  },
-}));
+vi.mock('@/lib/analytics', () => analyticsMock);
 
-// Create mock functions outside of mock factory
-const mockLoadTasks = vi.fn();
-const mockUpdateTaskStatus = vi.fn();
-const mockAddTaskUpdate = vi.fn();
-const mockListTasks = vi.fn();
-const mockOnTaskStatusChange = vi.fn();
-const mockOnTaskUpdate = vi.fn();
-
-// Helper to create mock tasks
-function createMockTask(
-  id: string,
-  prompt: string = 'Test task',
-  status: TaskStatus = 'completed'
-): Task {
-  return {
-    id,
-    prompt,
-    status,
-    messages: [],
-    createdAt: new Date().toISOString(),
-  };
-}
-
-// Mock accomplish API
-const mockAccomplish = {
-  listTasks: mockListTasks.mockResolvedValue([]),
-  onTaskStatusChange: mockOnTaskStatusChange.mockReturnValue(() => {}),
-  onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
-};
+// Create mock objects at module level
+const mockAccomplish = createMockAccomplish();
+let mockStoreState = createMockStoreState();
 
 // Mock the accomplish module
 vi.mock('@/lib/accomplish', () => ({
   getAccomplish: () => mockAccomplish,
 }));
-
-// Create a store state holder for testing
-let mockStoreState = {
-  tasks: [] as Task[],
-  loadTasks: mockLoadTasks,
-  updateTaskStatus: mockUpdateTaskStatus,
-  addTaskUpdate: mockAddTaskUpdate,
-};
 
 // Mock the task store
 vi.mock('@/stores/taskStore', () => ({
@@ -78,17 +46,7 @@ vi.mock('@/components/layout/SettingsDialog', () => ({
 }));
 
 // Mock framer-motion to simplify testing animations
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <div {...props}>{children}</div>
-    ),
-    button: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <button {...props}>{children}</button>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => framerMotionMock);
 
 // Need to import after mocks are set up
 import Sidebar from '@/components/layout/Sidebar';
@@ -97,12 +55,7 @@ describe('Sidebar Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state
-    mockStoreState = {
-      tasks: [],
-      loadTasks: mockLoadTasks,
-      updateTaskStatus: mockUpdateTaskStatus,
-      addTaskUpdate: mockAddTaskUpdate,
-    };
+    mockStoreState = createMockStoreState();
   });
 
   describe('rendering with no conversations', () => {
@@ -179,7 +132,7 @@ describe('Sidebar Integration', () => {
       );
 
       // Assert
-      expect(mockLoadTasks).toHaveBeenCalled();
+      expect(mockStoreState.loadTasks).toHaveBeenCalled();
     });
   });
 
@@ -187,8 +140,8 @@ describe('Sidebar Integration', () => {
     it('should render conversation list when tasks exist', () => {
       // Arrange
       const tasks = [
-        createMockTask('task-1', 'Check my email inbox'),
-        createMockTask('task-2', 'Review calendar'),
+        createMockTask({ id: 'task-1', prompt: 'Check my email inbox' }),
+        createMockTask({ id: 'task-2', prompt: 'Review calendar' }),
       ];
       mockStoreState.tasks = tasks;
 
@@ -206,7 +159,7 @@ describe('Sidebar Integration', () => {
 
     it('should not show empty state when tasks exist', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'A task')];
+      mockStoreState.tasks = [createMockTask({ id: 'task-1', prompt: 'A task' })];
 
       // Act
       render(
@@ -222,9 +175,9 @@ describe('Sidebar Integration', () => {
     it('should render all tasks in the list', () => {
       // Arrange
       const tasks = [
-        createMockTask('task-1', 'First task'),
-        createMockTask('task-2', 'Second task'),
-        createMockTask('task-3', 'Third task'),
+        createMockTask({ id: 'task-1', prompt: 'First task' }),
+        createMockTask({ id: 'task-2', prompt: 'Second task' }),
+        createMockTask({ id: 'task-3', prompt: 'Third task' }),
       ];
       mockStoreState.tasks = tasks;
 
@@ -244,7 +197,7 @@ describe('Sidebar Integration', () => {
     it('should show running indicator for running tasks', () => {
       // Arrange
       const tasks = [
-        createMockTask('task-1', 'Running task', 'running'),
+        createMockTask({ id: 'task-1', prompt: 'Running task', status: 'running' }),
       ];
       mockStoreState.tasks = tasks;
 
@@ -264,7 +217,7 @@ describe('Sidebar Integration', () => {
     it('should show completed indicator for completed tasks', () => {
       // Arrange
       const tasks = [
-        createMockTask('task-1', 'Completed task', 'completed'),
+        createMockTask({ id: 'task-1', prompt: 'Completed task', status: 'completed' }),
       ];
       mockStoreState.tasks = tasks;
 
@@ -285,7 +238,7 @@ describe('Sidebar Integration', () => {
   describe('conversation selection', () => {
     it('should render conversation items as clickable buttons', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-1', 'Clickable task')];
+      mockStoreState.tasks = [createMockTask({ id: 'task-1', prompt: 'Clickable task' })];
 
       // Act
       render(
@@ -302,7 +255,7 @@ describe('Sidebar Integration', () => {
 
     it('should navigate to execution page when conversation is clicked', async () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-123', 'Navigate task')];
+      mockStoreState.tasks = [createMockTask({ id: 'task-123', prompt: 'Navigate task' })];
 
       // Act
       render(
@@ -325,7 +278,7 @@ describe('Sidebar Integration', () => {
 
     it('should highlight active conversation', () => {
       // Arrange
-      mockStoreState.tasks = [createMockTask('task-123', 'Active task')];
+      mockStoreState.tasks = [createMockTask({ id: 'task-123', prompt: 'Active task' })];
 
       // Act
       render(
@@ -342,8 +295,8 @@ describe('Sidebar Integration', () => {
     it('should not highlight inactive conversations', () => {
       // Arrange
       mockStoreState.tasks = [
-        createMockTask('task-1', 'First task'),
-        createMockTask('task-2', 'Second task'),
+        createMockTask({ id: 'task-1', prompt: 'First task' }),
+        createMockTask({ id: 'task-2', prompt: 'Second task' }),
       ];
 
       // Act
@@ -453,7 +406,7 @@ describe('Sidebar Integration', () => {
       );
 
       // Assert
-      expect(mockOnTaskStatusChange).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskStatusChange).toHaveBeenCalled();
     });
 
     it('should subscribe to task updates on mount', () => {
@@ -465,7 +418,7 @@ describe('Sidebar Integration', () => {
       );
 
       // Assert
-      expect(mockOnTaskUpdate).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskUpdate).toHaveBeenCalled();
     });
   });
 

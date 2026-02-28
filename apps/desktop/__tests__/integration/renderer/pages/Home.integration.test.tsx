@@ -9,58 +9,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Task, TaskStatus } from '@accomplish/shared';
+import {
+  createMockAccomplish,
+  createMockStoreState,
+  createMockTask,
+  framerMotionMock,
+  analyticsMock,
+} from '../test-utils';
 
 // Mock analytics to prevent tracking calls
-vi.mock('@/lib/analytics', () => ({
-  analytics: {
-    trackSubmitTask: vi.fn(),
-  },
-}));
+vi.mock('@/lib/analytics', () => analyticsMock);
 
-// Create mock functions
-const mockStartTask = vi.fn();
-const mockAddTaskUpdate = vi.fn();
-const mockSetPermissionRequest = vi.fn();
-const mockHasAnyApiKey = vi.fn();
-const mockOnTaskUpdate = vi.fn();
-const mockOnPermissionRequest = vi.fn();
-const mockLogEvent = vi.fn();
-
-// Helper to create a mock task
-function createMockTask(
-  id: string,
-  prompt: string = 'Test task',
-  status: TaskStatus = 'running'
-): Task {
-  return {
-    id,
-    prompt,
-    status,
-    messages: [],
-    createdAt: new Date().toISOString(),
-  };
-}
-
-// Mock accomplish API
-const mockAccomplish = {
-  hasAnyApiKey: mockHasAnyApiKey,
-  onTaskUpdate: mockOnTaskUpdate.mockReturnValue(() => {}),
-  onPermissionRequest: mockOnPermissionRequest.mockReturnValue(() => {}),
-  logEvent: mockLogEvent.mockResolvedValue(undefined),
-};
+// Create mock objects at module level
+const mockAccomplish = createMockAccomplish();
+let mockStoreState = createMockStoreState();
 
 // Mock the accomplish module
 vi.mock('@/lib/accomplish', () => ({
   getAccomplish: () => mockAccomplish,
 }));
-
-// Mock store state holder
-let mockStoreState = {
-  startTask: mockStartTask,
-  isLoading: false,
-  addTaskUpdate: mockAddTaskUpdate,
-  setPermissionRequest: mockSetPermissionRequest,
-};
 
 // Mock the task store
 vi.mock('@/stores/taskStore', () => ({
@@ -68,20 +35,7 @@ vi.mock('@/stores/taskStore', () => ({
 }));
 
 // Mock framer-motion for simpler testing
-vi.mock('framer-motion', () => ({
-  motion: {
-    h1: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <h1 {...props}>{children}</h1>
-    ),
-    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
-      <div {...props}>{children}</div>
-    ),
-    button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: unknown }) => (
-      <button onClick={onClick} {...props}>{children}</button>
-    ),
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => framerMotionMock);
 
 // Mock SettingsDialog
 vi.mock('@/components/layout/SettingsDialog', () => ({
@@ -119,14 +73,9 @@ describe('Home Page Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state
-    mockStoreState = {
-      startTask: mockStartTask,
-      isLoading: false,
-      addTaskUpdate: mockAddTaskUpdate,
-      setPermissionRequest: mockSetPermissionRequest,
-    };
+    mockStoreState = createMockStoreState();
     // Default to having API key
-    mockHasAnyApiKey.mockResolvedValue(true);
+    mockAccomplish.hasAnyApiKey.mockResolvedValue(true);
   });
 
   describe('initial render', () => {
@@ -208,8 +157,8 @@ describe('Home Page Integration', () => {
       );
 
       // Assert
-      expect(mockOnTaskUpdate).toHaveBeenCalled();
-      expect(mockOnPermissionRequest).toHaveBeenCalled();
+      expect(mockAccomplish.onTaskUpdate).toHaveBeenCalled();
+      expect(mockAccomplish.onPermissionRequest).toHaveBeenCalled();
     });
   });
 
@@ -247,13 +196,13 @@ describe('Home Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockHasAnyApiKey).toHaveBeenCalled();
+        expect(mockAccomplish.hasAnyApiKey).toHaveBeenCalled();
       });
     });
 
     it('should open settings dialog when no API key exists', async () => {
       // Arrange
-      mockHasAnyApiKey.mockResolvedValue(false);
+      mockAccomplish.hasAnyApiKey.mockResolvedValue(false);
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -277,8 +226,8 @@ describe('Home Page Integration', () => {
     it('should start task when API key exists', async () => {
       // Arrange
       const mockTask = createMockTask('task-123', 'My task', 'running');
-      mockStartTask.mockResolvedValue(mockTask);
-      mockHasAnyApiKey.mockResolvedValue(true);
+      mockStoreState.startTask.mockResolvedValue(mockTask);
+      mockAccomplish.hasAnyApiKey.mockResolvedValue(true);
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -295,7 +244,7 @@ describe('Home Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockStartTask).toHaveBeenCalled();
+        expect(mockStoreState.startTask).toHaveBeenCalled();
       });
     });
 
@@ -313,8 +262,8 @@ describe('Home Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockHasAnyApiKey).not.toHaveBeenCalled();
-        expect(mockStartTask).not.toHaveBeenCalled();
+        expect(mockAccomplish.hasAnyApiKey).not.toHaveBeenCalled();
+        expect(mockStoreState.startTask).not.toHaveBeenCalled();
       });
     });
 
@@ -335,16 +284,16 @@ describe('Home Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockHasAnyApiKey).not.toHaveBeenCalled();
-        expect(mockStartTask).not.toHaveBeenCalled();
+        expect(mockAccomplish.hasAnyApiKey).not.toHaveBeenCalled();
+        expect(mockStoreState.startTask).not.toHaveBeenCalled();
       });
     });
 
     it('should execute task after saving API key in settings', async () => {
       // Arrange
-      mockHasAnyApiKey.mockResolvedValue(false);
+      mockAccomplish.hasAnyApiKey.mockResolvedValue(false);
       const mockTask = createMockTask('task-123', 'My task', 'running');
-      mockStartTask.mockResolvedValue(mockTask);
+      mockStoreState.startTask.mockResolvedValue(mockTask);
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -370,7 +319,7 @@ describe('Home Page Integration', () => {
 
       // Assert - Task should be started after key is saved
       await waitFor(() => {
-        expect(mockStartTask).toHaveBeenCalled();
+        expect(mockStoreState.startTask).toHaveBeenCalled();
       });
     });
   });
@@ -424,7 +373,7 @@ describe('Home Page Integration', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockStartTask).not.toHaveBeenCalled();
+        expect(mockStoreState.startTask).not.toHaveBeenCalled();
       });
     });
   });
@@ -523,7 +472,7 @@ describe('Home Page Integration', () => {
   describe('settings dialog interaction', () => {
     it('should close settings dialog without executing when cancelled', async () => {
       // Arrange
-      mockHasAnyApiKey.mockResolvedValue(false);
+      mockAccomplish.hasAnyApiKey.mockResolvedValue(false);
 
       render(
         <MemoryRouter initialEntries={['/']}>
@@ -549,7 +498,7 @@ describe('Home Page Integration', () => {
       // Assert
       await waitFor(() => {
         expect(screen.queryByTestId('settings-dialog')).not.toBeInTheDocument();
-        expect(mockStartTask).not.toHaveBeenCalled();
+        expect(mockStoreState.startTask).not.toHaveBeenCalled();
       });
     });
   });
