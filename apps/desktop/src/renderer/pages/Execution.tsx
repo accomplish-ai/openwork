@@ -11,6 +11,7 @@ import type { TaskMessage } from '@accomplish/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { XCircle, CornerDownLeft, ArrowLeft, CheckCircle2, AlertCircle, Terminal, Wrench, FileText, Search, Code, Brain, Clock, Square, Play, Download, File, Monitor, MonitorOff, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
@@ -74,7 +75,7 @@ export default function ExecutionPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [followUp, setFollowUp] = useState('');
   const [dictationError, setDictationError] = useState<string | null>(null);
-  const followUpInputRef = useRef<HTMLInputElement>(null);
+  const followUpInputRef = useRef<HTMLTextAreaElement>(null);
   const [taskRunCount, setTaskRunCount] = useState(0);
   const [currentTool, setCurrentTool] = useState<string | null>(null);
   const [currentToolInput, setCurrentToolInput] = useState<unknown>(null);
@@ -744,8 +745,8 @@ export default function ExecutionPage() {
         <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4">
           <div className="max-w-4xl mx-auto">
             {/* Input field with Send button */}
-            <div className="flex gap-3">
-              <Input
+            <div className="flex items-end gap-3">
+              <Textarea
                 ref={followUpInputRef}
                 value={followUp}
                 onChange={(e) => {
@@ -772,7 +773,11 @@ export default function ExecutionPage() {
                       : "Ask for something..."
                 }
                 disabled={isLoading}
-                className="flex-1"
+                aria-label="Chat message input"
+                rows={2}
+                autosize
+                maxHeight={224}
+                className="min-h-[56px] flex-1 resize-none py-3"
                 data-testid="execution-follow-up-input"
               />
               <Button

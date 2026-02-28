@@ -13,30 +13,19 @@ import { runPythonScript, runAppleScript, runExecutable } from './executors';
 import { ActionExecutorError, extractExecDetails, errorMessage } from './errors';
 
 const POINTER_SETTLE_DELAY_MS = 80;
-const POINTER_Y_CALIBRATION_OFFSET = 14;
 
 function waitForPointerSettle(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, POINTER_SETTLE_DELAY_MS));
-}
-
-function applyPointerCalibration(x: number, y: number): { x: number; y: number } {
-  return {
-    x,
-    y: y + POINTER_Y_CALIBRATION_OFFSET,
-  };
 }
 
 /**
  * Move the mouse to a specific position
  */
 export async function moveMouse(x: number, y: number): Promise<void> {
-  const calibrated = applyPointerCalibration(x, y);
-  await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)], {
+  await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(x), String(y)], {
     action: 'move_mouse',
     x,
     y,
-    calibratedX: calibrated.x,
-    calibratedY: calibrated.y,
   });
 }
 
@@ -44,15 +33,12 @@ export async function moveMouse(x: number, y: number): Promise<void> {
  * Click at a specific position
  */
 export async function click(x: number, y: number, button: MouseButton = 'left'): Promise<void> {
-  const calibrated = applyPointerCalibration(x, y);
   await moveMouse(x, y);
   await waitForPointerSettle();
-  await runPythonScript(PYTHON_CLICK_SCRIPT, [String(calibrated.x), String(calibrated.y), button], {
+  await runPythonScript(PYTHON_CLICK_SCRIPT, [String(x), String(y), button], {
     action: 'click',
     x,
     y,
-    calibratedX: calibrated.x,
-    calibratedY: calibrated.y,
     button,
   });
 }
@@ -61,15 +47,12 @@ export async function click(x: number, y: number, button: MouseButton = 'left'):
  * Double-click at a specific position
  */
 export async function doubleClick(x: number, y: number): Promise<void> {
-  const calibrated = applyPointerCalibration(x, y);
   await moveMouse(x, y);
   await waitForPointerSettle();
-  await runPythonScript(PYTHON_DOUBLE_CLICK_SCRIPT, [String(calibrated.x), String(calibrated.y)], {
+  await runPythonScript(PYTHON_DOUBLE_CLICK_SCRIPT, [String(x), String(y)], {
     action: 'double_click',
     x,
     y,
-    calibratedX: calibrated.x,
-    calibratedY: calibrated.y,
   });
 }
 

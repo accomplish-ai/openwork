@@ -4,46 +4,62 @@ import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const actionExecutorPath = path.resolve(currentDir, '../../../skills/action-executor/src/index.ts');
-const actionExecutorSource = readFileSync(actionExecutorPath, 'utf8');
+const actionExecutorActionsPath = path.resolve(
+  currentDir,
+  '../../../skills/action-executor/src/actions.ts'
+);
+const actionExecutorExecutorsPath = path.resolve(
+  currentDir,
+  '../../../skills/action-executor/src/executors.ts'
+);
+const actionExecutorScriptsPath = path.resolve(
+  currentDir,
+  '../../../skills/action-executor/src/scripts.ts'
+);
+const actionExecutorActionsSource = readFileSync(actionExecutorActionsPath, 'utf8');
+const actionExecutorExecutorsSource = readFileSync(actionExecutorExecutorsPath, 'utf8');
+const actionExecutorScriptsSource = readFileSync(actionExecutorScriptsPath, 'utf8');
 
 describe('Action Executor Security Regression', () => {
   it('routes type_text input through AppleScript argv instead of inline interpolation', () => {
-    expect(actionExecutorSource).toContain(
+    expect(actionExecutorScriptsSource).toContain(
       'tell application "System Events" to keystroke (item 1 of argv)'
     );
-    expect(actionExecutorSource).toContain(
+    expect(actionExecutorActionsSource).toContain(
       "await runAppleScript(APPLESCRIPT_TYPE_TEXT, [text],"
     );
-    expect(actionExecutorSource).not.toMatch(/keystroke\s+\$\{/);
+    expect(actionExecutorScriptsSource).not.toMatch(/keystroke\s+\$\{/);
   });
 
   it('routes move_mouse coordinates through Python argv values', () => {
-    expect(actionExecutorSource).toContain('target_x = float(sys.argv[1])');
-    expect(actionExecutorSource).toContain('target_y = float(sys.argv[2])');
-    expect(actionExecutorSource).toContain('const calibrated = applyPointerCalibration(x, y);');
-    expect(actionExecutorSource).toContain(
-      'await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(calibrated.x), String(calibrated.y)], {'
+    expect(actionExecutorScriptsSource).toContain('target_x = float(sys.argv[1])');
+    expect(actionExecutorScriptsSource).toContain('target_y = float(sys.argv[2])');
+    expect(actionExecutorActionsSource).toContain(
+      'await runPythonScript(PYTHON_MOVE_MOUSE_SCRIPT, [String(x), String(y)], {'
     );
   });
 
   it('moves pointer before click actions so movement is visible', () => {
-    const moveCalls = actionExecutorSource.match(/await moveMouse\(x, y\);/g) ?? [];
+    const moveCalls = actionExecutorActionsSource.match(/await moveMouse\(x, y\);/g) ?? [];
     expect(moveCalls.length).toBeGreaterThanOrEqual(2);
   });
 
   it('uses execFile argument arrays for subprocess execution', () => {
-    expect(actionExecutorSource).toContain('await execFileAsync(command, args, {');
-    expect(actionExecutorSource).toMatch(
+    expect(actionExecutorExecutorsSource).toContain('await execFileAsync(command, args, {');
+    expect(actionExecutorExecutorsSource).toMatch(
       /await runExecutable\('osascript', \[\.\.\.args, (?:'--', )?\.\.\.scriptArgs\], context\);/
     );
-    expect(actionExecutorSource).toContain("await runExecutable('python3', ['-c', script, ...scriptArgs], context);");
-    expect(actionExecutorSource).not.toMatch(/\bexec\(/);
+    expect(actionExecutorExecutorsSource).toContain(
+      "await runExecutable('python3', ['-c', script, ...scriptArgs], context);"
+    );
+    expect(actionExecutorExecutorsSource).not.toMatch(/\bexec\(/);
   });
 
   it('routes activate_app target via AppleScript argv without string interpolation', () => {
-    expect(actionExecutorSource).toContain('set appName to item 1 of argv');
-    expect(actionExecutorSource).toContain('tell application appName to activate');
-    expect(actionExecutorSource).toContain('await runAppleScript(APPLESCRIPT_ACTIVATE_APP, [appName], {');
+    expect(actionExecutorScriptsSource).toContain('set appName to item 1 of argv');
+    expect(actionExecutorScriptsSource).toContain('tell application appName to activate');
+    expect(actionExecutorActionsSource).toContain(
+      'await runAppleScript(APPLESCRIPT_ACTIVATE_APP, [appName], {'
+    );
   });
 });

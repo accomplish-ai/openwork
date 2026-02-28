@@ -5,7 +5,7 @@ interface UseChatGlobalShortcutsOptions {
   isLoading: boolean;
   isDictationSupported: boolean;
   toggleDictation: () => void;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setShowMenuPanel: React.Dispatch<React.SetStateAction<boolean>>;
   setLiveGuidanceEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   setShowLiveViewer: React.Dispatch<React.SetStateAction<boolean>>;

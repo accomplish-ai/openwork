@@ -61,7 +61,7 @@ describe('executeDesktopAction', () => {
       expect(mocks.execFileAsync).toHaveBeenCalled();
       expect(mocks.execFileAsync).toHaveBeenCalledWith(
         'python3',
-        expect.arrayContaining(['100', '214']),
+        expect.arrayContaining(['100', '200']),
         expect.any(Object)
       );
     });
@@ -91,6 +91,18 @@ describe('executeDesktopAction', () => {
 
       expect(result.action.type).toBe('click');
       expect(result.message).toContain('left');
+      expect(mocks.execFileAsync).toHaveBeenNthCalledWith(
+        1,
+        'python3',
+        expect.arrayContaining(['50', '75']),
+        expect.any(Object)
+      );
+      expect(mocks.execFileAsync).toHaveBeenNthCalledWith(
+        2,
+        'python3',
+        expect.arrayContaining(['50', '75', 'left']),
+        expect.any(Object)
+      );
     });
 
     it('supports right-click', async () => {

@@ -13,7 +13,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,6 +28,7 @@ import {
 } from '../ui/dropdown-menu';
 import { DICTATION_FALLBACK_HINT } from '../../hooks/useSpeechDictation';
 import type { DesktopControlPreferences } from '../desktop-control/useDesktopControlPreferences';
+import { Textarea } from '../ui/textarea';
 
 const WORK_WITH_APPS = [
   'Codex',
@@ -47,9 +47,9 @@ interface ChatInputToolbarProps {
   liveGuidanceByDefault: boolean;
   screenCaptureByDefault: boolean;
   keepDiagnosticsPanelVisible: boolean;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onInputChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onSendMessage: () => void;
   onStopCurrentTask: () => void;
   onToggleDictation: () => void;
@@ -144,7 +144,7 @@ export function ChatInputToolbar({
           </button>
         </div>
       )}
-      <div className="flex gap-2">
+      <div className="flex items-end gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -265,7 +265,7 @@ export function ChatInputToolbar({
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Input
+        <Textarea
           ref={inputRef}
           value={input}
           onChange={(e) => {
@@ -279,7 +279,10 @@ export function ChatInputToolbar({
           disabled={isLoading}
           aria-label="Chat message input"
           aria-describedby="floating-chat-shortcuts"
-          className="flex-1"
+          rows={2}
+          autosize
+          maxHeight={224}
+          className="min-h-[56px] flex-1 resize-none py-3"
         />
         <Button
           variant={isDictating ? 'default' : 'outline'}

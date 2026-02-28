@@ -252,6 +252,16 @@ describe('DiagnosticsPanel Integration', () => {
     expect(floatingChatMocks.getDesktopControlStatus).toHaveBeenNthCalledWith(2, { forceRefresh: true });
   });
 
+  it('renders the Screen Agent composer as a multiline textarea', async () => {
+    floatingChatMocks.getDesktopControlStatus.mockResolvedValueOnce(readyStatus);
+
+    render(<FloatingChat />);
+
+    const input = await screen.findByLabelText('Chat message input');
+    expect(input.tagName).toBe('TEXTAREA');
+    expect(input).toHaveAttribute('rows', '2');
+  });
+
   it('shows stop control while running and interrupts the active task', async () => {
     floatingChatMocks.getDesktopControlStatus.mockResolvedValueOnce(readyStatus);
 

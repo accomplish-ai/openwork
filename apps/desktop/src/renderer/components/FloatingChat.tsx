@@ -120,7 +120,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   const [dictationError, setDictationError] = useState<string | null>(null);
   const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const isCancellingRef = useRef(false);
   const lastDesktopControlBlockerKeyRef = useRef<string | null>(null);
   const isLoadingRef = useRef(isLoading);
@@ -881,7 +881,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
       : 'Ready to help';
 
   // Handle key press
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Escape' && isLoading) {
       e.preventDefault();
       void stopCurrentTask();
