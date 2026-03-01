@@ -51,10 +51,7 @@ function escapeAppleScriptString(s: string): string {
  * Request permission for a desktop action.
  * FAILS CLOSED: returns false when the permission API is unreachable or returns a non-200 status.
  */
-async function checkPermission(
-  action: string,
-  details: Record<string, unknown>,
-): Promise<boolean> {
+async function checkPermission(action: string, details: Record<string, unknown>): Promise<boolean> {
   try {
     const res = await fetch(PERMISSION_API_URL, {
       method: 'POST',
@@ -106,26 +103,36 @@ async function captureScreenshot(): Promise<CallToolResult> {
       const ps1 = tmpFile('capture', 'ps1');
       await writeFile(
         ps1,
+        // Capture the full screen, then scale to max 1280 px wide so the
+        // base64 payload stays within model input limits.
         `param([string]$Out)
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $s = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-$bmp = New-Object System.Drawing.Bitmap $s.Width, $s.Height
-$g = [System.Drawing.Graphics]::FromImage($bmp)
+$full = New-Object System.Drawing.Bitmap $s.Width, $s.Height
+$g = [System.Drawing.Graphics]::FromImage($full)
 $g.CopyFromScreen($s.Location, [System.Drawing.Point]::Empty, $s.Size)
-$bmp.Save($Out, [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose()
-$bmp.Dispose()`,
+$maxW = 1280
+if ($s.Width -gt $maxW) {
+  $scale = $maxW / $s.Width
+  $newW = $maxW
+  $newH = [int]($s.Height * $scale)
+  $scaled = New-Object System.Drawing.Bitmap $newW, $newH
+  $gs = [System.Drawing.Graphics]::FromImage($scaled)
+  $gs.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $gs.DrawImage($full, 0, 0, $newW, $newH)
+  $gs.Dispose()
+  $full.Dispose()
+  $full = $scaled
+}
+$full.Save($Out, [System.Drawing.Imaging.ImageFormat]::Png)
+$full.Dispose()`,
         'utf8',
       );
       try {
-        await execFile('powershell', [
-          '-NoProfile',
-          '-NonInteractive',
-          '-File',
-          ps1,
-          '-Out',
-          png,
-        ]);
+        await execFile('powershell', ['-NoProfile', '-NonInteractive', '-File', ps1, '-Out', png], {
+          windowsHide: true,
+        });
       } finally {
         await unlink(ps1).catch(() => undefined);
       }
@@ -157,12 +164,7 @@ async function mouseClick(
   if (PLATFORM === 'darwin') {
     // System Events supports click, right click, and double click at screen coordinates.
     // x and y are validated numbers — no injection risk when embedded directly.
-    const cmd =
-      button === 'right'
-        ? 'right click'
-        : button === 'double'
-          ? 'double click'
-          : 'click';
+    const cmd = button === 'right' ? 'right click' : button === 'double' ? 'double click' : 'click';
     await execFile('osascript', [
       '-e',
       `tell application "System Events" to ${cmd} at {${x}, ${y}}`,
@@ -206,10 +208,14 @@ for($i = 0; $i -lt $Cnt; $i++) {
         '-NonInteractive',
         '-File',
         ps1,
-        '-X', String(x),
-        '-Y', String(y),
-        '-Btn', btnCode,
-        '-Cnt', cnt,
+        '-X',
+        String(x),
+        '-Y',
+        String(y),
+        '-Btn',
+        btnCode,
+        '-Cnt',
+        cnt,
       ]);
     } finally {
       await unlink(ps1).catch(() => undefined);
@@ -218,8 +224,15 @@ for($i = 0; $i -lt $Cnt; $i++) {
     // Linux: xdotool — x and y are numbers, no injection.
     if (button === 'double') {
       await execFile('xdotool', [
-        'mousemove', String(x), String(y),
-        'click', '--repeat', '2', '--delay', '100', '1',
+        'mousemove',
+        String(x),
+        String(y),
+        'click',
+        '--repeat',
+        '2',
+        '--delay',
+        '100',
+        '1',
       ]);
     } else {
       const btn = button === 'right' ? '3' : '1';
@@ -246,10 +259,11 @@ public class WinMouse2 { [DllImport("user32.dll")] public static extern bool Set
       'utf8',
     );
     try {
-      await execFile('powershell', [
-        '-NoProfile', '-NonInteractive', '-File', ps1,
-        '-X', String(x), '-Y', String(y),
-      ]);
+      await execFile(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-File', ps1, '-X', String(x), '-Y', String(y)],
+        { windowsHide: true },
+      );
     } finally {
       await unlink(ps1).catch(() => undefined);
     }
@@ -290,17 +304,32 @@ async function typeText(text: string): Promise<void> {
       await writeFile(txt, text, 'utf8');
       await writeFile(
         ps1,
+        // Capture the current foreground window BEFORE doing anything else so we
+        // can restore focus to it just before SendKeys fires. This is the
+        // belt-and-suspenders fix on top of windowsHide:true: even with a hidden
+        // console, the OS may briefly shift focus during process creation.
         `param([string]$F)
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class WinType {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+}
+'@
+$target = [WinType]::GetForegroundWindow()
 $content = [System.IO.File]::ReadAllText($F, [System.Text.Encoding]::UTF8)
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Clipboard]::SetText($content)
+Start-Sleep -Milliseconds 150
+if ($target -ne [IntPtr]::Zero) { [WinType]::SetForegroundWindow($target) }
 Start-Sleep -Milliseconds 100
 [System.Windows.Forms.SendKeys]::SendWait('^v')`,
         'utf8',
       );
-      await execFile('powershell', [
-        '-NoProfile', '-NonInteractive', '-File', ps1, '-F', txt,
-      ]);
+      await execFile('powershell', ['-NoProfile', '-NonInteractive', '-File', ps1, '-F', txt], {
+        windowsHide: true,
+      });
     } finally {
       // Clean up both files regardless of which step failed.
       await unlink(txt).catch(() => undefined);
@@ -314,34 +343,89 @@ Start-Sleep -Milliseconds 100
 
 // AppleScript key codes for named keys.
 const APPLE_KEY_CODES: Record<string, number> = {
-  return: 36, enter: 36, esc: 53, escape: 53, tab: 48,
-  space: 49, delete: 51, backspace: 51, forwarddelete: 117,
-  up: 126, down: 125, left: 123, right: 124,
-  home: 115, end: 119, pageup: 116, pagedown: 121,
-  f1: 122, f2: 120, f3: 99, f4: 118, f5: 96, f6: 97,
-  f7: 98, f8: 100, f9: 101, f10: 109, f11: 103, f12: 111,
+  return: 36,
+  enter: 36,
+  esc: 53,
+  escape: 53,
+  tab: 48,
+  space: 49,
+  delete: 51,
+  backspace: 51,
+  forwarddelete: 117,
+  up: 126,
+  down: 125,
+  left: 123,
+  right: 124,
+  home: 115,
+  end: 119,
+  pageup: 116,
+  pagedown: 121,
+  f1: 122,
+  f2: 120,
+  f3: 99,
+  f4: 118,
+  f5: 96,
+  f6: 97,
+  f7: 98,
+  f8: 100,
+  f9: 101,
+  f10: 109,
+  f11: 103,
+  f12: 111,
 };
 
 const APPLE_MODIFIERS: Record<string, string> = {
-  ctrl: 'control down', control: 'control down',
-  cmd: 'command down', command: 'command down', meta: 'command down',
-  alt: 'option down', option: 'option down',
+  ctrl: 'control down',
+  control: 'control down',
+  cmd: 'command down',
+  command: 'command down',
+  meta: 'command down',
+  alt: 'option down',
+  option: 'option down',
   shift: 'shift down',
 };
 
 const WIN_MODIFIERS: Record<string, string> = {
-  ctrl: '^', control: '^', cmd: '^', command: '^', meta: '^',
-  alt: '%', option: '%',
+  ctrl: '^',
+  control: '^',
+  cmd: '^',
+  command: '^',
+  meta: '^',
+  alt: '%',
+  option: '%',
   shift: '+',
 };
 
 const WIN_KEYS: Record<string, string> = {
-  return: '{ENTER}', enter: '{ENTER}', esc: '{ESC}', escape: '{ESC}',
-  tab: '{TAB}', delete: '{DELETE}', forwarddelete: '{DELETE}', backspace: '{BACKSPACE}', space: ' ',
-  up: '{UP}', down: '{DOWN}', left: '{LEFT}', right: '{RIGHT}',
-  home: '{HOME}', end: '{END}', pageup: '{PGUP}', pagedown: '{PGDN}',
-  f1: '{F1}', f2: '{F2}', f3: '{F3}', f4: '{F4}', f5: '{F5}', f6: '{F6}',
-  f7: '{F7}', f8: '{F8}', f9: '{F9}', f10: '{F10}', f11: '{F11}', f12: '{F12}',
+  return: '{ENTER}',
+  enter: '{ENTER}',
+  esc: '{ESC}',
+  escape: '{ESC}',
+  tab: '{TAB}',
+  delete: '{DELETE}',
+  forwarddelete: '{DELETE}',
+  backspace: '{BACKSPACE}',
+  space: ' ',
+  up: '{UP}',
+  down: '{DOWN}',
+  left: '{LEFT}',
+  right: '{RIGHT}',
+  home: '{HOME}',
+  end: '{END}',
+  pageup: '{PGUP}',
+  pagedown: '{PGDN}',
+  f1: '{F1}',
+  f2: '{F2}',
+  f3: '{F3}',
+  f4: '{F4}',
+  f5: '{F5}',
+  f6: '{F6}',
+  f7: '{F7}',
+  f8: '{F8}',
+  f9: '{F9}',
+  f10: '{F10}',
+  f11: '{F11}',
+  f12: '{F12}',
 };
 
 function parseKeyParts(key: string): { modifiers: string[]; mainKey: string } {
@@ -361,9 +445,7 @@ function parseKeyParts(key: string): { modifiers: string[]; mainKey: string } {
 function buildAppleScriptForKey(key: string): string {
   const { modifiers, mainKey } = parseKeyParts(key);
   const modStr =
-    modifiers.length > 0
-      ? ` using {${modifiers.map((m) => APPLE_MODIFIERS[m]).join(', ')}}`
-      : '';
+    modifiers.length > 0 ? ` using {${modifiers.map((m) => APPLE_MODIFIERS[m]).join(', ')}}` : '';
 
   if (mainKey in APPLE_KEY_CODES) {
     return `tell application "System Events" to key code ${APPLE_KEY_CODES[mainKey]}${modStr}`;
@@ -389,9 +471,7 @@ function buildSendKeysString(key: string): string {
 async function pressKey(key: string): Promise<void> {
   // Validate key string to prevent unexpected characters.
   if (!/^[a-zA-Z0-9+\-_ ]+$/.test(key)) {
-    throw new Error(
-      `Invalid key string "${key}". Use format like "ctrl+c", "Return", "shift+F5".`,
-    );
+    throw new Error(`Invalid key string "${key}". Use format like "ctrl+c", "Return", "shift+F5".`);
   }
 
   if (PLATFORM === 'darwin') {
@@ -408,9 +488,11 @@ Add-Type -AssemblyName System.Windows.Forms
       'utf8',
     );
     try {
-      await execFile('powershell', [
-        '-NoProfile', '-NonInteractive', '-File', ps1, '-K', sendKeysStr,
-      ]);
+      await execFile(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-File', ps1, '-K', sendKeysStr],
+        { windowsHide: true },
+      );
     } finally {
       await unlink(ps1).catch(() => undefined);
     }
@@ -432,7 +514,8 @@ async function listWindows(): Promise<WindowInfo[]> {
   if (PLATFORM === 'darwin') {
     // JXA returns a proper JSON array — no newline/delimiter parsing bugs.
     const { stdout } = await execFile('osascript', [
-      '-l', 'JavaScript',
+      '-l',
+      'JavaScript',
       '-e',
       [
         'var se = Application("System Events");',
@@ -444,19 +527,26 @@ async function listWindows(): Promise<WindowInfo[]> {
     ]);
     return JSON.parse(stdout.trim()) as WindowInfo[];
   } else if (PLATFORM === 'win32') {
-    const { stdout } = await execFile('powershell', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      'Get-Process | Where-Object {$_.MainWindowTitle -ne ""} | Select-Object Name,Id,@{N="Title";E={$_.MainWindowTitle}} | ConvertTo-Json -Compress',
-    ]);
+    const { stdout } = await execFile(
+      'powershell',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        'Get-Process | Where-Object {$_.MainWindowTitle -ne ""} | Select-Object Name,Id,@{N="Title";E={$_.MainWindowTitle}} | ConvertTo-Json -Compress',
+      ],
+      { windowsHide: true },
+    );
     const raw = JSON.parse(stdout.trim()) as Array<{ Name: string; Id: number; Title: string }>;
     const arr = Array.isArray(raw) ? raw : [raw];
     return arr.map((w) => ({ name: w.Name, title: w.Title, pid: w.Id }));
   } else {
     // Linux: list visible windows via xdotool search + getwindowname.
     const { stdout: idList } = await execFile('xdotool', [
-      'search', '--onlyvisible', '--name', '.+',
+      'search',
+      '--onlyvisible',
+      '--name',
+      '.+',
     ]);
     const wids = idList.trim().split('\n').filter(Boolean);
     const results = await Promise.all(
@@ -503,15 +593,21 @@ public class WinFocus {
 '@
 $escapedTitle = [System.Management.Automation.WildcardPattern]::Escape($Title)
 $proc = Get-Process | Where-Object {$_.MainWindowTitle -like "*$escapedTitle*"} | Select-Object -First 1
-if($proc) { [WinFocus]::SetForegroundWindow($proc.MainWindowHandle) }
+if($proc) {
+  [WinFocus]::SetForegroundWindow($proc.MainWindowHandle)
+  # Give the OS time to actually bring the window to the foreground before returning.
+  Start-Sleep -Milliseconds 400
+}
 else { Write-Error "No window found matching: $Title"; exit 1 }`,
 
       'utf8',
     );
     try {
-      await execFile('powershell', [
-        '-NoProfile', '-NonInteractive', '-File', ps1, '-Title', name,
-      ]);
+      await execFile(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-File', ps1, '-Title', name],
+        { windowsHide: true },
+      );
     } finally {
       await unlink(ps1).catch(() => undefined);
     }
@@ -544,8 +640,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'desktop_mouse_click',
-      description:
-        'Click the mouse at absolute screen coordinates. Requires user permission.',
+      description: 'Click the mouse at absolute screen coordinates. Requires user permission.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -644,7 +739,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
     case 'desktop_mouse_click': {
       const x = Number((args as Record<string, unknown>).x);
       const y = Number((args as Record<string, unknown>).y);
-      const button = ((args as Record<string, unknown>).button as 'left' | 'right' | 'double') ?? 'left';
+      const button =
+        ((args as Record<string, unknown>).button as 'left' | 'right' | 'double') ?? 'left';
 
       if (!Number.isFinite(x) || !Number.isFinite(y)) {
         return errorResult('x and y must be finite numbers');
