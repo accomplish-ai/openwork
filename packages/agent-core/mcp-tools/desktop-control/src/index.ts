@@ -304,23 +304,70 @@ async function typeText(text: string): Promise<void> {
       await writeFile(txt, text, 'utf8');
       await writeFile(
         ps1,
-        // Read the window title written by focusWindow (dc-focused-window.txt).
-        // This avoids GetForegroundWindow() which returns the Electron window after
-        // the model round-trip between focusWindow and typeText calls.
+        // Three-layer strategy for reliable text insertion on Windows:
+        //   1. UI Automation ValuePattern — programmatic text append, works from any
+        //      background process, no focus required. Supports any UIA-compatible app
+        //      (Notepad, WordPad, most Win32/WinUI 3 text editors).
+        //   2. UI Automation SetFocus + clipboard paste — for apps that support UIA
+        //      focus but not ValuePattern (e.g. some custom editors).
+        //   3. AppActivate by PID + clipboard paste — last resort; PID is used (not
+        //      title) so it is immune to title changes after unsaved edits.
         `param([string]$F)
 $content = [System.IO.File]::ReadAllText($F, [System.Text.Encoding]::UTF8)
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Windows.Forms
-[System.Windows.Forms.Clipboard]::SetText($content)
 $wsh = New-Object -ComObject WScript.Shell
-$titleFile = "$env:TEMP\\dc-focused-window.txt"
-if (Test-Path $titleFile) {
-  $title = [System.IO.File]::ReadAllText($titleFile).Trim()
-} else {
-  $title = ''
+$pidFile = "$env:TEMP\\dc-focused-window.txt"
+$targetPid = 0
+if (Test-Path $pidFile) {
+  $s = [System.IO.File]::ReadAllText($pidFile).Trim()
+  if ($s -match '^[0-9]+$') { $targetPid = [int]$s }
 }
-if ($title -ne '') { $wsh.AppActivate($title) | Out-Null }
-Start-Sleep -Milliseconds 300
-$wsh.SendKeys('^v')`,
+$typed = $false
+if ($targetPid -gt 0) {
+  try {
+    $prop = [System.Windows.Automation.AutomationElement]::ProcessIdProperty
+    $cond = New-Object System.Windows.Automation.PropertyCondition($prop, $targetPid)
+    $root = [System.Windows.Automation.AutomationElement]::RootElement
+    $appEl = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+    if ($appEl) {
+      $scope = [System.Windows.Automation.TreeScope]::Descendants
+      $docCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Document)
+      $editCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Edit)
+      $orCond = New-Object System.Windows.Automation.OrCondition($docCond, $editCond)
+      $editEl = $appEl.FindFirst($scope, $orCond)
+      if ($editEl) {
+        $vpPatt = [System.Windows.Automation.ValuePattern]::Pattern
+        $supported = $editEl.GetSupportedPatterns() -contains $vpPatt
+        if ($supported) {
+          $vp = $editEl.GetCurrentPattern($vpPatt) -as [System.Windows.Automation.ValuePattern]
+          $existing = $vp.Current.Value
+          $vp.SetValue($existing + $content)
+          $typed = $true
+        } else {
+          $editEl.SetFocus()
+          Start-Sleep -Milliseconds 400
+          [System.Windows.Forms.Clipboard]::SetText($content)
+          Start-Sleep -Milliseconds 150
+          $wsh.SendKeys('^v')
+          $typed = $true
+        }
+      }
+    }
+  } catch { }
+}
+if (-not $typed) {
+  if ($targetPid -gt 0) { $wsh.AppActivate($targetPid) | Out-Null }
+  Start-Sleep -Milliseconds 400
+  [System.Windows.Forms.Clipboard]::SetText($content)
+  Start-Sleep -Milliseconds 150
+  $wsh.SendKeys('^v')
+}`,
         'utf8',
       );
       await execFile('powershell', ['-NoProfile', '-NonInteractive', '-File', ps1, '-F', txt], {
@@ -581,17 +628,17 @@ async function focusWindow(name: string): Promise<void> {
       ps1,
       // WScript.Shell.AppActivate works from any process (unlike SetForegroundWindow
       // which silently fails from background/hidden processes). After activating,
-      // persist the exact window title so typeText can re-activate the same window.
+      // persist the process PID so typeText can re-activate by PID — this is immune
+      // to window title changes (e.g. Notepad prepends "*" for unsaved edits).
       `param([string]$Title)
 $escapedTitle = [System.Management.Automation.WildcardPattern]::Escape($Title)
 $proc = Get-Process | Where-Object {$_.MainWindowTitle -like "*$escapedTitle*"} | Select-Object -First 1
 if ($proc) {
   $wsh = New-Object -ComObject WScript.Shell
-  $wsh.AppActivate($proc.MainWindowTitle) | Out-Null
+  $wsh.AppActivate($proc.Id) | Out-Null
   Start-Sleep -Milliseconds 400
-  [System.IO.File]::WriteAllText("$env:TEMP\\dc-focused-window.txt", $proc.MainWindowTitle)
+  [System.IO.File]::WriteAllText("$env:TEMP\\dc-focused-window.txt", [string]$proc.Id)
 } else { Write-Error "No window found matching: $Title"; exit 1 }`,
-
       'utf8',
     );
     try {
