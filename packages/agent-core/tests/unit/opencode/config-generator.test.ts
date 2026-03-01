@@ -422,7 +422,7 @@ describe('ConfigGenerator', () => {
       // Should use node + dist path instead of tsx + src
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]).toContain(path.join('dist', 'index.mjs'));
     });
 
     it('should throw when bundled node is missing in packaged mode', () => {
@@ -449,7 +449,7 @@ describe('ConfigGenerator', () => {
 
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]).toContain(path.join('dist', 'index.mjs'));
     });
 
     it('should throw when MCP dist entry is missing', () => {
@@ -563,7 +563,7 @@ describe('ConfigGenerator', () => {
 
       const result = generateConfig(options);
 
-      expect(result.systemPrompt).toContain('do NOT call complete_task');
+      expect(result.systemPrompt).toContain('do NOT call complete-task_complete_task');
       expect(result.systemPrompt).toContain('needs_planning');
     });
 
@@ -703,22 +703,22 @@ describe('ConfigGenerator', () => {
     it('should contain needs_planning: true for multi-step tasks', () => {
       expect(prompt).toContain('needs_planning: true');
       expect(prompt).toContain(
-        'will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands)',
+        'will require tools beyond start-task_start_task and complete-task_complete_task (e.g., file operations, browser actions, bash commands)',
       );
     });
 
     it('should contain needs_planning: false for conversational messages', () => {
       expect(prompt).toContain('needs_planning: false');
-      expect(prompt).toContain('you can answer from knowledge alone using only start_task');
+      expect(prompt).toContain('you can answer from knowledge alone using only start-task_start_task');
     });
 
     it('should contain explicit instruction not to call complete_task for conversational responses', () => {
-      expect(prompt).toContain('Do NOT call complete_task for conversational responses');
+      expect(prompt).toContain('Do NOT call complete-task_complete_task for conversational responses');
     });
 
     it('should require complete_task when needs_planning was true', () => {
       expect(prompt).toContain(
-        'You MUST call the `complete_task` tool when `needs_planning` was true',
+        'You MUST call the `complete-task_complete_task` tool when `needs_planning` was true',
       );
     });
 

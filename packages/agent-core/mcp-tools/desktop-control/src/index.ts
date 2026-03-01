@@ -285,6 +285,7 @@ async function typeText(text: string): Promise<void> {
   } else if (PLATFORM === 'win32') {
     const txt = tmpFile('type', 'txt');
     const ps1 = tmpFile('type', 'ps1');
+    // Both temp files must be cleaned up even if the second writeFile throws.
     try {
       await writeFile(txt, text, 'utf8');
       await writeFile(
@@ -301,8 +302,9 @@ Start-Sleep -Milliseconds 100
         '-NoProfile', '-NonInteractive', '-File', ps1, '-F', txt,
       ]);
     } finally {
-      await unlink(ps1).catch(() => undefined);
+      // Clean up both files regardless of which step failed.
       await unlink(txt).catch(() => undefined);
+      await unlink(ps1).catch(() => undefined);
     }
   } else {
     // xdotool type -- text: text is a discrete argument, no shell involved.
@@ -461,7 +463,16 @@ async function listWindows(): Promise<WindowInfo[]> {
       wids.map(async (wid) => {
         try {
           const { stdout: name } = await execFile('xdotool', ['getwindowname', wid]);
-          return { name: name.trim(), pid: Number(wid) };
+          // Retrieve the actual process ID; some windows may not have _NET_WM_PID set.
+          const entry: WindowInfo = { name: name.trim() };
+          try {
+            const { stdout: pidOut } = await execFile('xdotool', ['getwindowpid', wid]);
+            const parsed = parseInt(pidOut.trim(), 10);
+            if (Number.isFinite(parsed) && parsed > 0) entry.pid = parsed;
+          } catch {
+            // PID unavailable for this window — leave absent.
+          }
+          return entry;
         } catch {
           return null;
         }
@@ -490,9 +501,11 @@ public class WinFocus {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
 }
 '@
-$proc = Get-Process | Where-Object {$_.MainWindowTitle -like "*$Title*"} | Select-Object -First 1
+$escapedTitle = [System.Management.Automation.WildcardPattern]::Escape($Title)
+$proc = Get-Process | Where-Object {$_.MainWindowTitle -like "*$escapedTitle*"} | Select-Object -First 1
 if($proc) { [WinFocus]::SetForegroundWindow($proc.MainWindowHandle) }
-else { Write-Error "No window found matching: $Title" }`,
+else { Write-Error "No window found matching: $Title"; exit 1 }`,
+
       'utf8',
     );
     try {
@@ -525,7 +538,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: 'desktop_screenshot',
       description:
-        'Capture a screenshot of the entire primary display. Returns the image as a base64-encoded PNG. No permission required — this is a read-only observation.',
+        'Capture a screenshot of the entire primary display. Returns the image as a base64-encoded PNG. ' +
+        'Requires one-time session consent from the user before the first capture; subsequent calls in the same session are allowed automatically.',
       inputSchema: { type: 'object', properties: {}, required: [] },
     },
     {
@@ -746,5 +760,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<CallToo
   }
 });
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+async function main(): Promise<void> {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('Desktop Control MCP Server started');
+}
+
+main().catch((error) => {
+  console.error('Failed to start desktop-control MCP server:', error);
+  process.exit(1);
+});
