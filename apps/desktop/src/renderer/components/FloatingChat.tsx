@@ -155,7 +155,7 @@ export function FloatingChat({ onOpenSettings }: FloatingChatProps) {
   } = useDesktopControlStatus();
   const filteredTaskHistory = useMemo(() => {
     const normalizedQuery = menuSearchQuery.trim().toLowerCase();
-    const ordered = taskHistory.slice().reverse();
+    const ordered = taskHistory.slice();
 
     if (!normalizedQuery) {
       return ordered;
