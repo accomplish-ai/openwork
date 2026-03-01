@@ -304,27 +304,30 @@ async function typeText(text: string): Promise<void> {
       await writeFile(txt, text, 'utf8');
       await writeFile(
         ps1,
-        // Capture the current foreground window BEFORE doing anything else so we
-        // can restore focus to it just before SendKeys fires. This is the
-        // belt-and-suspenders fix on top of windowsHide:true: even with a hidden
-        // console, the OS may briefly shift focus during process creation.
+        // Use WScript.Shell.AppActivate to bring the target window to the
+        // foreground by title — this works from background/hidden processes
+        // where SetForegroundWindow silently fails due to Windows restrictions.
         `param([string]$F)
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
-public class WinType {
+using System.Text;
+public class WinHelper {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
 }
 '@
-$target = [WinType]::GetForegroundWindow()
+$hwnd = [WinHelper]::GetForegroundWindow()
+$sb = New-Object System.Text.StringBuilder 512
+[WinHelper]::GetWindowText($hwnd, $sb, 512) | Out-Null
+$title = $sb.ToString()
 $content = [System.IO.File]::ReadAllText($F, [System.Text.Encoding]::UTF8)
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Clipboard]::SetText($content)
-Start-Sleep -Milliseconds 150
-if ($target -ne [IntPtr]::Zero) { [WinType]::SetForegroundWindow($target) }
-Start-Sleep -Milliseconds 100
-[System.Windows.Forms.SendKeys]::SendWait('^v')`,
+$wsh = New-Object -ComObject WScript.Shell
+if ($title -ne '') { $wsh.AppActivate($title) | Out-Null }
+Start-Sleep -Milliseconds 300
+$wsh.SendKeys('^v')`,
         'utf8',
       );
       await execFile('powershell', ['-NoProfile', '-NonInteractive', '-File', ps1, '-F', txt], {
