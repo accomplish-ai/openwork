@@ -79,7 +79,9 @@
   "optionalDependencies": {
     "opencode-darwin-arm64": "1.2.10",
     "opencode-darwin-x64": "1.2.10",
-    "opencode-darwin-x64-baseline": "1.2.10"
+    "opencode-darwin-x64-baseline": "1.2.10",
+    "opencode-linux-x64": "1.2.10",
+    "opencode-linux-x64-baseline": "1.2.10"
   },
   "build": {
     "npmRebuild": false,
@@ -97,6 +99,8 @@
       "node_modules/opencode-darwin-arm64/**",
       "node_modules/opencode-darwin-x64/**",
       "node_modules/opencode-darwin-x64-baseline/**",
+      "node_modules/opencode-linux-x64/**",
+      "node_modules/opencode-linux-x64-baseline/**",
       "node_modules/node-pty/**",
       "node_modules/electron-store/**",
       "node_modules/conf/**",
@@ -104,8 +108,7 @@
       "node_modules/json-schema-typed/**",
       "node_modules/atomically/**",
       "node_modules/debounce-fn/**",
-      "!node_modules/@accomplish_ai/**",
-      "!node_modules/opencode-linux-*/**"
+      "!node_modules/@accomplish_ai/**"
     ],
     "extraResources": [
       {
@@ -150,6 +153,10 @@
       "node_modules/opencode-darwin-x64/package.json",
       "node_modules/opencode-darwin-x64-baseline/bin/opencode",
       "node_modules/opencode-darwin-x64-baseline/package.json",
+      "node_modules/opencode-linux-x64/bin/opencode",
+      "node_modules/opencode-linux-x64/package.json",
+      "node_modules/opencode-linux-x64-baseline/bin/opencode",
+      "node_modules/opencode-linux-x64-baseline/package.json",
       "node_modules/opencode-windows-x64/bin/opencode.exe",
       "node_modules/opencode-windows-x64/package.json",
       "node_modules/opencode-windows-x64-baseline/bin/opencode.exe",
@@ -197,6 +204,17 @@
         "nsis"
       ],
       "icon": "resources/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "resources/icon.png",
+      "category": "Utility",
+      "maintainer": "Accomplish Inc",
+      "synopsis": "AI Desktop Agent",
+      "description": "The open source AI coworker that lives on your desktop"
     },
     "nsis": {
       "oneClick": true,

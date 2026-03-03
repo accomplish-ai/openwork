@@ -114,6 +114,12 @@ importers:
       opencode-darwin-x64-baseline:
         specifier: 1.2.10
         version: 1.2.10
+      opencode-linux-x64:
+        specifier: 1.2.10
+        version: 1.2.10
+      opencode-linux-x64-baseline:
+        specifier: 1.2.10
+        version: 1.2.10
     devDependencies:
       '@electron/rebuild':
         specifier: ^4.0.2
@@ -2180,9 +2186,6 @@ packages:
 
   '@types/node@22.19.3':
     resolution: {integrity: sha512-1N9SBnWYOJTrNZCdh/yJE+t910Y128BoyY+zBLWhL3r0TYzlTmFdXrPwHL9DyFZmlEXNQQolTZh3KHV31QDhyA==}
-
-  '@types/node@25.3.0':
-    resolution: {integrity: sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==}
 
   '@types/plist@3.0.5':
     resolution: {integrity: sha512-E6OCaRmAe4WDmWNsL/9RMqdkkzDCY1etutkflWk4c+AcjDU07Pcz1fQwTX0TQz+Pxqn9i4L1TU3UFpjnrcDgxA==}
@@ -5529,9 +5532,6 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici-types@7.18.2:
-    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
-
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
 
@@ -8176,11 +8176,6 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/node@25.3.0':
-    dependencies:
-      undici-types: 7.18.2
-    optional: true
-
   '@types/plist@3.0.5':
     dependencies:
       '@types/node': 22.19.11
@@ -8211,7 +8206,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 22.19.11
     optional: true
 
   '@types/yauzl@2.10.3':
@@ -9971,7 +9966,7 @@ snapshots:
 
   happy-dom@20.6.1:
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 22.19.11
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       entities: 6.0.1
@@ -12368,9 +12363,6 @@ snapshots:
       which-boxed-primitive: 1.1.1
 
   undici-types@6.21.0: {}
-
-  undici-types@7.18.2:
-    optional: true
 
   unified@11.0.5:
     dependencies:
