@@ -155,6 +155,66 @@ function createWindow() {
 
   mainWindow.maximize();
 
+  // Debug: log ALL window lifecycle events to understand blank screen quits
+  mainWindow.on('close', () => {
+    console.log('[Main] Window close event fired');
+  });
+
+  mainWindow.on('closed', () => {
+    console.log('[Main] Window closed event fired');
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error(
+      `[Main] Renderer process gone! Reason: ${details.reason}, exitCode: ${details.exitCode}`,
+    );
+    // Try to recover from renderer crash
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log('[Main] Attempting to recover from renderer crash...');
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          if (ROUTER_URL) {
+            mainWindow.loadURL(ROUTER_URL);
+          } else {
+            const indexPath = path.join(WEB_DIST, 'index.html');
+            mainWindow.loadFile(indexPath);
+          }
+        }
+      }, 1000);
+    }
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('[Main] Page finished loading successfully');
+  });
+
+  // Auto-recover from blank screen scenarios
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.warn(`[Main] Page failed to load: ${errorDescription} (code: ${errorCode})`);
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        console.log('[Main] Retrying page load...');
+        if (ROUTER_URL) {
+          mainWindow.loadURL(ROUTER_URL);
+        } else {
+          const indexPath = path.join(WEB_DIST, 'index.html');
+          mainWindow.loadFile(indexPath);
+        }
+      }
+    }, 2000);
+  });
+
+  mainWindow.on('unresponsive', () => {
+    console.warn('[Main] Window became unresponsive, reloading...');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reload();
+    }
+  });
+
+  mainWindow.on('responsive', () => {
+    console.log('[Main] Window is responsive again');
+  });
+
   const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
   const isTestEnv = process.env.NODE_ENV === 'test';
   if (!app.isPackaged && !isE2EMode && !isTestEnv) {
@@ -266,6 +326,17 @@ if (!gotTheLock) {
         return;
       }
       throw err;
+    }
+
+    // Recover any tasks that were running/queued when the app last closed
+    try {
+      const storage = getStorage();
+      const recovered = storage.recoverOrphanedTasks();
+      if (recovered > 0) {
+        console.log(`[Main] Recovered ${recovered} orphaned task(s) from previous session`);
+      }
+    } catch (err) {
+      console.error('[Main] Orphaned task recovery failed:', err);
     }
 
     try {

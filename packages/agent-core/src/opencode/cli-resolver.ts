@@ -59,6 +59,12 @@ function getOpenCodePlatformInfo(): { packageNames: string[]; binaryName: string
       binaryName: 'opencode.exe',
     };
   }
+  if (process.platform === 'linux') {
+    return {
+      packageNames: ['opencode-linux-x64', 'opencode-linux-x64-baseline', 'opencode-ai'],
+      binaryName: 'opencode',
+    };
+  }
   return {
     packageNames: ['opencode-ai'],
     binaryName: 'opencode',
@@ -115,6 +121,8 @@ function resolveLocalCliPath(appPath?: string): ResolvedCliPaths | null {
   const appRoots = getCandidateAppRoots(appPath);
   const { packageNames, binaryName } = getOpenCodePlatformInfo();
 
+  console.log('[CLI Resolver] Candidate app roots:', appRoots);
+
   for (const root of appRoots) {
     if (process.platform === 'win32') {
       for (const packageName of packageNames) {
@@ -139,9 +147,34 @@ function resolveLocalCliPath(appPath?: string): ResolvedCliPaths | null {
       continue;
     }
 
+    // Linux: try platform-specific packages first (direct binary, no shim)
+    if (process.platform === 'linux') {
+      for (const packageName of packageNames) {
+        if (packageName === 'opencode-ai') continue; // skip launcher, check below
+        const cliPath = path.join(root, 'node_modules', packageName, 'bin', binaryName);
+        console.log('[CLI Resolver] Checking Linux binary path:', cliPath);
+        if (fs.existsSync(cliPath)) {
+          // Verify it's actually an ELF binary, not a JS shim
+          try {
+            const realPath = fs.realpathSync(cliPath);
+            console.log('[CLI Resolver] Resolved real path:', realPath);
+          } catch {
+            // realpathSync failed, but existsSync passed — continue anyway
+          }
+          console.log('[CLI Resolver] Using local OpenCode CLI binary (direct):', cliPath);
+          return {
+            cliPath,
+            cliDir: path.dirname(cliPath),
+            source: 'local',
+          };
+        }
+      }
+    }
+
+    // Fallback: .bin shim (macOS, or Linux if no platform binary found)
     const cliPath = path.join(root, 'node_modules', '.bin', binaryName);
     if (fs.existsSync(cliPath)) {
-      console.log('[CLI Resolver] Using local OpenCode CLI executable:', cliPath);
+      console.log('[CLI Resolver] Using local OpenCode CLI executable (.bin shim):', cliPath);
       return {
         cliPath,
         cliDir: path.dirname(cliPath),
