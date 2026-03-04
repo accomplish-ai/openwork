@@ -17,7 +17,7 @@
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
-# Accomplish™ (ранее Openwork) — открытый ИИ-агент для рабочего стола
+# Accomplish™ — открытый ИИ-агент для рабочего стола
 
 Accomplish — это открытый ИИ-агент для рабочего стола, который автоматизирует управление файлами, создание документов и задачи в браузере прямо на вашем компьютере. Используйте свои API-ключи (OpenAI, Anthropic, Google, xAI) или запускайте локальные модели через Ollama.
 
