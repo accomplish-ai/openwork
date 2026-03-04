@@ -405,6 +405,23 @@ export { isPortInUse, waitForPortRelease } from './utils/network.js';
 export { isWaitingForUser } from './common/utils/waiting-detection.js';
 export { detectLogSource, LOG_SOURCE_PATTERNS } from './common/utils/log-source-detector.js';
 
+// -----------------------------------------------------------------------------
+// Daemon Module (from ./daemon/)
+// -----------------------------------------------------------------------------
+
+// Scheduler
+export {
+  addScheduledTask,
+  listScheduledTasks,
+  cancelScheduledTask,
+  onScheduledTaskFire,
+  disposeScheduler,
+  matchesCron,
+  parseCronField,
+} from './daemon/scheduler.js';
+
+export type { ScheduledTask } from './daemon/scheduler.js';
+
 // Schemas
 export {
   taskConfigSchema,

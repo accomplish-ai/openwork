@@ -54,6 +54,7 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  runInBackground: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +127,10 @@ export interface AppSettingsAPI {
   getTheme(): ThemePreference;
   /** Set the theme preference */
   setTheme(theme: ThemePreference): void;
+  /** Get whether the app runs in background (system tray) mode */
+  getRunInBackground(): boolean;
+  /** Set background run mode */
+  setRunInBackground(enabled: boolean): void;
   /** Get all application settings as a snapshot */
   getAppSettings(): AppSettings;
   /** Reset all application settings to defaults */
