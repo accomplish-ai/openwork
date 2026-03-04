@@ -31,6 +31,12 @@ vi.mock('child_process', () => ({
   execSync: mockExecSync,
 }));
 
+// Mock required for daemon architecture
+vi.mock('node-pty', () => ({
+  spawn: vi.fn(),
+}));
+
+// Mock agent-core functions updated in main branch
 vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@accomplish_ai/agent-core')>();
   return {
@@ -47,7 +53,10 @@ vi.mock('@accomplish_ai/agent-core', async (importOriginal) => {
 });
 
 describe('OpenCode CLI Path Module', () => {
+  const originalPlatform = process.platform;
+
   beforeEach(() => {
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
     vi.clearAllMocks();
     vi.resetModules();
     mockApp.isPackaged = false;
@@ -55,6 +64,7 @@ describe('OpenCode CLI Path Module', () => {
   });
 
   afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
     vi.restoreAllMocks();
     if (originalAppRoot === undefined) {
       delete process.env.APP_ROOT;

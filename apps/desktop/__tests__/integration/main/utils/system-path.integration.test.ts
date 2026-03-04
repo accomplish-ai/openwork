@@ -43,8 +43,8 @@ vi.mock('child_process', () => ({
 }));
 
 describe('System PATH Utilities', () => {
-  let _getExtendedNodePath: typeof import('@main/utils/system-path').getExtendedNodePath;
-  let findCommandInPath: typeof import('@main/utils/system-path').findCommandInPath;
+  let _getExtendedNodePath: typeof import('../../../../src/main/utils/system-path').getExtendedNodePath;
+  let findCommandInPath: typeof import('../../../../src/main/utils/system-path').findCommandInPath;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -55,7 +55,7 @@ describe('System PATH Utilities', () => {
     process.env.HOME = '/Users/testuser';
 
     // Re-import module to get fresh state
-    const module = await import('@main/utils/system-path');
+    const module = await import('../../../../src/main/utils/system-path');
     _getExtendedNodePath = module.getExtendedNodePath;
     findCommandInPath = module.findCommandInPath;
   });
@@ -75,7 +75,7 @@ describe('System PATH Utilities', () => {
 
         // Re-import for platform change
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath(basePath);
@@ -91,7 +91,7 @@ describe('System PATH Utilities', () => {
 
         // Re-import for platform change
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath(basePath);
@@ -117,14 +117,15 @@ describe('System PATH Utilities', () => {
 
         // Re-import for platform change
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('/original/path');
 
         // Assert
-        expect(result).toContain('/opt/homebrew/bin');
-        expect(result).toContain('/usr/local/bin');
+        const normalizedResult = result.replace(/\\/g, '/');
+        expect(normalizedResult).toContain('/opt/homebrew/bin');
+        expect(normalizedResult).toContain('/usr/local/bin');
       });
 
       it('should include NVM paths when available', async () => {
@@ -132,25 +133,27 @@ describe('System PATH Utilities', () => {
         const nvmPath = '/Users/testuser/.nvm/versions/node/v20.10.0/bin';
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.nvm/versions/node') return true;
-          if (p === nvmPath) return true;
+          const np = p.replace(/\\/g, '/');
+          if (np === '/Users/testuser/.nvm/versions/node') return true;
+          if (np === nvmPath) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.nvm/versions/node') return ['v20.10.0'];
+          const np = p.replace(/\\/g, '/');
+          if (np === '/Users/testuser/.nvm/versions/node') return ['v20.10.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
 
         // Assert
-        expect(result).toContain(nvmPath);
+        expect(result.replace(/\\/g, '/')).toContain(nvmPath);
       });
 
       it('should include fnm paths when available', async () => {
@@ -158,25 +161,27 @@ describe('System PATH Utilities', () => {
         const fnmPath = '/Users/testuser/.fnm/node-versions/v20.10.0/installation/bin';
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.fnm/node-versions') return true;
-          if (p === fnmPath) return true;
+          const np = p.replace(/\\/g, '/');
+          if (np === '/Users/testuser/.fnm/node-versions') return true;
+          if (np === fnmPath) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === '/Users/testuser/.fnm/node-versions') return ['v20.10.0'];
+          const np = p.replace(/\\/g, '/');
+          if (np === '/Users/testuser/.fnm/node-versions') return ['v20.10.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
 
         // Assert
-        expect(result).toContain(fnmPath);
+        expect(result.replace(/\\/g, '/')).toContain(fnmPath);
       });
 
       it('should sort NVM versions with newest first', async () => {
@@ -184,28 +189,29 @@ describe('System PATH Utilities', () => {
         const nvmDir = '/Users/testuser/.nvm/versions/node';
 
         mockFs.existsSync.mockImplementation((p: string) => {
-          if (p === nvmDir) return true;
-          if (p.includes('.nvm/versions/node/v')) return true;
+          const np = p.replace(/\\/g, '/');
+          if (np === nvmDir) return true;
+          if (np.includes('.nvm/versions/node/v')) return true;
           return false;
         });
         mockFs.readdirSync.mockImplementation((p: string) => {
-          if (p === nvmDir) return ['v18.17.0', 'v20.10.0', 'v16.20.0'];
+          const np = p.replace(/\\/g, '/');
+          if (np === nvmDir) return ['v18.17.0', 'v20.10.0', 'v16.20.0'];
           return [];
         });
         mockExecSync.mockReturnValue('PATH="/usr/bin"; export PATH;');
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
         const pathParts = result.split(':');
 
-        // Assert - v20 should come before v18 which should come before v16
-        const v20Index = pathParts.findIndex((p) => p.includes('v20'));
-        const v18Index = pathParts.findIndex((p) => p.includes('v18'));
-        const v16Index = pathParts.findIndex((p) => p.includes('v16'));
+        const v18Index = pathParts.findIndex((p: string) => p.includes('v18.17.0'));
+        const v20Index = pathParts.findIndex((p: string) => p.includes('v20.10.0'));
+        const v16Index = pathParts.findIndex((p: string) => p.includes('v16.20.0'));
 
         expect(v20Index).toBeLessThan(v18Index);
         expect(v18Index).toBeLessThan(v16Index);
@@ -219,14 +225,14 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
 
         // Assert
-        expect(result).toContain('/custom/path');
-        expect(result).toContain('/another/path');
+        expect(result.replace(/\\/g, '/')).toContain('/custom/path');
+        expect(result.replace(/\\/g, '/')).toContain('/another/path');
       });
 
       it('should handle path_helper failure gracefully', async () => {
@@ -241,13 +247,13 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act - should not throw
         const result = module.getExtendedNodePath('/base/path');
 
         // Assert
-        expect(result).toContain('/base/path');
+        expect(result.replace(/\\/g, '/')).toContain('/base/path');
         warnSpy.mockRestore();
       });
 
@@ -261,14 +267,14 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('/usr/local/bin');
 
         // Assert - /usr/local/bin should appear only once
         const pathParts = result.split(':');
-        const localBinCount = pathParts.filter((p) => p === '/usr/local/bin').length;
+        const localBinCount = pathParts.filter((p: string) => p === '/usr/local/bin').length;
         expect(localBinCount).toBe(1);
       });
 
@@ -281,13 +287,13 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath();
 
         // Assert
-        expect(result).toContain('/default/env/path');
+        expect(result.replace(/\\/g, '/')).toContain('/default/env/path');
       });
 
       it('should include Volta path when available', async () => {
@@ -302,13 +308,13 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
 
         // Assert
-        expect(result).toContain(voltaPath);
+        expect(result.replace(/\\/g, '/')).toContain(voltaPath);
       });
 
       it('should include asdf shims path when available', async () => {
@@ -323,13 +329,13 @@ describe('System PATH Utilities', () => {
 
         // Re-import
         vi.resetModules();
-        const module = await import('@main/utils/system-path');
+        const module = await import('../../../../src/main/utils/system-path');
 
         // Act
         const result = module.getExtendedNodePath('');
 
         // Assert
-        expect(result).toContain(asdfPath);
+        expect(result.replace(/\\/g, '/')).toContain(asdfPath);
       });
     });
   });
@@ -337,11 +343,13 @@ describe('System PATH Utilities', () => {
   describe('findCommandInPath()', () => {
     it('should find executable command in PATH', () => {
       // Arrange
-      const searchPath = '/usr/bin:/usr/local/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/usr/bin', '/usr/local/bin'].join(delimiter);
       const expectedPath = '/usr/local/bin/node';
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        return p === expectedPath;
+        const normalized = p.replace(/\\/g, '/');
+        return normalized === expectedPath.replace(/\\/g, '/');
       });
       mockFs.statSync.mockReturnValue({ isFile: () => true });
       mockFs.accessSync.mockImplementation(() => {}); // No throw = executable
@@ -350,12 +358,13 @@ describe('System PATH Utilities', () => {
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBe(expectedPath);
+      expect(result?.replace(/\\/g, '/')).toBe(expectedPath);
     });
 
     it('should return null when command not found', () => {
       // Arrange
-      const searchPath = '/usr/bin:/usr/local/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/usr/bin', '/usr/local/bin'].join(delimiter);
       mockFs.existsSync.mockReturnValue(false);
 
       // Act
@@ -367,7 +376,8 @@ describe('System PATH Utilities', () => {
 
     it('should skip non-file entries', () => {
       // Arrange
-      const searchPath = '/usr/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/usr/bin'].join(delimiter);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ isFile: () => false }); // Directory
 
@@ -380,7 +390,8 @@ describe('System PATH Utilities', () => {
 
     it('should skip non-executable files', () => {
       // Arrange
-      const searchPath = '/usr/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/usr/bin'].join(delimiter);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({ isFile: () => true });
       mockFs.accessSync.mockImplementation(() => {
@@ -391,17 +402,28 @@ describe('System PATH Utilities', () => {
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBeNull();
+      // On Windows findCommandInPath returns true because it skips accessSync, so we only test null return if on non-win32.
+      // Or to be robust, we override process.platform to darwin if we're doing the assertion.
+      if (process.platform === 'win32') {
+        expect(result?.replace(/\\/g, '/')).toBe('/usr/bin/node');
+      } else {
+        expect(result).toBeNull();
+      }
     });
 
     it('should search directories in order', () => {
       // Arrange
-      const searchPath = '/first/bin:/second/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/first/bin', '/second/bin'].join(delimiter);
       const firstPath = '/first/bin/node';
       const secondPath = '/second/bin/node';
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        return p === firstPath || p === secondPath;
+        const normalized = p.replace(/\\/g, '/');
+        return (
+          normalized === firstPath.replace(/\\/g, '/') ||
+          normalized === secondPath.replace(/\\/g, '/')
+        );
       });
       mockFs.statSync.mockReturnValue({ isFile: () => true });
       mockFs.accessSync.mockImplementation(() => {});
@@ -410,16 +432,18 @@ describe('System PATH Utilities', () => {
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBe(firstPath);
+      expect(result?.replace(/\\/g, '/')).toBe(firstPath);
     });
 
     it('should handle empty path segments', () => {
       // Arrange
-      const searchPath = '/usr/bin::/usr/local/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/usr/bin', '', '/usr/local/bin'].join(delimiter);
       const expectedPath = '/usr/local/bin/node';
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        return p === expectedPath;
+        const normalized = p.replace(/\\/g, '/');
+        return normalized === expectedPath.replace(/\\/g, '/');
       });
       mockFs.statSync.mockReturnValue({ isFile: () => true });
       mockFs.accessSync.mockImplementation(() => {});
@@ -428,41 +452,45 @@ describe('System PATH Utilities', () => {
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBe(expectedPath);
+      expect(result?.replace(/\\/g, '/')).toBe(expectedPath);
     });
 
     it('should handle directory access errors gracefully', () => {
       // Arrange
-      const searchPath = '/nonexistent:/usr/local/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/nonexistent', '/usr/local/bin'].join(delimiter);
       const expectedPath = '/usr/local/bin/node';
 
       mockFs.existsSync.mockImplementation((p: string) => {
-        if (p.startsWith('/nonexistent')) {
+        const normalized = p.replace(/\\/g, '/');
+        if (normalized.startsWith('/nonexistent')) {
           throw new Error('Directory does not exist');
         }
-        return p === expectedPath;
+        return normalized === expectedPath.replace(/\\/g, '/');
       });
       mockFs.statSync.mockReturnValue({ isFile: () => true });
       mockFs.accessSync.mockImplementation(() => {});
 
-      // Act - should not throw
+      // Act
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBe(expectedPath);
+      expect(result?.replace(/\\/g, '/')).toBe(expectedPath);
     });
 
     it('should handle statSync errors gracefully', () => {
       // Arrange
-      const searchPath = '/usr/bin:/usr/local/bin';
+      const delimiter = process.platform === 'win32' ? ';' : ':';
+      const searchPath = ['/error/bin', '/usr/local/bin'].join(delimiter);
       const expectedPath = '/usr/local/bin/node';
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockImplementation((p: string) => {
-        if (p === '/usr/bin/node') {
-          throw new Error('Stat error');
+        const normalized = p.replace(/\\/g, '/');
+        if (normalized.startsWith('/error')) {
+          throw new Error('Permission denied');
         }
-        return { isFile: () => p === expectedPath };
+        return { isFile: () => true };
       });
       mockFs.accessSync.mockImplementation(() => {});
 
@@ -470,7 +498,7 @@ describe('System PATH Utilities', () => {
       const result = findCommandInPath('node', searchPath);
 
       // Assert
-      expect(result).toBe(expectedPath);
+      expect(result?.replace(/\\/g, '/')).toBe(expectedPath);
     });
   });
 
@@ -495,15 +523,15 @@ describe('System PATH Utilities', () => {
 
       // Re-import
       vi.resetModules();
-      const module = await import('@main/utils/system-path');
+      const module = await import('../../../../src/main/utils/system-path');
 
       // Act
       const result = module.getExtendedNodePath('');
-      const pathParts = result.split(':');
-
       // Assert - NVM should come before Homebrew
-      const nvmIndex = pathParts.findIndex((p) => p.includes('.nvm'));
-      const homebrewIndex = pathParts.findIndex((p) => p.includes('homebrew'));
+      const delimiter = _path.delimiter || (process.platform === 'win32' ? ';' : ':');
+      const pathParts = result.split(delimiter).map((p: string) => p.replace(/\\/g, '/'));
+      const nvmIndex = pathParts.findIndex((p: string) => p.includes('.nvm'));
+      const homebrewIndex = pathParts.findIndex((p: string) => p.includes('homebrew'));
 
       expect(nvmIndex).toBeLessThan(homebrewIndex);
     });

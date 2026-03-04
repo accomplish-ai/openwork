@@ -115,3 +115,32 @@ export type {
 export type { ThoughtEvent, CheckpointEvent } from './thought-stream.js';
 
 export type { TodoItem } from './todo.js';
+
+// Daemon RPC protocol
+export { JSON_RPC_ERRORS } from './daemon.js';
+export type {
+  JsonRpcRequest,
+  JsonRpcResponse,
+  JsonRpcNotification,
+  JsonRpcError,
+  JsonRpcMessage,
+  TaskStartParams,
+  TaskIdParams,
+  TaskSendResponseParams,
+  PermissionRespondParams,
+  SessionResumeParams,
+  StorageSaveTaskParams,
+  StorageUpdateTaskStatusParams,
+  StorageUpdateTaskSummaryParams,
+  StorageAddTaskMessageParams,
+  StorageDeleteTaskParams,
+  DaemonMethodMap,
+  DaemonMethod,
+  DaemonNotificationMap,
+  DaemonNotification,
+  TypedJsonRpcRequest,
+  TypedJsonRpcResponse,
+  TypedJsonRpcNotification,
+  DaemonTransport,
+  DaemonConnectionState,
+} from './daemon.js';

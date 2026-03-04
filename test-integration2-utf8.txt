@@ -1,0 +1,24 @@
+﻿
+> @accomplish/desktop@0.3.8 test:integration C:\Users\david\Documents\GitHub\accomplish\apps\desktop
+> vitest run --config vitest.integration.config.ts "run"
+
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/david/Documents/GitHub/accomplish/apps/desktop[39m
+
+node.exe : [31mNo test files found, exiting with code 1
+En C:\Users\david\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mNo test fi...ing with code 1:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[39m
+[2mfilter: [22m[33mrun[39m
+[2minclude: [22m[33m__tests__/**/*.integration.test.{ts,tsx}[39m
+[2mexclude:  [22m[33m**/node_modules/**[2m, [22m**/dist/**[2m, 
+[22m**/dist-electron/**[2m, [22m**/release/**[39m
+
+C:\Users\david\Documents\GitHub\accomplish\apps\desktop:
+ÔÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILÔÇë @accomplish/desktop@0.3.8 test:integration: `vitest run --config vitest.integration.config.ts "run"`
+Exit status 1

@@ -1,0 +1,4 @@
+﻿
+> @accomplish/desktop@0.3.8 typecheck C:\Users\david\Documents\GitHub\accomplish\apps\desktop
+> tsc --noEmit
+

@@ -109,6 +109,22 @@ vi.mock('@main/opencode/auth', () => ({
   loginOpenAiWithChatGpt: vi.fn(() => Promise.resolve({ openedUrl: undefined })),
 }));
 
+// Mock daemon-bootstrap
+const mockDaemonClient = {
+  call: vi.fn(),
+  send: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
+  disconnect: vi.fn(),
+  requestState: vi.fn(),
+};
+
+vi.mock('@main/daemon-bootstrap', () => ({
+  getDaemonClient: vi.fn(() => mockDaemonClient),
+  bootstrapDaemon: vi.fn(),
+  shutdownDaemon: vi.fn(),
+}));
+
 // Mock task history (stored in test state)
 const mockTasks: Array<{
   id: string;
@@ -418,6 +434,7 @@ describe('IPC Handlers Integration', () => {
     mockTaskManager.getSessionId.mockReturnValue(null);
     mockTaskManager.isTaskQueued.mockReturnValue(false);
     mockTaskManager.cancelQueuedTask.mockReset();
+    mockDaemonClient.call.mockReset();
   });
 
   afterEach(() => {
@@ -720,57 +737,29 @@ describe('IPC Handlers Integration', () => {
     it('task:cancel should cancel a running task', async () => {
       // Arrange
       const taskId = 'task_to_cancel';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('task:cancel', taskId);
 
       // Assert
-      expect(mockTaskManager.cancelTask).toHaveBeenCalledWith(taskId);
-    });
-
-    it('task:cancel should cancel a queued task', async () => {
-      // Arrange
-      const taskId = 'task_queued';
-      mockTaskManager.isTaskQueued.mockReturnValue(true);
-
-      // Act
-      await invokeHandler('task:cancel', taskId);
-
-      // Assert
-      expect(mockTaskManager.cancelQueuedTask).toHaveBeenCalledWith(taskId);
-    });
-
-    it('task:cancel should do nothing for non-existent task', async () => {
-      // Arrange
-      const taskId = 'task_nonexistent';
-      mockTaskManager.isTaskQueued.mockReturnValue(false);
-      mockTaskManager.hasActiveTask.mockReturnValue(false);
-
-      // Act
-      await invokeHandler('task:cancel', taskId);
-
-      // Assert
-      expect(mockTaskManager.cancelTask).not.toHaveBeenCalled();
-      expect(mockTaskManager.cancelQueuedTask).not.toHaveBeenCalled();
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.cancel', { taskId });
     });
 
     it('task:interrupt should interrupt a running task', async () => {
       // Arrange
       const taskId = 'task_to_interrupt';
-      mockTaskManager.hasActiveTask.mockReturnValue(true);
 
       // Act
       await invokeHandler('task:interrupt', taskId);
 
       // Assert
-      expect(mockTaskManager.interruptTask).toHaveBeenCalledWith(taskId);
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.interrupt', { taskId });
     });
 
     it('task:get should return task from history', async () => {
       // Arrange
       const taskId = 'task_existing';
-      mockTasks.push({
+      mockDaemonClient.call.mockResolvedValueOnce({
         id: taskId,
         prompt: 'Existing task',
         status: 'completed',
@@ -782,6 +771,7 @@ describe('IPC Handlers Integration', () => {
       const result = await invokeHandler('task:get', taskId);
 
       // Assert
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.get', { taskId });
       expect(result).toEqual(
         expect.objectContaining({
           id: taskId,
@@ -791,86 +781,38 @@ describe('IPC Handlers Integration', () => {
       );
     });
 
-    it('task:get should return null for non-existent task', async () => {
-      // Arrange - no tasks
-
-      // Act
-      const result = await invokeHandler('task:get', 'task_nonexistent');
-
-      // Assert
-      expect(result).toBeNull();
-    });
-
     it('task:list should return all tasks from history', async () => {
       // Arrange
-      mockTasks.push(
-        {
-          id: 'task_1',
-          prompt: 'Task 1',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'task_2',
-          prompt: 'Task 2',
-          status: 'running',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-      );
+      mockDaemonClient.call.mockResolvedValueOnce([
+        { id: 'task_1', prompt: 'Task 1', status: 'completed' },
+        { id: 'task_2', prompt: 'Task 2', status: 'running' },
+      ]);
 
       // Act
       const result = await invokeHandler('task:list');
 
       // Assert
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.list');
       expect(result).toHaveLength(2);
     });
 
     it('task:delete should remove task from history', async () => {
       // Arrange
       const taskId = 'task_to_delete';
-      mockTasks.push({
-        id: taskId,
-        prompt: 'Task to delete',
-        status: 'completed',
-        messages: [],
-        createdAt: new Date().toISOString(),
-      });
 
       // Act
       await invokeHandler('task:delete', taskId);
 
       // Assert
-      const { deleteTask } = await import('@accomplish_ai/agent-core');
-      expect(deleteTask).toHaveBeenCalledWith(taskId);
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.delete', { taskId });
     });
 
     it('task:clear-history should clear all tasks', async () => {
-      // Arrange
-      mockTasks.push(
-        {
-          id: 'task_1',
-          prompt: 'Task 1',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'task_2',
-          prompt: 'Task 2',
-          status: 'completed',
-          messages: [],
-          createdAt: new Date().toISOString(),
-        },
-      );
-
       // Act
       await invokeHandler('task:clear-history');
 
       // Assert
-      const { clearHistory } = await import('@accomplish_ai/agent-core');
-      expect(clearHistory).toHaveBeenCalled();
+      expect(mockDaemonClient.call).toHaveBeenCalledWith('task.clearHistory');
     });
   });
 

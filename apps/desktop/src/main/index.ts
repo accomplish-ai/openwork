@@ -24,7 +24,7 @@ import { registerIPCHandlers } from './ipc/handlers';
 import { FutureSchemaError } from '@accomplish_ai/agent-core';
 import { initThoughtStreamApi, startThoughtStreamServer } from './thought-stream-api';
 import type { ProviderId } from '@accomplish_ai/agent-core';
-import { disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
+import { getTaskManager, disposeTaskManager, cleanupVertexServiceAccountKey } from './opencode';
 import { oauthBrowserFlow } from './opencode/auth-browser';
 import { migrateLegacyData } from './store/legacyMigration';
 import {
@@ -36,6 +36,8 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { createTray, destroyTray } from './tray';
+import { bootstrapDaemon, shutdownDaemon } from './daemon-bootstrap';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -83,6 +85,7 @@ const WEB_DIST = app.isPackaged
   : path.join(process.env.APP_ROOT, '../web/dist/client');
 
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
 
 function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
@@ -309,6 +312,12 @@ if (!gotTheLock) {
       // First launch or corrupt DB — nativeTheme stays 'system'
     }
 
+    // Bootstrap the daemon RPC layer (child-process with in-process fallback)
+    const taskManager = getTaskManager();
+    const storage = getStorage();
+    await bootstrapDaemon({ taskManager, storage });
+    console.log('[Main] Daemon bootstrapped');
+
     registerIPCHandlers();
     console.log('[Main] IPC handlers registered');
 
@@ -317,6 +326,18 @@ if (!gotTheLock) {
     if (mainWindow) {
       initThoughtStreamApi(mainWindow);
       startThoughtStreamServer();
+
+      // Intercept window close: hide to tray instead of quitting
+      mainWindow.on('close', (event) => {
+        if (!isQuitting) {
+          event.preventDefault();
+          mainWindow?.hide();
+          console.log('[Main] Window hidden to tray');
+        }
+      });
+
+      createTray(mainWindow);
+      console.log('[Main] System tray created');
     }
 
     app.on('activate', () => {
@@ -329,12 +350,16 @@ if (!gotTheLock) {
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  // With system tray, the app stays alive when all windows are closed.
+  // On macOS this was already the default behavior.
+  // On Windows/Linux the tray keeps the app running.
+  console.log('[Main] All windows closed — app continues in system tray');
 });
 
 app.on('before-quit', () => {
+  isQuitting = true;
+  destroyTray();
+  shutdownDaemon();
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();

@@ -1,0 +1,653 @@
+﻿
+> @accomplish_ai/agent-core@0.4.0 test C:\Users\david\Documents\GitHub\accomplish\packages\agent-core
+> vitest "run"
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/david/Documents/GitHub/accomplish/packages/agent-core[39m
+
+ [32mÔ£ô[39m tests/unit/opencode/completion/completion-enforcer.test.ts [2m([22m[2m49 tests[22m[2m)[22m[90m 49[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/providers/vertex.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 51[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/providers/validation.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/adapter.test.ts [2m([22m[2m32 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+node.exe : [90mstderr[2m | tests/integration/full-flow.test.ts[2m > [22m[2mCore 
+Package Integration
+En C:\Users\david\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...age Integration:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mSkipping integration tests: better-sqlite3 native module not available
+To fix: pnpm rebuild better-sqlite3
+
+ [32mÔ£ô[39m tests/integration/full-flow.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 570[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/config-generator.test.ts [2m([22m[2m55 tests[22m[2m)[22m[33m 542[2mms[22m[39m
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2minitialize[2m > [22m[2mshould initialize and create user skills directory
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2minitialize[2m > [22m[2mshould only initialize once
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mscanDirectory / resync[2m > [22m[2mshould discover skills from directory
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mscanDirectory / resync[2m > [22m[2mshould discover multiple skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mscanDirectory / resync[2m > [22m[2mshould differentiate between bundled and user skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mparse skill frontmatter[2m > [22m[2mshould parse skill frontmatter correctly
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mparse skill frontmatter[2m > [22m[2mshould handle missing frontmatter fields
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mparse skill frontmatter[2m > [22m[2mshould handle hidden skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2msync skills to database[2m > [22m[2mshould sync skills to database
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2msync skills to database[2m > [22m[2mshould update existing skills on resync
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2msync skills to database[2m > [22m[2mshould remove stale skills that no longer exist on disk
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2menable/disable skills[2m > [22m[2mshould enable and disable skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2menable/disable skills[2m > [22m[2mshould get only enabled skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2menable/disable skills[2m > [22m[2mshould preserve enabled state on resync
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mget skill content[2m > [22m[2mshould get skill content
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mget skill content[2m > [22m[2mshould return null for non-existent skill
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mgetSkillById[2m > [22m[2mshould get skill by ID
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mgetSkillById[2m > [22m[2mshould return null for non-existent ID
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2maddSkill from file[2m > [22m[2mshould add skill from local file
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2maddSkill from file[2m > [22m[2mshould throw error for skill without name
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mdeleteSkill[2m > [22m[2mshould delete custom skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mdeleteSkill[2m > [22m[2mshould not delete official skills
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mdeleteSkill[2m > [22m[2mshould return false for non-existent skill
+[22m[39m[DB] Opening database at: :memory:
+
+[90mstdout[2m | tests/unit/skills/skills-manager.test.ts[2m > [22m[2mSkillsManager[2m > [22m[2mpath traversal protection[2m > [22m[2mshould sanitize skill names to prevent path traversal
+[22m[39m[DB] Opening database at: :memory:
+
+ [31mÔØ»[39m tests/unit/skills/skills-manager.test.ts [2m([22m[2m24 tests[22m[2m | [22m[31m24 failed[39m[2m)[22m[33m 855[2mms[22m[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22minitialize[2m > [22mshould initialize and create user skills directory[90m 31[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22minitialize[2m > [22mshould only initialize once[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould discover skills from directory[90m 7[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould discover multiple skills[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould differentiate between bundled and user skills[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould parse skill frontmatter correctly[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould handle missing frontmatter fields[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould handle hidden skills[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22msync skills to database[2m > [22mshould sync skills to database[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22msync skills to database[2m > [22mshould update existing skills on resync[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22msync skills to database[2m > [22mshould remove stale skills that no longer exist on disk[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22menable/disable skills[2m > [22mshould enable and disable skills[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22menable/disable skills[2m > [22mshould get only enabled skills[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22menable/disable skills[2m > [22mshould preserve enabled state on resync[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mget skill content[2m > [22mshould get skill content[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mget skill content[2m > [22mshould return null for non-existent skill[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mgetSkillById[2m > [22mshould get skill by ID[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mgetSkillById[2m > [22mshould return null for non-existent ID[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22maddSkill from file[2m > [22mshould add skill from local file[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22maddSkill from file[2m > [22mshould throw error for skill without name[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mdeleteSkill[2m > [22mshould delete custom skills[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mdeleteSkill[2m > [22mshould not delete official skills[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mdeleteSkill[2m > [22mshould return false for non-existent skill[90m 8[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m SkillsManager[2m > [22mpath traversal protection[2m > [22mshould sanitize skill names to prevent path traversal[90m 9[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+ [32mÔ£ô[39m tests/unit/opencode/task-manager.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/log-watcher.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 132[2mms[22m[39m
+ [31mÔØ»[39m tests/unit/storage/database.test.ts [2m([22m[2m20 tests[22m[2m | [22m[31m16 failed[39m[2m)[22m[90m 235[2mms[22m[39m
+[31m   [31m├ù[31m Database[2m > [22minitializeDatabase[2m > [22mshould initialize database with migrations[90m 30[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22minitializeDatabase[2m > [22mshould create database file[90m 7[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22minitializeDatabase[2m > [22mshould return existing connection when called with same path[90m 10[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22minitializeDatabase[2m > [22mshould close and reinitialize with different path[90m 11[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22minitializeDatabase[2m > [22mshould skip migrations when runMigrations is false[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mWAL mode[2m > [22mshould run WAL mode[90m 7[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mforeign keys[2m > [22mshould enforce foreign keys[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mgetDatabase[2m > [22mshould return database after initialization[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mcloseDatabase[2m > [22mshould close database properly[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mresetDatabaseInstance[2m > [22mshould reset database instance[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mdatabaseExists[2m > [22mshould return true for existing database[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mresetDatabase[2m > [22mshould backup and remove corrupt database[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mresetDatabase[2m > [22mshould remove WAL and SHM files[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mmigration schema[2m > [22mshould create schema_meta table[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mmigration schema[2m > [22mshould set version in schema_meta[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[31m   [31m├ù[31m Database[2m > [22mmigration schema[2m > [22mshould create expected tables from migrations[90m 6[2mms[22m[31m[39m
+[31m     ÔåÆ The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sqlite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+ [32mÔ£ô[39m tests/unit/opencode/completion/completion-state.test.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/stream-parser.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 169[2mms[22m[39m
+[90mstdout[2m | tests/unit/opencode/proxies/moonshot-proxy.test.ts[2m > [22m[2mMoonshot Proxy[2m > [22m[2mensureMoonshotProxy[2m > [22m[2mshould start proxy server and return proxy info
+[22m[39m[Moonshot Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/moonshot-proxy.test.ts[2m > [22m[2mMoonshot Proxy[2m > [22m[2mensureMoonshotProxy[2m > [22m[2mshould reuse existing proxy server
+[22m[39m[Moonshot Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/moonshot-proxy.test.ts[2m > [22m[2mMoonshot Proxy[2m > [22m[2mensureMoonshotProxy[2m > [22m[2mshould normalize URL by removing trailing slash
+[22m[39m[Moonshot Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/moonshot-proxy.test.ts[2m > [22m[2mMoonshot Proxy[2m > [22m[2misMoonshotProxyRunning[2m > [22m[2mshould return true after starting proxy
+[22m[39m[Moonshot Proxy] Server stopped
+
+ [32mÔ£ô[39m tests/unit/opencode/proxies/moonshot-proxy.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 95[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/cli-resolver.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 470[2mms[22m[39m
+   [33m[2mÔ£ô[22m[39m CLI Resolver[2m > [22mresolveCliPath[2m > [22mdevelopment mode[2m > [22mshould return null when not found in node_modules [33m338[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/completion/prompts.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstdout[2m | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts[2m > [22m[2mAzure Foundry Proxy[2m > [22m[2mensureAzureFoundryProxy[2m > [22m[2mshould start proxy server and return proxy info
+[22m[39m[Azure Foundry Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts[2m > [22m[2mAzure Foundry Proxy[2m > [22m[2mensureAzureFoundryProxy[2m > [22m[2mshould reuse existing proxy server
+[22m[39m[Azure Foundry Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts[2m > [22m[2mAzure Foundry Proxy[2m > [22m[2mensureAzureFoundryProxy[2m > [22m[2mshould normalize URL by removing trailing slash
+[22m[39m[Azure Foundry Proxy] Server stopped
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-foundry-proxy.test.ts[2m > [22m[2mAzure Foundry Proxy[2m > [22m[2misAzureFoundryProxyRunning[2m > [22m[2mshould return true after starting proxy
+[22m[39m[Azure Foundry Proxy] Server stopped
+
+ [32mÔ£ô[39m tests/unit/opencode/proxies/azure-foundry-proxy.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 77[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/opencode/message-processor.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+[90mstdout[2m | tests/unit/providers/tool-support-testing.test.ts[2m > [22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "supported" when capabilities include "tools"
+[22m[39m[Ollama] Model llama3:latest supports tools (capabilities)
+
+[90mstdout[2m | tests/unit/providers/tool-support-testing.test.ts[2m > [22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unsupported" when capabilities exist but do not include "tools"
+[22m[39m[Ollama] Model llama3:latest does not support tools (capabilities: completion)
+
+[90mstdout[2m | tests/unit/providers/tool-support-testing.test.ts[2m > [22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unsupported" when capabilities is an empty array
+[22m[39m[Ollama] Model llama3:latest does not support tools (capabilities: )
+
+[90mstdout[2m | tests/unit/providers/tool-support-testing.test.ts[2m > [22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unknown" when response has no capabilities field
+[22m[39m[Ollama] Model llama3:latest has no capabilities field
+
+[90mstderr[2m | tests/unit/providers/tool-support-testing.test.ts[2m > 
+[22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unknown" when 
+/api/show returns a non-ok status
+[22m[39m[Ollama] /api/show failed for llama3:latest: 404
+
+[90mstderr[2m | tests/unit/providers/tool-support-testing.test.ts[2m > 
+[22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unknown" when fetch 
+throws a network error
+[22m[39m[Ollama] Tool check error for llama3:latest: Error: fetch failed
+    at [90mC:\Users\david\Documents\GitHub\accomplish\packages\agent-core\[39mtests\
+unit\providers\tool-support-testing.test.ts:73:44
+    at file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules
+/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.j
+s:39:7)
+    at runTest (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.p
+npm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:
+17)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205
+:15)
+    at runSuite (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205
+:15)
+    at runFiles (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262
+:5)
+    at startTests (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4
+m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:12
+71:3)
+
+[90mstderr[2m | tests/unit/providers/tool-support-testing.test.ts[2m > 
+[22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould return "unknown" when fetch 
+is aborted (timeout)
+[22m[39m[Ollama] Tool check error for llama3:latest: Error [AbortError]: The 
+operation was aborted
+    at [90mC:\Users\david\Documents\GitHub\accomplish\packages\agent-core\[39mtests\
+unit\providers\tool-support-testing.test.ts:81:24
+    at file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules
+/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.j
+s:39:7)
+    at runTest (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.p
+npm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:
+17)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205
+:15)
+    at runSuite (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205
+:15)
+    at runFiles (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4m.
+pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262
+:5)
+    at startTests (file:///C:/Users/david/Documents/GitHub/accomplish/node_modules/[4
+m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:12
+71:3)
+
+[90mstdout[2m | tests/unit/providers/tool-support-testing.test.ts[2m > [22m[2mtestOllamaModelToolSupport[2m > [22m[2mshould call the correct URL with POST and model in the body
+[22m[39m[Ollama] Model llama3:latest supports tools (capabilities)
+
+ [32mÔ£ô[39m tests/unit/providers/tool-support-testing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/providers/ollama.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 79[2mms[22m[39m
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mclearAzureTokenCache[2m > [22m[2mshould clear the token cache
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mhasValidToken[2m > [22m[2mshould return false when no token cached
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mgetTokenExpiry[2m > [22m[2mshould return null when no token cached
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mgetAzureEntraToken[2m > [22m[2mshould return error when Azure Identity not available
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mgetAzureEntraToken[2m > [22m[2mshould return cached token if valid
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mgetAzureEntraToken[2m > [22m[2mshould provide helpful hints for common errors
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mtoken caching[2m > [22m[2mshould not have valid token initially
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mtoken caching[2m > [22m[2mshould not have expiry initially
+[22m[39m[Azure Token Manager] Token cache cleared
+
+[90mstdout[2m | tests/unit/opencode/proxies/azure-token-manager.test.ts[2m > [22m[2mAzure Token Manager[2m > [22m[2mtoken caching[2m > [22m[2mshould clear expiry after clearing cache
+[22m[39m[Azure Token Manager] Token cache cleared
+
+ [32mÔ£ô[39m tests/unit/opencode/proxies/azure-token-manager.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32mÔ£ô[39m tests/unit/storage/secure-storage.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1698[2mms[22m[39m
+
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1m[7m Failed Tests 40 [27m[22mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22minitialize[2m > [22mshould initialize and create user 
+skills directory
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22minitialize[2m > [22mshould only initialize once
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould discover 
+skills from directory
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould discover 
+multiple skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mscanDirectory / resync[2m > [22mshould differentiate 
+between bundled and user skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould parse skill 
+frontmatter correctly
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould handle 
+missing frontmatter fields
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mparse skill frontmatter[2m > [22mshould handle hidden 
+skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22msync skills to database[2m > [22mshould sync skills 
+to database
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22msync skills to database[2m > [22mshould update 
+existing skills on resync
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22msync skills to database[2m > [22mshould remove stale 
+skills that no longer exist on disk
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22menable/disable skills[2m > [22mshould enable and 
+disable skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22menable/disable skills[2m > [22mshould get only 
+enabled skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22menable/disable skills[2m > [22mshould preserve 
+enabled state on resync
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mget skill content[2m > [22mshould get skill content
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mget skill content[2m > [22mshould return null for 
+non-existent skill
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mgetSkillById[2m > [22mshould get skill by ID
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mgetSkillById[2m > [22mshould return null for 
+non-existent ID
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22maddSkill from file[2m > [22mshould add skill from 
+local file
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22maddSkill from file[2m > [22mshould throw error for 
+skill without name
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mdeleteSkill[2m > [22mshould delete custom skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mdeleteSkill[2m > [22mshould not delete official skills
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mdeleteSkill[2m > [22mshould return false for 
+non-existent skill
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/skills/skills-manager.test.ts[2m > 
+[22mSkillsManager[2m > [22mpath traversal protection[2m > [22mshould sanitize 
+skill names to prevent path traversal
+[31m[1mError[22m: The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_m
+odules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sq
+lite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[90m [2mÔØ»[22m bindings ../../node_modules/.pnpm/bindings@1.5.0/node_modules/bindi
+ngs/bindings.js:[2m112:48[22m[39m
+[90m [2mÔØ»[22m new Database ../../node_modules/.pnpm/better-sqlite3@12.6.2/node_mo
+dules/better-sqlite3/lib/database.js:[2m48:64[22m[39m
+[36m [2mÔØ»[22m initializeDatabase src/storage/database.ts:[2m34:9[22m[39m
+    [90m 32| [39m  console[33m.[39m[34mlog[39m([32m'[DB] Opening database 
+at:'[39m[33m,[39m databasePath)[33m;[39m
+    [90m 33| [39m
+    [90m 34| [39m  _db [33m=[39m [35mnew[39m 
+[33mDatabase[39m(databasePath)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 35| [39m  _currentPath [33m=[39m databasePath[33m;[39m
+    [90m 36| [39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/40]ÔÄ
+»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22minitializeDatabase[2m > [22mshould initialize database 
+with migrations
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22minitializeDatabase[2m > [22mshould create database file
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22minitializeDatabase[2m > [22mshould return existing 
+connection when called with same path
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22minitializeDatabase[2m > [22mshould close and reinitialize 
+with different path
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22minitializeDatabase[2m > [22mshould skip migrations when 
+runMigrations is false
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mWAL mode[2m > [22mshould run WAL mode
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mforeign keys[2m > [22mshould enforce foreign keys
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mgetDatabase[2m > [22mshould return database after 
+initialization
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mcloseDatabase[2m > [22mshould close database properly
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mresetDatabaseInstance[2m > [22mshould reset database 
+instance
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mdatabaseExists[2m > [22mshould return true for existing 
+database
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mresetDatabase[2m > [22mshould backup and remove corrupt 
+database
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mresetDatabase[2m > [22mshould remove WAL and SHM files
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mmigration schema[2m > [22mshould create schema_meta table
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mmigration schema[2m > [22mshould set version in schema_meta
+[31m[1m[7m FAIL [27m[22m[39m tests/unit/storage/database.test.ts[2m > 
+[22mDatabase[2m > [22mmigration schema[2m > [22mshould create expected tables 
+from migrations
+[31m[1mError[22m: The module '\\?\C:\Users\david\Documents\GitHub\accomplish\node_m
+odules\.pnpm\better-sqlite3@12.6.2\node_modules\better-sqlite3\build\Release\better_sq
+lite3.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 133. This version of Node.js requires
+NODE_MODULE_VERSION 137. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).[39m
+[90m [2mÔØ»[22m bindings ../../node_modules/.pnpm/bindings@1.5.0/node_modules/bindi
+ngs/bindings.js:[2m112:48[22m[39m
+[90m [2mÔØ»[22m new Database ../../node_modules/.pnpm/better-sqlite3@12.6.2/node_mo
+dules/better-sqlite3/lib/database.js:[2m48:64[22m[39m
+[36m [2mÔØ»[22m Module.initializeDatabase 
+src/storage/database.ts:[2m34:9[22m[39m
+    [90m 32| [39m  console[33m.[39m[34mlog[39m([32m'[DB] Opening database 
+at:'[39m[33m,[39m databasePath)[33m;[39m
+    [90m 33| [39m
+    [90m 34| [39m  _db [33m=[39m [35mnew[39m 
+[33mDatabase[39m(databasePath)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 35| [39m  _currentPath [33m=[39m databasePath[33m;[39m
+    [90m 36| [39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/40]ÔÄ
+»[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m19 passed[39m[22m[90m (21)[39m
+[2m      Tests [22m [1m[31m40 failed[39m[22m[2m | [22m[1m[32m431 passed[39m[22m[90m (471)[39m
+[2m   Start at [22m 03:06:21
+[2m   Duration [22m 5.05s[2m (transform 1.94s, setup 0ms, collect 4.87s, tests 5.24s, environment 8ms, prepare 7.87s)[22m
+
+C:\Users\david\Documents\GitHub\accomplish\packages\agent-core:
+ÔÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILÔÇë @accomplish_ai/agent-core@0.4.0 test: `vitest "run"`
+Exit status 1

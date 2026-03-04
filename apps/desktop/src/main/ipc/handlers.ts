@@ -98,6 +98,7 @@ import {
 } from '../test-utils/mock-task-flow';
 import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
+import { getDaemonClient } from '../daemon-bootstrap';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
 
@@ -218,45 +219,39 @@ export function registerIPCHandlers(): void {
 
   handle('task:cancel', async (_event: IpcMainInvokeEvent, taskId?: string) => {
     if (!taskId) return;
-
-    if (taskManager.isTaskQueued(taskId)) {
-      taskManager.cancelQueuedTask(taskId);
-      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
-      return;
-    }
-
-    if (taskManager.hasActiveTask(taskId)) {
-      await taskManager.cancelTask(taskId);
-      storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
-    }
+    const daemon = getDaemonClient();
+    await daemon.call('task.cancel', { taskId });
   });
 
   handle('task:interrupt', async (_event: IpcMainInvokeEvent, taskId?: string) => {
     if (!taskId) return;
-
-    if (taskManager.hasActiveTask(taskId)) {
-      await taskManager.interruptTask(taskId);
-    }
+    const daemon = getDaemonClient();
+    await daemon.call('task.interrupt', { taskId });
   });
 
   handle('task:get', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return storage.getTask(taskId) || null;
+    const daemon = getDaemonClient();
+    return daemon.call('task.get', { taskId });
   });
 
   handle('task:list', async (_event: IpcMainInvokeEvent) => {
-    return storage.getTasks();
+    const daemon = getDaemonClient();
+    return daemon.call('task.list');
   });
 
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    storage.deleteTask(taskId);
+    const daemon = getDaemonClient();
+    await daemon.call('task.delete', { taskId });
   });
 
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
-    storage.clearHistory();
+    const daemon = getDaemonClient();
+    await daemon.call('task.clearHistory');
   });
 
   handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
-    return storage.getTodosForTask(taskId);
+    const daemon = getDaemonClient();
+    return daemon.call('task.getTodos', { taskId });
   });
 
   handle('permission:respond', async (_event: IpcMainInvokeEvent, response: PermissionResponse) => {

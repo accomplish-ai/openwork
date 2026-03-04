@@ -1,0 +1,117 @@
+﻿
+> accomplish@0.1.0 build C:\Users\david\Documents\GitHub\accomplish
+> pnpm -r build
+
+Scope: 3 of 4 workspace projects
+packages/agent-core build$ tsc
+packages/agent-core build: Done
+apps/desktop build$ pnpm -F @accomplish/web build && tsc && vite build && node scripts/bundle-skills.cjs
+apps/web build$ tsc -p tsconfig.client.json --noEmit && vite build
+apps/desktop build: > @accomplish/web@0.0.1 build C:\Users\david\Documents\GitHub\accomplish\apps\web
+apps/desktop build: > tsc -p tsconfig.client.json --noEmit && vite build
+apps/web build: [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+apps/desktop build: [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+apps/desktop build: transforming...
+apps/web build: transforming...
+apps/web build: [32mÔ£ô[39m 5490 modules transformed.
+apps/desktop build: [32mÔ£ô[39m 5490 modules transformed.
+apps/desktop build: rendering chunks...
+apps/web build: rendering chunks...
+apps/desktop build: computing gzip size...
+apps/web build: computing gzip size...
+apps/web build: [2mdist/client/[22m[32mindex.html                 [39m[1m[2m    0.80 kB[22m[1m[22m[2m Ôöé gzip:   0.46 kB[22m
+apps/desktop build: [2mdist/client/[22m[32mindex.html                 [39m[1m[2m    0.80 kB[22m[1m[22m[2m Ôöé gzip:   0.46 kB[22m
+apps/desktop build: [2mdist/client/[22m[35massets/index-L7SE_8Im.css  [39m[1m[2m   80.18 kB[22m[1m[22m[2m Ôöé gzip:  13.17 kB[22m
+apps/desktop build: [2mdist/client/[22m[36massets/index-7t5NJ5iq.js   [39m[1m[33m1,180.66 kB[39m[22m[2m Ôöé gzip: 347.60 kB[22m
+apps/desktop build: [33m
+apps/desktop build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/desktop build: - Using dynamic import() to code-split the application
+apps/desktop build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+apps/desktop build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+apps/web build: [33m
+apps/web build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/web build: - Using dynamic import() to code-split the application
+apps/web build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+apps/web build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+apps/web build: [2mdist/client/[22m[35massets/index-L7SE_8Im.css  [39m[1m[2m   80.18 kB[22m[1m[22m[2m Ôöé gzip:  13.17 kB[22m
+apps/web build: [2mdist/client/[22m[36massets/index-7t5NJ5iq.js   [39m[1m[33m1,180.66 kB[39m[22m[2m Ôöé gzip: 347.60 kB[22m
+apps/web build: [32mÔ£ô built in 19.15s[39m
+apps/desktop build: [32mÔ£ô built in 18.90s[39m
+apps/web build: Done
+apps/desktop build: [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+apps/desktop build: transforming...
+apps/desktop build: [32mÔ£ô[39m 1 modules transformed.
+apps/desktop build: rendering chunks...
+apps/desktop build: computing gzip size...
+apps/desktop build: [2mdist/[22m[32mindex.html  [39m[1m[2m0.79 kB[22m[1m[22m[2m Ôöé gzip: 0.44 kB[22m
+apps/desktop build: [32mÔ£ô built in 92ms[39m
+apps/desktop build: [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+apps/desktop build: transforming...
+apps/desktop build: [32mÔ£ô[39m 1547 modules transformed.
+apps/desktop build: [33m../../node_modules/.pnpm/gray-matter@4.0.3/node_modules/gray-matter/lib/engines.js (43:13): Use of eval in "../../node_modules/.pnpm/gray-matter@4.0.3/node_modules/gray-matter/lib/engines.js" is strongly discouraged as it poses security risks and may cause issues with minification.[39m
+apps/desktop build: rendering chunks...
+apps/desktop build: computing gzip size...
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-BZ-PCxw0.js                    [39m[1m[2m  0.07 kB[22m[1m[22m[2m Ôöé gzip:   0.09 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex.js                             [39m[1m[2m  0.14 kB[22m[1m[22m[2m Ôöé gzip:   0.12 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-BB2f20wy.js                    [39m[1m[2m  0.25 kB[22m[1m[22m[2m Ôöé gzip:   0.18 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mexternalDataInterceptor-B4AK9Zl2.js  [39m[1m[2m  0.27 kB[22m[1m[22m[2m Ôöé gzip:   0.19 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-CL537xWz.js                    [39m[1m[2m  1.94 kB[22m[1m[22m[2m Ôöé gzip:   0.88 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-B5Q62vOU.js                    [39m[1m[2m  2.28 kB[22m[1m[22m[2m Ôöé gzip:   0.94 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-Bh63_f92.js                    [39m[1m[2m  4.45 kB[22m[1m[22m[2m Ôöé gzip:   1.77 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-BmfO40S5.js                    [39m[1m[2m  5.55 kB[22m[1m[22m[2m Ôöé gzip:   1.94 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-DFjlK7zc.js                    [39m[1m[2m  6.87 kB[22m[1m[22m[2m Ôöé gzip:   2.26 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-BGmXlrzT.js                    [39m[1m[2m  8.68 kB[22m[1m[22m[2m Ôöé gzip:   3.26 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-BFEfveSw.js                    [39m[1m[2m  8.76 kB[22m[1m[22m[2m Ôöé gzip:   2.73 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-4oGGfSOj.js                    [39m[1m[2m 10.75 kB[22m[1m[22m[2m Ôöé gzip:   3.88 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mloadSso-BAAZ2p6u.js                  [39m[1m[2m 12.72 kB[22m[1m[22m[2m Ôöé gzip:   3.95 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-CZpfOtpc.js                    [39m[1m[2m 21.40 kB[22m[1m[22m[2m Ôöé gzip:   5.74 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-CQXeLMhT.js                    [39m[1m[2m 25.93 kB[22m[1m[22m[2m Ôöé gzip:   6.10 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-Us_OVocK.js                    [39m[1m[2m 31.45 kB[22m[1m[22m[2m Ôöé gzip:   7.75 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-Cw_Pk32U.js                    [39m[1m[2m 33.32 kB[22m[1m[22m[2m Ôöé gzip:   7.99 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-B2N-6tmo.js                    [39m[1m[2m 36.89 kB[22m[1m[22m[2m Ôöé gzip:  10.83 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-p45BrKiI.js                    [39m[1m[33m602.48 kB[39m[22m[2m Ôöé gzip: 150.53 kB[22m
+apps/desktop build: [2mdist-electron/main/[22m[36mindex-CiCQ5kjh.js                    [39m[1m[33m953.96 kB[39m[22m[2m Ôöé gzip: 234.69 kB[22m
+apps/desktop build: [32mÔ£ô built in 6.46s[39m
+apps/desktop build: [36mvite v6.4.1 [32mbuilding for production...[36m[39m
+apps/desktop build: transforming...
+apps/desktop build: [32mÔ£ô[39m 1 modules transformed.
+apps/desktop build: rendering chunks...
+apps/desktop build: computing gzip size...
+apps/desktop build: [2mdist-electron/preload/[22m[36mindex.mjs  [39m[1m[2m9.11 kB[22m[1m[22m[2m Ôöé gzip: 2.24 kB[22m
+apps/desktop build: [2mdist-electron/preload/[22m[36mindex.cjs  [39m[1m[2m8.44 kB[22m[1m[22m[2m Ôöé gzip: 1.79 kB[22m
+apps/desktop build: [32mÔ£ô built in 29ms[39m
+apps/desktop build: [bundle-skills] Starting skill bundling...
+apps/desktop build: [bundle-skills] Bundling ask-user-question: src/index.ts -> dist/index.mjs
+apps/desktop build:   ....\packages\agent-core\mcp-tools\ask-user-question\dist\index.mjs  690.3kb
+apps/desktop build: Done in 87ms
+apps/desktop build: [bundle-skills] Bundling file-permission: src/index.ts -> dist/index.mjs
+apps/desktop build:   ..\..\packages\agent-core\mcp-tools\file-permission\dist\index.mjs  689.0kb
+apps/desktop build: Done in 75ms
+apps/desktop build: [bundle-skills] Bundling complete-task: src/index.ts -> dist/index.mjs
+apps/desktop build:   ..\..\packages\agent-core\mcp-tools\complete-task\dist\index.mjs  688.2kb
+apps/desktop build: Done in 267ms
+apps/desktop build: [bundle-skills] Bundling start-task: src/index.ts -> dist/index.mjs
+apps/desktop build:   ..\..\packages\agent-core\mcp-tools\start-task\dist\index.mjs  688.7kb
+apps/desktop build: Done in 337ms
+apps/desktop build: [bundle-skills] Bundling dev-browser-mcp: src/index.ts -> dist/index.mjs
+apps/desktop build: Ôû▓ [WARNING] Using direct eval with a bundler is not recommended and may cause problems [direct-eval]
+apps/desktop build:     src/index.ts:1398:6:
+apps/desktop build:       1398 Ôöé       eval(script);
+apps/desktop build:            ÔòÁ       ~~~~
+apps/desktop build:   You can read more about direct eval and bundling here: https://esbuild.github.io/link/direct-eval
+apps/desktop build: Ôû▓ [WARNING] Using direct eval with a bundler is not recommended and may cause problems [direct-eval]
+apps/desktop build:     src/index.ts:3254:27:
+apps/desktop build:       3254 Ôöé                     return eval(code);
+apps/desktop build:            ÔòÁ                            ~~~~
+apps/desktop build:   You can read more about direct eval and bundling here: https://esbuild.github.io/link/direct-eval
+apps/desktop build: 2 warnings
+apps/desktop build:   ..\..\packages\agent-core\mcp-tools\dev-browser-mcp\dist\index.mjs  852.6kb
+apps/desktop build: Done in 85ms
+apps/desktop build: [bundle-skills] Bundling dev-browser: scripts/start-server.ts -> dist/start-server.mjs
+apps/desktop build:   ...\packages\agent-core\mcp-tools\dev-browser\dist\start-server.mjs  1.1mb
+apps/desktop build: Done in 72ms
+apps/desktop build: [bundle-skills] Bundling dev-browser: scripts/start-relay.ts -> dist/start-relay.mjs
+apps/desktop build:   ....\packages\agent-core\mcp-tools\dev-browser\dist\start-relay.mjs  218.1kb
+apps/desktop build: Done in 20ms
+apps/desktop build: [bundle-skills] Done
+apps/desktop build: Done

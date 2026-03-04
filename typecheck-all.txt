@@ -1,0 +1,11 @@
+﻿
+> accomplish@0.1.0 typecheck C:\Users\david\Documents\GitHub\accomplish
+> pnpm -r --parallel run typecheck
+
+Scope: 3 of 4 workspace projects
+apps/desktop typecheck$ tsc --noEmit
+apps/web typecheck$ tsc -p tsconfig.client.json --noEmit
+packages/agent-core typecheck$ tsc --noEmit
+packages/agent-core typecheck: Done
+apps/desktop typecheck: Done
+apps/web typecheck: Done

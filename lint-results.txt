@@ -1,0 +1,26 @@
+﻿
+> accomplish@0.1.0 lint C:\Users\david\Documents\GitHub\accomplish
+> pnpm -r --parallel run typecheck && eslint . "--fix"
+
+Scope: 3 of 4 workspace projects
+apps/desktop typecheck$ tsc --noEmit
+apps/web typecheck$ tsc -p tsconfig.client.json --noEmit
+packages/agent-core typecheck$ tsc --noEmit
+packages/agent-core typecheck: Done
+apps/desktop typecheck: Done
+apps/web typecheck: Done
+node.exe : (node:28908) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://
+/C:/Users/david/Documents/GitHub/accomplish/eslint.config.js?mtime=1771742444010 is 
+not specified and it doesn't parse as CommonJS.
+En C:\Users\david\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:28908) [M...se as CommonJS.:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Reparsing as ES module because module syntax was detected. This incurs a performance 
+overhead.
+To eliminate this warning, add "type": "module" to 
+C:\Users\david\Documents\GitHub\accomplish\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

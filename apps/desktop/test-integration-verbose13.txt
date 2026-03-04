@@ -1,0 +1,188 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/david/Documents/GitHub/accomplish/apps/desktop[39m
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return nvm OpenCode path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mNon-macOS Platforms[2m > [22mshould return base PATH unchanged on Linux[33m 2710[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mNon-macOS Platforms[2m > [22mshould return base PATH unchanged on Windows[32m 38[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include common Node.js paths[32m 42[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include NVM paths when available[32m 37[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include fnm paths when available[32m 28[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould sort NVM versions with newest first[32m 27[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include path_helper output[32m 28[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould handle path_helper failure gracefully[32m 35[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould deduplicate paths[32m 31[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould use process.env.PATH as default base[32m 28[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould find executable command in PATH
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould return null when command not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return nvm OpenCode path when available
+[22m[39m[CLI Resolver] Using nvm OpenCode CLI: \Users\testuser\.nvm\versions\node\v20.10.0\bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-file entries
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return global npm OpenCode path when nvm not available
+[22m[39m[CLI Resolver] Using global OpenCode CLI: /usr/local/bin/opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return Homebrew OpenCode path on Apple Silicon
+[22m[39m[CLI Resolver] Using global OpenCode CLI: /opt/homebrew/bin/opencode
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-executable files
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return bundled CLI path in node_modules when global not found
+[22m[39m[CLI Resolver] Using bundled CLI: \mock\app\path\node_modules\.bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould search directories in order
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include Volta path when available[32m 27[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include asdf shims path when available[32m 24[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould find executable command in PATH[32m 19[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould return null when command not found[32m 13[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould skip non-file entries[32m 18[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould skip non-executable files[32m 13[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return true when nvm OpenCode is available
+[22m[39m[CLI Resolver] Using nvm OpenCode CLI: \Users\testuser\.nvm\versions\node\v20.10.0\bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle empty path segments
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return true when bundled CLI exists in node_modules
+[22m[39m[CLI Resolver] Using bundled CLI: \mock\app\path\node_modules\.bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return true when opencode is available on PATH
+[22m[39m[CLI Resolver] Using opencode command on PATH
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle directory access errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould execute CLI with --version flag and parse output
+[22m[39m[CLI Resolver] Using bundled CLI: \mock\app\path\node_modules\.bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould parse version from simple version string
+[22m[39m[CLI Resolver] Using bundled CLI: \mock\app\path\node_modules\.bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle statSync errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return null when version command fails
+[22m[39m[CLI Resolver] Using bundled CLI: \mock\app\path\node_modules\.bin\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mNVM Path Scanning[2m > [22m[2mshould scan multiple nvm versions and return first found
+[22m[39m[CLI Resolver] Using nvm OpenCode CLI: \Users\testuser\.nvm\versions\node\v20.10.0\bin\opencode
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return nvm OpenCode path when available[33m 3098[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return global npm OpenCode path when nvm not available[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return Homebrew OpenCode path on Apple Silicon[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return bundled CLI path in node_modules when global not found[32m 7[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould throw when no OpenCode CLI path can be resolved[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > [22mshould return unpacked asar path when packaged[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > [22mshould throw when bundled CLI is missing in packaged app[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when nvm OpenCode is available[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when bundled CLI exists in node_modules[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when opencode is available on PATH[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return false when no CLI is found anywhere[32m 3[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > [22mshould return true when bundled CLI exists in unpacked asar[32m 3[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > [22mshould return false when bundled CLI missing in unpacked asar[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > [22mshould read version from package.json in unpacked asar[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > [22mshould return null when package.json not found[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould execute CLI with --version flag and parse output[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould parse version from simple version string[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould return null when version command fails[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould scan multiple nvm versions and return first found[32m 4[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould handle missing nvm directory gracefully[32m 6[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould search directories in order[32m 18[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle empty path segments[32m 13[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle directory access errors gracefully[32m 23[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle statSync errors gracefully[32m 16[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mPath Priority Order[2m > [22mshould prioritize version manager paths over system paths[32m 38[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m41 passed[39m[22m[90m (41)[39m
+[2m   Start at [22m 09:19:51
+[2m   Duration [22m 3.81s[2m (transform 2.26s, setup 146ms, import 300ms, tests 6.43s, environment 0ms)[22m
+
