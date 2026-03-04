@@ -17,7 +17,7 @@
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
-# Accomplish™ (formerly Openwork) - ओपन सोर्स AI डेस्कटॉप एजेंट
+# Accomplish™ - ओपन सोर्स AI डेस्कटॉप एजेंट
 
 Accomplish एक ओपन सोर्स AI डेस्कटॉप एजेंट है जो आपकी मशीन पर लोकल तौर पर फ़ाइल मैनेजमेंट, डॉक्यूमेंट क्रिएशन और ब्राउज़र टास्क को ऑटोमेट करता है। अपनी खुद की API कीज़ (OpenAI, Anthropic, Google, xAI) लाएँ या Ollama के ज़रिए लोकल मॉडल चलाएँ।
 
