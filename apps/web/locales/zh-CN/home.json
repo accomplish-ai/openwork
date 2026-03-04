@@ -1,6 +1,10 @@
 {
   "title": "今天想完成什么？",
   "inputPlaceholder": "描述一个任务，让 AI 来处理",
+  "favorites": {
+    "title": "收藏",
+    "empty": "将已完成的任务加星即可在此显示。"
+  },
   "plusMenu": {
     "addContent": "添加内容",
     "attachFiles": "附加文件",

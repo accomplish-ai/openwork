@@ -1,6 +1,10 @@
 {
   "title": "What will you accomplish today?",
   "inputPlaceholder": "Describe a task and let AI handle the rest",
+  "favorites": {
+    "title": "Favorites",
+    "empty": "Star completed tasks to see them here."
+  },
   "plusMenu": {
     "addContent": "Add content",
     "attachFiles": "Attach Files",

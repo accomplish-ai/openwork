@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@accomplish_ai/agent-core/common';
 import { cn } from '@/lib/utils';
-import { X, SpinnerGap } from '@phosphor-icons/react';
+import { X, Star, SpinnerGap } from '@phosphor-icons/react';
 import { useTaskStore } from '@/stores/taskStore';
 import { STATUS_COLORS, extractDomains } from '@/lib/task-utils';
+
+const COMPLETED_OR_INTERRUPTED: Array<string> = ['completed', 'interrupted'];
 
 interface ConversationListItemProps {
   task: Task;
@@ -18,6 +20,16 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
   const isActive = location.pathname === `/execution/${task.id}`;
   const deleteTask = useTaskStore((state) => state.deleteTask);
   const domains = useMemo(() => extractDomains(task), [task]);
+  const { favorites, loadFavorites, addFavorite, removeFavorite } = useTaskStore();
+  const favoritesList = Array.isArray(favorites) ? favorites : [];
+  const isFavorited = favoritesList.some((f) => f.taskId === task.id);
+  const canFavorite = COMPLETED_OR_INTERRUPTED.includes(task.status);
+
+  useEffect(() => {
+    if (typeof loadFavorites === 'function') {
+      loadFavorites();
+    }
+  }, [loadFavorites]);
 
   const handleClick = () => {
     navigate(`/execution/${task.id}`);
@@ -89,6 +101,29 @@ export function ConversationListItem({ task }: ConversationListItemProps) {
               </span>
             ))}
           </span>
+        )}
+        {canFavorite && (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (isFavorited) {
+                await removeFavorite(task.id);
+              } else {
+                await addFavorite(task.id);
+              }
+            }}
+            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            className={cn(
+              'absolute right-6 top-1/2 -translate-y-1/2',
+              'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto',
+              'transition-opacity duration-200',
+              'p-1 rounded hover:bg-accent shrink-0',
+              isFavorited && 'opacity-100 text-amber-500',
+            )}
+          >
+            <Star className={cn('h-3 w-3', isFavorited && 'fill-current')} />
+          </button>
         )}
         <button
           onClick={handleDelete}

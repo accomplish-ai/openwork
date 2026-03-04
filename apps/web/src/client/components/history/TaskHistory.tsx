@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
+import { Star } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
@@ -10,13 +11,29 @@ interface TaskHistoryProps {
 }
 
 export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProps) {
-  const { tasks, loadTasks, deleteTask, clearHistory } = useTaskStore();
+  const {
+    tasks,
+    favorites,
+    loadTasks,
+    loadFavorites,
+    addFavorite,
+    removeFavorite,
+    deleteTask,
+    clearHistory,
+  } = useTaskStore();
+  const favoritesList = Array.isArray(favorites) ? favorites : [];
   const { t } = useTranslation('history');
   const { t: tCommon } = useTranslation('common');
 
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (typeof loadFavorites === 'function') {
+      loadFavorites();
+    }
+  }, [loadFavorites]);
 
   const displayedTasks = limit ? tasks.slice(0, limit) : tasks;
 
@@ -50,7 +67,22 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
 
       <div className="space-y-2">
         {displayedTasks.map((task) => (
-          <TaskHistoryItem key={task.id} task={task} onDelete={() => deleteTask(task.id)} />
+          <TaskHistoryItem
+            key={task.id}
+            task={task}
+            isFavorited={favoritesList.some((f) => f.taskId === task.id)}
+            onToggleFavorite={async () => {
+              if (typeof addFavorite !== 'function' || typeof removeFavorite !== 'function') {
+                return;
+              }
+              if (favoritesList.some((f) => f.taskId === task.id)) {
+                await removeFavorite(task.id);
+              } else {
+                await addFavorite(task.id);
+              }
+            }}
+            onDelete={() => deleteTask(task.id)}
+          />
         ))}
       </div>
 
@@ -66,7 +98,19 @@ export default function TaskHistory({ limit, showTitle = true }: TaskHistoryProp
   );
 }
 
-function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void }) {
+const COMPLETED_OR_INTERRUPTED: Array<string> = ['completed', 'interrupted'];
+
+function TaskHistoryItem({
+  task,
+  isFavorited,
+  onToggleFavorite,
+  onDelete,
+}: {
+  task: Task;
+  isFavorited: boolean;
+  onToggleFavorite: () => Promise<void>;
+  onDelete: () => void;
+}) {
   const { t: tCommon } = useTranslation('common');
   const { t } = useTranslation('history');
 
@@ -77,10 +121,12 @@ function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void 
     cancelled: { color: 'bg-text-muted', labelKey: 'status.cancelled' },
     pending: { color: 'bg-warning', labelKey: 'status.pending' },
     waiting_permission: { color: 'bg-warning', labelKey: 'status.waiting' },
+    interrupted: { color: 'bg-text-muted', labelKey: 'status.stopped' },
   };
 
   const config = statusConfig[task.status] || statusConfig.pending;
   const timeAgo = getTimeAgo(task.createdAt, tCommon);
+  const canFavorite = COMPLETED_OR_INTERRUPTED.includes(task.status);
 
   return (
     <Link
@@ -97,7 +143,22 @@ function TaskHistoryItem({ task, onDelete }: { task: Task; onDelete: () => void 
           {tCommon('messages', { count: task.messages.length })}
         </p>
       </div>
+      {canFavorite && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void onToggleFavorite();
+          }}
+          className="p-2 text-text-muted hover:text-foreground transition-colors"
+          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Star className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+        </button>
+      )}
       <button
+        type="button"
+        data-testid="task-delete-button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
