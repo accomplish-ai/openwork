@@ -8,6 +8,15 @@ export type TaskStatus =
   | 'cancelled'
   | 'interrupted';
 
+export interface TaskFileAttachment {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  type: 'image' | 'text' | 'code' | 'pdf' | 'other';
+  content?: string; // For text/code extraction
+}
+
 export interface TaskConfig {
   prompt: string;
   taskId?: string;
@@ -18,6 +27,7 @@ export interface TaskConfig {
   sessionId?: string;
   /** Model ID for display name in progress events */
   modelId?: string;
+  attachments?: TaskFileAttachment[];
 }
 
 export interface Task {

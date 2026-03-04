@@ -9,6 +9,7 @@ import { getAccomplish } from '@/lib/accomplish';
 import { springs } from '@/lib/animations';
 import { ArrowUpLeft } from '@phosphor-icons/react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import type { TaskFileAttachment } from '@accomplish_ai/agent-core';
 import { PlusMenu } from '@/components/landing/PlusMenu';
 import { IntegrationIcon } from '@/components/landing/IntegrationIcons';
 
@@ -26,6 +27,8 @@ const USE_CASE_KEYS = [
 
 export function HomePage() {
   const [prompt, setPrompt] = useState('');
+  const [attachments, setAttachments] = useState<TaskFileAttachment[]>([]);
+  const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
@@ -64,11 +67,11 @@ export function HomePage() {
     if (!prompt.trim() || isLoading) return;
 
     const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
+    const task = await startTask({ prompt: prompt.trim(), taskId, attachments });
     if (task) {
       navigate(`/execution/${task.id}`);
     }
-  }, [prompt, isLoading, startTask, navigate]);
+  }, [prompt, attachments, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
     if (isLoading) {
@@ -142,6 +145,58 @@ export function HomePage() {
         initialTab={settingsInitialTab}
       />
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springs.gentle, delay: 0.1 }}
+            className="w-full"
+          >
+            <Card className="w-full bg-card/95 backdrop-blur-md shadow-xl gap-0 py-0 flex flex-col max-h-[calc(100vh-3rem)]">
+              <CardContent className="p-6 pb-4 flex-shrink-0">
+                {/* Input Section */}
+                <TaskInputBar
+                  value={prompt}
+                  onChange={setPrompt}
+                  attachments={attachments}
+                  onAttachmentsChange={setAttachments}
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                  placeholder={t('inputPlaceholder')}
+                  large={true}
+                  autoFocus={true}
+                  onOpenSpeechSettings={handleOpenSpeechSettings}
+                  onOpenSettings={(tab: 'providers' | 'voice' | 'skills' | 'connectors') => {
+                    setSettingsInitialTab(tab);
+                    setShowSettingsDialog(true);
+                  }}
+                  onOpenModelSettings={handleOpenModelSettings}
+                  hideModelWhenNoModel={true}
+                />
+              </CardContent>
+
+              {/* Examples Toggle */}
+              <div className="border-t border-border">
+                <button
+                  onClick={() => setShowExamples(!showExamples)}
+                  className="w-full px-6 py-3 flex items-center justify-between text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
+                >
+                  <span>{t('examplePrompts')}</span>
+                  <motion.div
+                    animate={{ rotate: showExamples ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.div>
+                </button>
+
+                <AnimatePresence>
+                  {showExamples && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
       <div className="h-full flex flex-col bg-accent relative overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6 pb-0">
           <div className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-3">

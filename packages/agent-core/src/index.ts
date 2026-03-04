@@ -206,6 +206,8 @@ export { redact } from './utils/redact.js';
 
 export { mapResultToStatus } from './utils/task-status.js';
 
+export { buildEnhancedPrompt } from './utils/prompt.js';
+
 // Logging - use createLogWriter factory from ./factories/log-writer.js instead
 
 // -----------------------------------------------------------------------------
@@ -242,6 +244,7 @@ export type {
   TaskConfig,
   Task,
   TaskAttachment,
+  TaskFileAttachment,
   TaskMessage,
   TaskResult,
   TaskProgress,
