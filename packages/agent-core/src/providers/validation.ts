@@ -1,5 +1,9 @@
 import type { ProviderType } from '../common/types/provider.js';
-import { DEFAULT_PROVIDERS, STANDARD_VALIDATION_PROVIDERS, ZAI_ENDPOINTS } from '../common/types/provider.js';
+import {
+  DEFAULT_PROVIDERS,
+  STANDARD_VALIDATION_PROVIDERS,
+  ZAI_ENDPOINTS,
+} from '../common/types/provider.js';
 import type { ZaiRegion } from '../common/types/providerSettings.js';
 
 import { fetchWithTimeout } from '../utils/fetch.js';
@@ -25,7 +29,7 @@ interface StandardValidationRequest {
 function buildStandardValidationRequest(
   provider: ProviderType,
   apiKey: string,
-  options?: ValidationOptions
+  options?: ValidationOptions,
 ): StandardValidationRequest | null {
   if (!STANDARD_VALIDATION_PROVIDERS.has(provider)) {
     return null;
@@ -70,7 +74,7 @@ function buildStandardValidationRequest(
 export async function validateApiKey(
   provider: ProviderType,
   apiKey: string,
-  options?: ValidationOptions
+  options?: ValidationOptions,
 ): Promise<ValidationResult> {
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT_MS;
 
@@ -87,7 +91,7 @@ export async function validateApiKey(
               Authorization: `Bearer ${apiKey}`,
             },
           },
-          timeout
+          timeout,
         );
         break;
 
@@ -102,12 +106,12 @@ export async function validateApiKey(
               'anthropic-version': '2023-06-01',
             },
             body: JSON.stringify({
-              model: 'MiniMax-M2',
+              model: 'MiniMax-M2.5',
               max_tokens: 1,
               messages: [{ role: 'user', content: 'test' }],
             }),
           },
-          timeout
+          timeout,
         );
         break;
 

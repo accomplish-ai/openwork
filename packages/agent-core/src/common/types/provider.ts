@@ -5,7 +5,27 @@ export const ZAI_ENDPOINTS: Record<ZaiRegion, string> = {
   international: 'https://api.z.ai/api/coding/paas/v4',
 };
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'google' | 'xai' | 'ollama' | 'deepseek' | 'moonshot' | 'zai' | 'azure-foundry' | 'custom' | 'bedrock' | 'litellm' | 'minimax' | 'lmstudio' | 'vertex' | 'nebius' | 'together' | 'fireworks' | 'groq';
+export type ProviderType =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'xai'
+  | 'ollama'
+  | 'deepseek'
+  | 'moonshot'
+  | 'zai'
+  | 'azure-foundry'
+  | 'custom'
+  | 'bedrock'
+  | 'litellm'
+  | 'minimax'
+  | 'lmstudio'
+  | 'vertex'
+  | 'nebius'
+  | 'together'
+  | 'fireworks'
+  | 'groq';
 
 export type ApiKeyProvider =
   | 'anthropic'
@@ -295,11 +315,11 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
     requiresApiKey: true,
     apiKeyEnvVar: 'MINIMAX_API_KEY',
     baseUrl: 'https://api.minimax.io',
-    defaultModelId: 'minimax/MiniMax-M2',
+    defaultModelId: 'minimax/MiniMax-M2.5',
     models: [
       {
         id: 'MiniMax-M2',
-        displayName: 'MiniMax-M2',
+        displayName: 'MiniMax M2',
         provider: 'minimax',
         fullId: 'minimax/MiniMax-M2',
         contextWindow: 196608,
@@ -307,9 +327,33 @@ export const DEFAULT_PROVIDERS: ProviderConfig[] = [
       },
       {
         id: 'MiniMax-M2.1',
-        displayName: 'MiniMax-M2.1',
+        displayName: 'MiniMax M2.1',
         provider: 'minimax',
         fullId: 'minimax/MiniMax-M2.1',
+        contextWindow: 204800,
+        supportsVision: false,
+      },
+      {
+        id: 'MiniMax-M2.1-highspeed',
+        displayName: 'MiniMax M2.1 Highspeed',
+        provider: 'minimax',
+        fullId: 'minimax/MiniMax-M2.1-highspeed',
+        contextWindow: 204800,
+        supportsVision: false,
+      },
+      {
+        id: 'MiniMax-M2.5',
+        displayName: 'MiniMax M2.5',
+        provider: 'minimax',
+        fullId: 'minimax/MiniMax-M2.5',
+        contextWindow: 204800,
+        supportsVision: false,
+      },
+      {
+        id: 'MiniMax-M2.5-highspeed',
+        displayName: 'MiniMax M2.5 Highspeed',
+        provider: 'minimax',
+        fullId: 'minimax/MiniMax-M2.5-highspeed',
         contextWindow: 204800,
         supportsVision: false,
       },

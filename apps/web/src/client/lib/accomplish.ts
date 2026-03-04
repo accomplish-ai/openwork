@@ -269,9 +269,7 @@ interface AccomplishAPI {
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
   getBedrockCredentials(): Promise<BedrockCredentials | null>;
-  fetchBedrockModels(
-    credentials: string,
-  ): Promise<{
+  fetchBedrockModels(credentials: string): Promise<{
     success: boolean;
     models: Array<{ id: string; name: string; provider: string }>;
     error?: string;
@@ -281,9 +279,7 @@ interface AccomplishAPI {
   validateVertexCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveVertexCredentials(credentials: string): Promise<ApiKeyConfig>;
   getVertexCredentials(): Promise<VertexCredentials | null>;
-  fetchVertexModels(
-    credentials: string,
-  ): Promise<{
+  fetchVertexModels(credentials: string): Promise<{
     success: boolean;
     models: Array<{ id: string; name: string; provider: string }>;
     error?: string;
@@ -356,6 +352,7 @@ interface AccomplishAPI {
   getEnabledSkills(): Promise<Skill[]>;
   setSkillEnabled(id: string, enabled: boolean): Promise<void>;
   getSkillContent(id: string): Promise<string | null>;
+  getUserSkillsPath(): Promise<string>;
   pickSkillFile(): Promise<string | null>;
   addSkillFromFile(filePath: string): Promise<Skill>;
   addSkillFromGitHub(rawUrl: string): Promise<Skill>;

@@ -1,63 +1,50 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import TaskInputBar from '../components/landing/TaskInputBar';
-import { SettingsDialog } from '../components/layout/SettingsDialog';
-import { useTaskStore } from '../stores/taskStore';
-import { getAccomplish } from '../lib/accomplish';
-import { springs, staggerContainer, staggerItem } from '../lib/animations';
-import { Card, CardContent } from '@/components/ui/card';
-import { CaretDown } from '@phosphor-icons/react';
+import { TaskInputBar } from '@/components/landing/TaskInputBar';
+import { SettingsDialog } from '@/components/layout/SettingsDialog';
+import { useTaskStore } from '@/stores/taskStore';
+import { getAccomplish } from '@/lib/accomplish';
+import { springs } from '@/lib/animations';
+import { ArrowUpLeft } from '@phosphor-icons/react';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
+import { PlusMenu } from '@/components/landing/PlusMenu';
+import { IntegrationIcon } from '@/components/landing/IntegrationIcons';
 
-// Import use case images for proper bundling in production
-import calendarPrepNotesImg from '/assets/usecases/calendar-prep-notes.png';
-import inboxPromoCleanupImg from '/assets/usecases/inbox-promo-cleanup.png';
-import competitorPricingDeckImg from '/assets/usecases/competitor-pricing-deck.png';
-import notionApiAuditImg from '/assets/usecases/notion-api-audit.png';
-import stagingVsProdVisualImg from '/assets/usecases/staging-vs-prod-visual.png';
-import prodBrokenLinksImg from '/assets/usecases/prod-broken-links.png';
-import stockPortfolioAlertsImg from '/assets/usecases/stock-portfolio-alerts.png';
-import jobApplicationAutomationImg from '/assets/usecases/job-application-automation.png';
-import eventCalendarBuilderImg from '/assets/usecases/event-calendar-builder.png';
-
-// Use case keys for i18n
 const USE_CASE_KEYS = [
-  { key: 'calendarPrepNotes', image: calendarPrepNotesImg },
-  { key: 'inboxPromoCleanup', image: inboxPromoCleanupImg },
-  { key: 'competitorPricingDeck', image: competitorPricingDeckImg },
-  { key: 'notionApiAudit', image: notionApiAuditImg },
-  { key: 'stagingVsProdVisual', image: stagingVsProdVisualImg },
-  { key: 'prodBrokenLinks', image: prodBrokenLinksImg },
-  { key: 'portfolioMonitoring', image: stockPortfolioAlertsImg },
-  { key: 'jobApplicationAutomation', image: jobApplicationAutomationImg },
-  { key: 'eventCalendarBuilder', image: eventCalendarBuilderImg },
+  { key: 'calendarPrepNotes', icons: ['calendar.google.com', 'docs.google.com'] },
+  { key: 'inboxPromoCleanup', icons: ['mail.google.com'] },
+  { key: 'competitorPricingDeck', icons: ['slides.google.com', 'sheets.google.com'] },
+  { key: 'notionApiAudit', icons: ['notion.so'] },
+  { key: 'stagingVsProdVisual', icons: ['google.com'] },
+  { key: 'prodBrokenLinks', icons: ['google.com'] },
+  { key: 'portfolioMonitoring', icons: ['finance.yahoo.com'] },
+  { key: 'jobApplicationAutomation', icons: ['linkedin.com'] },
+  { key: 'eventCalendarBuilder', icons: ['eventbrite.com', 'calendar.google.com'] },
 ] as const;
 
 export function HomePage() {
   const [prompt, setPrompt] = useState('');
-  const [showExamples, setShowExamples] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
+  const { startTask, interruptTask, isLoading, addTaskUpdate, setPermissionRequest } =
+    useTaskStore();
   const navigate = useNavigate();
-  const accomplish = getAccomplish();
+  const accomplish = useMemo(() => getAccomplish(), []);
   const { t } = useTranslation('home');
 
-  // Build use case examples from translations
   const useCaseExamples = useMemo(() => {
-    return USE_CASE_KEYS.map(({ key, image }) => ({
+    return USE_CASE_KEYS.map(({ key, icons }) => ({
       title: t(`useCases.${key}.title`),
       description: t(`useCases.${key}.description`),
       prompt: t(`useCases.${key}.prompt`),
-      image,
+      icons,
     }));
   }, [t]);
 
-  // Subscribe to task events
   useEffect(() => {
     const unsubscribeTask = accomplish.onTaskUpdate((event) => {
       addTaskUpdate(event);
@@ -84,9 +71,12 @@ export function HomePage() {
   }, [prompt, isLoading, startTask, navigate]);
 
   const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
+    if (isLoading) {
+      void interruptTask();
+      return;
+    }
+    if (!prompt.trim()) return;
 
-    // Check if any provider is ready before sending (skip in E2E mode)
     const isE2EMode = await accomplish.isE2EMode();
     if (!isE2EMode) {
       const settings = await accomplish.getProviderSettings();
@@ -102,7 +92,6 @@ export function HomePage() {
 
   const handleSettingsDialogChange = (open: boolean) => {
     setShowSettingsDialog(open);
-    // Reset to providers tab when dialog closes
     if (!open) {
       setSettingsInitialTab('providers');
     }
@@ -119,15 +108,29 @@ export function HomePage() {
   }, []);
 
   const handleApiKeySaved = async () => {
-    // API key was saved - close dialog and execute the task
     setShowSettingsDialog(false);
     if (prompt.trim()) {
       await executeTask();
     }
   };
 
+  const focusPromptTextarea = () => {
+    setTimeout(() => {
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        '[data-testid="task-input-textarea"]',
+      );
+      textarea?.focus();
+    }, 0);
+  };
+
   const handleExampleClick = (examplePrompt: string) => {
     setPrompt(examplePrompt);
+    focusPromptTextarea();
+  };
+
+  const handleSkillSelect = (command: string) => {
+    setPrompt((prev) => `${command} ${prev}`.trim());
+    focusPromptTextarea();
   };
 
   return (
@@ -138,122 +141,107 @@ export function HomePage() {
         onApiKeySaved={handleApiKeySaved}
         initialTab={settingsInitialTab}
       />
-      <div className="h-full flex items-center justify-center p-6 overflow-y-auto bg-accent">
-        <div className="w-full max-w-2xl flex flex-col items-center gap-8">
-          {/* Main Title */}
-          <motion.h1
-            data-testid="home-title"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={springs.gentle}
-            className="text-4xl font-light tracking-tight text-foreground"
-          >
-            {t('title')}
-          </motion.h1>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...springs.gentle, delay: 0.1 }}
-            className="w-full"
-          >
-            <Card className="w-full bg-card/95 backdrop-blur-md shadow-xl gap-0 py-0 flex flex-col max-h-[calc(100vh-3rem)]">
-              <CardContent className="p-6 pb-4 flex-shrink-0">
-                {/* Input Section */}
-                <TaskInputBar
-                  value={prompt}
-                  onChange={setPrompt}
-                  onSubmit={handleSubmit}
-                  isLoading={isLoading}
-                  placeholder={t('inputPlaceholder')}
-                  large={true}
-                  autoFocus={true}
-                  onOpenSpeechSettings={handleOpenSpeechSettings}
-                  onOpenSettings={(tab: 'providers' | 'voice' | 'skills' | 'connectors') => {
-                    setSettingsInitialTab(tab);
-                    setShowSettingsDialog(true);
-                  }}
-                  onOpenModelSettings={handleOpenModelSettings}
-                  hideModelWhenNoModel={true}
-                />
-              </CardContent>
+      <div className="h-full flex flex-col bg-accent relative overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-6 pb-0">
+          <div className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-3">
+            <motion.h1
+              data-testid="home-title"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springs.gentle}
+              className="font-apparat text-[32px] tracking-[-0.015em] text-foreground w-full text-center pt-[250px]"
+            >
+              {t('title')}
+            </motion.h1>
 
-              {/* Examples Toggle */}
-              <div className="border-t border-border">
-                <button
-                  onClick={() => setShowExamples(!showExamples)}
-                  className="w-full px-6 py-3 flex items-center justify-between text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
-                >
-                  <span>{t('examplePrompts')}</span>
-                  <motion.div
-                    animate={{ rotate: showExamples ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <CaretDown className="h-4 w-4" />
-                  </motion.div>
-                </button>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...springs.gentle, delay: 0.1 }}
+              className="w-full"
+            >
+              <TaskInputBar
+                value={prompt}
+                onChange={setPrompt}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                placeholder={t('inputPlaceholder')}
+                typingPlaceholder={true}
+                large={true}
+                autoFocus={true}
+                onOpenSpeechSettings={handleOpenSpeechSettings}
+                onOpenModelSettings={handleOpenModelSettings}
+                hideModelWhenNoModel={true}
+                toolbarLeft={
+                  <PlusMenu
+                    onSkillSelect={handleSkillSelect}
+                    onOpenSettings={(tab) => {
+                      setSettingsInitialTab(tab);
+                      setShowSettingsDialog(true);
+                    }}
+                    disabled={isLoading}
+                  />
+                }
+              />
+            </motion.div>
 
-                <AnimatePresence>
-                  {showExamples && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ ...springs.gentle, delay: 0.2 }}
+              className="w-full"
+            >
+              <div className="flex flex-col gap-3 pt-[200px] pb-[120px]">
+                <h2 className="font-apparat text-[22px] font-light tracking-[-0.66px] text-foreground text-center">
+                  {t('examplePrompts')}
+                </h2>
+
+                <div className="grid grid-cols-3 gap-4 w-full">
+                  {useCaseExamples.map((example, index) => (
+                    <motion.button
+                      key={index}
+                      data-testid={`home-example-${index}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleExampleClick(example.prompt)}
+                      className="group flex flex-col justify-between rounded-[4px] border border-border hover:border-muted-foreground/40 active:border-muted-foreground/40 bg-accent pl-3 pr-4 py-3 text-left h-[164px] transition-colors"
                     >
-                      <div
-                        className="px-6 pt-3 pb-4 overflow-y-auto max-h-[360px]"
-                        style={{
-                          background:
-                            'linear-gradient(to bottom, hsl(var(--muted)) 0%, hsl(var(--background)) 100%)',
-                          backgroundAttachment: 'fixed',
-                        }}
-                      >
-                        <motion.div
-                          variants={staggerContainer}
-                          initial="initial"
-                          animate="animate"
-                          className="grid grid-cols-3 gap-3"
-                        >
-                          {useCaseExamples.map((example, index) => (
-                            <motion.button
-                              key={index}
-                              data-testid={`home-example-${index}`}
-                              variants={staggerItem}
-                              transition={springs.gentle}
-                              whileHover={{ scale: 1.03, transition: { duration: 0.15 } }}
-                              whileTap={{ scale: 0.97 }}
-                              onClick={() => handleExampleClick(example.prompt)}
-                              className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border bg-card hover:border-ring hover:bg-muted/50"
-                            >
-                              <img
-                                src={example.image}
-                                alt={example.title}
-                                className="w-12 h-12 object-cover rounded"
-                              />
-                              <div className="flex flex-col items-center gap-1 w-full">
-                                <div className="font-medium text-xs text-foreground text-center">
-                                  {example.title}
-                                </div>
-                                <div className="text-xs text-muted-foreground text-center line-clamp-2">
-                                  {example.description}
-                                </div>
-                              </div>
-                            </motion.button>
-                          ))}
-                        </motion.div>
+                      <div className="flex items-start justify-between w-full">
+                        <span className="font-sans text-[14px] leading-[18px] tracking-[-0.28px] text-foreground whitespace-pre-line w-[120px]">
+                          {example.title}
+                        </span>
+                        <span className="shrink-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-active:translate-y-0 -scale-y-100 rotate-180">
+                          <ArrowUpLeft className="w-4 h-4 text-foreground" weight="regular" />
+                        </span>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
+                      <p className="text-[13px] leading-[15px] tracking-[-0.13px] text-muted-foreground">
+                        {example.description}
+                      </p>
+
+                      <div className="flex items-center gap-[2px]">
+                        {example.icons.map((domain) => (
+                          <div
+                            key={domain}
+                            className="flex items-center rounded-[5.778px] bg-popover p-[3.25px] shrink-0"
+                          >
+                            <IntegrationIcon domain={domain} className="w-[22px] h-[22px]" />
+                          </div>
+                        ))}
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
               </div>
-            </Card>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
+
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[120px] bg-gradient-to-t from-accent to-transparent" />
       </div>
     </>
   );
 }
-
-export default HomePage;

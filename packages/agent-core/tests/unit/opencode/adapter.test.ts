@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { OpenCodeCliNotFoundError } from '../../../src/internal/classes/OpenCodeAdapter.js';
+import {
+  NON_TASK_CONTINUATION_TOOLS,
+  isNonTaskContinuationToolName,
+} from '../../../src/opencode/tool-classification.js';
 import { serializeError } from '../../../src/utils/error.js';
 
 /**
@@ -237,6 +241,26 @@ describe('Start task detection', () => {
     expect(isExemptTool('mcp_todowrite')).toBe(true);
     expect(isExemptTool('start_task')).toBe(true);
     expect(isExemptTool('read_file')).toBe(false);
+  });
+});
+
+describe('Non-task continuation tool detection', () => {
+  it('should include housekeeping tools in NON_TASK_CONTINUATION_TOOLS', () => {
+    expect(NON_TASK_CONTINUATION_TOOLS).toContain('prune');
+    expect(NON_TASK_CONTINUATION_TOOLS).toContain('distill');
+    expect(NON_TASK_CONTINUATION_TOOLS).toContain('extract');
+    expect(NON_TASK_CONTINUATION_TOOLS).toContain('context_info');
+  });
+
+  it('should classify housekeeping tool calls as non-task continuation tools', () => {
+    expect(isNonTaskContinuationToolName('prune')).toBe(true);
+    expect(isNonTaskContinuationToolName('distill')).toBe(true);
+    expect(isNonTaskContinuationToolName('extract')).toBe(true);
+    expect(isNonTaskContinuationToolName('context_info')).toBe(true);
+    expect(isNonTaskContinuationToolName('mcp_prune')).toBe(true);
+    expect(isNonTaskContinuationToolName('mcp_distill')).toBe(true);
+    expect(isNonTaskContinuationToolName('mcp_extract')).toBe(true);
+    expect(isNonTaskContinuationToolName('mcp_context_info')).toBe(true);
   });
 });
 
