@@ -17,7 +17,7 @@
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
-# Accomplish™ (formerly Openwork) - திறந்த மூல AI டெஸ்க்டாப் முகவர்
+# Accomplish™ - திறந்த மூல AI டெஸ்க்டாப் முகவர்
 
 Accomplish என்பது உங்கள் கணினியிலேயே கோப்பு மேலாண்மை, ஆவண உருவாக்கம் மற்றும் உலாவி பணிகளை தானியங்குபடுத்தும் ஒரு திறந்த மூல AI டெஸ்க்டாப் முகவர் ஆகும். உங்கள் சொந்த API விசைகளை (OpenAI, Anthropic, Google, xAI) கொண்டு வாருங்கள் அல்லது Ollama வழியாக local models-ஐ இயக்கவும்.
 
