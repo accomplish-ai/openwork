@@ -59,6 +59,12 @@ function getOpenCodePlatformInfo(): { packageNames: string[]; binaryName: string
       binaryName: 'opencode.exe',
     };
   }
+  if (process.platform === 'linux') {
+    return {
+      packageNames: ['opencode-linux-x64', 'opencode-linux-x64-baseline', 'opencode-ai'],
+      binaryName: 'opencode',
+    };
+  }
   return {
     packageNames: ['opencode-ai'],
     binaryName: 'opencode',
