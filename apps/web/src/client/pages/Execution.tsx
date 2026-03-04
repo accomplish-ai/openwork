@@ -19,6 +19,7 @@ import {
   Square,
   Download,
   CaretDown,
+  Star,
 } from '@phosphor-icons/react';
 import { isWaitingForUser } from '../lib/waiting-detection';
 import { SettingsDialog } from '../components/layout/SettingsDialog';
@@ -84,6 +85,7 @@ export function ExecutionPage() {
     startupStage,
     startupStageTaskId,
     clearStartupStage,
+    toggleFavorite,
     todos,
     todosTaskId,
   } = useTaskStore();
@@ -429,6 +431,24 @@ export function ExecutionPage() {
                 <span data-testid="execution-status-badge">{getStatusBadge()}</span>
               </div>
             </div>
+            {(currentTask.status === 'completed' ||
+              currentTask.status === 'failed' ||
+              currentTask.status === 'interrupted') && (
+              <Button
+                data-testid="favorite-toggle"
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleFavorite(currentTask.id)}
+                className="shrink-0 no-drag"
+                aria-label={currentTask.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Star
+                  className="h-4 w-4"
+                  weight={currentTask.isFavorite ? 'fill' : 'regular'}
+                  color={currentTask.isFavorite ? '#facc15' : undefined}
+                />
+              </Button>
+            )}
           </div>
         </div>
 

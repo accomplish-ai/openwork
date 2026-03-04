@@ -28,6 +28,10 @@ const accomplishAPI = {
   clearTaskHistory: (): Promise<void> => ipcRenderer.invoke('task:clear-history'),
   getTodosForTask: (taskId: string): Promise<TodoItem[]> =>
     ipcRenderer.invoke('task:get-todos', taskId),
+  setTaskFavorite: (taskId: string, isFavorite: boolean): Promise<void> =>
+    ipcRenderer.invoke('task:set-favorite', taskId, isFavorite),
+  getFavoriteTasks: (): Promise<Array<Record<string, unknown>>> =>
+    ipcRenderer.invoke('task:get-favorites'),
 
   // Permission responses
   respondToPermission: (response: { taskId: string; allowed: boolean }): Promise<void> =>

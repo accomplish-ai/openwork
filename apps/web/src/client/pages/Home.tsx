@@ -7,7 +7,8 @@ import { SettingsDialog } from '@/components/layout/SettingsDialog';
 import { useTaskStore } from '@/stores/taskStore';
 import { getAccomplish } from '@/lib/accomplish';
 import { springs } from '@/lib/animations';
-import { ArrowUpLeft } from '@phosphor-icons/react';
+import { ArrowUpLeft, Star } from '@phosphor-icons/react';
+import { Link } from 'react-router';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 import { PlusMenu } from '@/components/landing/PlusMenu';
 import { IntegrationIcon } from '@/components/landing/IntegrationIcons';
@@ -30,11 +31,20 @@ export function HomePage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, interruptTask, isLoading, addTaskUpdate, setPermissionRequest } =
-    useTaskStore();
+  const {
+    startTask,
+    interruptTask,
+    isLoading,
+    addTaskUpdate,
+    setPermissionRequest,
+    favoriteTasks,
+    loadFavorites,
+  } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = useMemo(() => getAccomplish(), []);
   const { t } = useTranslation('home');
+
+  const MAX_DISPLAYED_FAVORITES = 5;
 
   const useCaseExamples = useMemo(() => {
     return USE_CASE_KEYS.map(({ key, icons }) => ({
@@ -44,6 +54,11 @@ export function HomePage() {
       icons,
     }));
   }, [t]);
+
+  const displayedFavorites = useMemo(
+    () => favoriteTasks.slice(0, MAX_DISPLAYED_FAVORITES),
+    [favoriteTasks],
+  );
 
   useEffect(() => {
     const unsubscribeTask = accomplish.onTaskUpdate((event) => {
@@ -59,6 +74,10 @@ export function HomePage() {
       unsubscribePermission();
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
 
   const executeTask = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;
@@ -192,6 +211,28 @@ export function HomePage() {
               transition={{ ...springs.gentle, delay: 0.2 }}
               className="w-full"
             >
+              {displayedFavorites.length > 0 && (
+                <div className="w-full pt-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="h-3.5 w-3.5" weight="fill" color="#facc15" />
+                    <span className="text-sm font-medium text-foreground">Favorites</span>
+                  </div>
+                  <div className="space-y-1">
+                    {displayedFavorites.map((task) => (
+                      <Link
+                        key={task.id}
+                        to={`/execution/${task.id}`}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted/50 transition-colors group"
+                      >
+                        <span className="truncate text-muted-foreground group-hover:text-foreground transition-colors">
+                          {task.summary || task.prompt}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 pt-[200px] pb-[120px]">
                 <h2 className="font-apparat text-[22px] font-light tracking-[-0.66px] text-foreground text-center">
                   {t('examplePrompts')}
