@@ -138,6 +138,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 
 ## Supported models and providers
 
+- Venice.ai
 - Anthropic (Claude)
 - OpenAI (GPT)
 - Google AI (Gemini)
