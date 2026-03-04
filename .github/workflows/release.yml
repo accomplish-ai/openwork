@@ -272,7 +272,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Accomplish-macOS-arm64
           path: |
@@ -323,7 +323,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: Accomplish-macOS-x64
           path: |
@@ -368,7 +368,7 @@ jobs:
   #         CSC_IDENTITY_AUTO_DISCOVERY: false
   #
   #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v4
+  #       uses: actions/upload-artifact@v6
   #       with:
   #         name: Accomplish-Windows-x64
   #         path: apps/desktop/release/*.exe
