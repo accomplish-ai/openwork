@@ -12,6 +12,7 @@ import {
   isCliAvailable as coreIsCliAvailable,
   buildCliArgs as coreBuildCliArgs,
   buildOpenCodeEnvironment,
+  createSandboxProvider,
   type BrowserServerConfig,
   type CliResolverConfig,
   type EnvironmentConfig,
@@ -334,6 +335,10 @@ export async function onBeforeTaskStart(
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {
+  const storage = getStorage();
+  const sandboxConfig = storage.getSandboxConfig();
+  const sandboxProvider = createSandboxProvider(sandboxConfig, process.platform);
+
   return {
     adapterOptions: {
       platform: process.platform,
@@ -344,6 +349,8 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       onBeforeStart,
       getModelDisplayName,
       buildCliArgs,
+      sandboxProvider,
+      sandboxConfig,
     },
     defaultWorkingDirectory: app.getPath('temp'),
     maxConcurrentTasks: 10,

@@ -39,6 +39,8 @@ import {
   setTheme,
   getAppSettings,
   clearAppSettings,
+  getSandboxConfig,
+  setSandboxConfig,
 } from '../storage/repositories/appSettings.js';
 import {
   getProviderSettings,
@@ -124,6 +126,8 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     setTheme: (theme) => setTheme(theme),
     getAppSettings: () => getAppSettings(),
     clearAppSettings: () => clearAppSettings(),
+    getSandboxConfig: () => getSandboxConfig(),
+    setSandboxConfig: (config) => setSandboxConfig(config),
 
     // Provider Settings
     getProviderSettings: () => getProviderSettings(),
