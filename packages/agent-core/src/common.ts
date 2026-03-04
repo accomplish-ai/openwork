@@ -124,6 +124,9 @@ export type {
   McpConnector,
 } from './common/types/connector.js';
 
+// Sandbox types
+export type { SandboxMode, SandboxConfig, SandboxNetworkPolicy } from './common/types/sandbox.js';
+
 // Other types
 export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';

@@ -344,6 +344,10 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       onBeforeStart,
       getModelDisplayName,
       buildCliArgs,
+      getSandboxConfig: () => {
+        const storage = getStorage();
+        return storage.getSandboxConfig();
+      },
     },
     defaultWorkingDirectory: app.getPath('temp'),
     maxConcurrentTasks: 10,

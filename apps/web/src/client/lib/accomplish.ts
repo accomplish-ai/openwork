@@ -24,6 +24,7 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  SandboxConfig,
 } from '@accomplish_ai/agent-core/common';
 
 // Define the API interface
@@ -358,6 +359,10 @@ interface AccomplishAPI {
   resyncSkills(): Promise<Skill[]>;
   openSkillInEditor(filePath: string): Promise<void>;
   showSkillInFolder(filePath: string): Promise<void>;
+
+  // Sandbox Settings
+  getSandboxConfig(): Promise<SandboxConfig | null>;
+  setSandboxConfig(config: SandboxConfig | null): Promise<void>;
 
   // MCP Connectors
   getConnectors(): Promise<McpConnector[]>;
