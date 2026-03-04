@@ -625,6 +625,16 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     this.completionEnforcer.markToolsUsed(!this.isNonTaskContinuationTool(toolName));
 
+    // Intercept invalid tool calls where model tried to call complete_task but opencode rejected it
+    if (toolName === 'invalid' || toolName === 'unknown') {
+      const invalidInput = toolInput as { tool?: string };
+      if (invalidInput?.tool === 'complete_task' || invalidInput?.tool?.endsWith?.('_complete_task')) {
+        console.log('[OpenCode Adapter] Intercepting rejected complete_task call, treating as complete');
+        this.completionEnforcer.handleCompleteTaskDetection({ status: 'success', summary: 'Task completed.' });
+        return;
+      }
+    }
+
     if (toolName === 'complete_task' || toolName.endsWith('_complete_task')) {
       this.completionEnforcer.handleCompleteTaskDetection(toolInput);
       const completeInput = toolInput as { summary?: string };
@@ -835,11 +845,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       this.options.isPackaged && this.options.platform === 'darwin'
         ? '/bin/sh'
         : process.env.SHELL ||
-          (fs.existsSync('/bin/bash')
-            ? '/bin/bash'
-            : fs.existsSync('/bin/zsh')
-              ? '/bin/zsh'
-              : '/bin/sh');
+        (fs.existsSync('/bin/bash')
+          ? '/bin/bash'
+          : fs.existsSync('/bin/zsh')
+            ? '/bin/zsh'
+            : '/bin/sh');
 
     const fullCommand = this.buildShellCommand(command, args);
     return { file: shell, args: ['-c', fullCommand] };
