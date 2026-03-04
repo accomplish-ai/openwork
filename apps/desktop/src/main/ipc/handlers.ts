@@ -963,6 +963,58 @@ export function registerIPCHandlers(): void {
     return storage.getAppSettings();
   });
 
+  handle('settings:cloud-browser-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getCloudBrowserConfig();
+  });
+
+  handle(
+    'settings:cloud-browser-config:set',
+    async (_event: IpcMainInvokeEvent, config: string | null) => {
+      if (config === null) {
+        storage.setCloudBrowserConfig(null);
+        return;
+      }
+      if (typeof config !== 'string') {
+        throw new Error('Invalid cloud browser config');
+      }
+      try {
+        const parsed = JSON.parse(config);
+        storage.setCloudBrowserConfig(parsed);
+      } catch (e) {
+        throw new Error(
+          `Invalid cloud browser config: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    },
+  );
+
+  // --- Messaging Integration ---
+  handle('settings:messaging-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getMessagingConfig();
+  });
+
+  handle(
+    'settings:messaging-config:set',
+    async (_event: IpcMainInvokeEvent, config: string | null) => {
+      if (config === null) {
+        storage.setMessagingConfig(null);
+        return;
+      }
+      if (typeof config !== 'string') {
+        throw new Error('Invalid messaging config');
+      }
+      try {
+        const parsed = JSON.parse(config);
+        if (!parsed.integrations || typeof parsed.integrations !== 'object') {
+          throw new Error('Invalid messaging config structure: missing integrations');
+        }
+        storage.setMessagingConfig(parsed);
+      } catch (e) {
+        throw new Error(`Invalid messaging config: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    },
+  );
+
   handle('settings:openai-base-url:get', async (_event: IpcMainInvokeEvent) => {
     return storage.getOpenAiBaseUrl();
   });

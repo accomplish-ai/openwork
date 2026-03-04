@@ -37,6 +37,10 @@ import {
   setOpenAiBaseUrl,
   getTheme,
   setTheme,
+  getCloudBrowserConfig,
+  setCloudBrowserConfig,
+  getMessagingConfig,
+  setMessagingConfig,
   getAppSettings,
   clearAppSettings,
 } from '../storage/repositories/appSettings.js';
@@ -122,6 +126,10 @@ export function createStorage(options: StorageOptions = {}): StorageAPI {
     setOpenAiBaseUrl: (baseUrl) => setOpenAiBaseUrl(baseUrl),
     getTheme: () => getTheme(),
     setTheme: (theme) => setTheme(theme),
+    getCloudBrowserConfig: () => getCloudBrowserConfig(),
+    setCloudBrowserConfig: (config) => setCloudBrowserConfig(config),
+    getMessagingConfig: () => getMessagingConfig(),
+    setMessagingConfig: (config) => setMessagingConfig(config),
     getAppSettings: () => getAppSettings(),
     clearAppSettings: () => clearAppSettings(),
 

@@ -124,10 +124,27 @@ export type {
   McpConnector,
 } from './common/types/connector.js';
 
+// Cloud browser types
+export type {
+  CloudBrowserProvider,
+  CloudBrowserProviderConfig,
+  CloudBrowserConfig,
+} from './common/types/cloud-browser.js';
+
 // Other types
 export type { TodoItem } from './common/types/todo.js';
 export type { LogLevel, LogSource, LogEntry } from './common/types/logging.js';
 export type { ThoughtEvent, CheckpointEvent } from './common/types/thought-stream.js';
+
+// Messaging integration types
+export type {
+  MessagingPlatform,
+  MessagingConnectionStatus,
+  MessagingIntegrationConfig,
+  MessagingConfig,
+  MessagingQRCode,
+  IncomingMessage,
+} from './common/types/messaging.js';
 
 // === CONSTANTS ===
 export {
