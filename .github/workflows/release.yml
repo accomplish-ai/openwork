@@ -426,21 +426,21 @@ jobs:
 
       - name: Download macOS ARM64 artifacts
         if: needs.build-mac-arm64.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Accomplish-macOS-arm64
           path: ./release/arm64
 
       - name: Download macOS x64 artifacts
         if: needs.build-mac-x64.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: Accomplish-macOS-x64
           path: ./release/x64
 
       # - name: Download Windows x64 artifacts
       #   if: needs.build-windows-x64.result == 'success'
-      #   uses: actions/download-artifact@v4
+      #   uses: actions/download-artifact@v7
       #   with:
       #     name: Accomplish-Windows-x64
       #     path: ./release/win-x64
