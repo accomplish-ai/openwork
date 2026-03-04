@@ -437,7 +437,7 @@ const accomplishAPI = {
   getSkillContent: (id: string): Promise<string | null> =>
     ipcRenderer.invoke('skills:get-content', id),
   getUserSkillsPath: (): Promise<string> => ipcRenderer.invoke('skills:get-user-skills-path'),
-  pickSkillFile: (): Promise<string | null> => ipcRenderer.invoke('skills:pick-file'),
+  pickSkillFolder: (): Promise<string | null> => ipcRenderer.invoke('skills:pick-folder'),
   addSkillFromFile: (filePath: string): Promise<Skill> =>
     ipcRenderer.invoke('skills:add-from-file', filePath),
   addSkillFromGitHub: (rawUrl: string): Promise<Skill> =>

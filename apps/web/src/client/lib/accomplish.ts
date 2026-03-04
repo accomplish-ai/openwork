@@ -351,7 +351,7 @@ interface AccomplishAPI {
   setSkillEnabled(id: string, enabled: boolean): Promise<void>;
   getSkillContent(id: string): Promise<string | null>;
   getUserSkillsPath(): Promise<string>;
-  pickSkillFile(): Promise<string | null>;
+  pickSkillFolder(): Promise<string | null>;
   addSkillFromFile(filePath: string): Promise<Skill>;
   addSkillFromGitHub(rawUrl: string): Promise<Skill>;
   deleteSkill(id: string): Promise<void>;

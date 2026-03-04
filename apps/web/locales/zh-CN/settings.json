@@ -319,7 +319,7 @@
     "buildWithAccomplish": "使用 Accomplish 构建",
     "buildDescription": "通过对话创建技能",
     "uploadSkill": "上传技能",
-    "uploadDescription": "上传 SKILL.md 文件",
+    "uploadDescription": "上传技能文件夹",
     "importFromGitHub": "从 GitHub 导入",
     "importDescription": "粘贴仓库链接",
     "importDialogDescription": "输入包含 SKILL.md 文件的 GitHub 仓库 URL。",

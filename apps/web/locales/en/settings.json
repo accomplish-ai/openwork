@@ -319,7 +319,7 @@
     "buildWithAccomplish": "Build with Accomplish",
     "buildDescription": "Create skills through conversation",
     "uploadSkill": "Upload a skill",
-    "uploadDescription": "Upload a SKILL.md file",
+    "uploadDescription": "Upload a skill folder",
     "importFromGitHub": "Import from GitHub",
     "importDescription": "Paste a repository link",
     "importDialogDescription": "Enter the URL of a GitHub repository containing a SKILL.md file.",

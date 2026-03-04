@@ -39,7 +39,7 @@ export function AddSkillDropdown({ onSkillAdded, onClose }: AddSkillDropdownProp
     try {
       setIsLoading(true);
       setUploadError(null);
-      const filePath = await window.accomplish.pickSkillFile();
+      const filePath = await window.accomplish.pickSkillFolder();
       if (!filePath) {
         setIsLoading(false);
         return; // User cancelled

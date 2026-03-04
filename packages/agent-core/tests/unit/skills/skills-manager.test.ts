@@ -479,6 +479,56 @@ Content.
     });
   });
 
+  describe('addSkill from folder', () => {
+    it('should add skill from a folder and copy all companion files', async () => {
+      if (!moduleAvailable || !manager) return;
+
+      await manager.initialize();
+
+      const sourceDir = path.join(testDir, 'source-folder');
+      fs.mkdirSync(sourceDir, { recursive: true });
+
+      const skillContent = `---
+name: Folder Skill
+description: A skill imported from a folder
+---
+
+Folder skill content.
+`;
+      fs.writeFileSync(path.join(sourceDir, 'SKILL.md'), skillContent);
+      fs.writeFileSync(path.join(sourceDir, 'template.md'), '# Template\nSome template content.');
+      fs.writeFileSync(path.join(sourceDir, 'data.json'), '{"key": "value"}');
+
+      const skill = await manager.addSkill(sourceDir);
+
+      expect(skill).not.toBeNull();
+      expect(skill?.name).toBe('Folder Skill');
+      expect(skill?.source).toBe('custom');
+
+      // Verify SKILL.md was copied
+      const destDir = path.join(userSkillsPath, 'Folder-Skill');
+      expect(fs.existsSync(path.join(destDir, 'SKILL.md'))).toBe(true);
+
+      // Verify companion files were also copied
+      expect(fs.existsSync(path.join(destDir, 'template.md'))).toBe(true);
+      expect(fs.existsSync(path.join(destDir, 'data.json'))).toBe(true);
+    });
+
+    it('should throw error when folder has no SKILL.md', async () => {
+      if (!moduleAvailable || !manager) return;
+
+      await manager.initialize();
+
+      const sourceDir = path.join(testDir, 'source-no-skill-md');
+      fs.mkdirSync(sourceDir, { recursive: true });
+      fs.writeFileSync(path.join(sourceDir, 'readme.txt'), 'Not a skill folder.');
+
+      await expect(manager.addSkill(sourceDir)).rejects.toThrow(
+        'does not contain a SKILL.md file',
+      );
+    });
+  });
+
   describe('deleteSkill', () => {
     it('should delete custom skills', async () => {
       if (!moduleAvailable || !manager) return;
