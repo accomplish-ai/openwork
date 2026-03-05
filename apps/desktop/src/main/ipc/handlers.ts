@@ -72,6 +72,11 @@ import {
   transcribeAudio,
   isElevenLabsConfigured,
 } from '../services/speechToText';
+import {
+  startBrowserPreviewStream,
+  stopBrowserPreviewStream,
+  stopAllBrowserPreviewStreams,
+} from '../services/browserPreview';
 import type {
   TaskConfig,
   PermissionResponse,
@@ -222,12 +227,14 @@ export function registerIPCHandlers(): void {
     if (taskManager.isTaskQueued(taskId)) {
       taskManager.cancelQueuedTask(taskId);
       storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+      await stopBrowserPreviewStream(taskId);
       return;
     }
 
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.cancelTask(taskId);
       storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+      await stopBrowserPreviewStream(taskId);
     }
   });
 
@@ -236,6 +243,7 @@ export function registerIPCHandlers(): void {
 
     if (taskManager.hasActiveTask(taskId)) {
       await taskManager.interruptTask(taskId);
+      await stopBrowserPreviewStream(taskId);
     }
   });
 
@@ -249,10 +257,30 @@ export function registerIPCHandlers(): void {
 
   handle('task:delete', async (_event: IpcMainInvokeEvent, taskId: string) => {
     storage.deleteTask(taskId);
+    await stopBrowserPreviewStream(taskId);
   });
 
   handle('task:clear-history', async (_event: IpcMainInvokeEvent) => {
     storage.clearHistory();
+    await stopAllBrowserPreviewStreams();
+  });
+
+  handle('browser-preview:start', async (event: IpcMainInvokeEvent, taskId: string, pageName?: string) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    if (!taskId || typeof taskId !== 'string') {
+      throw new Error('taskId is required');
+    }
+
+    await startBrowserPreviewStream(taskId, pageName);
+  });
+
+  handle('browser-preview:stop', async (event: IpcMainInvokeEvent, taskId: string) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+    if (!taskId || typeof taskId !== 'string') {
+      throw new Error('taskId is required');
+    }
+
+    await stopBrowserPreviewStream(taskId);
   });
 
   handle('task:get-todos', async (_event: IpcMainInvokeEvent, taskId: string) => {
@@ -520,7 +548,7 @@ export function registerIPCHandlers(): void {
             zaiRegion:
               provider === 'zai'
                 ? (options?.region as import('@accomplish_ai/agent-core').ZaiRegion) ||
-                  'international'
+                'international'
                 : undefined,
           },
         );
