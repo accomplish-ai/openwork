@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+const taskInputAttachmentTypeSchema = z.enum(['image', 'text', 'document', 'other']);
+
+export const taskInputAttachmentSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  path: z.string().min(1),
+  type: taskInputAttachmentTypeSchema,
+  size: z.number().nonnegative(),
+});
+
 export const taskConfigSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
   taskId: z.string().optional(),
@@ -9,6 +19,7 @@ export const taskConfigSchema = z.object({
   outputSchema: z.record(z.any()).optional(),
   sessionId: z.string().optional(),
   chrome: z.boolean().optional(),
+  attachments: z.array(taskInputAttachmentSchema).max(5).optional(),
 });
 
 export const permissionResponseSchema = z.object({

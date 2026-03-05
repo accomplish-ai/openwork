@@ -1399,6 +1399,34 @@ describe('IPC Handlers Integration', () => {
       expect(saveTask).toHaveBeenCalled();
     });
 
+    it('task:start should compose prompt when attachments are present', async () => {
+      const config = {
+        prompt: 'Use this file',
+        attachments: [
+          {
+            id: 'att-1',
+            name: 'data.txt',
+            path: '/nonexistent/data.txt',
+            type: 'text',
+            size: 100,
+          },
+        ],
+      };
+      mockTaskManager.startTask.mockResolvedValue({
+        id: 'task_att',
+        prompt: 'composed',
+        status: 'running',
+        messages: [],
+        createdAt: new Date().toISOString(),
+      });
+
+      await invokeHandler('task:start', config);
+
+      const callConfig = mockTaskManager.startTask.mock.calls[0][1];
+      expect(callConfig.prompt).toContain('Use this file');
+      expect(callConfig.prompt).toMatch(/User attached file|could not read/);
+    });
+
     it('task:start should validate all optional config fields', async () => {
       // Arrange
       const config = {
