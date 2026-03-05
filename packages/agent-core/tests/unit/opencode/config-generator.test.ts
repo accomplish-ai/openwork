@@ -21,6 +21,7 @@ describe('ConfigGenerator', () => {
     ['ask-user-question', 'dist/index.mjs'],
     ['complete-task', 'dist/index.mjs'],
     ['start-task', 'dist/index.mjs'],
+    ['desktop-control', 'dist/index.mjs'],
     ['dev-browser-mcp', 'dist/index.mjs'],
   ] as const;
 
@@ -176,6 +177,7 @@ describe('ConfigGenerator', () => {
       expect(result.mcpServers['dev-browser-mcp']).toBeDefined();
       expect(result.mcpServers['complete-task']).toBeDefined();
       expect(result.mcpServers['start-task']).toBeDefined();
+      expect(result.mcpServers['desktop-control']).toBeDefined();
     });
 
     it('should set permission API port in environment', () => {
@@ -189,6 +191,7 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9999');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9999');
     });
 
     it('should set question API port in environment', () => {
@@ -215,6 +218,7 @@ describe('ConfigGenerator', () => {
 
       expect(result.mcpServers['file-permission'].environment?.PERMISSION_API_PORT).toBe('9226');
       expect(result.mcpServers['ask-user-question'].environment?.QUESTION_API_PORT).toBe('9227');
+      expect(result.mcpServers['desktop-control'].environment?.PERMISSION_API_PORT).toBe('9226');
     });
 
     it('should include skills in system prompt when provided', () => {
@@ -418,7 +422,7 @@ describe('ConfigGenerator', () => {
       // Should use node + dist path instead of tsx + src
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]).toContain(path.join('dist', 'index.mjs'));
     });
 
     it('should throw when bundled node is missing in packaged mode', () => {
@@ -445,7 +449,7 @@ describe('ConfigGenerator', () => {
 
       const command = result.mcpServers['file-permission'].command;
       expect(command?.[0]).toContain('node');
-      expect(command?.[1]).toContain('dist/index.mjs');
+      expect(command?.[1]).toContain(path.join('dist', 'index.mjs'));
     });
 
     it('should throw when MCP dist entry is missing', () => {
@@ -559,7 +563,7 @@ describe('ConfigGenerator', () => {
 
       const result = generateConfig(options);
 
-      expect(result.systemPrompt).toContain('do NOT call complete_task');
+      expect(result.systemPrompt).toContain('do NOT call complete-task_complete_task');
       expect(result.systemPrompt).toContain('needs_planning');
     });
 
@@ -699,22 +703,22 @@ describe('ConfigGenerator', () => {
     it('should contain needs_planning: true for multi-step tasks', () => {
       expect(prompt).toContain('needs_planning: true');
       expect(prompt).toContain(
-        'will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands)',
+        'will require tools beyond start-task_start_task and complete-task_complete_task (e.g., file operations, browser actions, bash commands)',
       );
     });
 
     it('should contain needs_planning: false for conversational messages', () => {
       expect(prompt).toContain('needs_planning: false');
-      expect(prompt).toContain('you can answer from knowledge alone using only start_task');
+      expect(prompt).toContain('you can answer from knowledge alone using only start-task_start_task');
     });
 
     it('should contain explicit instruction not to call complete_task for conversational responses', () => {
-      expect(prompt).toContain('Do NOT call complete_task for conversational responses');
+      expect(prompt).toContain('Do NOT call complete-task_complete_task for conversational responses');
     });
 
     it('should require complete_task when needs_planning was true', () => {
       expect(prompt).toContain(
-        'You MUST call the `complete_task` tool when `needs_planning` was true',
+        'You MUST call the `complete-task_complete_task` tool when `needs_planning` was true',
       );
     });
 
@@ -740,16 +744,16 @@ describe('ConfigGenerator', () => {
       expect(prompt).toContain('bash commands');
     });
 
-    it('should still contain start_task as mandatory first tool', () => {
-      expect(prompt).toContain('You MUST call start_task before any other tool');
-      expect(prompt).toContain('CALL start_task FIRST - THIS IS MANDATORY');
+    it('should still contain start-task_start_task as mandatory first tool', () => {
+      expect(prompt).toContain('You MUST call start-task_start_task before any other tool');
+      expect(prompt).toContain('CALL start-task_start_task FIRST - THIS IS MANDATORY');
     });
 
     it('should still contain todowrite instructions under needs_planning=true path', () => {
       expect(prompt).toContain('Mark completed steps as "completed"');
       expect(prompt).toContain('Mark the current step as "in_progress"');
       expect(prompt).toContain(
-        'All todos must be "completed" or "cancelled" before calling complete_task',
+        'All todos must be "completed" or "cancelled" before calling complete-task_complete_task',
       );
     });
 

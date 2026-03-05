@@ -70,8 +70,10 @@ export function startPermissionApiServer(): http.Server {
       return;
     }
 
-    // Only handle POST /permission
-    if (req.method !== 'POST' || req.url !== '/permission') {
+    // Handle both file permissions (/permission) and desktop permissions (/desktop-permission)
+    const isFilePermission = req.method === 'POST' && req.url === '/permission';
+    const isDesktopPermission = req.method === 'POST' && req.url === '/desktop-permission';
+    if (!isFilePermission && !isDesktopPermission) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
       return;
@@ -83,22 +85,33 @@ export function startPermissionApiServer(): http.Server {
       body += chunk;
     }
 
-    let data: FilePermissionRequestData;
+    let data: FilePermissionRequestData | Record<string, unknown>;
 
     try {
-      data = JSON.parse(body);
+      data = JSON.parse(body) as FilePermissionRequestData | Record<string, unknown>;
     } catch {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Invalid JSON' }));
       return;
     }
 
-    // Validate request using core handler
-    const validation = permissionHandler.validateFilePermissionRequest(data);
-    if (!validation.valid) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: validation.error }));
-      return;
+    // For file permissions, validate the payload strictly.
+    // For desktop permissions, only require an `operation` field (no filePath needed).
+    if (isFilePermission) {
+      const validation = permissionHandler.validateFilePermissionRequest(data);
+      if (!validation.valid) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: validation.error }));
+        return;
+      }
+    } else {
+      // desktop-permission: just require an operation string
+      const d = data as Record<string, unknown>;
+      if (!d.operation || typeof d.operation !== 'string') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'operation is required for desktop permissions' }));
+        return;
+      }
     }
 
     // Check if we have the necessary dependencies
@@ -118,8 +131,23 @@ export function startPermissionApiServer(): http.Server {
     // Create request using core handler
     const { requestId, promise } = permissionHandler.createPermissionRequest();
 
-    // Build permission request for the UI
-    const permissionRequest = permissionHandler.buildFilePermissionRequest(requestId, taskId, data);
+    // Build permission request for the UI.
+    // For desktop permissions, synthesise a file-permission-shaped request so the
+    // existing UI component can display it without changes.
+    const rawData = data as Record<string, unknown>;
+    const uiData: FilePermissionRequestData = isDesktopPermission
+      ? ({
+          operation: String(rawData.operation),
+          // Exclude the `operation` key and show the remaining details as the
+          // file path field so the permission UI has human-readable context.
+          filePath: JSON.stringify(
+            Object.fromEntries(
+              Object.entries(rawData).filter(([k]) => k !== 'operation'),
+            ),
+          ),
+        } as unknown as FilePermissionRequestData)
+      : (data as FilePermissionRequestData);
+    const permissionRequest = permissionHandler.buildFilePermissionRequest(requestId, taskId, uiData);
 
     // Send to renderer (Electron-specific)
     mainWindow.webContents.send('permission:request', permissionRequest);

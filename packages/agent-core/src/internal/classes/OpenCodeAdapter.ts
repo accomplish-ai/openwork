@@ -823,12 +823,16 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
   private buildPtySpawnArgs(command: string, args: string[]): { file: string; args: string[] } {
     if (this.options.platform === 'win32') {
-      // Windows policy: always spawn the real .exe, never cmd wrappers.
-      if (command.toLowerCase().endsWith('.exe')) {
-        return { file: command, args };
+      if (!command.toLowerCase().endsWith('.exe')) {
+        throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
       }
 
-      throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
+      // On Windows, spawn the opencode .exe directly in node-pty without a shell wrapper.
+      // Passing args as an array avoids all cmd.exe / PowerShell quoting issues:
+      // the OS hands each element to the process as a raw argv entry regardless
+      // of what characters it contains (double-quotes, %, ^, &, newlines, etc.).
+      // See: https://github.com/accomplish-ai/accomplish/issues/596
+      return { file: command, args };
     }
 
     const shell =
