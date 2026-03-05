@@ -17,7 +17,7 @@
   <a href="https://discord.gg/MepaTT55"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
-# Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
+# Accomplish™ - Open Source AI Desktop Agent
 
 Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama.
 
