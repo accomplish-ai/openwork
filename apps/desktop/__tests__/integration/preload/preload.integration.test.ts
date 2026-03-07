@@ -272,6 +272,13 @@ describe('Preload Script Integration', () => {
         expect(mockInvoke).toHaveBeenCalledWith('log:event', payload);
       });
     });
+
+    describe('Skills Operations', () => {
+      it('getUserSkillsPath should invoke skills:get-user-skills-path', async () => {
+        await (capturedAccomplishAPI.getUserSkillsPath as () => Promise<string>)();
+        expect(mockInvoke).toHaveBeenCalledWith('skills:get-user-skills-path');
+      });
+    });
   });
 
   describe('Event Subscriptions', () => {

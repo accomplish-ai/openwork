@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
