@@ -13,7 +13,11 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'nebius'
+  | 'together'
+  | 'fireworks'
+  | 'groq';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -129,6 +133,38 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
     label: 'Local Models',
     logoKey: 'lmstudio',
     helpUrl: 'https://lmstudio.ai/',
+  },
+  nebius: {
+    id: 'nebius',
+    name: 'Nebius AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'nebius',
+    helpUrl: 'https://studio.nebius.ai/',
+  },
+  together: {
+    id: 'together',
+    name: 'Together AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'together',
+    helpUrl: 'https://api.together.xyz/settings/api-keys',
+  },
+  fireworks: {
+    id: 'fireworks',
+    name: 'Fireworks AI',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'fireworks',
+    helpUrl: 'https://fireworks.ai/account/api-keys',
+  },
+  groq: {
+    id: 'groq',
+    name: 'Groq',
+    category: 'classic',
+    label: 'Service',
+    logoKey: 'groq',
+    helpUrl: 'https://console.groq.com/keys',
   },
 };
 
@@ -286,4 +322,8 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  nebius: 'nebius',
+  together: 'together',
+  fireworks: 'fireworks',
+  groq: 'groq',
 };
