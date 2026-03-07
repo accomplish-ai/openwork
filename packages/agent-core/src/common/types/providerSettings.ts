@@ -13,7 +13,8 @@ export type ProviderId =
   | 'litellm'
   | 'minimax'
   | 'lmstudio'
-  | 'vertex';
+  | 'vertex'
+  | 'huggingface-local';
 
 export type ProviderCategory = 'classic' | 'aws' | 'gcp' | 'azure' | 'local' | 'proxy' | 'hybrid';
 
@@ -130,6 +131,14 @@ export const PROVIDER_META: Record<ProviderId, ProviderMeta> = {
     logoKey: 'lmstudio',
     helpUrl: 'https://lmstudio.ai/',
   },
+  'huggingface-local': {
+    id: 'huggingface-local',
+    name: 'HuggingFace Local',
+    category: 'local',
+    label: 'Local Models',
+    logoKey: 'huggingface',
+    helpUrl: 'https://huggingface.co/docs/transformers.js',
+  },
 };
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -194,6 +203,11 @@ export interface VertexProviderCredentials {
   serviceAccountEmail?: string;
 }
 
+export interface HuggingFaceLocalCredentials {
+  type: 'huggingface-local';
+  serverUrl: string;
+}
+
 export interface OAuthCredentials {
   type: 'oauth';
   oauthProvider: 'chatgpt';
@@ -209,6 +223,7 @@ export type ProviderCredentials =
   | ZaiCredentials
   | AzureFoundryCredentials
   | LMStudioCredentials
+  | HuggingFaceLocalCredentials
   | OAuthCredentials;
 
 export type ToolSupportStatus = 'supported' | 'unsupported' | 'unknown';
@@ -286,4 +301,5 @@ export const PROVIDER_ID_TO_OPENCODE: Record<ProviderId, string> = {
   minimax: 'minimax',
   lmstudio: 'lmstudio',
   vertex: 'vertex',
+  'huggingface-local': 'huggingface-local',
 };
