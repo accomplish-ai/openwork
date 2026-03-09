@@ -90,6 +90,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private waitingTransitionTimer: ReturnType<typeof setTimeout> | null = null;
   private hasReceivedFirstTool: boolean = false;
   private startTaskCalled: boolean = false;
+  private interruptKillTimer: ReturnType<typeof setTimeout> | null = null;
   private options: AdapterOptions;
 
   constructor(options: AdapterOptions, taskId?: string) {
@@ -324,6 +325,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     this.wasInterrupted = true;
 
+    // Clear any previous kill timer
+    if (this.interruptKillTimer) {
+      clearTimeout(this.interruptKillTimer);
+      this.interruptKillTimer = null;
+    }
+
     this.ptyProcess.write('\x03');
     console.log('[OpenCode CLI] Sent Ctrl+C interrupt signal');
 
@@ -335,6 +342,20 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         }
       }, 100);
     }
+
+    // Fallback: if the process doesn't exit within 3 seconds after Ctrl+C,
+    // force kill it. This handles CLI processes that ignore SIGINT.
+    this.interruptKillTimer = setTimeout(() => {
+      if (this.ptyProcess && !this.hasCompleted) {
+        console.log('[OpenCode CLI] Process did not exit after Ctrl+C, force killing');
+        try {
+          this.ptyProcess.kill();
+        } catch (err) {
+          console.warn('[OpenCode CLI] Force kill failed:', err);
+        }
+      }
+      this.interruptKillTimer = null;
+    }, 3000);
   }
 
   getSessionId(): string | null {
@@ -360,6 +381,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
 
     console.log(`[OpenCode Adapter] Disposing adapter for task ${this.currentTaskId}`);
     this.isDisposed = true;
+
+    if (this.interruptKillTimer) {
+      clearTimeout(this.interruptKillTimer);
+      this.interruptKillTimer = null;
+    }
 
     if (this.logWatcher) {
       this.logWatcher.stop().catch((err) => {
@@ -671,8 +697,14 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
   private handleProcessExit(code: number | null): void {
     this.ptyProcess = null;
 
-    if (this.wasInterrupted && code === 0 && !this.hasCompleted) {
-      console.log('[OpenCode CLI] Task was interrupted by user');
+    // Clear the interrupt kill timer since the process exited
+    if (this.interruptKillTimer) {
+      clearTimeout(this.interruptKillTimer);
+      this.interruptKillTimer = null;
+    }
+
+    if (this.wasInterrupted && !this.hasCompleted) {
+      console.log(`[OpenCode CLI] Task was interrupted by user (exit code: ${code})`);
       this.hasCompleted = true;
       this.emit('complete', {
         status: 'interrupted',
@@ -831,6 +863,12 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
     }
 
+    // Linux: spawn directly if the command is an actual binary (not a .bin shim)
+    if (this.options.platform === 'linux' && !command.includes('/node_modules/.bin/')) {
+      return { file: command, args };
+    }
+
+    // macOS or fallback: use shell wrapping
     const shell =
       this.options.isPackaged && this.options.platform === 'darwin'
         ? '/bin/sh'

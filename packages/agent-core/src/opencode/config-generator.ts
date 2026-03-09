@@ -450,6 +450,14 @@ Use empty array [] if no skills apply to your task.
     }
   }
 
+  // Add jCodeMunch MCP for token-efficient codebase exploration
+  mcpServers['jcodemunch'] = {
+    type: 'local',
+    command: ['/home/guy/.local/bin/jcodemunch-mcp'],
+    enabled: true,
+    timeout: 30000,
+  };
+
   // Fill browser-specific template sections based on mode
   const hasBrowser = browserConfig.mode !== 'none';
   systemPrompt = systemPrompt

@@ -320,8 +320,20 @@ export class TaskManager {
           workingDirectory: config.workingDirectory || this.options.defaultWorkingDirectory,
         });
       } catch (error) {
-        console.error(`[TaskManager] Task startup failed for ${taskId}:`, error);
-        callbacks.onError(error instanceof Error ? error : new Error(String(error)));
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        console.error(`[TaskManager] Task startup failed for ${taskId}: ${errorObj.message}`);
+        if (errorObj.stack) {
+          console.error(`[TaskManager] Stack: ${errorObj.stack}`);
+        }
+        callbacks.onProgress({
+          stage: 'error',
+          message: `Task failed to start: ${errorObj.message}`,
+        });
+        callbacks.onComplete({
+          status: 'error',
+          error: errorObj.message,
+        });
+        callbacks.onError(errorObj);
         this.cleanupTask(taskId);
         this.processQueue();
       }

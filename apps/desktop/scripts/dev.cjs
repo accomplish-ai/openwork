@@ -11,7 +11,12 @@ const mode = isRemote ? 'remote' : isClean ? 'clean' : 'dev';
 
 const env = { ...process.env };
 if (!isRemote && !env.ACCOMPLISH_ROUTER_URL) {
-  env.ACCOMPLISH_ROUTER_URL = 'http://localhost:5173';
+  // On Linux, the desktop's Vite dev server doesn't properly serve the web app
+  // (index.html has no React entry). Skip setting ROUTER_URL so Electron loads
+  // from pre-built web assets in apps/web/dist/client/ instead.
+  if (process.platform !== 'linux') {
+    env.ACCOMPLISH_ROUTER_URL = 'http://localhost:5173';
+  }
 }
 if (isClean) {
   env.CLEAN_START = '1';

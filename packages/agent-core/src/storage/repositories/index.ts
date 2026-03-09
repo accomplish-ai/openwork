@@ -43,6 +43,7 @@ export {
   getTask,
   saveTask,
   updateTaskStatus,
+  recoverOrphanedTasks,
   addTaskMessage,
   updateTaskSessionId,
   updateTaskSummary,

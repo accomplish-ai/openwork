@@ -70,6 +70,8 @@ export interface TaskStorageAPI {
   saveTask(task: Task): void;
   /** Update a task's status and optional completion timestamp */
   updateTaskStatus(taskId: string, status: TaskStatus, completedAt?: string): void;
+  /** Mark any orphaned in-flight tasks as failed (used on startup recovery) */
+  recoverOrphanedTasks(): number;
   /** Append a message to a task's message history */
   addTaskMessage(taskId: string, message: TaskMessage): void;
   /** Update the CLI session ID for a task */

@@ -182,6 +182,17 @@ export function saveTask(task: Task): void {
   })();
 }
 
+export function recoverOrphanedTasks(): number {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `UPDATE tasks SET status = 'failed', completed_at = ? WHERE status IN ('running', 'queued', 'pending', 'waiting_permission')`,
+    )
+    .run(now);
+  return result.changes;
+}
+
 export function updateTaskStatus(taskId: string, status: TaskStatus, completedAt?: string): void {
   const db = getDatabase();
 
