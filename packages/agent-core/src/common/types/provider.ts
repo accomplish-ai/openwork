@@ -39,7 +39,8 @@ export type ApiKeyProvider =
   | 'minimax'
   | 'lmstudio'
   | 'vertex'
-  | 'elevenlabs';
+  | 'elevenlabs'
+  | 'aws-agentcore';
 
 /**
  * Providers that accept API key storage via the setApiKey IPC handler.
@@ -63,6 +64,7 @@ export const ALLOWED_API_KEY_PROVIDERS: ReadonlySet<string> = new Set<string>([
   'lmstudio',
   'vertex',
   'elevenlabs',
+  'aws-agentcore',
 ]);
 
 /**
