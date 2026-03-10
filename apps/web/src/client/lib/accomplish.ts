@@ -263,6 +263,10 @@ interface AccomplishAPI {
     } | null,
   ): Promise<void>;
 
+  // Embedded browser preview
+  startBrowserPreview(taskId: string, pageName?: string): Promise<void>;
+  stopBrowserPreview(taskId: string): Promise<void>;
+
   // Bedrock configuration
   validateBedrockCredentials(credentials: string): Promise<{ valid: boolean; error?: string }>;
   saveBedrockCredentials(credentials: string): Promise<ApiKeyConfig>;
@@ -318,6 +322,27 @@ interface AccomplishAPI {
   onTaskSummary?(callback: (data: { taskId: string; summary: string }) => void): () => void;
   onTodoUpdate?(callback: (data: { taskId: string; todos: TodoItem[] }) => void): () => void;
   onAuthError?(callback: (data: { providerId: string; message: string }) => void): () => void;
+  onBrowserFrame?(callback: (data: {
+    taskId: string;
+    pageName: string;
+    data: string;
+    width?: number;
+    height?: number;
+    timestamp: number;
+  }) => void): () => void;
+  onBrowserNavigate?(callback: (data: {
+    taskId: string;
+    pageName: string;
+    url: string;
+    timestamp: number;
+  }) => void): () => void;
+  onBrowserStatus?(callback: (data: {
+    taskId: string;
+    pageName: string;
+    status: 'starting' | 'streaming' | 'loading' | 'ready' | 'stopped' | 'error';
+    message?: string;
+    timestamp: number;
+  }) => void): () => void;
 
   // Speech-to-Text
   speechIsConfigured(): Promise<boolean>;

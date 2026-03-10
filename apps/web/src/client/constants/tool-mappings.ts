@@ -100,3 +100,24 @@ export function getToolDisplayInfo(
   const baseName = getBaseToolName(toolName);
   return TOOL_PROGRESS_MAP[baseName];
 }
+export function isBrowserToolName(toolName: string | null | undefined): boolean {
+  if (!toolName) {
+    return false;
+  }
+
+  const baseName = getBaseToolName(toolName);
+  return baseName.startsWith('browser_') || baseName === 'dev_browser_execute';
+}
+
+export function getPageNameFromToolInput(toolInput: unknown): string {
+  if (!toolInput || typeof toolInput !== 'object') {
+    return 'main';
+  }
+
+  const pageName = (toolInput as Record<string, unknown>).page_name;
+  if (typeof pageName === 'string' && pageName.trim()) {
+    return pageName.trim();
+  }
+
+  return 'main';
+}

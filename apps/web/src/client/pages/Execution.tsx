@@ -32,6 +32,9 @@ import { MessageBubble } from '../components/execution/MessageList';
 import { ToolProgress } from '../components/execution/ToolProgress';
 import { PermissionDialog } from '../components/execution/PermissionDialog';
 import { DebugPanel, type DebugLogEntry } from '../components/execution/DebugPanel';
+import { BrowserPreview } from '../components/execution/BrowserPreview';
+import { isBrowserToolName, getPageNameFromToolInput } from '../constants/tool-mappings';
+
 
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -60,6 +63,16 @@ export function ExecutionPage() {
   >('providers');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | null>(null);
   const pendingSpeechFollowUpRef = useRef<string | null>(null);
+
+  const [hasBrowserActivity, setHasBrowserActivity] = useState(false);
+  const [browserPreviewCollapsed, setBrowserPreviewCollapsed] = useState(false);
+  const [browserFrame, setBrowserFrame] = useState<string | null>(null);
+  const [browserUrl, setBrowserUrl] = useState('');
+  const [browserPageName, setBrowserPageName] = useState('main');
+  const [browserStatus, setBrowserStatus] = useState<
+    'starting' | 'streaming' | 'loading' | 'ready' | 'stopped' | 'error' | 'idle'
+  >('idle');
+
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -99,7 +112,7 @@ export function ExecutionPage() {
         followUpInputRef.current?.focus();
       }, 0);
     },
-    onError: () => {},
+    onError: () => { },
   });
 
   const scrollToBottom = useMemo(
@@ -150,6 +163,12 @@ export function ExecutionPage() {
       setDebugLogs([]);
       setCurrentTool(null);
       setCurrentToolInput(null);
+      setHasBrowserActivity(false);
+      setBrowserPreviewCollapsed(false);
+      setBrowserFrame(null);
+      setBrowserUrl('');
+      setBrowserPageName('main');
+      setBrowserStatus('idle');
       accomplish.getTodosForTask(id).then((todos) => {
         useTaskStore.getState().setTodos(id, todos);
       });
@@ -163,8 +182,13 @@ export function ExecutionPage() {
         if (toolName) {
           setCurrentTool(toolName);
           setCurrentToolInput(event.message.toolInput);
+          if (isBrowserToolName(toolName)) {
+            setHasBrowserActivity(true);
+            setBrowserPageName(getPageNameFromToolInput(event.message.toolInput));
+          }
         }
       }
+
       if (event.taskId === id && event.type === 'message' && event.message?.type === 'assistant') {
         setCurrentTool(null);
         setCurrentToolInput(null);
@@ -179,7 +203,21 @@ export function ExecutionPage() {
     const unsubscribeTaskBatch = accomplish.onTaskUpdateBatch?.((event) => {
       if (event.messages?.length) {
         addTaskUpdateBatch(event);
+
+        for (const message of event.messages) {
+          if (event.taskId !== id || message.type !== 'tool') {
+            continue;
+          }
+          const toolName =
+            message.toolName || message.content?.match(/Using tool: (\w+)/)?.[1];
+          if (toolName && isBrowserToolName(toolName)) {
+            setHasBrowserActivity(true);
+            setBrowserPageName(getPageNameFromToolInput(message.toolInput));
+          }
+        }
+
         if (event.taskId === id) {
+
           const lastMsg = event.messages[event.messages.length - 1];
           if (lastMsg.type === 'assistant') {
             setCurrentTool(null);
@@ -222,6 +260,96 @@ export function ExecutionPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loadTaskById, addTaskUpdate, addTaskUpdateBatch, updateTaskStatus, setPermissionRequest]);
+
+  // If this task already has browser tool messages, enable preview state when loading history
+  useEffect(() => {
+    if (!currentTask || currentTask.id !== id || hasBrowserActivity) {
+      return;
+    }
+
+    const lastBrowserMessage = [...currentTask.messages].reverse().find((message) => {
+      if (message.type !== 'tool') {
+        return false;
+      }
+      const toolName =
+        message.toolName || message.content?.match(/Using tool: (\w+)/)?.[1];
+      return isBrowserToolName(toolName);
+    });
+
+    if (!lastBrowserMessage) {
+      return;
+    }
+
+    setHasBrowserActivity(true);
+    setBrowserPageName(getPageNameFromToolInput(lastBrowserMessage.toolInput));
+  }, [currentTask, hasBrowserActivity, id]);
+
+  // Browser preview IPC subscriptions
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const unsubscribeFrame = accomplish.onBrowserFrame?.((data) => {
+      if (data.taskId !== id) {
+        return;
+      }
+      setBrowserFrame(data.data);
+    });
+
+    const unsubscribeNavigate = accomplish.onBrowserNavigate?.((data) => {
+      if (data.taskId !== id) {
+        return;
+      }
+      setBrowserUrl(data.url || '');
+    });
+
+    const unsubscribeStatus = accomplish.onBrowserStatus?.((data) => {
+      if (data.taskId !== id) {
+        return;
+      }
+      setBrowserStatus(data.status);
+    });
+
+    return () => {
+      unsubscribeFrame?.();
+      unsubscribeNavigate?.();
+      unsubscribeStatus?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Start/stop browser preview stream based on task and preview visibility
+  useEffect(() => {
+    if (!id || !accomplish.startBrowserPreview || !accomplish.stopBrowserPreview) {
+      return;
+    }
+
+    const shouldStream =
+      currentTask?.status === 'running' && hasBrowserActivity && !browserPreviewCollapsed;
+
+    if (!shouldStream) {
+      void accomplish.stopBrowserPreview(id).catch(() => { });
+      return;
+    }
+
+    void accomplish.startBrowserPreview(id, browserPageName).catch((error) => {
+      console.error('[BrowserPreview] Failed to start stream:', error);
+      setBrowserStatus('error');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, currentTask?.status, hasBrowserActivity, browserPreviewCollapsed, browserPageName]);
+
+  // Safety cleanup when navigating away
+  useEffect(() => {
+    return () => {
+      if (id && accomplish.stopBrowserPreview) {
+        void accomplish.stopBrowserPreview(id).catch(() => { });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
 
   useEffect(() => {
     if (isAtBottom) {
@@ -297,6 +425,14 @@ export function ExecutionPage() {
     setSettingsInitialTab('providers');
     setShowSettingsDialog(true);
   }, []);
+
+  const handlePopOutBrowser = useCallback(() => {
+    if (!browserUrl) {
+      return;
+    }
+    void accomplish.openExternal(browserUrl);
+  }, [accomplish, browserUrl]);
+
 
   useEffect(() => {
     if (!pendingSpeechFollowUpRef.current) return;
@@ -570,7 +706,19 @@ export function ExecutionPage() {
               data-testid="messages-scroll-container"
             >
               <div className="max-w-4xl mx-auto space-y-4">
+                {hasBrowserActivity && (
+                  <BrowserPreview
+                    frame={browserFrame}
+                    url={browserUrl}
+                    pageName={browserPageName}
+                    status={browserStatus}
+                    collapsed={browserPreviewCollapsed}
+                    onToggleCollapsed={() => setBrowserPreviewCollapsed((prev) => !prev)}
+                    onPopOut={handlePopOutBrowser}
+                  />
+                )}
                 {currentTask.messages
+
                   .filter((m) => !(m.type === 'tool' && m.toolName?.toLowerCase() === 'bash'))
                   .map((message, index, filteredMessages) => {
                     const isLastMessage = index === filteredMessages.length - 1;
