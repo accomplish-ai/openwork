@@ -1,0 +1,4 @@
+﻿
+> @accomplish_ai/agent-core@0.4.0 typecheck C:\Users\david\Documents\GitHub\accomplish\packages\agent-core
+> tsc --noEmit
+

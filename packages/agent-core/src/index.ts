@@ -412,3 +412,40 @@ export {
   resumeSessionSchema,
   validate,
 } from './common/schemas/validation.js';
+
+// -----------------------------------------------------------------------------
+// Daemon Module (from ./daemon/)
+// -----------------------------------------------------------------------------
+
+export { DaemonServer, DaemonClient, createInProcessTransportPair } from './daemon/index.js';
+export { createChildProcessTransport, createParentProcessTransport } from './daemon/index.js';
+export {
+  addScheduledTask,
+  listScheduledTasks,
+  cancelScheduledTask,
+  onScheduledTaskFire,
+  disposeScheduler,
+} from './daemon/index.js';
+export type { DaemonServerOptions, DaemonClientOptions } from './daemon/index.js';
+
+// Daemon protocol types (re-exported from common/types/daemon.ts)
+export { JSON_RPC_ERRORS } from './common/types/daemon.js';
+export type {
+  JsonRpcRequest,
+  JsonRpcResponse,
+  JsonRpcNotification,
+  JsonRpcError,
+  JsonRpcMessage,
+  DaemonMethodMap,
+  DaemonMethod,
+  DaemonNotificationMap,
+  DaemonNotification,
+  DaemonTransport,
+  DaemonConnectionState,
+  TypedJsonRpcRequest,
+  TypedJsonRpcResponse,
+  TypedJsonRpcNotification,
+  ScheduledTask,
+  TaskScheduleParams,
+  TaskCancelScheduledParams,
+} from './common/types/daemon.js';

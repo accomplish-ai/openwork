@@ -1,0 +1,48 @@
+﻿
+> accomplish@0.1.0 lint:eslint C:\Users\david\Documents\GitHub\accomplish
+> eslint .
+
+node.exe : 
+(node:19904) [MODULE_TY
+PELESS_PACKAGE_JSON] 
+Warning: Module type 
+of file:///C:/Users/dav
+id/Documents/GitHub/acc
+omplish/eslint.config.j
+s?mtime=1771742444010 
+is not specified and 
+it doesn't parse as 
+CommonJS.
+En C:\Users\david\AppDa
+ta\Roaming\npm\pnpm.ps1
+: 24 Carácter: 5
++     & "node$exe"  "$b
+asedir/node_modules/pnp
+m/bin/pnpm.cjs" $args
++     ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ((node:19904)    
+ [M...se as CommonJ    
+S.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+Reparsing as ES module 
+because module syntax 
+was detected. This 
+incurs a performance 
+overhead.
+To eliminate this 
+warning, add "type": 
+"module" to C:\Users\da
+vid\Documents\GitHub\ac
+complish\package.json.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)

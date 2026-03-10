@@ -1,0 +1,1573 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/david/Documents/GitHub/accomplish/apps/desktop[39m
+
+node.exe : [90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return nvm OpenCode path when 
+available
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m... when available:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return global npm OpenCode path when 
+nvm not available
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return Homebrew OpenCode path on 
+Apple Silicon
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return bundled CLI path in 
+node_modules when global not found
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould throw when no OpenCode CLI path can 
+be resolved
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould return unpacked asar path when packaged
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould throw when bundled CLI is missing in 
+packaged app
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return true when nvm OpenCode is 
+available
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return true when bundled CLI exists 
+in node_modules
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return true when opencode is 
+available on PATH
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return false when no CLI is found 
+anywhere
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould return true when bundled CLI exists in 
+unpacked asar
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2misOpenCodeBundled()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould return false when bundled CLI missing in 
+unpacked asar
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould read version from package.json in 
+unpacked asar
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > 
+[22m[2mPackaged Mode[2m > [22m[2mshould return null when package.json not found
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould execute CLI with --version flag and 
+parse output
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould parse version from simple version 
+string
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return nvm OpenCode path when available[32m 252[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return global npm OpenCode path when nvm not available[32m 10[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return Homebrew OpenCode path on Apple Silicon[32m 9[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould return bundled CLI path in node_modules when global not found[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > [22mshould throw when no OpenCode CLI path can be resolved[32m 9[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > [22mshould return unpacked asar path when packaged[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > [22mshould throw when bundled CLI is missing in packaged app[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when nvm OpenCode is available[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when bundled CLI exists in node_modules[32m 6[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return true when opencode is available on PATH[32m 8[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > [22mshould return false when no CLI is found anywhere[32m 6[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > [22mshould return true when bundled CLI exists in unpacked asar[32m 6[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > [22mshould return false when bundled CLI missing in unpacked asar[32m 6[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > [22mshould read version from package.json in unpacked asar[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > [22mshould return null when package.json not found[32m 8[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould execute CLI with --version flag and parse output[32m 4[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mgetBundledOpenCodeVersion()[2m > 
+[22m[2mDevelopment Mode[2m > [22m[2mshould return null when version command fails
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mNVM Path Scanning[2m > 
+[22m[2mshould scan multiple nvm versions and return first found
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+[90mstderr[2m | 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > 
+[22m[2mOpenCode CLI Path Module[2m > [22m[2mNVM Path Scanning[2m > 
+[22m[2mshould handle missing nvm directory gracefully
+[22m[39mMOCK FACTORY ERROR: Error: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js
+    at Object.loadNativeModule (C:\Users\david\Documents\GitHub\accomplish\node_module
+s\[4m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\utils.js:36:11)
+    at Object.<anonymous> (C:\Users\david\Documents\GitHub\accomplish\node_modules\[4
+m.pnpm[24m\node-pty@1.1.0\node_modules\[4mnode-pty[24m\lib\unixTerminal.js:27:22)
+[90m    at Module._compile (node:internal/modules/cjs/loader:1761:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1481:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1300:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1504:12)[39m
+[90m    at require (node:internal/modules/helpers:152:16)[39m
+
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould parse version from simple version string[32m 6[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment Mode[2m > [22mshould return null when version command fails[32m 11[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould scan multiple nvm versions and return first found[32m 8[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould handle missing nvm directory gracefully[32m 5[2mms[22m[39m
+[31m   ÔåÆ [vitest] There was an error when mocking a module. If you are using "vi.mock" factory, make sure there are no top level variables inside, since this call is hoisted to top of the file. Read more: https://vitest.dev/api/vi.html#vi-mock[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mNon-macOS Platforms[2m > [22mshould return base PATH unchanged on Linux[33m 4117[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mNon-macOS Platforms[2m > [22mshould return base PATH unchanged on Windows[32m 37[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include common Node.js paths[32m 37[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include NVM paths when available[32m 42[2mms[22m[39m
+[31m   ÔåÆ expected '/usr/bin:C:/Users/david/Documents/GitÔÇª' to contain '/Users/testuser/.nvm/versions/node/v2ÔÇª'[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include fnm paths when available[32m 31[2mms[22m[39m
+[31m   ÔåÆ expected '/usr/bin:C:/Users/david/Documents/GitÔÇª' to contain '/Users/testuser/.fnm/node-versions/v2ÔÇª'[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould sort NVM versions with newest first[32m 27[2mms[22m[39m
+[31m   ÔåÆ expected -1 to be less than -1[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include path_helper output[32m 26[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould handle path_helper failure gracefully[32m 24[2mms[22m[39m
+ [31m├ù[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould deduplicate paths[32m 28[2mms[22m[39m
+[31m   ÔåÆ expected +0 to be 1 // Object.is equality[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould use process.env.PATH as default base[32m 23[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include Volta path when available[32m 22[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould find executable command in PATH
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould return null when command not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-file entries
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-executable files
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould search directories in order
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle empty path segments
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > [22mshould include asdf shims path when available[32m 29[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould find executable command in PATH[32m 13[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould return null when command not found[32m 13[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould skip non-file entries[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould skip non-executable files[32m 16[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould search directories in order[32m 14[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle directory access errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle statSync errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle empty path segments[32m 14[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle directory access errors gracefully[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mfindCommandInPath()[2m > [22mshould handle statSync errors gracefully[32m 16[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem PATH Utilities[2m > [22mPath Priority Order[2m > [22mshould prioritize version manager paths over system paths[32m 26[2mms[22m[39m
+
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Tests 24 
+[49m[22m[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > 
+[22mshould return nvm OpenCode path when available
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m108:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > 
+[22mshould return global npm OpenCode path when nvm not available
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m128:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > 
+[22mshould return Homebrew OpenCode path on Apple Silicon
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m148:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > 
+[22mshould return bundled CLI path in node_modules when global not found
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m170:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[4/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mDevelopment Mode[2m > 
+[22mshould throw when no OpenCode CLI path can be resolved
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m188:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[5/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > 
+[22mshould return unpacked asar path when packaged
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m227:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[6/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetOpenCodeCliPath()[2m > [22mPackaged Mode[2m > 
+[22mshould throw when bundled CLI is missing in packaged app
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m247:40[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[7/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > 
+[22mshould return true when nvm OpenCode is available
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m274:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[8/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > 
+[22mshould return true when bundled CLI exists in node_modules
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m295:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[9/24]ÔÄ
+»[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > 
+[22mshould return true when opencode is available on PATH
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m310:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[10/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mDevelopment Mode[2m > 
+[22mshould return false when no CLI is found anywhere
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m327:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[11/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > 
+[22mshould return true when bundled CLI exists in unpacked asar
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m367:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[12/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22misOpenCodeBundled()[2m > [22mPackaged Mode[2m > 
+[22mshould return false when bundled CLI missing in unpacked asar
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m383:39[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[13/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > 
+[22mshould read version from package.json in unpacked asar
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m420:47[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[14/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mPackaged Mode[2m > 
+[22mshould return null when package.json not found
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m436:47[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[15/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment 
+Mode[2m > [22mshould execute CLI with --version flag and parse output
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m460:47[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[16/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment 
+Mode[2m > [22mshould parse version from simple version string
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m482:47[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[17/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mgetBundledOpenCodeVersion()[2m > [22mDevelopment 
+Mode[2m > [22mshould return null when version command fails
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m506:47[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[18/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould scan multiple nvm 
+versions and return first found
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m535:38[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[19/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22mOpenCode 
+CLI Path Module[2m > [22mNVM Path Scanning[2m > [22mshould handle missing nvm 
+directory gracefully
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you are 
+using "vi.mock" factory, make sure there are no top level variables inside, since 
+this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mÔØ»[22m src/main/opencode/electron-options.ts:[2m7:1[22m[39m
+    [90m  5| [39mimport type { TaskManagerOptions, TaskCallbacks } from 
+'@accomplish_aiÔÇª
+    [90m  6| [39m[35mimport[39m type { [33mTaskConfig[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m  7| [39m[35mimport[39m { [33mDEV_BROWSER_PORT[39m } [35mfrom[39m 
+[32m'@accomplish_ai/agent-core'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m[35mimport[39m {
+    [90m  9| [39m  getAzureEntraToken[33m,[39m
+[90m [2mÔØ»[22m 
+__tests__/integration/main/opencode/cli-path.integration.test.ts:[2m554:38[22m[39m
+
+[31m[1mCaused by: Error[22m: Failed to load native module: pty.node, checked: 
+build/Release, build/Debug, prebuilds/darwin-x64: Error: Cannot find module 
+'./prebuilds/darwin-x64//pty.node'
+Require stack:
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\utils.js
+- C:\Users\david\Documents\GitHub\accomplish\node_modules\.pnpm\node-pty@1.1.0\node_mo
+dules\node-pty\lib\index.js[39m
+[90m [2mÔØ»[22m Object.loadNativeModule ../../node_modules/.pnpm/node-pty@1.1.0/nod
+e_modules/node-pty/lib/utils.js:[2m36:11[22m[39m
+[90m [2mÔØ»[22m Object.<anonymous> ../../node_modules/.pnpm/node-pty@1.1.0/node_mod
+ules/node-pty/lib/unixTerminal.js:[2m27:22[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[20/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem 
+PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > 
+[22mshould include NVM paths when available
+[31m[1mAssertionError[22m: expected '/usr/bin:C:/Users/david/Documents/GitÔÇª' to 
+contain '/Users/testuser/.nvm/versions/node/v2ÔÇª'[39m
+
+Expected: [32m"/[7mUsers/testuser/.nvm/versions/node/v20.10.0/bin[27m"[39m
+Received: [31m"/[7musr/bin:C:/Users/david/Documents/GitHub/accomplish/apps/desktop/n
+ode_modules/.bin;C:/Users/david/Documents/GitHub/accomplish/apps/node_modules/.bin;C:/
+Users/david/Documents/GitHub/accomplish/node_modules/.bin;C:/Users/david/Documents/Git
+Hub/node_modules/.bin;C:/Users/david/Documents/node_modules/.bin;C:/Users/david/node_m
+odules/.bin;C:/Users/node_modules/.bin;C:/node_modules/.bin;C:/Program Files/nodejs/no
+de_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin;C:/Program Files/Micro
+soft/jdk-21.0.9.10-hotspot/bin;C:/Windows/system32;C:/Windows;C:/Windows/System32/Wbem
+;C:/Windows/System32/WindowsPowerShell/v1.0/;C:/Windows/System32/OpenSSH/;C:/Program 
+Files (x86)/NVIDIA Corporation/PhysX/Common;C:/Program Files/NVIDIA 
+Corporation/NVIDIA NvDLISR;C:/WINDOWS/system32;C:/WINDOWS;C:/WINDOWS/System32/Wbem;C:/
+WINDOWS/System32/WindowsPowerShell/v1.0/;C:/WINDOWS/System32/OpenSSH/;C:/Program 
+Files (x86)/Windows Kits/10/Windows Performance Toolkit/;C:/Program 
+Files/nodejs/;C:/Program Files/Docker/Docker/resources/bin;C:/Program Files/Git/cmd;C:
+/Users/david/.cargo/bin;C:/Users/david/.local/bin;C:/Users/david/AppData/Local/Microso
+ft/WindowsApps;C:/Users/david/AppData/Local/Programs/Antigravity/bin;C:/Users/david/Ap
+pData/Local/Python/bin;C:/Users/david/AppData/Local/Programs/Microsoft VS Code/bin;C:/
+Users/david/DevTools/Maven/bin;C:/Users/david/AppData/Roaming/npm;C:/Users/david/AppDa
+ta/Roaming/Python/Scripts;C:/Users/david/AppData/Local/Programs/Ollama[27m"[39m
+
+[36m [2mÔØ»[22m 
+__tests__/integration/main/utils/system-path.integration.test.ts:[2m154:44[22m[39m
+    [90m152| [39m
+    [90m153| [39m        [90m// Assert[39m
+    [90m154| [39m        
+[34mexpect[39m(result[33m.[39m[34mreplace[39m([36m/\\/g[39m[33m,[39m 
+[32m'/'[39m))[33m.[39m[34mtoContain[39m(nvmPath)[33m;[39m
+    [90m   | [39m                                           [31m^[39m
+    [90m155| [39m      })[33m;[39m
+    [90m156| [39m
+
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[21/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem 
+PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > 
+[22mshould include fnm paths when available
+[31m[1mAssertionError[22m: expected '/usr/bin:C:/Users/david/Documents/GitÔÇª' to 
+contain '/Users/testuser/.fnm/node-versions/v2ÔÇª'[39m
+
+Expected: 
+[32m"/[7mUsers/testuser/.fnm/node-versions/v20.10.0/installation/bin[27m"[39m
+Received: [31m"/[7musr/bin:C:/Users/david/Documents/GitHub/accomplish/apps/desktop/n
+ode_modules/.bin;C:/Users/david/Documents/GitHub/accomplish/apps/node_modules/.bin;C:/
+Users/david/Documents/GitHub/accomplish/node_modules/.bin;C:/Users/david/Documents/Git
+Hub/node_modules/.bin;C:/Users/david/Documents/node_modules/.bin;C:/Users/david/node_m
+odules/.bin;C:/Users/node_modules/.bin;C:/node_modules/.bin;C:/Program Files/nodejs/no
+de_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin;C:/Program Files/Micro
+soft/jdk-21.0.9.10-hotspot/bin;C:/Windows/system32;C:/Windows;C:/Windows/System32/Wbem
+;C:/Windows/System32/WindowsPowerShell/v1.0/;C:/Windows/System32/OpenSSH/;C:/Program 
+Files (x86)/NVIDIA Corporation/PhysX/Common;C:/Program Files/NVIDIA 
+Corporation/NVIDIA NvDLISR;C:/WINDOWS/system32;C:/WINDOWS;C:/WINDOWS/System32/Wbem;C:/
+WINDOWS/System32/WindowsPowerShell/v1.0/;C:/WINDOWS/System32/OpenSSH/;C:/Program 
+Files (x86)/Windows Kits/10/Windows Performance Toolkit/;C:/Program 
+Files/nodejs/;C:/Program Files/Docker/Docker/resources/bin;C:/Program Files/Git/cmd;C:
+/Users/david/.cargo/bin;C:/Users/david/.local/bin;C:/Users/david/AppData/Local/Microso
+ft/WindowsApps;C:/Users/david/AppData/Local/Programs/Antigravity/bin;C:/Users/david/Ap
+pData/Local/Python/bin;C:/Users/david/AppData/Local/Programs/Microsoft VS Code/bin;C:/
+Users/david/DevTools/Maven/bin;C:/Users/david/AppData/Roaming/npm;C:/Users/david/AppDa
+ta/Roaming/Python/Scripts;C:/Users/david/AppData/Local/Programs/Ollama[27m"[39m
+
+[36m [2mÔØ»[22m 
+__tests__/integration/main/utils/system-path.integration.test.ts:[2m180:44[22m[39m
+    [90m178| [39m
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m24 failed[39m[22m[2m | [22m[1m[32m17 passed[39m[22m[90m (41)[39m
+[2m   Start at [22m 03:28:47
+[2m   Duration [22m 5.30s[2m (transform 2.05s, setup 162ms, import 368ms, tests 4.97s, environment 1ms)[22m
+
+    [90m179| [39m        [90m// Assert[39m
+    [90m180| [39m        
+[34mexpect[39m(result[33m.[39m[34mreplace[39m([36m/\\/g[39m[33m,[39m 
+[32m'/'[39m))[33m.[39m[34mtoContain[39m(fnmPath)[33m;[39m
+    [90m   | [39m                                           [31m^[39m
+    [90m181| [39m      })[33m;[39m
+    [90m182| [39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[22/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem 
+PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > 
+[22mshould sort NVM versions with newest first
+[31m[1mAssertionError[22m: expected -1 to be less than -1[39m
+[36m [2mÔØ»[22m 
+__tests__/integration/main/utils/system-path.integration.test.ts:[2m213:26[22m[39m
+    [90m211| [39m        [35mconst[39m v16Index [33m=[39m 
+pathParts[33m.[39m[34mfindIndex[39m((p) [33m=>[39m 
+p[33m.[39m[34mincludes[39m([32m'v16'[39m))[33m;[39m
+    [90m212| [39m
+    [90m213| [39m        
+[34mexpect[39m(v20Index)[33m.[39m[34mtoBeLessThan[39m(v18Index)[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m214| [39m        
+[34mexpect[39m(v18Index)[33m.[39m[34mtoBeLessThan[39m(v16Index)[33m;[39m
+    [90m215| [39m      })[33m;[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[23/24]ÔÄ»
+[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[45m integration [49m[39m 
+__tests__/integration/main/utils/system-path.integration.test.ts[2m > [22mSystem 
+PATH Utilities[2m > [22mgetExtendedNodePath()[2m > [22mmacOS Platform[2m > 
+[22mshould deduplicate paths
+[31m[1mAssertionError[22m: expected +0 to be 1 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2mÔØ»[22m 
+__tests__/integration/main/utils/system-path.integration.test.ts:[2m276:31[22m[39m
+    [90m274| [39m        const pathParts = result.split(delimiter).map(p => 
+p.replace(/ÔÇª
+    [90m275| [39m        const localBinCount = pathParts.filter((p) => p === 
+'/usr/locaÔÇª
+    [90m276| [39m        
+[34mexpect[39m(localBinCount)[33m.[39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                              [31m^[39m
+    [90m277| [39m      })[33m;[39m
+    [90m278| [39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[24/24]ÔÄ»
+[22m[39m
+

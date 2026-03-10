@@ -1,0 +1,482 @@
+﻿
+> @accomplish/desktop@0.3.8 test:integration
+> vitest run --config vitest.integration.config.ts
+
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/david/Documents/GitHub/accomplish/apps/desktop[39m
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/taskHistory.integration.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/preload/preload.integration.test.ts [2m([22m[2m41 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould create config directory if it does not exist
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-mihr4A\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-NrCQ3z
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould create config directory if it does not exist
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-NrCQ3z\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-NrCQ3z\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-NrCQ3z\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould not recreate directory if it already exists
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-4SF78M\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-2kQpVN
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould not recreate directory if it already exists
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-2kQpVN\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-2kQpVN\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-2kQpVN\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould write config file with correct structure
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-sHIX23\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-iHvGhP
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould write config file with correct structure
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-iHvGhP\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-iHvGhP\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-iHvGhP\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include accomplish agent configuration
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-j6J1gJ\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-XIanbR
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include accomplish agent configuration
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-XIanbR\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-XIanbR\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-XIanbR\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include MCP server configuration for file-permission
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-LnFcfj\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ZBspCx
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include MCP server configuration for file-permission
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ZBspCx\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ZBspCx\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ZBspCx\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include platform-specific environment instructions
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-w7S2zc\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-mCUcT7
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould include platform-specific environment instructions
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-mCUcT7\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-mCUcT7\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-mCUcT7\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould set OPENCODE_CONFIG environment variable after generation
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-VHKQW3\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-l2pH9T
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould set OPENCODE_CONFIG environment variable after generation
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-l2pH9T\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-l2pH9T\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-l2pH9T\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould return the config file path
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-obzQX1\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ly02Lr
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mgenerateOpenCodeConfig()[2m > [22m[2mshould return the config file path
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ly02Lr\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ly02Lr\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-ly02Lr\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include browser automation guidance
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-Q1Wygl\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-LSUiNO
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include browser automation guidance
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-LSUiNO\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-LSUiNO\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-LSUiNO\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include file permission rules
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-fAfnmU\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-B0md32
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include file permission rules
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-B0md32\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-B0md32\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-B0md32\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include user communication guidance
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-tXSn7A\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-0jX0hA
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mSystem Prompt Content[2m > [22m[2mshould include user communication guidance
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-0jX0hA\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-0jX0hA\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-0jX0hA\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould overwrite existing config file on regeneration
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-0BYw9N\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould overwrite existing config file on regeneration
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould overwrite existing config file on regeneration
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-0BYw9N\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould overwrite existing config file on regeneration
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-qcTnNQ\opencode
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould create valid JSON that can be parsed
+[22m[39m[OpenCode Config] MCP tools path: C:\Users\david\AppData\Local\Temp\opencode-config-test-monorepo-MYL9K4\packages\agent-core\mcp-tools
+[OpenCode Config] User data path: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-o4sHiC
+
+[90mstdout[2m | __tests__/integration/main/opencode/config-generator.integration.test.ts[2m > [22m[2mOpenCode Config Generator Integration[2m > [22m[2mConfig File Persistence[2m > [22m[2mshould create valid JSON that can be parsed
+[22m[39m[OpenCode Config] Generated config at: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-o4sHiC\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-o4sHiC\opencode\opencode.json
+[OpenCode Config] OPENCODE_CONFIG_DIR env set to: C:\Users\david\AppData\Local\Temp\opencode-config-test-userData-o4sHiC\opencode
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/config-generator.integration.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 1285[2mms[22m[39m
+         [33m[2mÔ£ô[22m[39m should return skills path relative to app path in dev mode [33m 985[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/opencode/cli-path.integration.test.ts[2m > [22m[2mOpenCode CLI Path Module[2m > [22m[2mgetOpenCodeCliPath()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return nvm OpenCode path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mDevelopment Mode[2m > [22m[2mshould return null in development mode
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/permission-api.integration.test.ts
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould store and retrieve an API key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Linux
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - macOS (darwin)[2m > [22m[2mshould return correct paths for arm64 architecture
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/permission-api.integration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - macOS (darwin)[2m > [22m[2mshould return correct paths for arm64 architecture
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - macOS (darwin)[2m > [22m[2mshould return correct paths for x64 architecture
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mNon-macOS Platforms[2m > [22m[2mshould return base PATH unchanged on Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - macOS (darwin)[2m > [22m[2mshould return correct paths for x64 architecture
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - Windows (win32)[2m > [22m[2mshould return correct paths for Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include common Node.js paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetBundledNodePaths()[2m > [22m[2mPackaged Mode - Windows (win32)[2m > [22m[2mshould return correct paths for Windows
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2misBundledNodeAvailable()[2m > [22m[2mshould return false in development mode
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include NVM paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2misBundledNodeAvailable()[2m > [22m[2mshould return true when bundled node exists
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2misBundledNodeAvailable()[2m > [22m[2mshould return true when bundled node exists
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2misBundledNodeAvailable()[2m > [22m[2mshould return false when bundled node does not exist
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include fnm paths when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2misBundledNodeAvailable()[2m > [22m[2mshould return false when bundled node does not exist
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNodePath()[2m > [22m[2mshould return "node" in development mode
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould sort NVM versions with newest first
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNodePath()[2m > [22m[2mshould return bundled node path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNodePath()[2m > [22m[2mshould return bundled node path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include path_helper output
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNodePath()[2m > [22m[2mshould fallback to "node" when bundled not found in packaged app
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould handle path_helper failure gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNodePath()[2m > [22m[2mshould fallback to "node" when bundled not found in packaged app
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpmPath()[2m > [22m[2mshould return "npm" in development mode
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould deduplicate paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpmPath()[2m > [22m[2mshould return bundled npm path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould return null for non-existent provider
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpmPath()[2m > [22m[2mshould return bundled npm path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould use process.env.PATH as default base
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould encrypt the API key in storage
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpmPath()[2m > [22m[2mshould fallback to "npm" when bundled not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpmPath()[2m > [22m[2mshould fallback to "npm" when bundled not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include Volta path when available
+[22m[39m[agent-core] u2d sync test
+
+ [31mÔØ»[39m [30m[45m integration [49m[39m __tests__/integration/main/opencode/cli-path.integration.test.ts [2m([22m[2m20 tests[22m[2m | [22m[31m13 failed[39m[2m)[22m[33m 4136[2mms[22m[39m
+[31m         [31m├ù[31m should return nvm OpenCode path when available[39m[33m 3971[2mms[22m[39m
+[31m         [31m├ù[31m should return global npm OpenCode path when nvm not available[39m[32m 11[2mms[22m[39m
+[31m         [31m├ù[31m should return Homebrew OpenCode path on Apple Silicon[39m[32m 9[2mms[22m[39m
+[31m         [31m├ù[31m should return bundled CLI path in node_modules when global not found[39m[32m 9[2mms[22m[39m
+         [32mÔ£ô[39m should throw when no OpenCode CLI path can be resolved[32m 15[2mms[22m[39m
+[31m         [31m├ù[31m should return unpacked asar path when packaged[39m[32m 7[2mms[22m[39m
+         [32mÔ£ô[39m should throw when bundled CLI is missing in packaged app[32m 7[2mms[22m[39m
+[31m         [31m├ù[31m should return true when nvm OpenCode is available[39m[32m 14[2mms[22m[39m
+[31m         [31m├ù[31m should return true when bundled CLI exists in node_modules[39m[32m 7[2mms[22m[39m
+[31m         [31m├ù[31m should return true when opencode is available on PATH[39m[32m 9[2mms[22m[39m
+         [32mÔ£ô[39m should return false when no CLI is found anywhere[32m 8[2mms[22m[39m
+[31m         [31m├ù[31m should return true when bundled CLI exists in unpacked asar[39m[32m 9[2mms[22m[39m
+         [32mÔ£ô[39m should return false when bundled CLI missing in unpacked asar[32m 8[2mms[22m[39m
+[31m         [31m├ù[31m should read version from package.json in unpacked asar[39m[32m 10[2mms[22m[39m
+         [32mÔ£ô[39m should return null when package.json not found[32m 6[2mms[22m[39m
+[31m         [31m├ù[31m should execute CLI with --version flag and parse output[39m[32m 6[2mms[22m[39m
+[31m         [31m├ù[31m should parse version from simple version string[39m[32m 5[2mms[22m[39m
+         [32mÔ£ô[39m should return null when version command fails[32m 5[2mms[22m[39m
+[31m       [31m├ù[31m should scan multiple nvm versions and return first found[39m[32m 10[2mms[22m[39m
+       [32mÔ£ô[39m should handle missing nvm directory gracefully[32m 6[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpxPath()[2m > [22m[2mshould return "npx" in development mode
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpxPath()[2m > [22m[2mshould return bundled npx path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mgetExtendedNodePath()[2m > [22m[2mmacOS Platform[2m > [22m[2mshould include asdf shims path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpxPath()[2m > [22m[2mshould return bundled npx path when available
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould find executable command in PATH
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpxPath()[2m > [22m[2mshould fallback to "npx" when bundled not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould return null when command not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mgetNpxPath()[2m > [22m[2mshould fallback to "npx" when bundled not found
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould overwrite existing key for same provider
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-file entries
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mlogBundledNodeInfo()[2m > [22m[2mshould log development mode message when not packaged
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould skip non-executable files
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mlogBundledNodeInfo()[2m > [22m[2mshould log bundled node configuration when packaged
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould search directories in order
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mlogBundledNodeInfo()[2m > [22m[2mshould log bundled node configuration when packaged
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle empty path segments
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mBundledNodePaths Interface[2m > [22m[2mshould return all required path properties
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle directory access errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/bundled-node.integration.test.ts[2m > [22m[2mBundled Node.js Utilities[2m > [22m[2mBundledNodePaths Interface[2m > [22m[2mshould return all required path properties
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mfindCommandInPath()[2m > [22m[2mshould handle statSync errors gracefully
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/bundled-node.integration.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 4301[2mms[22m[39m
+         [33m[2mÔ£ô[22m[39m should return null in development mode [33m 3472[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould handle special characters in API key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/utils/system-path.integration.test.ts[2m > [22m[2mSystem PATH Utilities[2m > [22m[2mPath Priority Order[2m > [22m[2mshould prioritize version manager paths over system paths
+[22m[39m[agent-core] u2d sync test
+
+ [31mÔØ»[39m [30m[45m integration [49m[39m __tests__/integration/main/utils/system-path.integration.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[33m 4412[2mms[22m[39m
+         [33m[2mÔ£ô[22m[39m should return base PATH unchanged on Linux [33m 3565[2mms[22m[39m
+         [32mÔ£ô[39m should return base PATH unchanged on Windows[32m 93[2mms[22m[39m
+         [32mÔ£ô[39m should include common Node.js paths[32m 74[2mms[22m[39m
+[31m         [31m├ù[31m should include NVM paths when available[39m[32m 74[2mms[22m[39m
+[31m         [31m├ù[31m should include fnm paths when available[39m[32m 66[2mms[22m[39m
+[31m         [31m├ù[31m should sort NVM versions with newest first[39m[32m 49[2mms[22m[39m
+         [32mÔ£ô[39m should include path_helper output[32m 51[2mms[22m[39m
+         [32mÔ£ô[39m should handle path_helper failure gracefully[32m 48[2mms[22m[39m
+[31m         [31m├ù[31m should deduplicate paths[39m[32m 54[2mms[22m[39m
+         [32mÔ£ô[39m should use process.env.PATH as default base[32m 40[2mms[22m[39m
+         [32mÔ£ô[39m should include Volta path when available[32m 35[2mms[22m[39m
+         [32mÔ£ô[39m should include asdf shims path when available[32m 42[2mms[22m[39m
+[31m       [31m├ù[31m should find executable command in PATH[39m[32m 23[2mms[22m[39m
+       [32mÔ£ô[39m should return null when command not found[32m 21[2mms[22m[39m
+       [32mÔ£ô[39m should skip non-file entries[32m 21[2mms[22m[39m
+[31m       [31m├ù[31m should skip non-executable files[39m[32m 22[2mms[22m[39m
+[31m       [31m├ù[31m should search directories in order[39m[32m 20[2mms[22m[39m
+[31m       [31m├ù[31m should handle empty path segments[39m[32m 26[2mms[22m[39m
+[31m       [31m├ù[31m should handle directory access errors gracefully[39m[32m 20[2mms[22m[39m
+[31m       [31m├ù[31m should handle statSync errors gracefully[39m[32m 20[2mms[22m[39m
+       [32mÔ£ô[39m should prioritize version manager paths over system paths[32m 44[2mms[22m[39m
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould handle very long API keys
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mstoreApiKey and getApiKey[2m > [22m[2mshould handle empty string as API key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mmultiple providers[2m > [22m[2mshould store API keys for different providers independently
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mmultiple providers[2m > [22m[2mshould not affect other providers when updating one
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mdeleteApiKey[2m > [22m[2mshould remove only the target provider key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mdeleteApiKey[2m > [22m[2mshould return false when deleting non-existent key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mdeleteApiKey[2m > [22m[2mshould allow re-storing after deletion
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mgetAllApiKeys[2m > [22m[2mshould return all null for empty store
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mgetAllApiKeys[2m > [22m[2mshould return all stored API keys
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mgetAllApiKeys[2m > [22m[2mshould return partial results when some providers are set
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mhasAnyApiKey[2m > [22m[2mshould return false when no keys are stored
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mhasAnyApiKey[2m > [22m[2mshould return true when at least one key is stored
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mhasAnyApiKey[2m > [22m[2mshould return true when multiple keys are stored
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mhasAnyApiKey[2m > [22m[2mshould return false after all keys are deleted
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mclearSecureStorage[2m > [22m[2mshould remove all stored API keys
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mclearSecureStorage[2m > [22m[2mshould allow storing new keys after clear
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mclearSecureStorage[2m > [22m[2mshould reset salt and derived key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mencryption consistency[2m > [22m[2mshould decrypt values correctly after module reload
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mencryption consistency[2m > [22m[2mshould decrypt values correctly after module reload
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mencryption consistency[2m > [22m[2mshould maintain encryption across multiple store/retrieve cycles
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2mencryption consistency[2m > [22m[2mshould use unique IV for each encryption
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2medge cases[2m > [22m[2mshould handle unicode characters in API key
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2medge cases[2m > [22m[2mshould handle rapid successive stores
+[22m[39m[agent-core] u2d sync test
+
+[90mstdout[2m | __tests__/integration/main/secureStorage.integration.test.ts[2m > [22m[2msecureStorage Integration[2m > [22m[2medge cases[2m > [22m[2mshould handle concurrent operations on different providers
+[22m[39m[agent-core] u2d sync test
+
+ [32mÔ£ô[39m [30m[45m integration [49m[39m __tests__/integration/main/secureStorage.integration.test.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 6920[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should store and retrieve an API key [33m 4055[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[31m23 failed[39m[22m[2m | [22m[1m[32m148 passed[39m[22m[90m (171)[39m
+[2m   Start at [22m 03:17:12
+[2m   Duration [22m 7.89s[2m (transform 6.03s, setup 481ms, import 4.75s, tests 21.36s, environment 2ms)[22m
+
