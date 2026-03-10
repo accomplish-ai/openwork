@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -30,11 +30,11 @@ export function HomePage() {
   const [settingsInitialTab, setSettingsInitialTab] = useState<
     'providers' | 'voice' | 'skills' | 'connectors'
   >('providers');
-  const { startTask, interruptTask, isLoading, addTaskUpdate, setPermissionRequest } =
-    useTaskStore();
+  const { startTask, isLoading, addTaskUpdate, setPermissionRequest } = useTaskStore();
   const navigate = useNavigate();
   const accomplish = useMemo(() => getAccomplish(), []);
   const { t } = useTranslation('home');
+  const attachFilesClickRef = useRef<(() => void) | null>(null);
 
   const useCaseExamples = useMemo(() => {
     return USE_CASE_KEYS.map(({ key, icons }) => ({
@@ -60,35 +60,39 @@ export function HomePage() {
     };
   }, [addTaskUpdate, setPermissionRequest, accomplish]);
 
-  const executeTask = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
-
-    const taskId = `task_${Date.now()}`;
-    const task = await startTask({ prompt: prompt.trim(), taskId });
-    if (task) {
-      navigate(`/execution/${task.id}`);
-    }
-  }, [prompt, isLoading, startTask, navigate]);
-
-  const handleSubmit = async () => {
-    if (isLoading) {
-      void interruptTask();
-      return;
-    }
-    if (!prompt.trim()) return;
-
-    const isE2EMode = await accomplish.isE2EMode();
-    if (!isE2EMode) {
-      const settings = await accomplish.getProviderSettings();
-      if (!hasAnyReadyProvider(settings)) {
-        setSettingsInitialTab('providers');
-        setShowSettingsDialog(true);
+  const handleSubmit = useCallback(
+    async (
+      submittedPrompt: string,
+      attachments?: import('@accomplish_ai/agent-core/common').TaskInputAttachment[],
+    ) => {
+      const hasPrompt = !!submittedPrompt.trim();
+      const hasAttachments = attachments && attachments.length > 0;
+      if ((!hasPrompt && !hasAttachments) || isLoading) {
         return;
       }
-    }
 
-    await executeTask();
-  };
+      const isE2EMode = await accomplish.isE2EMode();
+      if (!isE2EMode) {
+        const settings = await accomplish.getProviderSettings();
+        if (!hasAnyReadyProvider(settings)) {
+          setSettingsInitialTab('providers');
+          setShowSettingsDialog(true);
+          return;
+        }
+      }
+
+      const taskId = `task_${Date.now()}`;
+      const task = await startTask({
+        prompt: submittedPrompt.trim() || ' ',
+        taskId,
+        attachments: hasAttachments ? attachments : undefined,
+      });
+      if (task) {
+        navigate(`/execution/${task.id}`);
+      }
+    },
+    [isLoading, startTask, navigate, accomplish],
+  );
 
   const handleSettingsDialogChange = (open: boolean) => {
     setShowSettingsDialog(open);
@@ -110,7 +114,7 @@ export function HomePage() {
   const handleApiKeySaved = async () => {
     setShowSettingsDialog(false);
     if (prompt.trim()) {
-      await executeTask();
+      await handleSubmit(prompt.trim(), undefined);
     }
   };
 
@@ -180,9 +184,11 @@ export function HomePage() {
                       setSettingsInitialTab(tab);
                       setShowSettingsDialog(true);
                     }}
+                    onAttachFilesClick={() => attachFilesClickRef.current?.()}
                     disabled={isLoading}
                   />
                 }
+                toolbarLeftInjectRef={attachFilesClickRef}
               />
             </motion.div>
 
