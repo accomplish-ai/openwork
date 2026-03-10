@@ -409,6 +409,14 @@ const accomplishAPI = {
   exportLogs: (): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
     ipcRenderer.invoke('logs:export'),
 
+  // Debug bug reporting
+  captureScreenshot: (): Promise<string | null> => ipcRenderer.invoke('debug:capture-screenshot'),
+  saveBugReport: (
+    reportJson: string,
+    screenshotBase64: string | null,
+  ): Promise<{ success: boolean; path?: string; error?: string; reason?: string }> =>
+    ipcRenderer.invoke('debug:save-report', reportJson, screenshotBase64),
+
   // Speech-to-Text API
   speechIsConfigured: (): Promise<boolean> => ipcRenderer.invoke('speech:is-configured'),
   speechGetConfig: (): Promise<{ enabled: boolean; hasApiKey: boolean; apiKeyPrefix?: string }> =>
