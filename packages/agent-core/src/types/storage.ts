@@ -13,6 +13,8 @@ import type {
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
 import type { McpConnector, ConnectorStatus, OAuthTokens } from '../common/types/connector.js';
+import type { CloudBrowserConfig } from '../common/types/cloud-browser.js';
+import type { MessagingConfig } from '../common/types/messaging.js';
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -54,6 +56,8 @@ export interface AppSettings {
   lmstudioConfig: LMStudioConfig | null;
   openaiBaseUrl: string;
   theme: ThemePreference;
+  cloudBrowserConfig: CloudBrowserConfig | null;
+  messagingConfig: MessagingConfig | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +130,14 @@ export interface AppSettingsAPI {
   getTheme(): ThemePreference;
   /** Set the theme preference */
   setTheme(theme: ThemePreference): void;
+  /** Get cloud browser configuration */
+  getCloudBrowserConfig(): CloudBrowserConfig | null;
+  /** Set cloud browser configuration */
+  setCloudBrowserConfig(config: CloudBrowserConfig | null): void;
+  /** Get messaging integration configuration */
+  getMessagingConfig(): MessagingConfig | null;
+  /** Set messaging integration configuration */
+  setMessagingConfig(config: MessagingConfig | null): void;
   /** Get all application settings as a snapshot */
   getAppSettings(): AppSettings;
   /** Reset all application settings to defaults */
@@ -252,4 +264,6 @@ export type {
   McpConnector,
   ConnectorStatus,
   OAuthTokens,
+  CloudBrowserConfig,
+  MessagingConfig,
 };
