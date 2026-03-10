@@ -528,7 +528,7 @@ export async function buildProviderConfigs(
       id: 'zai-coding-plan',
       npm: '@ai-sdk/openai-compatible',
       name: 'Z.AI Coding Plan',
-      options: { baseURL: zaiEndpoint },
+      options: { baseURL: zaiEndpoint, ...(zaiKey ? { apiKey: zaiKey } : {}) },
       models: zaiModels,
     });
     console.log('[OpenCode Config Builder] Z.AI Coding Plan configured, region:', zaiRegion);
