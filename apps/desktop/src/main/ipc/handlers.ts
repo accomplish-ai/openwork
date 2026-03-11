@@ -82,6 +82,7 @@ import type {
   LiteLLMConfig,
   LMStudioConfig,
 } from '@accomplish_ai/agent-core';
+import type { CloudBrowserConfig } from '@accomplish_ai/agent-core/common';
 import {
   DEFAULT_PROVIDERS,
   ALLOWED_API_KEY_PROVIDERS,
@@ -962,6 +963,37 @@ export function registerIPCHandlers(): void {
   handle('settings:app-settings', async (_event: IpcMainInvokeEvent) => {
     return storage.getAppSettings();
   });
+
+  handle('settings:cloud-browser-config:get', async (_event: IpcMainInvokeEvent) => {
+    return storage.getCloudBrowserConfig();
+  });
+
+  handle(
+    'settings:cloud-browser-config:set',
+    async (_event: IpcMainInvokeEvent, config: string | null) => {
+      if (config === null) {
+        storage.setCloudBrowserConfig(null);
+        return;
+      }
+      if (typeof config !== 'string') {
+        throw new Error('Invalid cloud browser config');
+      }
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(config);
+      } catch {
+        throw new Error('Invalid cloud browser config: malformed JSON');
+      }
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('Invalid cloud browser config: expected object');
+      }
+      const cfg = parsed as Record<string, unknown>;
+      if (cfg.activeProvider !== null && typeof cfg.activeProvider !== 'string') {
+        throw new Error('Invalid cloud browser config: activeProvider must be string or null');
+      }
+      storage.setCloudBrowserConfig(parsed as CloudBrowserConfig);
+    },
+  );
 
   handle('settings:openai-base-url:get', async (_event: IpcMainInvokeEvent) => {
     return storage.getOpenAiBaseUrl();
