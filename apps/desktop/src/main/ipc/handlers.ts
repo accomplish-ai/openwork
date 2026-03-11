@@ -25,7 +25,6 @@ import {
   sanitizeString,
   generateTaskSummary,
   validateTaskConfig,
-  buildEnhancedPrompt,
 } from '@accomplish_ai/agent-core';
 import { createTaskId, createMessageId } from '@accomplish_ai/agent-core';
 import {
@@ -149,10 +148,6 @@ export function registerIPCHandlers(): void {
     const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
     const sender = event.sender;
     const validatedConfig = validateTaskConfig(config);
-    validatedConfig.prompt = buildEnhancedPrompt(
-      validatedConfig.prompt,
-      validatedConfig.attachments,
-    );
 
     if (!isMockTaskEventsEnabled() && !storage.hasReadyProvider()) {
       throw new Error(
@@ -313,13 +308,12 @@ export function registerIPCHandlers(): void {
       sessionId: string,
       prompt: string,
       existingTaskId?: string,
-      attachments?: import('@accomplish_ai/agent-core').FileAttachmentInfo[],
+      attachments?: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[],
     ) => {
       const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
       const sender = event.sender;
       const validatedSessionId = sanitizeString(sessionId, 'sessionId', 128);
-      let validatedPrompt = sanitizeString(prompt, 'prompt');
-      validatedPrompt = buildEnhancedPrompt(validatedPrompt, attachments);
+      const validatedPrompt = sanitizeString(prompt, 'prompt');
       const validatedExistingTaskId = existingTaskId
         ? sanitizeString(existingTaskId, 'taskId', 128)
         : undefined;
@@ -358,7 +352,7 @@ export function registerIPCHandlers(): void {
           sessionId: validatedSessionId,
           taskId,
           modelId: selectedModelForResume?.model,
-          attachments,
+          files: attachments,
         },
         callbacks,
       );
@@ -652,7 +646,7 @@ export function registerIPCHandlers(): void {
       throw new Error('You can only select a maximum of 5 files.');
     }
 
-    const attachments: import('@accomplish_ai/agent-core').FileAttachmentInfo[] = [];
+    const attachments: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[] = [];
 
     for (const filePath of result.filePaths) {
       const stats = await fs.promises.stat(filePath);
@@ -723,7 +717,7 @@ export function registerIPCHandlers(): void {
       }
     }
 
-    const attachments: import('@accomplish_ai/agent-core').FileAttachmentInfo[] = [];
+    const attachments: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[] = [];
 
     for (const filePath of paths) {
       const resolvedPath = path.resolve(filePath);

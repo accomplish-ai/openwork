@@ -30,11 +30,11 @@ const accomplishAPI = {
   clearTaskHistory: (): Promise<void> => ipcRenderer.invoke('task:clear-history'),
   getTodosForTask: (taskId: string): Promise<TodoItem[]> =>
     ipcRenderer.invoke('task:get-todos', taskId),
-  pickFiles: (): Promise<import('@accomplish_ai/agent-core').FileAttachmentInfo[]> =>
+  pickFiles: (): Promise<import('@accomplish_ai/agent-core/common').FileAttachmentInfo[]> =>
     ipcRenderer.invoke('task:pick-files'),
   processDroppedFiles: (
     paths: string[],
-  ): Promise<import('@accomplish_ai/agent-core').FileAttachmentInfo[]> =>
+  ): Promise<import('@accomplish_ai/agent-core/common').FileAttachmentInfo[]> =>
     ipcRenderer.invoke('task:process-dropped-files', paths),
 
   // Permission responses
@@ -46,7 +46,7 @@ const accomplishAPI = {
     sessionId: string,
     prompt: string,
     taskId?: string,
-    attachments?: import('@accomplish_ai/agent-core').FileAttachmentInfo[],
+    attachments?: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[],
   ): Promise<unknown> =>
     ipcRenderer.invoke('session:resume', sessionId, prompt, taskId, attachments),
 
