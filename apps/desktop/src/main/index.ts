@@ -36,6 +36,31 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { initTray, destroyTray } from './tray';
+import {
+  startDaemonServer,
+  stopDaemonServer,
+  registerMethod,
+  getSocketPath,
+} from './daemon/server';
+import { getTaskManager } from './opencode';
+import {
+  createTaskId,
+  createMessageId,
+  validateTaskConfig,
+  generateTaskSummary,
+  addScheduledTask,
+  listScheduledTasks,
+  cancelScheduledTask,
+  onScheduledTaskFire,
+  disposeScheduler,
+} from '@accomplish_ai/agent-core';
+import { createDaemonTaskCallbacks } from './ipc/task-callbacks';
+import {
+  initPermissionApi,
+  startPermissionApiServer,
+  startQuestionApiServer,
+} from './permission-api';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -82,7 +107,23 @@ const WEB_DIST = app.isPackaged
   ? path.join(process.resourcesPath, 'web-ui')
   : path.join(process.env.APP_ROOT, '../web/dist/client');
 
+interface AppWithQuitting extends Electron.App {
+  isQuitting: boolean;
+}
+
+const quitableApp = app as AppWithQuitting;
+
 let mainWindow: BrowserWindow | null = null;
+// Track app quit intent so the close handler knows to allow it
+quitableApp.isQuitting = false;
+
+function getRunInBackgroundSafely(): boolean {
+  try {
+    return getStorage().getRunInBackground();
+  } catch {
+    return false;
+  }
+}
 
 function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
@@ -155,6 +196,14 @@ function createWindow() {
 
   mainWindow.maximize();
 
+  // When runInBackground is enabled, hide to tray instead of closing
+  mainWindow.on('close', (event) => {
+    if (getRunInBackgroundSafely() && !quitableApp.isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   const isE2EMode = (global as Record<string, unknown>).E2E_SKIP_AUTH === true;
   const isTestEnv = process.env.NODE_ENV === 'test';
   if (!app.isPackaged && !isE2EMode && !isTestEnv) {
@@ -219,7 +268,12 @@ if (!gotTheLock) {
 
   app.on('second-instance', (_event, commandLine) => {
     if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
       mainWindow.focus();
       console.log('[Main] Focused existing instance after second-instance event');
 
@@ -319,22 +373,328 @@ if (!gotTheLock) {
       startThoughtStreamServer();
     }
 
+    // Initialize system tray
+    initTray({
+      getWindow: () => mainWindow,
+      getActiveTaskCount: () => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      },
+    });
+
+    // Crash recovery: mark stale running tasks as failed
+    try {
+      const storage = getStorage();
+      const allTasks = storage.getTasks();
+      for (const task of allTasks) {
+        if (task.status === 'running') {
+          console.warn(`[Daemon] Crash recovery: marking stale task ${task.id} as failed`);
+          storage.updateTaskStatus(task.id, 'failed', new Date().toISOString());
+        }
+      }
+    } catch (err) {
+      console.warn('[Daemon] Crash recovery check failed:', err);
+    }
+
+    // Start daemon socket server for external triggers
+    const daemonStartTime = Date.now();
+
+    registerMethod('daemon.ping', () => ({ pong: true }));
+
+    registerMethod('daemon.health', () => ({
+      version: app.getVersion(),
+      uptime: Math.floor((Date.now() - daemonStartTime) / 1000),
+      activeTasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      })(),
+      memoryUsage: process.memoryUsage().heapUsed,
+    }));
+
+    registerMethod('daemon.status', () => ({
+      running: true,
+      version: app.getVersion(),
+      activeTasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskCount();
+        } catch {
+          return 0;
+        }
+      })(),
+    }));
+    registerMethod('task.list', () => ({
+      tasks: (() => {
+        try {
+          return getTaskManager().getActiveTaskIds();
+        } catch {
+          return [];
+        }
+      })(),
+    }));
+
+    let daemonPermissionApiReady = false;
+
+    const ensureDaemonPermissionApisReady = (): void => {
+      if (!daemonPermissionApiReady && mainWindow && !mainWindow.isDestroyed()) {
+        initPermissionApi(mainWindow, () => getTaskManager().getActiveTaskId());
+        startPermissionApiServer();
+        startQuestionApiServer();
+        daemonPermissionApiReady = true;
+      }
+    };
+
+    registerMethod('task.start', async (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { prompt, taskId: requestedTaskId } = params as {
+        prompt: string;
+        taskId?: string;
+      };
+
+      if (typeof prompt !== 'string' || prompt.trim() === '') {
+        throw new Error('prompt is required');
+      }
+
+      if (requestedTaskId !== undefined && typeof requestedTaskId !== 'string') {
+        throw new Error('taskId must be a string');
+      }
+
+      const storage = getStorage();
+
+      if (!storage.hasReadyProvider()) {
+        throw new Error('No provider is ready. Configure a provider in Settings first.');
+      }
+
+      ensureDaemonPermissionApisReady();
+
+      const taskId =
+        typeof requestedTaskId === 'string' && requestedTaskId.length > 0
+          ? requestedTaskId
+          : createTaskId();
+      const taskManager = getTaskManager();
+
+      const validatedConfig = validateTaskConfig({ prompt });
+      const activeModel = storage.getActiveProviderModel();
+      const selectedModel = activeModel || storage.getSelectedModel();
+      if (selectedModel?.model) {
+        validatedConfig.modelId = selectedModel.model;
+      }
+
+      const callbacks = createDaemonTaskCallbacks({
+        taskId,
+        getWindow: () => mainWindow,
+      });
+
+      const task = await taskManager.startTask(taskId, validatedConfig, callbacks);
+
+      const initialUserMessage = {
+        id: createMessageId(),
+        type: 'user' as const,
+        content: prompt,
+        timestamp: new Date().toISOString(),
+      };
+      task.messages = [initialUserMessage];
+      storage.saveTask(task);
+
+      // Generate summary async
+      generateTaskSummary(prompt, getApiKey)
+        .then((summary) => {
+          storage.updateTaskSummary(taskId, summary);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('task:summary', { taskId, summary });
+          }
+        })
+        .catch((err) => {
+          console.warn('[Daemon] Failed to generate task summary:', err);
+        });
+
+      console.log('[Daemon] Task started via socket:', taskId);
+      return { taskId };
+    });
+
+    registerMethod('task.stop', async (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { taskId } = params as { taskId: string };
+
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('taskId is required');
+      }
+
+      const taskManager = getTaskManager();
+      const storage = getStorage();
+
+      if (taskManager.isTaskQueued(taskId)) {
+        taskManager.cancelQueuedTask(taskId);
+        storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+        console.log('[Daemon] Queued task cancelled:', taskId);
+        return { ok: true };
+      }
+
+      if (taskManager.hasActiveTask(taskId)) {
+        await taskManager.cancelTask(taskId);
+        storage.updateTaskStatus(taskId, 'cancelled', new Date().toISOString());
+        console.log('[Daemon] Active task stopped:', taskId);
+        return { ok: true };
+      }
+
+      throw new Error(`Task ${taskId} not found or not active`);
+    });
+
+    registerMethod('task.get', (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { taskId } = params as { taskId: string };
+
+      if (!taskId || typeof taskId !== 'string') {
+        throw new Error('taskId is required');
+      }
+
+      const storage = getStorage();
+      const task = storage.getTask(taskId);
+
+      if (!task) {
+        throw new Error(`Task ${taskId} not found`);
+      }
+
+      return { task };
+    });
+
+    // ── Scheduling ───────────────────────────────────────────────────
+
+    registerMethod('task.schedule', (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { cron, prompt } = params as { cron: string; prompt: string };
+
+      if (typeof cron !== 'string' || cron.trim() === '') {
+        throw new Error('cron expression is required');
+      }
+      if (typeof prompt !== 'string' || prompt.trim() === '') {
+        throw new Error('prompt is required');
+      }
+
+      return addScheduledTask(cron.trim(), prompt.trim());
+    });
+
+    registerMethod('task.listScheduled', () => ({
+      schedules: listScheduledTasks(),
+    }));
+
+    registerMethod('task.cancelScheduled', (params: unknown) => {
+      if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+        throw new Error('params must be an object');
+      }
+
+      const { scheduleId } = params as { scheduleId: string };
+
+      if (typeof scheduleId !== 'string' || scheduleId.trim() === '') {
+        throw new Error('scheduleId is required');
+      }
+
+      cancelScheduledTask(scheduleId);
+      return { ok: true };
+    });
+
+    // Wire scheduler: when a scheduled task fires, start a real task
+    onScheduledTaskFire((scheduled) => {
+      console.log('[Daemon] Scheduled task firing:', scheduled.id, scheduled.prompt.slice(0, 50));
+
+      const storage = getStorage();
+      if (!storage.hasReadyProvider()) {
+        console.warn('[Daemon] Scheduled task skipped — no provider ready');
+        return;
+      }
+
+      ensureDaemonPermissionApisReady();
+
+      const taskId = createTaskId();
+      const taskManager = getTaskManager();
+      const validatedConfig = validateTaskConfig({ prompt: scheduled.prompt });
+
+      const activeModel = storage.getActiveProviderModel();
+      const selectedModel = activeModel || storage.getSelectedModel();
+      if (selectedModel?.model) {
+        validatedConfig.modelId = selectedModel.model;
+      }
+
+      const callbacks = createDaemonTaskCallbacks({
+        taskId,
+        getWindow: () => mainWindow,
+      });
+
+      taskManager
+        .startTask(taskId, validatedConfig, callbacks)
+        .then((task) => {
+          const initialUserMessage = {
+            id: createMessageId(),
+            type: 'user' as const,
+            content: `[Scheduled: ${scheduled.cron}] ${scheduled.prompt}`,
+            timestamp: new Date().toISOString(),
+          };
+          task.messages = [initialUserMessage];
+          storage.saveTask(task);
+
+          generateTaskSummary(scheduled.prompt, getApiKey)
+            .then((summary) => {
+              storage.updateTaskSummary(taskId, summary);
+            })
+            .catch((err) => {
+              console.warn('[Daemon] Failed to generate scheduled task summary:', err);
+            });
+
+          console.log('[Daemon] Scheduled task started:', taskId);
+        })
+        .catch((err) => {
+          console.error('[Daemon] Failed to start scheduled task:', err);
+        });
+    });
+
+    try {
+      startDaemonServer();
+      console.log('[Main] Daemon socket server started at:', getSocketPath());
+    } catch (err) {
+      console.error('[Main] Failed to start daemon server:', err);
+    }
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
         console.log('[Main] Application reactivated; recreated window');
+      } else if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
       }
     });
   });
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  // When runInBackground is enabled, keep the app alive (it lives in the system tray)
+  if (!getRunInBackgroundSafely()) {
     app.quit();
   }
 });
 
 app.on('before-quit', () => {
+  quitableApp.isQuitting = true;
+  disposeScheduler();
+  stopDaemonServer();
+  destroyTray();
   disposeTaskManager(); // Also cleans up proxies internally
   cleanupVertexServiceAccountKey();
   oauthBrowserFlow.dispose();
