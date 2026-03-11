@@ -88,6 +88,11 @@ function getPreloadPath(): string {
   return path.join(__dirname, '../preload/index.cjs');
 }
 
+/**
+ * Creates and configures the main application BrowserWindow and loads the web UI.
+ *
+ * Configures window appearance (size, minimums, title, platform-specific title bar and icon) and webPreferences (preload, contextIsolation, spellcheck). Sets up a spellcheck context menu with suggestions and "Add to Dictionary", an external-link handler that opens http/https links in the default browser, and a response-header hook enforcing a Content-Security-Policy. Maximizes the window, conditionally opens DevTools in non-packaged/non-test/e2e modes, and loads the renderer from ROUTER_URL if available or the packaged index.html otherwise.
+ */
 function createWindow() {
   console.log('[Main] Creating main application window');
 
@@ -166,7 +171,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
+          "default-src 'self' https:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; font-src 'self' https: data:",
         ],
       },
     });
