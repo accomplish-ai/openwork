@@ -66,7 +66,13 @@ interface AccomplishAPI {
       | 'custom'
       | 'bedrock'
       | 'litellm'
+      | 'minimax'
       | 'lmstudio'
+      | 'vertex'
+      | 'nebius'
+      | 'together'
+      | 'fireworks'
+      | 'groq'
       | 'elevenlabs',
     key: string,
     label?: string,
@@ -103,13 +109,9 @@ interface AccomplishAPI {
   getOnboardingComplete(): Promise<boolean>;
   setOnboardingComplete(complete: boolean): Promise<void>;
 
-  // OpenCode CLI
-  checkOpenCodeCli(): Promise<{
-    installed: boolean;
-    version: string | null;
-    installCommand: string;
-  }>;
-  getOpenCodeVersion(): Promise<string | null>;
+  // Claude CLI
+  checkClaudeCli(): Promise<{ installed: boolean; version: string | null; installCommand: string }>;
+  getClaudeVersion(): Promise<string | null>;
 
   // Model selection
   getSelectedModel(): Promise<{

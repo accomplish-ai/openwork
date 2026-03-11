@@ -1,6 +1,5 @@
 // apps/desktop/src/renderer/components/settings/ProviderSettingsPanel.tsx
 
-import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ProviderId, ConnectedProvider } from '@accomplish_ai/agent-core/common';
 import { PROVIDER_META } from '@accomplish_ai/agent-core/common';
@@ -34,8 +33,20 @@ export function ProviderSettingsPanel({
   onModelChange,
   showModelError,
 }: ProviderSettingsPanelProps) {
-  const { t } = useTranslation('settings');
   const meta = PROVIDER_META[providerId];
+
+  // Safety check for missing metadata (prevents crash on new providers without built core)
+  if (!meta) {
+    console.warn(`Missing metadata for provider: ${providerId}`);
+    return (
+      <div className="flex items-center justify-center h-[260px] text-muted-foreground">
+        <p>
+          Provider configuration not found for:{' '}
+          <span className="font-mono text-xs">{providerId}</span>
+        </p>
+      </div>
+    );
+  }
 
   // Render form content based on provider category
   const renderForm = () => {
@@ -146,7 +157,7 @@ export function ProviderSettingsPanel({
         );
 
       default:
-        return <div>{t('providers.unknownType')}</div>;
+        return <div>Unknown provider type</div>;
     }
   };
 
