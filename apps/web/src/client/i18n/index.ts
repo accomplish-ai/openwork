@@ -27,8 +27,17 @@ import zhCNHistory from '@locales/zh-CN/history.json';
 import zhCNErrors from '@locales/zh-CN/errors.json';
 import zhCNSidebar from '@locales/zh-CN/sidebar.json';
 
+// Static Russian locale imports
+import ruCommon from '@locales/ru/common.json';
+import ruHome from '@locales/ru/home.json';
+import ruSettings from '@locales/ru/settings.json';
+import ruExecution from '@locales/ru/execution.json';
+import ruHistory from '@locales/ru/history.json';
+import ruErrors from '@locales/ru/errors.json';
+import ruSidebar from '@locales/ru/sidebar.json';
+
 // Supported languages and namespaces
-export const SUPPORTED_LANGUAGES = ['en', 'zh-CN'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'zh-CN', 'ru'] as const;
 export const NAMESPACES = [
   'common',
   'home',
@@ -64,13 +73,16 @@ function resolveStoredLanguage(): SupportedLanguage {
     return 'en';
   }
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (stored === 'en' || stored === 'zh-CN') {
+  if (stored === 'en' || stored === 'zh-CN' || stored === 'ru') {
     return stored;
   }
   // 'auto' or missing — detect from browser
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'en';
   if (nav.startsWith('zh')) {
     return 'zh-CN';
+  }
+  if (nav.startsWith('ru')) {
+    return 'ru';
   }
   return 'en';
 }
@@ -112,6 +124,15 @@ export async function initI18n(): Promise<void> {
             errors: zhCNErrors as Record<string, unknown>,
             sidebar: zhCNSidebar as Record<string, unknown>,
           },
+          ru: {
+            common: ruCommon as Record<string, unknown>,
+            home: ruHome as Record<string, unknown>,
+            settings: ruSettings as Record<string, unknown>,
+            execution: ruExecution as Record<string, unknown>,
+            history: ruHistory as Record<string, unknown>,
+            errors: ruErrors as Record<string, unknown>,
+            sidebar: ruSidebar as Record<string, unknown>,
+          },
         },
         lng: initialLanguage,
         fallbackLng: 'en',
@@ -148,7 +169,7 @@ export async function initI18n(): Promise<void> {
 /**
  * Change language and persist to localStorage
  */
-export async function changeLanguage(language: 'en' | 'zh-CN' | 'auto'): Promise<void> {
+export async function changeLanguage(language: 'en' | 'zh-CN' | 'ru' | 'auto'): Promise<void> {
   const resolvedLanguage = language === 'auto' ? resolveAutoLanguage() : language;
   localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   await i18n.changeLanguage(resolvedLanguage);
@@ -158,12 +179,12 @@ export async function changeLanguage(language: 'en' | 'zh-CN' | 'auto'): Promise
 /**
  * Get the current language preference from localStorage
  */
-export function getLanguagePreference(): 'en' | 'zh-CN' | 'auto' {
+export function getLanguagePreference(): 'en' | 'zh-CN' | 'ru' | 'auto' {
   if (typeof localStorage === 'undefined') {
     return 'auto';
   }
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (stored === 'en' || stored === 'zh-CN' || stored === 'auto') {
+  if (stored === 'en' || stored === 'zh-CN' || stored === 'ru' || stored === 'auto') {
     return stored;
   }
   return 'auto';
@@ -173,6 +194,9 @@ function resolveAutoLanguage(): SupportedLanguage {
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'en';
   if (nav.startsWith('zh')) {
     return 'zh-CN';
+  }
+  if (nav.startsWith('ru')) {
+    return 'ru';
   }
   return 'en';
 }
