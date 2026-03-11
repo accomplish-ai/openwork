@@ -72,11 +72,15 @@ export class ExecutionPage {
         const badge = document.querySelector('[data-testid="execution-status-badge"]');
         if (!badge) return false;
         const text = badge.textContent?.toLowerCase() || '';
-        return text.includes('completed') || text.includes('failed') || text.includes('stopped') || text.includes('cancelled');
+        return (
+          text.includes('completed') ||
+          text.includes('failed') ||
+          text.includes('stopped') ||
+          text.includes('cancelled')
+        );
       },
       null,
-      { timeout }
+      { timeout },
     );
   }
-
 }

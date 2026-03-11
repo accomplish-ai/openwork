@@ -26,11 +26,7 @@ export {
   type Migration,
 } from './migrations/index.js';
 
-export {
-  FutureSchemaError,
-  MigrationError,
-  CorruptDatabaseError,
-} from './migrations/errors.js';
+export { FutureSchemaError, MigrationError, CorruptDatabaseError } from './migrations/errors.js';
 
 export {
   getDebugMode,

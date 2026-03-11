@@ -12,11 +12,7 @@ import type {
   ProviderSettings,
   ConnectedProvider,
 } from '../common/types/providerSettings.js';
-import type {
-  McpConnector,
-  ConnectorStatus,
-  OAuthTokens,
-} from '../common/types/connector.js';
+import type { McpConnector, ConnectorStatus, OAuthTokens } from '../common/types/connector.js';
 
 /** Options for creating a Storage instance */
 export interface StorageOptions {
@@ -232,7 +228,8 @@ export interface DatabaseLifecycleAPI {
 
 /** Unified storage API combining task, settings, provider, secure storage, connector, and database lifecycle operations */
 export interface StorageAPI
-  extends TaskStorageAPI,
+  extends
+    TaskStorageAPI,
     AppSettingsAPI,
     ProviderSettingsAPI,
     SecureStorageAPI,

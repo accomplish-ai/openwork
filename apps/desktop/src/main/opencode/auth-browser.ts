@@ -81,6 +81,7 @@ export class OAuthBrowserFlow {
           openedUrl = url;
           await shell.openExternal(url);
         } catch {
+          // intentionally empty
         }
       };
 
@@ -121,8 +122,8 @@ export class OAuthBrowserFlow {
         reject(
           new Error(
             `OpenCode auth login failed (exit ${exitCode}, signal ${signal ?? 'none'})` +
-              (redacted ? `\n\nOutput:\n${redacted}` : '')
-          )
+              (redacted ? `\n\nOutput:\n${redacted}` : ''),
+          ),
         );
       });
     });

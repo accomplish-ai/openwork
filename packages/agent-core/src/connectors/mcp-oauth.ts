@@ -1,12 +1,18 @@
 import crypto from 'crypto';
-import type { OAuthTokens, OAuthMetadata, OAuthClientRegistration } from '../common/types/connector.js';
+import type {
+  OAuthTokens,
+  OAuthMetadata,
+  OAuthClientRegistration,
+} from '../common/types/connector.js';
 
 const OAUTH_FETCH_TIMEOUT_MS = 30_000;
 
 function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), OAUTH_FETCH_TIMEOUT_MS);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId),
+  );
 }
 
 /**
@@ -22,7 +28,7 @@ export async function discoverOAuthMetadata(serverUrl: string): Promise<OAuthMet
 
   if (!response.ok) {
     throw new Error(
-      `Failed to discover OAuth metadata from ${url.toString()}: ${response.status} ${response.statusText}`
+      `Failed to discover OAuth metadata from ${url.toString()}: ${response.status} ${response.statusText}`,
     );
   }
 
@@ -32,9 +38,7 @@ export async function discoverOAuthMetadata(serverUrl: string): Promise<OAuthMet
   const tokenEndpoint = data.token_endpoint as string | undefined;
 
   if (!authorizationEndpoint || !tokenEndpoint) {
-    throw new Error(
-      'Invalid OAuth metadata: missing authorization_endpoint or token_endpoint'
-    );
+    throw new Error('Invalid OAuth metadata: missing authorization_endpoint or token_endpoint');
   }
 
   return {
@@ -73,7 +77,7 @@ export async function registerOAuthClient(
   if (!response.ok) {
     const body = await response.text();
     throw new Error(
-      `OAuth client registration failed: ${response.status} ${response.statusText} - ${body}`
+      `OAuth client registration failed: ${response.status} ${response.statusText} - ${body}`,
     );
   }
 
@@ -161,7 +165,7 @@ export async function exchangeCodeForTokens(params: {
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `Token exchange failed: ${response.status} ${response.statusText} - ${errorBody}`
+      `Token exchange failed: ${response.status} ${response.statusText} - ${errorBody}`,
     );
   }
 
@@ -211,7 +215,7 @@ export async function refreshAccessToken(params: {
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `Token refresh failed: ${response.status} ${response.statusText} - ${errorBody}`
+      `Token refresh failed: ${response.status} ${response.statusText} - ${errorBody}`,
     );
   }
 
