@@ -97,6 +97,7 @@ export function TaskInputBar({
   const pendingAutoSubmitRef = useRef<string | null>(null);
   const accomplish = getAccomplish();
   const [isDragOver, setIsDragOver] = useState(false);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const dragCounterRef = useRef(0);
 
   const addFiles = useCallback(
@@ -105,15 +106,17 @@ export function TaskInputBar({
         return;
       }
 
+      setAttachmentError(null);
       const accepted = processFileAttachments(fileList, attachments.length, {
-        onOversize: (name, limit) => console.warn(`${name} exceeds ${limit} limit`),
-        onOverLimit: (_count, max) => console.warn(`Maximum ${max} files allowed`),
+        onOversize: (name, limit) =>
+          setAttachmentError(t('plusMenu.fileTooLarge', { name, limit })),
+        onOverLimit: (_count, max) => setAttachmentError(t('plusMenu.tooManyFiles', { max })),
       });
       if (accepted.length > 0) {
         onAttachmentsChange([...attachments, ...accepted]);
       }
     },
-    [attachments, onAttachmentsChange],
+    [attachments, onAttachmentsChange, t],
   );
 
   const removeAttachment = useCallback(
@@ -257,7 +260,10 @@ export function TaskInputBar({
       >
         {isDragOver && (
           <div className="px-4 py-3 text-center text-sm text-primary font-medium">
-            Drop files here to attach (max {MAX_FILES} files, {MAX_FILE_SIZE / 1024 / 1024}MB each)
+            {t('plusMenu.dropFilesHere')}{' '}
+            <span className="text-muted-foreground font-normal">
+              {t('plusMenu.dropFilesHint', { max: MAX_FILES, size: MAX_FILE_SIZE / 1024 / 1024 })}
+            </span>
           </div>
         )}
 
@@ -274,6 +280,13 @@ export function TaskInputBar({
               rows={3}
               className="w-full min-h-[60px] max-h-[200px] resize-none overflow-y-auto bg-transparent text-[16px] leading-relaxed tracking-[-0.015em] text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
+          </div>
+        )}
+
+        {attachmentError && (
+          <div className="px-4 py-1.5 text-xs text-destructive flex items-center gap-1.5">
+            <WarningCircle className="h-3 w-3 shrink-0" />
+            {attachmentError}
           </div>
         )}
 

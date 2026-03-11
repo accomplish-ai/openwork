@@ -696,8 +696,12 @@ export function registerIPCHandlers(): void {
     return attachments;
   });
 
-  handle('task:process-dropped-files', async (_event: IpcMainInvokeEvent, paths: string[]) => {
-    if (!paths || paths.length === 0) return [];
+  handle('task:process-dropped-files', async (event: IpcMainInvokeEvent, paths: string[]) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+
+    if (!paths || paths.length === 0) {
+      return [];
+    }
 
     if (paths.length > 5) {
       throw new Error('You can only drop a maximum of 5 files.');
@@ -705,13 +709,34 @@ export function registerIPCHandlers(): void {
 
     // Security: reject non-absolute paths and paths in sensitive system directories
     // to prevent a compromised renderer from using this channel as a file-read primitive.
-    const BLOCKED_PREFIXES = ['/etc/', '/sys/', '/proc/', '/dev/', '/boot/', '/root/'];
+    const BLOCKED_PREFIXES = [
+      // Unix/macOS system dirs
+      '/etc/',
+      '/sys/',
+      '/proc/',
+      '/dev/',
+      '/boot/',
+      '/root/',
+      // Windows system dirs (normalised to forward-slash lower-case for comparison)
+      'c:/windows/',
+      'c:/system32/',
+      'c:/program files/',
+      'c:/programdata/',
+    ];
+
     for (const p of paths) {
-      const normalised = path.resolve(p);
-      if (!path.isAbsolute(normalised)) {
+      // Resolve symlinks to get the real path, preventing traversal via symlinks
+      let resolvedReal: string;
+      try {
+        resolvedReal = await fs.promises.realpath(p);
+      } catch {
+        throw new Error(`Cannot resolve path for ${path.basename(p)}.`);
+      }
+
+      if (!path.isAbsolute(resolvedReal)) {
         throw new Error('Only absolute file paths are accepted.');
       }
-      const lower = normalised.toLowerCase();
+      const lower = resolvedReal.replace(/\\/g, '/').toLowerCase();
       if (BLOCKED_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
         throw new Error(`Access to ${path.basename(p)} is not permitted.`);
       }
@@ -720,7 +745,8 @@ export function registerIPCHandlers(): void {
     const attachments: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[] = [];
 
     for (const filePath of paths) {
-      const resolvedPath = path.resolve(filePath);
+      // Re-use the real path already resolved in the security check above
+      const resolvedPath = await fs.promises.realpath(filePath).catch(() => path.resolve(filePath));
       if (!fs.existsSync(resolvedPath)) {
         throw new Error(`File ${path.basename(resolvedPath)} does not exist.`);
       }

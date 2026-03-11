@@ -8,7 +8,11 @@
     "useSkills": "Use Skills",
     "connectors": "Connectors",
     "noConnectors": "No connectors yet",
-    "manage": "Manage"
+    "manage": "Manage",
+    "dropFilesHere": "Drop files here to attach",
+    "dropFilesHint": "(max {max} files, {size}MB each)",
+    "fileTooLarge": "{name} exceeds {limit} size limit",
+    "tooManyFiles": "Maximum {max} files allowed"
   },
   "examplePrompts": "Example Prompts",
   "useCases": {

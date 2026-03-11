@@ -223,8 +223,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         message: 'UI follow-up: starting fresh task (no session from interrupted task)',
         context: { taskId: currentTask.id },
       });
-      await startTask({ prompt: message, files: attachments });
-      return true;
+      const newTask = await startTask({ prompt: message, files: attachments });
+      return newTask !== null;
     }
 
     if (!sessionId) {
