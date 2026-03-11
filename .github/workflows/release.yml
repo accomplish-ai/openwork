@@ -272,7 +272,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Accomplish-macOS-arm64
           path: |
@@ -323,7 +323,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Accomplish-macOS-x64
           path: |
@@ -368,7 +368,7 @@ jobs:
   #         CSC_IDENTITY_AUTO_DISCOVERY: false
   #
   #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v6
+  #       uses: actions/upload-artifact@v7
   #       with:
   #         name: Accomplish-Windows-x64
   #         path: apps/desktop/release/*.exe
@@ -426,21 +426,21 @@ jobs:
 
       - name: Download macOS ARM64 artifacts
         if: needs.build-mac-arm64.result == 'success'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: Accomplish-macOS-arm64
           path: ./release/arm64
 
       - name: Download macOS x64 artifacts
         if: needs.build-mac-x64.result == 'success'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: Accomplish-macOS-x64
           path: ./release/x64
 
       # - name: Download Windows x64 artifacts
       #   if: needs.build-windows-x64.result == 'success'
-      #   uses: actions/download-artifact@v7
+      #   uses: actions/download-artifact@v8
       #   with:
       #     name: Accomplish-Windows-x64
       #     path: ./release/win-x64
