@@ -1,5 +1,5 @@
 <p align="center">
-  <strong>English</strong> | <a href="README.zh-CN.md">中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.es.md">Español</a> | <a href="README.tr.md">Türkçe</a> | <a href="README.ar.md">العربية</a> | <a href="README.id.md">Bahasa Indonesia</a>
+  <strong>English</strong> | <a href="README.zh-CN.md">中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.ru.md">Русский</a> | <a href="README.es.md">Español</a> | <a href="README.tr.md">Türkçe</a> | <a href="README.ar.md">العربية</a> | <a href="README.id.md">Bahasa Indonesia</a>
 </p>
 
 <p align="center">
@@ -11,10 +11,13 @@
   <a href="https://github.com/accomplish-ai/accomplish/stargazers"><img src="https://img.shields.io/github/stars/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Stars" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/issues"><img src="https://img.shields.io/github/issues/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="GitHub Issues" /></a>
   <a href="https://github.com/accomplish-ai/accomplish/commits"><img src="https://img.shields.io/github/last-commit/accomplish-ai/accomplish?style=flat-square&color=22c55e" alt="Last Commit" /></a>
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS-0ea5e9?style=flat-square" alt="Download for macOS" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS_(Apple_Silicon)-0ea5e9?style=flat-square" alt="Download for macOS (Apple Silicon)" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS_(Intel)-0ea5e9?style=flat-square" alt="Download for macOS (Intel)" /></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/windows/Accomplish-0.4.0-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_11-0ea5e9?style=flat-square" alt="Download for Windows 11" /></a>
+  <a href="https://discord.gg/YH86b2P8"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
-# Accomplish™ (formerly Openwork) - Open Source AI Desktop Agent
+# Accomplish™ - Open Source AI Desktop Agent
 
 Accomplish is an open source AI desktop agent that automates file management, document creation, and browser tasks locally on your machine. Bring your own API keys (OpenAI, Anthropic, Google, xAI) or run local models via Ollama.
 
@@ -23,9 +26,11 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </p>
 
 <p align="center">
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg"><strong>Download for Mac (Apple Silicon)</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-arm64.dmg"><strong>Download for Mac (Apple Silicon)</strong></a>
   ·
-  <a href="https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe"><strong>Download for Windows 11</strong></a>
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-x64.dmg"><strong>Download for Mac (Intel)</strong></a>
+  ·
+  <a href="https://downloads.accomplish.ai/downloads/0.4.0/windows/Accomplish-0.4.0-win-x64.exe"><strong>Download for Windows 11</strong></a>
   ·
   <a href="https://www.accomplish.ai/">Accomplish website</a>
   ·
@@ -46,7 +51,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 <tr>
 <td width="50%" valign="top" align="center">
 
-### 🖥️  It runs locally
+### 🖥️ It runs locally
 
 <div align="left">
 
@@ -59,7 +64,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </td>
 <td width="50%" valign="top" align="center">
 
-### 🔑  You bring your own AI
+### 🔑 You bring your own AI
 
 <div align="left">
 
@@ -75,7 +80,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 <tr>
 <td width="50%" valign="top" align="center">
 
-### 📖  It's open source
+### 📖 It's open source
 
 <div align="left">
 
@@ -88,7 +93,7 @@ Accomplish is an open source AI desktop agent that automates file management, do
 </td>
 <td width="50%" valign="top" align="center">
 
-### ⚡  It acts, not just chats
+### ⚡ It acts, not just chats
 
 <div align="left">
 
@@ -111,13 +116,13 @@ Accomplish is an open source AI desktop agent that automates file management, do
 
 ## What it actually does
 
-| | | |
-|:--|:--|:--|
-| **📁 File Management** | **✍️ Document Writing** | **🔗 Tool Connections** |
-| Sort, rename, and move files based on content or rules you give it | Prompt it to write, summarize, or rewrite documents | Works with Notion, Google Drive, Dropbox, and more (through local APIs) |
-| | | |
-| **⚙️ Custom Skills** | **🛡️ Full Control** | |
-| Define repeatable workflows, save them as skills | You approve every action. You can see logs. You can stop it anytime. | |
+|                                                                    |                                                                      |                                                                         |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| **📁 File Management**                                             | **✍️ Document Writing**                                              | **🔗 Tool Connections**                                                 |
+| Sort, rename, and move files based on content or rules you give it | Prompt it to write, summarize, or rewrite documents                  | Works with Notion, Google Drive, Dropbox, and more (through local APIs) |
+|                                                                    |                                                                      |                                                                         |
+| **⚙️ Custom Skills**                                               | **🛡️ Full Control**                                                  |                                                                         |
+| Define repeatable workflows, save them as skills                   | You approve every action. You can see logs. You can stop it anytime. |                                                                         |
 
 <br />
 
@@ -171,21 +176,20 @@ Accomplish runs locally on your machine. Your files stay on your device, and you
 
 > **Takes 2 minutes to set up.**
 
-| Step | Action | Details |
-|:----:|--------|---------|
-| **1** | **Install the App** | Download the DMG and drag it into Applications |
+| Step  | Action              | Details                                                                                                           |
+| :---: | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **1** | **Install the App** | Download the DMG and drag it into Applications                                                                    |
 | **2** | **Connect Your AI** | Use your own Google, OpenAI, Anthropic (or other) API key — or sign in with ChatGPT (Plus/Pro). No subscriptions. |
-| **3** | **Give It Access** | Choose which folders it can see. You stay in control. |
-| **4** | **Start Working** | Ask it to summarize a doc, clean a folder, or create a report. You approve everything. |
+| **3** | **Give It Access**  | Choose which folders it can see. You stay in control.                                                             |
+| **4** | **Start Working**   | Ask it to summarize a doc, clean a folder, or create a report. You approve everything.                            |
 
 <br />
-
 
 <br />
 
 <div align="center">
 
-[**Download for Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.3.8/macos/Accomplish-0.3.8-mac-arm64.dmg) · [**Download for Windows 11**](https://downloads.accomplish.ai/downloads/0.3.8/windows/Accomplish-v2-0.3.8-win-x64.exe)
+[**Download for Mac (Apple Silicon)**](https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-arm64.dmg) · [**Download for Mac (Intel)**](https://downloads.accomplish.ai/downloads/0.4.0/macos/Accomplish-0.4.0-mac-x64.dmg) · [**Download for Windows 11**](https://downloads.accomplish.ai/downloads/0.4.0/windows/Accomplish-0.4.0-win-x64.exe)
 
 </div>
 
@@ -251,24 +255,24 @@ That's it.
 <details>
 <summary><strong>All Commands</strong></summary>
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Run desktop app in dev mode |
-| `pnpm dev:clean` | Dev mode with clean start |
-| `pnpm build` | Build all workspaces |
-| `pnpm build:desktop` | Build desktop app only |
-| `pnpm lint` | TypeScript checks |
-| `pnpm typecheck` | Type validation |
-| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E tests |
+| Command                                | Description                 |
+| -------------------------------------- | --------------------------- |
+| `pnpm dev`                             | Run desktop app in dev mode |
+| `pnpm dev:clean`                       | Dev mode with clean start   |
+| `pnpm build`                           | Build all workspaces        |
+| `pnpm build:desktop`                   | Build desktop app only      |
+| `pnpm lint`                            | TypeScript checks           |
+| `pnpm typecheck`                       | Type validation             |
+| `pnpm -F @accomplish/desktop test:e2e` | Playwright E2E tests        |
 
 </details>
 
 <details>
 <summary><strong>Environment Variables</strong></summary>
 
-| Variable | Description |
-|----------|-------------|
-| `CLEAN_START=1` | Clear all stored data on app start |
+| Variable          | Description                        |
+| ----------------- | ---------------------------------- |
+| `CLEAN_START=1`   | Clear all stored data on app start |
 | `E2E_SKIP_AUTH=1` | Skip onboarding flow (for testing) |
 
 </details>

@@ -32,10 +32,7 @@ let getActiveTaskId: (() => string | null) | null = null;
 /**
  * Initialize the permission API with dependencies
  */
-export function initPermissionApi(
-  window: BrowserWindow,
-  taskIdGetter: () => string | null
-): void {
+export function initPermissionApi(window: BrowserWindow, taskIdGetter: () => string | null): void {
   mainWindow = window;
   getActiveTaskId = taskIdGetter;
 }
@@ -52,10 +49,7 @@ export function resolvePermission(requestId: string, allowed: boolean): boolean 
  * Resolve a pending question request from the MCP server
  * Called when user responds via the UI
  */
-export function resolveQuestion(
-  requestId: string,
-  response: QuestionResponseData
-): boolean {
+export function resolveQuestion(requestId: string, response: QuestionResponseData): boolean {
   return permissionHandler.resolveQuestionRequest(requestId, response);
 }
 
@@ -125,11 +119,7 @@ export function startPermissionApiServer(): http.Server {
     const { requestId, promise } = permissionHandler.createPermissionRequest();
 
     // Build permission request for the UI
-    const permissionRequest = permissionHandler.buildFilePermissionRequest(
-      requestId,
-      taskId,
-      data
-    );
+    const permissionRequest = permissionHandler.buildFilePermissionRequest(requestId, taskId, data);
 
     // Send to renderer (Electron-specific)
     mainWindow.webContents.send('permission:request', permissionRequest);
@@ -139,7 +129,7 @@ export function startPermissionApiServer(): http.Server {
       const allowed = await promise;
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ allowed }));
-    } catch (error) {
+    } catch (_error) {
       res.writeHead(408, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Request timed out', allowed: false }));
     }
@@ -151,7 +141,9 @@ export function startPermissionApiServer(): http.Server {
 
   server.on('error', (error: NodeJS.ErrnoException) => {
     if (error.code === 'EADDRINUSE') {
-      console.warn(`[Permission API] Port ${PERMISSION_API_PORT} already in use, skipping server start`);
+      console.warn(
+        `[Permission API] Port ${PERMISSION_API_PORT} already in use, skipping server start`,
+      );
     } else {
       console.error('[Permission API] Server error:', error);
     }
@@ -226,11 +218,7 @@ export function startQuestionApiServer(): http.Server {
     const { requestId, promise } = permissionHandler.createQuestionRequest();
 
     // Build question request for the UI
-    const questionRequest = permissionHandler.buildQuestionRequest(
-      requestId,
-      taskId,
-      data
-    );
+    const questionRequest = permissionHandler.buildQuestionRequest(requestId, taskId, data);
 
     // Send to renderer (Electron-specific)
     mainWindow.webContents.send('permission:request', questionRequest);
@@ -240,7 +228,7 @@ export function startQuestionApiServer(): http.Server {
       const response = await promise;
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(response));
-    } catch (error) {
+    } catch (_error) {
       res.writeHead(408, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Request timed out', denied: true }));
     }
@@ -252,7 +240,9 @@ export function startQuestionApiServer(): http.Server {
 
   server.on('error', (error: NodeJS.ErrnoException) => {
     if (error.code === 'EADDRINUSE') {
-      console.warn(`[Question API] Port ${QUESTION_API_PORT} already in use, skipping server start`);
+      console.warn(
+        `[Question API] Port ${QUESTION_API_PORT} already in use, skipping server start`,
+      );
     } else {
       console.error('[Question API] Server error:', error);
     }

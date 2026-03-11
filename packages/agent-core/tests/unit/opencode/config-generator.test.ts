@@ -15,11 +15,19 @@ describe('ConfigGenerator', () => {
   let testDir: string;
   let mcpToolsPath: string;
   let userDataPath: string;
+  const sharedBundledNodeBinPath = path.join(os.tmpdir(), 'config-gen-test-bundled-node', 'bin');
+  const requiredMcpDistEntries = [
+    ['file-permission', 'dist/index.mjs'],
+    ['ask-user-question', 'dist/index.mjs'],
+    ['complete-task', 'dist/index.mjs'],
+    ['start-task', 'dist/index.mjs'],
+    ['dev-browser-mcp', 'dist/index.mjs'],
+  ] as const;
 
   beforeEach(() => {
     testDir = path.join(
       os.tmpdir(),
-      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      `config-gen-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mcpToolsPath = path.join(testDir, 'mcp-tools');
     userDataPath = path.join(testDir, 'user-data');
@@ -27,6 +35,15 @@ describe('ConfigGenerator', () => {
     // Create directories
     fs.mkdirSync(mcpToolsPath, { recursive: true });
     fs.mkdirSync(userDataPath, { recursive: true });
+    fs.mkdirSync(sharedBundledNodeBinPath, { recursive: true });
+    fs.writeFileSync(path.join(sharedBundledNodeBinPath, 'node'), '');
+    fs.writeFileSync(path.join(sharedBundledNodeBinPath, 'node.exe'), '');
+
+    for (const [toolName, relEntry] of requiredMcpDistEntries) {
+      const entryPath = path.join(mcpToolsPath, toolName, relEntry);
+      fs.mkdirSync(path.dirname(entryPath), { recursive: true });
+      fs.writeFileSync(entryPath, `// ${toolName} bundled entry`);
+    }
 
     // Suppress console output
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,6 +51,11 @@ describe('ConfigGenerator', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+
+    const sharedBundledNodeRoot = path.dirname(sharedBundledNodeBinPath);
+    if (fs.existsSync(sharedBundledNodeRoot)) {
+      fs.rmSync(sharedBundledNodeRoot, { recursive: true, force: true });
+    }
 
     if (fs.existsSync(testDir)) {
       fs.rmSync(testDir, { recursive: true, force: true });
@@ -52,6 +74,7 @@ describe('ConfigGenerator', () => {
       mcpToolsPath: '',
       isPackaged: false,
       userDataPath: '',
+      bundledNodeBinPath: sharedBundledNodeBinPath,
     };
 
     it('should generate config with required fields', () => {
@@ -240,7 +263,7 @@ describe('ConfigGenerator', () => {
     });
 
     it('should include bundled node bin path in environment', () => {
-      const nodeBinPath = '/path/to/bundled/node/bin';
+      const nodeBinPath = sharedBundledNodeBinPath;
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
@@ -374,21 +397,20 @@ describe('ConfigGenerator', () => {
 
       const result = generateConfig(options);
 
-      expect(result.config.plugin).toContain('@tarquinen/opencode-dcp@^1.2.7');
+      expect(result.config.plugin).toContain('@tarquinen/opencode-dcp@^2.0.0');
     });
 
     it('should use bundled MCP entry when packaged and dist exists', () => {
-      // Create dist file
-      const mcpDir = path.join(mcpToolsPath, 'file-permission', 'dist');
-      fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'index.mjs'), '// bundled');
+      const bundledNodeBinPath = path.join(testDir, 'bundled-node', 'bin');
+      fs.mkdirSync(bundledNodeBinPath, { recursive: true });
+      fs.writeFileSync(path.join(bundledNodeBinPath, 'node'), '');
 
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
         userDataPath,
         isPackaged: true,
-        bundledNodeBinPath: '/bundled/node/bin',
+        bundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -399,7 +421,19 @@ describe('ConfigGenerator', () => {
       expect(command?.[1]).toContain('dist/index.mjs');
     });
 
-    it('should use tsx for MCP entry when not packaged', () => {
+    it('should throw when bundled node is missing in packaged mode', () => {
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: true,
+        bundledNodeBinPath: path.join(testDir, 'missing-bundled-node'),
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing bundled Node\.js executable/);
+    });
+
+    it('should use node and dist MCP entry when not packaged', () => {
       const options: ConfigGeneratorOptions = {
         ...baseOptions,
         mcpToolsPath,
@@ -410,8 +444,21 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(options);
 
       const command = result.mcpServers['file-permission'].command;
-      // Should use npx tsx or bundled tsx
-      expect(command?.some((arg) => arg.includes('tsx') || arg.includes('npx'))).toBe(true);
+      expect(command?.[0]).toContain('node');
+      expect(command?.[1]).toContain('dist/index.mjs');
+    });
+
+    it('should throw when MCP dist entry is missing', () => {
+      fs.rmSync(path.join(mcpToolsPath, 'file-permission', 'dist', 'index.mjs'));
+
+      const options: ConfigGeneratorOptions = {
+        ...baseOptions,
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+      };
+
+      expect(() => generateConfig(options)).toThrow(/Missing MCP dist entry/);
     });
   });
 
@@ -430,6 +477,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -438,19 +486,35 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('Accomplish');
     });
 
-    it('should include task planning behavior', () => {
+    it('should include task planning behavior with needs_planning', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
 
       expect(result.systemPrompt).toContain('start_task');
-      expect(result.systemPrompt).toContain('todowrite');
+      expect(result.systemPrompt).toContain('needs_planning');
       expect(result.systemPrompt).toContain('complete_task');
+    });
+
+    it('should include needs_planning true and false instructions', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('needs_planning: true');
+      expect(result.systemPrompt).toContain('needs_planning: false');
     });
 
     it('should include filesystem rules', () => {
@@ -459,6 +523,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -473,6 +538,7 @@ describe('ConfigGenerator', () => {
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -482,12 +548,28 @@ describe('ConfigGenerator', () => {
       expect(result.systemPrompt).toContain('File Management');
     });
 
+    it('should instruct agent NOT to call complete_task for conversational responses', () => {
+      const options: ConfigGeneratorOptions = {
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
+      };
+
+      const result = generateConfig(options);
+
+      expect(result.systemPrompt).toContain('do NOT call complete_task');
+      expect(result.systemPrompt).toContain('needs_planning');
+    });
+
     it('should include user communication rules', () => {
       const options: ConfigGeneratorOptions = {
         platform: 'darwin',
         mcpToolsPath,
         userDataPath,
         isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
       };
 
       const result = generateConfig(options);
@@ -503,6 +585,7 @@ describe('ConfigGenerator', () => {
       mcpToolsPath: '',
       isPackaged: false,
       userDataPath: '',
+      bundledNodeBinPath: sharedBundledNodeBinPath,
     };
 
     function makeOptions(overrides: Partial<ConfigGeneratorOptions> = {}): ConfigGeneratorOptions {
@@ -596,6 +679,130 @@ describe('ConfigGenerator', () => {
       const result = generateConfig(makeOptions({ browser }));
 
       expect(result.systemPrompt).toContain('browser automation assistant');
+    });
+  });
+
+  describe('needs_planning decision framework', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should contain needs_planning: true for multi-step tasks', () => {
+      expect(prompt).toContain('needs_planning: true');
+      expect(prompt).toContain(
+        'will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands)',
+      );
+    });
+
+    it('should contain needs_planning: false for conversational messages', () => {
+      expect(prompt).toContain('needs_planning: false');
+      expect(prompt).toContain('you can answer from knowledge alone using only start_task');
+    });
+
+    it('should contain explicit instruction not to call complete_task for conversational responses', () => {
+      expect(prompt).toContain('Do NOT call complete_task for conversational responses');
+    });
+
+    it('should require complete_task when needs_planning was true', () => {
+      expect(prompt).toContain(
+        'You MUST call the `complete_task` tool when `needs_planning` was true',
+      );
+    });
+
+    it('should instruct providing goal/steps/verification when needs_planning is true', () => {
+      expect(prompt).toContain('needs_planning is TRUE');
+      expect(prompt).toContain('goal, steps, verification');
+    });
+
+    it('should instruct skipping goal/steps/verification when needs_planning is false', () => {
+      expect(prompt).toContain('needs_planning is FALSE');
+      expect(prompt).toContain('skip goal, steps, verification');
+    });
+
+    it('should mention greetings/questions/knowledge as needs_planning=false examples', () => {
+      expect(prompt).toContain('greetings');
+      expect(prompt).toContain('knowledge questions');
+      expect(prompt).toContain('conversational messages');
+    });
+
+    it('should mention file operations/browser/bash as needs_planning=true indicators', () => {
+      expect(prompt).toContain('file operations');
+      expect(prompt).toContain('browser actions');
+      expect(prompt).toContain('bash commands');
+    });
+
+    it('should still contain start_task as mandatory first tool', () => {
+      expect(prompt).toContain('You MUST call start_task before any other tool');
+      expect(prompt).toContain('CALL start_task FIRST - THIS IS MANDATORY');
+    });
+
+    it('should still contain todowrite instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('Mark completed steps as "completed"');
+      expect(prompt).toContain('Mark the current step as "in_progress"');
+      expect(prompt).toContain(
+        'All todos must be "completed" or "cancelled" before calling complete_task',
+      );
+    });
+
+    it('should contain todo update instructions under needs_planning=true path', () => {
+      expect(prompt).toContain('UPDATE TODOS AS YOU PROGRESS');
+      expect(prompt).toContain('COMPLETE ALL TODOS BEFORE FINISHING');
+    });
+  });
+
+  describe('needs_planning regression checks', () => {
+    let prompt: string;
+
+    beforeEach(() => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
+      });
+      prompt = result.systemPrompt;
+    });
+
+    it('should still contain complete_task instructions', () => {
+      expect(prompt).toContain('complete_task');
+      expect(prompt).toContain('status: "success"');
+      expect(prompt).toContain('status: "blocked"');
+      expect(prompt).toContain('status: "partial"');
+    });
+
+    it('should still contain verification behavior', () => {
+      expect(prompt).toContain("You verified EVERY part of the user's request is done");
+      expect(prompt).toContain('original_request_summary');
+    });
+
+    it('should include skills section when skills are configured', () => {
+      const result = generateConfig({
+        platform: 'darwin',
+        mcpToolsPath,
+        userDataPath,
+        isPackaged: false,
+        bundledNodeBinPath: sharedBundledNodeBinPath,
+        skills: [
+          {
+            name: 'test-skill',
+            command: '/test',
+            description: 'A test skill',
+            filePath: '/tmp/skill',
+          },
+        ],
+      });
+      expect(result.systemPrompt).toContain('available-skills');
+      expect(result.systemPrompt).toContain('test-skill');
     });
   });
 });

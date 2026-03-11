@@ -27,7 +27,6 @@ export interface ConfigGeneratorOptions {
   apiKey?: string;
   skills?: Skill[];
   bundledNodeBinPath?: string;
-  bundledTsxPath?: string;
   isPackaged: boolean;
   providerConfigs?: ProviderConfig[];
   azureFoundryToken?: string;
@@ -101,6 +100,7 @@ interface OpenCodeConfigFile {
   mcp?: Record<string, McpServerConfig>;
   provider?: Record<string, Omit<ProviderConfig, 'id'>>;
   plugin?: string[];
+  experimental?: Record<string, unknown>;
 }
 
 function getPlatformEnvironmentInstructions(platform: NodeJS.Platform): string {
@@ -127,12 +127,17 @@ You are Accomplish, a {{AGENT_ROLE}} assistant.
 
 <behavior name="task-planning">
 ##############################################################################
-# CRITICAL: PLAN FIRST WITH start_task - THIS IS MANDATORY
+# CRITICAL: CALL start_task FIRST - THIS IS MANDATORY
 ##############################################################################
 
-**STEP 1: CALL start_task (before any other action)**
-
 You MUST call start_task before any other tool. This is enforced - other tools will fail until start_task is called.
+
+**Decide: Does this request need planning?**
+
+Set \`needs_planning: true\` if completing the request will require tools beyond start_task and complete_task (e.g., file operations, browser actions, bash commands).
+Set \`needs_planning: false\` if you can answer from knowledge alone using only start_task → text response → stop. This includes greetings, knowledge questions, meta-questions about your capabilities, help requests, and conversational messages.
+
+**When needs_planning is TRUE** — provide goal, steps, verification:
 
 start_task requires:
 - original_request: Echo the user's request exactly as stated
@@ -148,16 +153,6 @@ As you complete each step, call \`todowrite\` to update progress:
 - Mark the current step as "in_progress"
 - Keep the same step content - do NOT change the text
 
-\`\`\`json
-{
-  "todos": [
-    {"id": "1", "content": "First step (same as before)", "status": "completed", "priority": "high"},
-    {"id": "2", "content": "Second step (same as before)", "status": "in_progress", "priority": "medium"},
-    {"id": "3", "content": "Third step (same as before)", "status": "pending", "priority": "medium"}
-  ]
-}
-\`\`\`
-
 **STEP 3: COMPLETE ALL TODOS BEFORE FINISHING**
 
 All todos must be "completed" or "cancelled" before calling complete_task.
@@ -165,6 +160,8 @@ All todos must be "completed" or "cancelled" before calling complete_task.
 WRONG: Starting work without calling start_task first
 WRONG: Forgetting to update todos as you progress
 CORRECT: Call start_task FIRST, update todos as you work, then complete_task
+
+**When needs_planning is FALSE** — skip goal, steps, verification. Respond directly with your text answer and stop. Do NOT call complete_task for conversational responses.
 
 ##############################################################################
 </behavior>
@@ -253,7 +250,7 @@ If the user gave you a task with specific criteria (e.g., "find 8-15 results", "
 
 **TASK COMPLETION - CRITICAL:**
 
-You MUST call the \`complete_task\` tool to finish ANY task. Never stop without calling it.
+You MUST call the \`complete_task\` tool when \`needs_planning\` was true. For conversational responses (\`needs_planning: false\`), do NOT call complete_task — just respond and stop naturally.
 
 When to call \`complete_task\`:
 
@@ -284,49 +281,23 @@ The \`original_request_summary\` field forces you to re-read the request - use t
 </behavior>
 `;
 
-function resolveBundledTsxCommand(mcpToolsPath: string, platform: NodeJS.Platform): string[] {
-  const tsxBin = platform === 'win32' ? 'tsx.cmd' : 'tsx';
-  const candidates = [
-    path.join(mcpToolsPath, 'file-permission', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'ask-user-question', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'dev-browser-mcp', 'node_modules', '.bin', tsxBin),
-    path.join(mcpToolsPath, 'complete-task', 'node_modules', '.bin', tsxBin),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      console.log('[OpenCode Config] Using bundled tsx:', candidate);
-      return [candidate];
-    }
-  }
-
-  console.log('[OpenCode Config] Bundled tsx not found; falling back to npx tsx');
-  return ['npx', 'tsx'];
-}
-
 function resolveMcpCommand(
-  tsxCommand: string[],
   mcpToolsPath: string,
   mcpName: string,
-  sourceRelPath: string,
   distRelPath: string,
-  isPackaged: boolean,
-  nodePath?: string
+  nodePath: string,
 ): string[] {
   const mcpDir = path.join(mcpToolsPath, mcpName);
-  const sourcePath = path.join(mcpDir, sourceRelPath);
   const distPath = path.join(mcpDir, distRelPath);
 
-  // Use compiled dist entry when packaged OR when source files don't exist
-  // (e.g. agent-core installed from npm where only dist/ is published)
-  if ((isPackaged || !fs.existsSync(sourcePath)) && fs.existsSync(distPath)) {
-    const nodeExe = nodePath || 'node';
-    console.log('[OpenCode Config] Using bundled MCP entry:', distPath);
-    return [nodeExe, distPath];
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `[OpenCode Config] Missing MCP dist entry: ${distPath}. ` +
+        'Run "pnpm -F @accomplish/desktop build:mcp-tools:dev" before launching.',
+    );
   }
 
-  console.log('[OpenCode Config] Using tsx MCP entry:', sourcePath);
-  return [...tsxCommand, sourcePath];
+  return [nodePath, distPath];
 }
 
 export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig {
@@ -334,7 +305,6 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
     platform,
     mcpToolsPath,
     skills = [],
-    isPackaged,
     bundledNodeBinPath,
     providerConfigs = [],
     permissionApiPort = 9226,
@@ -346,8 +316,10 @@ export function generateConfig(options: ConfigGeneratorOptions): GeneratedConfig
   } = options;
 
   const environmentInstructions = getPlatformEnvironmentInstructions(platform);
-  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE
-    .replace(/\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g, environmentInstructions);
+  let systemPrompt = ACCOMPLISH_SYSTEM_PROMPT_TEMPLATE.replace(
+    /\{\{ENVIRONMENT_INSTRUCTIONS\}\}/g,
+    environmentInstructions,
+  );
 
   if (skills.length > 0) {
     const skillsSection = `
@@ -362,8 +334,12 @@ After calling start_task, you MUST read the SKILL.md file for each skill you lis
 
 **Available Skills:**
 
-${skills.map(s => `- **${s.name}** (${s.command}): ${s.description}
-  File: ${s.filePath}`).join('\n\n')}
+${skills
+  .map(
+    (s) => `- **${s.name}** (${s.command}): ${s.description}
+  File: ${s.filePath}`,
+  )
+  .join('\n\n')}
 
 Use empty array [] if no skills apply to your task.
 
@@ -373,24 +349,22 @@ Use empty array [] if no skills apply to your task.
     systemPrompt += skillsSection;
   }
 
-  const tsxCommand = resolveBundledTsxCommand(mcpToolsPath, platform);
+  if (!bundledNodeBinPath) {
+    throw new Error(
+      '[OpenCode Config] Missing bundled Node.js path; cannot launch MCP tools. ' +
+        'Run "pnpm -F @accomplish/desktop download:nodejs" and rebuild artifacts.',
+    );
+  }
 
-  const nodePath = bundledNodeBinPath
-    ? path.join(bundledNodeBinPath, platform === 'win32' ? 'node.exe' : 'node')
-    : undefined;
+  const nodeExe = path.join(bundledNodeBinPath, platform === 'win32' ? 'node.exe' : 'node');
+  if (!fs.existsSync(nodeExe)) {
+    throw new Error(`[OpenCode Config] Missing bundled Node.js executable: ${nodeExe}`);
+  }
 
   const mcpServers: Record<string, McpServerConfig> = {
     'file-permission': {
       type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'file-permission',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
+      command: resolveMcpCommand(mcpToolsPath, 'file-permission', 'dist/index.mjs', nodeExe),
       enabled: true,
       environment: {
         PERMISSION_API_PORT: String(permissionApiPort),
@@ -399,46 +373,22 @@ Use empty array [] if no skills apply to your task.
     },
     'ask-user-question': {
       type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'ask-user-question',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
+      command: resolveMcpCommand(mcpToolsPath, 'ask-user-question', 'dist/index.mjs', nodeExe),
       enabled: true,
       environment: {
         QUESTION_API_PORT: String(questionApiPort),
       },
-      timeout: 30000,
+      timeout: 600000, // 10 minutes — user needs time to read and respond
     },
     'complete-task': {
       type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'complete-task',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
+      command: resolveMcpCommand(mcpToolsPath, 'complete-task', 'dist/index.mjs', nodeExe),
       enabled: true,
       timeout: 30000,
     },
     'start-task': {
       type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand,
-        mcpToolsPath,
-        'start-task',
-        'src/index.ts',
-        'dist/index.mjs',
-        isPackaged,
-        nodePath
-      ),
+      command: resolveMcpCommand(mcpToolsPath, 'start-task', 'dist/index.mjs', nodeExe),
       enabled: true,
       timeout: 30000,
     },
@@ -465,10 +415,7 @@ Use empty array [] if no skills apply to your task.
 
     mcpServers['dev-browser-mcp'] = {
       type: 'local',
-      command: resolveMcpCommand(
-        tsxCommand, mcpToolsPath, 'dev-browser-mcp',
-        'src/index.ts', 'dist/index.mjs', isPackaged, nodePath
-      ),
+      command: resolveMcpCommand(mcpToolsPath, 'dev-browser-mcp', 'dist/index.mjs', nodeExe),
       enabled: true,
       ...(Object.keys(browserEnv).length > 0 && { environment: browserEnv }),
       timeout: 30000,
@@ -507,11 +454,16 @@ Use empty array [] if no skills apply to your task.
   const hasBrowser = browserConfig.mode !== 'none';
   systemPrompt = systemPrompt
     .replace('{{AGENT_ROLE}}', hasBrowser ? 'browser automation' : 'task automation')
-    .replace('{{BROWSER_CAPABILITY}}', hasBrowser
-      ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
-      : '')
-    .replace('{{BROWSER_BEHAVIOR}}', hasBrowser
-      ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
+    .replace(
+      '{{BROWSER_CAPABILITY}}',
+      hasBrowser
+        ? '- **Browser Automation**: Control web browsers, navigate sites, fill forms, click buttons\n'
+        : '',
+    )
+    .replace(
+      '{{BROWSER_BEHAVIOR}}',
+      hasBrowser
+        ? `- **NEVER use shell commands (open, xdg-open, start, subprocess, webbrowser) to open browsers or URLs** - these open the user's default browser, not the automation-controlled Chrome. ALL browser operations MUST use browser_* MCP tools.
 - For multi-step browser workflows, prefer \`browser_script\` over individual tools - it's faster and auto-returns page state.
 - **For collecting data from multiple pages** (e.g. comparing listings, gathering info from search results), use \`browser_batch_actions\` to extract data from multiple URLs in ONE call instead of visiting each page individually with click/snapshot loops. First collect the URLs from the search results page, then pass them all to \`browser_batch_actions\` with a JS extraction script.
 
@@ -532,7 +484,8 @@ Example bad narration (too terse):
 - After each action, evaluate the result before deciding next steps
 - Use browser_sequence for efficiency when you need to perform multiple actions in quick succession (e.g., filling a form with multiple fields)
 `
-      : '');
+        : '',
+    );
 
   const providerConfig: Record<string, Omit<ProviderConfig, 'id'>> = {};
   for (const provider of providerConfigs) {
@@ -545,8 +498,16 @@ Example bad narration (too terse):
     enabledProviders = [...new Set([...customEnabledProviders, ...Object.keys(providerConfig)])];
   } else {
     const baseProviders = [
-      'anthropic', 'openai', 'openrouter', 'google', 'xai',
-      'deepseek', 'moonshot', 'zai-coding-plan', 'amazon-bedrock', 'minimax'
+      'anthropic',
+      'openai',
+      'openrouter',
+      'google',
+      'xai',
+      'deepseek',
+      'moonshot',
+      'zai-coding-plan',
+      'amazon-bedrock',
+      'minimax',
     ];
     enabledProviders = [...new Set([...baseProviders, ...Object.keys(providerConfig)])];
   }
@@ -562,7 +523,7 @@ Example bad narration (too terse):
       todowrite: 'allow',
     },
     provider: Object.keys(providerConfig).length > 0 ? providerConfig : undefined,
-    plugin: ['@tarquinen/opencode-dcp@^1.2.7'],
+    plugin: ['@tarquinen/opencode-dcp@^2.0.0'],
     agent: {
       [ACCOMPLISH_AGENT_NAME]: {
         description: 'Browser automation assistant using dev-browser',
@@ -571,6 +532,9 @@ Example bad narration (too terse):
       },
     },
     mcp: mcpServers,
+    experimental: {
+      mcp_timeout: 600000, // 10 minutes — allow long-running MCP tools like AskUserQuestion
+    },
   };
 
   const configDir = path.join(userDataPath, 'opencode');
@@ -634,8 +598,9 @@ export function buildCliArgs(options: BuildCliArgsOptions): string[] {
     } else if (selectedModel.provider === 'openrouter') {
       args.push('--model', selectedModel.model);
     } else if (selectedModel.provider === 'ollama') {
-      const modelId = selectedModel.model.replace(/^ollama\//, '');
-      args.push('--model', `ollama/${modelId}`);
+      // Accept both "qwen3:4b" and "ollama/qwen3:4b" inputs consistently
+      const normalizedModelId = selectedModel.model.replace(/^ollama\//, '');
+      args.push('--model', `ollama/${normalizedModelId}`);
     } else if (selectedModel.provider === 'litellm') {
       const modelId = selectedModel.model.replace(/^litellm\//, '');
       args.push('--model', `litellm/${modelId}`);
