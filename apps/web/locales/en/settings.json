@@ -355,7 +355,8 @@
     "autoUnsupported": "Auto (Unsupported)",
     "en": "English",
     "zhCN": "Simplified Chinese",
-    "ru": "Русский"
+    "ru": "Русский",
+    "fr": "Français"
   },
   "about": {
     "title": "About",
