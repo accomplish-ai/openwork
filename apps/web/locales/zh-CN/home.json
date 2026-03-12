@@ -50,7 +50,7 @@
     "jobApplicationAutomation": {
       "title": "求职申请自动化",
       "description": "筛选职位并使用保存的资料提交申请。",
-      "prompt": "从 Indeed 查找 [关键词] 的职位列表，按薪资排序，并使用我的资料申请前 5 个。"
+      "prompt": "从 LinkedIn 查找 [关键词] 的职位列表，按薪资排序，并使用我的资料申请前 5 个。"
     },
     "eventCalendarBuilder": {
       "title": "活动日程构建",
