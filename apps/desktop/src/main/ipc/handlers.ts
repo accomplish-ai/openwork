@@ -1396,15 +1396,11 @@ export function registerIPCHandlers(): void {
     return skillsManager.getUserSkillsPath();
   });
 
-  handle('skills:pick-file', async () => {
+  handle('skills:pick-folder', async () => {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Select a SKILL.md file',
-      filters: [
-        { name: 'Skill Files', extensions: ['md'] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
-      properties: ['openFile'],
+      title: 'Select a skill folder',
+      properties: ['openDirectory'],
     });
     if (result.canceled || result.filePaths.length === 0) {
       return null;
