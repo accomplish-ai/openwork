@@ -402,7 +402,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
       // operators when executing via cmd.exe /s /c. This prevents user-controlled
       // text (e.g. a prompt containing "&" or "|") from being parsed as separators.
       if (/[ "&|<>^%]/.test(arg)) {
-        return `"${arg.replace(/"/g, '""')}"`;
+        // Double embedded quotes for cmd.exe quoting rules, then escape % as ^%
+        // so cmd.exe does not expand environment variables (e.g. %PATH%) inside
+        // the quoted argument when the outer /s /c pair is stripped.
+        const escaped = arg.replace(/"/g, '""').replace(/%/g, '^%');
+        return `"${escaped}"`;
       }
       return arg;
     } else {

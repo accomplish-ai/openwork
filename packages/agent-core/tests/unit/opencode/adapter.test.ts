@@ -219,8 +219,7 @@ describe('Shell escaping utilities', () => {
       expect(outerArg.endsWith('"')).toBe(true);
       expect(outerArg).toContain('"C:\\Users\\Anish Maheshwari\\');
 
-      // cmd.exe /s strips the outer pair, so the inner command must itself be
-      // a properly-quoted exe invocation (no leading double-quote — Issue #596).
+      // Issue #596: inner command must be a clean quoted-exe invocation.
       const innerCommand = outerArg.slice(1, -1);
       expect(innerCommand.startsWith('"C:\\')).toBe(true);
       expect(innerCommand.startsWith('""')).toBe(false);
@@ -266,6 +265,22 @@ describe('Shell escaping utilities', () => {
       const { args } = spawnArgs(exe, ['run', '--prompt', 'foo&bar']);
 
       expect(args[2]).toContain('"foo&bar"');
+    });
+
+    it('escapes lone percent signs in args to prevent cmd.exe variable expansion', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const { args } = spawnArgs(exe, ['run', '--prompt', '100%']);
+
+      // % is escaped to ^% so cmd.exe does not attempt variable expansion
+      expect(args[2]).toContain('"100^%"');
+    });
+
+    it('escapes %VAR% patterns in args to prevent environment variable expansion', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const { args } = spawnArgs(exe, ['run', '--prompt', '%PATH%']);
+
+      // Both % signs must be escaped to break the %VAR% expansion pattern
+      expect(args[2]).toContain('"^%PATH^%"');
     });
   });
 
