@@ -10,7 +10,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccomplish } from '@/lib/accomplish';
-import type { SandboxConfig } from '@accomplish_ai/agent-core/common';
+import type { SandboxConfig } from '@accomplish_ai/agent-core';
 
 const DEFAULT_CONFIG: SandboxConfig = {
   mode: 'disabled',

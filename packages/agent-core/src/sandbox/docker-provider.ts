@@ -72,13 +72,15 @@ export class DockerSandboxProvider implements SandboxProvider {
    * docker arg construction and network policy handling.
    */
   async wrapSpawnArgs(args: SpawnArgs, config: SandboxConfig): Promise<SpawnArgs> {
-    const dockerArgs = this.buildDockerArgs(args, config);
+    const sandboxEnv = this.buildSandboxEnvironment(config);
+    const mergedEnv = { ...(args.env ?? {}), ...sandboxEnv };
+    const dockerArgs = this.buildDockerArgs({ ...args, env: mergedEnv }, config);
 
     return {
       file: 'docker',
       args: dockerArgs,
       cwd: args.cwd,
-      env: args.env,
+      env: mergedEnv,
     };
   }
 

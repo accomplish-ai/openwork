@@ -473,12 +473,16 @@ const accomplishAPI = {
     allowedPaths: string[];
     networkRestricted: boolean;
     allowedHosts: string[];
+    dockerImage?: string;
+    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
   }> => ipcRenderer.invoke('sandbox:get-config'),
   setSandboxConfig: (config: {
     mode: string;
     allowedPaths: string[];
     networkRestricted: boolean;
     allowedHosts: string[];
+    dockerImage?: string;
+    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
   }): Promise<void> => ipcRenderer.invoke('sandbox:set-config', config),
 
   // MCP Connectors

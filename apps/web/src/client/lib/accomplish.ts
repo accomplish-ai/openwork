@@ -379,12 +379,16 @@ interface AccomplishAPI {
     allowedPaths: string[];
     networkRestricted: boolean;
     allowedHosts: string[];
+    dockerImage?: string;
+    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
   }>;
   setSandboxConfig(config: {
     mode: string;
     allowedPaths: string[];
     networkRestricted: boolean;
     allowedHosts: string[];
+    dockerImage?: string;
+    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
   }): Promise<void>;
 
   // MCP Connectors

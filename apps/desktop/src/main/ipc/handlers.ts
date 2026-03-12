@@ -1197,13 +1197,15 @@ export function registerIPCHandlers(): void {
         allowedPaths: string[];
         networkRestricted: boolean;
         allowedHosts: string[];
+        dockerImage?: string;
+        networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
       },
     ) => {
       if (!config || typeof config !== 'object') {
         throw new Error('Invalid sandbox configuration');
       }
-      if (!['disabled', 'native'].includes(config.mode)) {
-        throw new Error('Invalid sandbox mode. Must be "disabled" or "native".');
+      if (!['disabled', 'native', 'docker'].includes(config.mode)) {
+        throw new Error('Invalid sandbox mode. Must be "disabled", "native", or "docker".');
       }
       if (!Array.isArray(config.allowedPaths)) {
         throw new Error('allowedPaths must be an array');
@@ -1216,10 +1218,23 @@ export function registerIPCHandlers(): void {
       }
 
       storage.setSandboxConfig({
-        mode: config.mode as 'disabled' | 'native',
+        mode: config.mode as 'disabled' | 'native' | 'docker',
         allowedPaths: config.allowedPaths.map((p) => sanitizeString(p, 'allowedPath', 512)),
         networkRestricted: config.networkRestricted,
         allowedHosts: config.allowedHosts.map((h) => sanitizeString(h, 'allowedHost', 256)),
+        ...(config.dockerImage !== undefined && {
+          dockerImage: sanitizeString(config.dockerImage, 'dockerImage', 256),
+        }),
+        ...(config.networkPolicy !== undefined && {
+          networkPolicy: {
+            allowOutbound: Boolean(config.networkPolicy.allowOutbound),
+            ...(Array.isArray(config.networkPolicy.allowedHosts) && {
+              allowedHosts: config.networkPolicy.allowedHosts.map((h) =>
+                sanitizeString(h, 'networkPolicy.allowedHost', 256),
+              ),
+            }),
+          },
+        }),
       });
     },
   );
