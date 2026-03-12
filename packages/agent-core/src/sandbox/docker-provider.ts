@@ -138,6 +138,16 @@ export class DockerSandboxProvider implements SandboxProvider {
       dockerArgs.push('--network', 'none');
     }
 
+    // Warn if per-host allowlists are set — Docker mode doesn't support them
+    const hasAllowedHosts =
+      (config.allowedHosts && config.allowedHosts.length > 0) ||
+      (netPolicy?.allowedHosts && netPolicy.allowedHosts.length > 0);
+    if (hasAllowedHosts) {
+      console.warn(
+        '[DockerProvider] allowedHosts is set but Docker mode does not support per-host allowlists. The allowedHosts restriction will be ignored.',
+      );
+    }
+
     // Forward a curated set of env vars (preeeetham, PR #430 allowlist +
     // SaaiAravindhRaja, PR #612 BLOCKED_ENV_KEYS exclusion)
     for (const key of FORWARDED_ENV_KEYS) {
@@ -185,6 +195,9 @@ export class DockerSandboxProvider implements SandboxProvider {
   }
 
   private escapeShellArg(arg: string): string {
+    if (arg === '') {
+      return "''";
+    }
     const needsEscaping = ["'", ' ', '$', '`', '\\', '"', '\n'].some((c) => arg.includes(c));
     if (needsEscaping) {
       return `'${arg.replace(/'/g, "'\\''")}'`;

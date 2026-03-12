@@ -308,7 +308,7 @@ export function SandboxPanel() {
           <span
             aria-hidden="true"
             className={`h-2 w-2 rounded-full ${
-              isDockerMode ? 'bg-green-500' : 'bg-muted-foreground'
+              config.mode !== 'disabled' ? 'bg-green-500' : 'bg-muted-foreground'
             }`}
           />
           <span className="text-muted-foreground">
