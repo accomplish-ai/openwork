@@ -248,7 +248,12 @@
     "ariaLabel": "Préférence de thème",
     "system": "Système",
     "light": "Clair",
-    "dark": "Sombre"
+    "dark": "Sombre",
+    "themeTitle": "Apparence",
+    "themeDescription": "Choisissez votre thème de couleur préféré.",
+    "themeSystem": "Système",
+    "themeLight": "Clair",
+    "themeDark": "Sombre"
   },
   "connectors": {
     "description": "Connectez des serveurs MCP distants via OAuth. Seuls les serveurs prenant en charge le flux d'autorisation OAuth 2.0 sont actuellement pris en charge.",
@@ -349,14 +354,14 @@
     "exportHeader": "Journaux de l'application Accomplish\nExporté : {{timestamp}}\nRépertoire des journaux : {{logDir}}\n\nAucun journal enregistré.\n"
   },
   "language": {
-    "title": "Langue",
     "description": "Choisissez votre langue d'affichage préférée.",
     "auto": "Auto (Système)",
     "autoUnsupported": "Auto (Non pris en charge)",
     "en": "English",
     "zhCN": "Simplified Chinese",
     "ru": "Русский",
-    "fr": "Français"
+    "fr": "Français",
+    "title": "Langue"
   },
   "about": {
     "title": "À propos",
