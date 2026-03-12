@@ -6,6 +6,7 @@ import type {
   LiteLLMConfig,
   AzureFoundryConfig,
   LMStudioConfig,
+  HuggingFaceLocalConfig,
 } from '../common/types/provider.js';
 import type {
   ProviderId,
@@ -118,6 +119,10 @@ export interface AppSettingsAPI {
   getLMStudioConfig(): LMStudioConfig | null;
   /** Set the LM Studio configuration */
   setLMStudioConfig(config: LMStudioConfig | null): void;
+  /** Get the HuggingFace Local configuration */
+  getHuggingFaceLocalConfig(): HuggingFaceLocalConfig | null;
+  /** Set the HuggingFace Local configuration */
+  setHuggingFaceLocalConfig(config: HuggingFaceLocalConfig | null): void;
   /** Get the custom OpenAI base URL */
   getOpenAiBaseUrl(): string;
   /** Set the custom OpenAI base URL */

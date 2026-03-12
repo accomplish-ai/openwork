@@ -54,7 +54,8 @@
     "moonshot": "Moonshot",
     "litellm": "LiteLLM",
     "vertex": "Vertex AI",
-    "azure-foundry": "Azure AI Foundry"
+    "azure-foundry": "Azure AI Foundry",
+    "huggingface-local": "HuggingFace Local"
   },
   "providerLabels": {
     "anthropic": "Claude models",
@@ -71,7 +72,8 @@
     "moonshot": "Kimi models",
     "litellm": "Unified proxy",
     "vertex": "Google Cloud",
-    "azure-foundry": "Azure Service"
+    "azure-foundry": "Azure Service",
+    "huggingface-local": "Local inference"
   },
   "status": {
     "connected": "Connected",
@@ -283,6 +285,14 @@
   "openrouter": {
     "description": "Access 200+ AI models through OpenRouter's unified API.",
     "fetchModelsFailed": "Failed to fetch models"
+  },
+  "huggingfaceLocal": {
+    "serverUrl": "HuggingFace Local Server URL",
+    "serverHint": "Run a local HuggingFace Transformers.js inference server with ONNX Runtime",
+    "selectModel": "Please select a model",
+    "selectModelPlaceholder": "Select a model...",
+    "infoBannerTitle": "Local inference with Transformers.js",
+    "infoBannerDescription": "Models run locally using ONNX Runtime. Smaller quantized models (Q4) are recommended for faster inference."
   },
   "litellm": {
     "description": "Connect to your LiteLLM proxy server for unified model access.",

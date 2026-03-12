@@ -24,6 +24,7 @@ const PROVIDER_ORDER: ProviderId[] = [
   'openrouter',
   'litellm',
   'minimax',
+  'huggingface-local',
 ];
 
 interface ProviderGridProps {

@@ -280,6 +280,57 @@ const accomplishAPI = {
     } | null,
   ): Promise<void> => ipcRenderer.invoke('lmstudio:set-config', config),
 
+  // HuggingFace Local configuration
+  testHuggingFaceLocalConnection: (
+    url: string,
+  ): Promise<{
+    success: boolean;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: 'supported' | 'unsupported' | 'unknown';
+    }>;
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface-local:test-connection', url),
+
+  fetchHuggingFaceLocalModels: (): Promise<{
+    success: boolean;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: 'supported' | 'unsupported' | 'unknown';
+    }>;
+    error?: string;
+  }> => ipcRenderer.invoke('huggingface-local:fetch-models'),
+
+  getHuggingFaceLocalConfig: (): Promise<{
+    serverUrl: string;
+    enabled: boolean;
+    lastValidated?: number;
+    models?: Array<{
+      id: string;
+      displayName: string;
+      size: number;
+      toolSupport?: 'supported' | 'unsupported' | 'unknown';
+    }>;
+  } | null> => ipcRenderer.invoke('huggingface-local:get-config'),
+
+  setHuggingFaceLocalConfig: (
+    config: {
+      serverUrl: string;
+      enabled: boolean;
+      lastValidated?: number;
+      models?: Array<{
+        id: string;
+        displayName: string;
+        size: number;
+        toolSupport?: 'supported' | 'unsupported' | 'unknown';
+      }>;
+    } | null,
+  ): Promise<void> => ipcRenderer.invoke('huggingface-local:set-config', config),
+
   // Bedrock
   validateBedrockCredentials: (credentials: string) =>
     ipcRenderer.invoke('bedrock:validate', credentials),
