@@ -50,7 +50,7 @@
     "jobApplicationAutomation": {
       "title": "Automatisation des candidatures",
       "description": "Filtrez les offres d'emploi et soumettez des candidatures avec les profils enregistrés.",
-      "prompt": "Trouvez les offres d'emploi sur Indeed pour [requête], triez par salaire et postulez aux 5 meilleures avec mon profil."
+      "prompt": "Trouvez les offres d'emploi sur LinkedIn pour [requête], triez par salaire et postulez aux 5 meilleures avec mon profil."
     },
     "eventCalendarBuilder": {
       "title": "Création de calendrier d'événements",
