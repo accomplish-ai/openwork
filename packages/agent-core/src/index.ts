@@ -379,8 +379,14 @@ export type {
   SandboxConfig,
   SandboxProvider,
   SpawnArgs,
+  // SandboxPaths contributed by preeeetham (PR #430)
+  SandboxPaths,
+  // SandboxNetworkPolicy contributed by SaaiAravindhRaja (PR #612)
+  SandboxNetworkPolicy,
 } from './common/types/sandbox.js';
 export { DEFAULT_SANDBOX_CONFIG } from './common/types/sandbox.js';
+// DockerSandboxProvider contributed by preeeetham (#430) + SaaiAravindhRaja (#612)
+export { DockerSandboxProvider } from './sandbox/docker-provider.js';
 
 // Constants
 export {
