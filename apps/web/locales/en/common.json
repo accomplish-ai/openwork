@@ -87,5 +87,6 @@
     "configureModel": "Configure model",
     "changeModel": "Change model"
   },
-  "messages": "{{count}} messages"
+  "messages": "{{count}} messages",
+  "favorite": "Favorite"
 }
