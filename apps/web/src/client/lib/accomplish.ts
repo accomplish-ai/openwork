@@ -373,6 +373,20 @@ interface AccomplishAPI {
   openSkillInEditor(filePath: string): Promise<void>;
   showSkillInFolder(filePath: string): Promise<void>;
 
+  // Sandbox configuration
+  getSandboxConfig(): Promise<{
+    mode: string;
+    allowedPaths: string[];
+    networkRestricted: boolean;
+    allowedHosts: string[];
+  }>;
+  setSandboxConfig(config: {
+    mode: string;
+    allowedPaths: string[];
+    networkRestricted: boolean;
+    allowedHosts: string[];
+  }): Promise<void>;
+
   // MCP Connectors
   getConnectors(): Promise<McpConnector[]>;
   addConnector(name: string, url: string): Promise<McpConnector>;

@@ -9,6 +9,7 @@ import type { Task, TaskConfig, TaskStatus, TaskMessage, TaskResult } from '../c
 import type { PermissionRequest } from '../common/types/permission';
 import type { TodoItem } from '../common/types/todo';
 import type { OpenCodeMessage } from '../common/types/opencode';
+import type { SandboxConfig, SandboxProvider } from '../common/types/sandbox';
 
 /** Progress event emitted during task execution */
 export interface TaskProgressEvent {
@@ -91,6 +92,10 @@ export interface TaskAdapterOptions {
   onBeforeStart?: () => Promise<void>;
   /** Function to get display name for a model ID */
   getModelDisplayName?: (modelId: string) => string;
+  /** Optional sandbox provider for restricting agent FS/network access */
+  sandboxProvider?: SandboxProvider;
+  /** Sandbox configuration used when sandboxProvider is set */
+  sandboxConfig?: SandboxConfig;
 }
 
 /** Options for creating a TaskManager instance */

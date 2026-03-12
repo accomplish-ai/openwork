@@ -467,6 +467,20 @@ const accomplishAPI = {
   showSkillInFolder: (filePath: string): Promise<void> =>
     ipcRenderer.invoke('skills:show-in-folder', filePath),
 
+  // Sandbox configuration
+  getSandboxConfig: (): Promise<{
+    mode: string;
+    allowedPaths: string[];
+    networkRestricted: boolean;
+    allowedHosts: string[];
+  }> => ipcRenderer.invoke('sandbox:get-config'),
+  setSandboxConfig: (config: {
+    mode: string;
+    allowedPaths: string[];
+    networkRestricted: boolean;
+    allowedHosts: string[];
+  }): Promise<void> => ipcRenderer.invoke('sandbox:set-config', config),
+
   // MCP Connectors
   getConnectors: (): Promise<McpConnector[]> => ipcRenderer.invoke('connectors:list'),
   addConnector: (name: string, url: string): Promise<McpConnector> =>
