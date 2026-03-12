@@ -64,16 +64,24 @@ export function getOpenCodeCliPath(): { command: string; args: string[] } {
   if (resolved) {
     return { command: resolved.cliPath, args: [] };
   }
-  console.log('[CLI Path] Falling back to opencode command on PATH');
-  return { command: 'opencode', args: [] };
+  throw new Error('OpenCode CLI executable not found');
 }
 
 export function isOpenCodeBundled(): boolean {
   return coreIsCliAvailable(getCliResolverConfig());
 }
 
+export function isOpenCodeCliAvailable(): boolean {
+  return coreIsCliAvailable(getCliResolverConfig());
+}
+
 export function getBundledOpenCodeVersion(): string | null {
-  const { command } = getOpenCodeCliPath();
+  let command: string;
+  try {
+    ({ command } = getOpenCodeCliPath());
+  } catch {
+    return null;
+  }
   if (app.isPackaged) {
     try {
       const packageName = process.platform === 'win32' ? 'opencode-windows-x64' : 'opencode-ai';

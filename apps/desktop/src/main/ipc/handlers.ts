@@ -1444,7 +1444,7 @@ export function registerIPCHandlers(): void {
     shell.showItemInFolder(filePath);
   });
 
-  handle('get-user-skills-path', async () => {
+  handle('skills:get-user-skills-path', async () => {
     return skillsManager.getUserSkillsPath();
   });
 
