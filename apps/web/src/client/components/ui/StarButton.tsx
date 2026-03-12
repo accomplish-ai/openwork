@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Star } from '@phosphor-icons/react';
 
 interface StarButtonProps {
@@ -10,7 +11,8 @@ interface StarButtonProps {
 
 /**
  * Reusable star/favorite toggle button.
- * Renders a filled star when favorited, outline when not.
+ * Uses a stable accessible name ("Favorite") with aria-pressed to signal state,
+ * so screen readers don't treat the on/off states as different controls.
  */
 export function StarButton({
   isFavorite,
@@ -19,6 +21,8 @@ export function StarButton({
   className = '',
   'data-testid': testId,
 }: StarButtonProps) {
+  const { t } = useTranslation('common');
+
   const sizeClasses = {
     sm: 'h-3 w-3',
     md: 'h-4 w-4',
@@ -31,14 +35,16 @@ export function StarButton({
     onToggle();
   };
 
+  const label = t('favorite', 'Favorite');
+
   return (
     <button
       type="button"
       onClick={handleClick}
       data-testid={testId}
       aria-pressed={isFavorite}
-      aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-      title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      aria-label={label}
+      title={label}
       className={`p-1 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring ${
         isFavorite
           ? 'text-yellow-500 hover:text-yellow-600'

@@ -94,5 +94,6 @@
   "todos": {
     "title": "Задачи",
     "progress": "{{completed}} из {{total}}"
-  }
+  },
+  "startNewTask": "Начать новую задачу"
 }

@@ -76,7 +76,9 @@ function ExecutionCompleteFooter({
 
   return (
     <div className="flex-shrink-0 border-t border-border bg-card/50 px-6 py-4 flex flex-col items-center gap-3">
-      <p className="text-sm text-muted-foreground">Task {statusLabel}</p>
+      <p className="text-sm text-muted-foreground">
+        {tExecution('taskStatus', { status: statusLabel })}
+      </p>
       <div className="flex items-center gap-2">
         {canFavorite && (
           <StarButton
@@ -87,7 +89,7 @@ function ExecutionCompleteFooter({
           />
         )}
         <Button onClick={onStartNewTask} data-testid="start-new-task">
-          Start New Task
+          {tExecution('startNewTask')}
         </Button>
       </div>
     </div>

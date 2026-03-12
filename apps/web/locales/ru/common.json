@@ -87,5 +87,6 @@
     "configureModel": "Настроить модель",
     "changeModel": "Сменить модель"
   },
-  "messages": "{{count}} сообщений"
+  "messages": "{{count}} сообщений",
+  "favorite": "Избранное"
 }

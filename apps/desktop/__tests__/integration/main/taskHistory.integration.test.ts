@@ -13,7 +13,6 @@ interface StoredTask {
   prompt: string;
   summary?: string;
   status: TaskStatus;
-  favorite?: boolean;
   sessionId?: string;
   messages: TaskMessage[];
   createdAt: string;
@@ -22,9 +21,11 @@ interface StoredTask {
 }
 
 let mockTaskStore: Map<string, StoredTask> = new Map();
+let mockFavoritesStore: Set<string> = new Set();
 
 function resetMockStore() {
   mockTaskStore = new Map();
+  mockFavoritesStore = new Set();
 }
 
 // Mock the taskHistory module with in-memory behavior
@@ -39,7 +40,6 @@ vi.mock('@accomplish_ai/agent-core', () => ({
       prompt: task.prompt,
       summary: task.summary,
       status: task.status,
-      favorite: task.favorite,
       sessionId: task.sessionId,
       messages: [...task.messages],
       createdAt: task.createdAt,
@@ -78,14 +78,22 @@ vi.mock('@accomplish_ai/agent-core', () => ({
     }
   }),
 
-  toggleTaskFavorite: vi.fn((taskId: string) => {
-    const task = mockTaskStore.get(taskId);
-    if (!task) {
-      return false;
-    }
-    task.favorite = !task.favorite;
-    return Boolean(task.favorite);
+  addFavorite: vi.fn((taskId: string, _prompt: string, _summary?: string) => {
+    mockFavoritesStore.add(taskId);
   }),
+
+  removeFavorite: vi.fn((taskId: string) => {
+    mockFavoritesStore.delete(taskId);
+  }),
+
+  getFavorites: vi.fn(() =>
+    Array.from(mockFavoritesStore).map((taskId) => {
+      const task = mockTaskStore.get(taskId);
+      return { taskId, prompt: task?.prompt ?? '', favoritedAt: new Date().toISOString() };
+    }),
+  ),
+
+  isFavorite: vi.fn((taskId: string) => mockFavoritesStore.has(taskId)),
 
   deleteTask: vi.fn((taskId: string) => {
     mockTaskStore.delete(taskId);
