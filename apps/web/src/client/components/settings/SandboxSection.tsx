@@ -1,20 +1,34 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getAccomplish } from '@/lib/accomplish';
 
+// Local type matching the shape returned by accomplish.getSandboxConfig()
+interface SandboxConfigShape {
+  mode: string;
+  allowedPaths: string[];
+  networkRestricted: boolean;
+  allowedHosts: string[];
+  dockerImage?: string;
+  networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
+}
+
 interface SandboxSectionProps {
   visible: boolean;
 }
 
 export function SandboxSection({ visible }: SandboxSectionProps) {
   const [sandboxEnabled, setSandboxEnabled] = useState(false);
+  const [sandboxConfig, setSandboxConfig] = useState<SandboxConfigShape | null>(null);
   const [loading, setLoading] = useState(true);
   const accomplish = getAccomplish();
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      return;
+    }
     accomplish
       .getSandboxConfig()
       .then((config) => {
+        setSandboxConfig(config);
         setSandboxEnabled(config.mode === 'native');
         setLoading(false);
       })
@@ -25,16 +39,20 @@ export function SandboxSection({ visible }: SandboxSectionProps) {
     const newEnabled = !sandboxEnabled;
     const newMode = newEnabled ? 'native' : 'disabled';
 
-    await accomplish.setSandboxConfig({
+    // Round-trip the full existing config, only mutating the mode, so
+    // allowedPaths / allowedHosts / networkRestricted are preserved.
+    const updated: SandboxConfigShape = {
+      ...(sandboxConfig ?? { allowedPaths: [], networkRestricted: false, allowedHosts: [] }),
       mode: newMode,
-      allowedPaths: [],
-      networkRestricted: false,
-      allowedHosts: [],
-    });
+    };
+    await accomplish.setSandboxConfig(updated);
+    setSandboxConfig(updated);
     setSandboxEnabled(newEnabled);
-  }, [sandboxEnabled, accomplish]);
+  }, [sandboxEnabled, sandboxConfig, accomplish]);
 
-  if (loading || !visible) return null;
+  if (loading || !visible) {
+    return null;
+  }
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -54,6 +72,9 @@ export function SandboxSection({ visible }: SandboxSectionProps) {
         </div>
         <div className="ml-4">
           <button
+            type="button"
+            aria-label="Local sandbox"
+            aria-pressed={sandboxEnabled}
             data-testid="settings-sandbox-toggle"
             onClick={handleToggle}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-accomplish ${

@@ -18,10 +18,6 @@ export class DisabledSandboxProvider implements SandboxProvider {
     return args;
   }
 
-  buildSandboxEnvironment(_config: SandboxConfig): Record<string, string> {
-    return {};
-  }
-
   async dispose(): Promise<void> {
     // nothing to clean up
   }

@@ -335,10 +335,6 @@ export async function onBeforeTaskStart(
 }
 
 export function createElectronTaskManagerOptions(): TaskManagerOptions {
-  const storage = getStorage();
-  const sandboxConfig = storage.getSandboxConfig();
-  const sandboxProvider = createSandboxProvider(sandboxConfig, process.platform);
-
   return {
     adapterOptions: {
       platform: process.platform,
@@ -349,8 +345,13 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       onBeforeStart,
       getModelDisplayName,
       buildCliArgs,
-      sandboxProvider,
-      sandboxConfig,
+      // Resolve sandbox provider and config lazily at each task creation so that
+      // changes persisted by sandbox:set-config are reflected without recreating
+      // the TaskManager.
+      sandboxFactory: () => {
+        const config = getStorage().getSandboxConfig();
+        return { provider: createSandboxProvider(config, process.platform), config };
+      },
     },
     defaultWorkingDirectory: app.getPath('temp'),
     maxConcurrentTasks: 10,

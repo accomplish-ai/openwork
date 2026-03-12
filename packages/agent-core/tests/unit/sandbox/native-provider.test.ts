@@ -52,8 +52,8 @@ describe('NativeSandboxProvider', () => {
     });
   });
 
-  describe('buildSandboxEnvironment', () => {
-    it('should set ACCOMPLISH_SANDBOX_ENABLED and MODE', () => {
+  describe('sandbox env var injection (via wrapSpawnArgs)', () => {
+    it('should set ACCOMPLISH_SANDBOX_ENABLED and MODE', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -62,13 +62,16 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_ENABLED']).toBe('1');
-      expect(env['ACCOMPLISH_SANDBOX_MODE']).toBe('native');
+      expect(result.env['ACCOMPLISH_SANDBOX_ENABLED']).toBe('1');
+      expect(result.env['ACCOMPLISH_SANDBOX_MODE']).toBe('native');
     });
 
-    it('should set ALLOWED_PATHS with colon delimiter on Linux', () => {
+    it('should set ALLOWED_PATHS with colon delimiter on Linux', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -77,12 +80,15 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBe('/home/user/project:/tmp');
+      expect(result.env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBe('/home/user/project:/tmp');
     });
 
-    it('should set ALLOWED_PATHS with semicolon delimiter on Windows', () => {
+    it('should set ALLOWED_PATHS with semicolon delimiter on Windows', async () => {
       const provider = new NativeSandboxProvider('win32');
       const config: SandboxConfig = {
         mode: 'native',
@@ -91,12 +97,15 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: 'cmd.exe', args: [], cwd: 'C:\\Temp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBe('D:\\Projects;C:\\Temp');
+      expect(result.env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBe('D:\\Projects;C:\\Temp');
     });
 
-    it('should set NETWORK_RESTRICTED when networkRestricted is true', () => {
+    it('should set NETWORK_RESTRICTED when networkRestricted is true', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -105,12 +114,15 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_NETWORK_RESTRICTED']).toBe('1');
+      expect(result.env['ACCOMPLISH_SANDBOX_NETWORK_RESTRICTED']).toBe('1');
     });
 
-    it('should not set NETWORK_RESTRICTED when networkRestricted is false', () => {
+    it('should not set NETWORK_RESTRICTED when networkRestricted is false', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -119,12 +131,15 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_NETWORK_RESTRICTED']).toBeUndefined();
+      expect(result.env['ACCOMPLISH_SANDBOX_NETWORK_RESTRICTED']).toBeUndefined();
     });
 
-    it('should set ALLOWED_HOSTS as comma-separated', () => {
+    it('should set ALLOWED_HOSTS as comma-separated', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -133,12 +148,17 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: ['api.openai.com', 'api.anthropic.com'],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_ALLOWED_HOSTS']).toBe('api.openai.com,api.anthropic.com');
+      expect(result.env['ACCOMPLISH_SANDBOX_ALLOWED_HOSTS']).toBe(
+        'api.openai.com,api.anthropic.com',
+      );
     });
 
-    it('should not set ALLOWED_PATHS when empty', () => {
+    it('should not set ALLOWED_PATHS when empty', async () => {
       const provider = new NativeSandboxProvider('linux');
       const config: SandboxConfig = {
         mode: 'native',
@@ -147,9 +167,12 @@ describe('NativeSandboxProvider', () => {
         allowedHosts: [],
       };
 
-      const env = provider.buildSandboxEnvironment(config);
+      const result = await provider.wrapSpawnArgs(
+        { file: '/bin/sh', args: [], cwd: '/tmp', env: {} },
+        config,
+      );
 
-      expect(env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBeUndefined();
+      expect(result.env['ACCOMPLISH_SANDBOX_ALLOWED_PATHS']).toBeUndefined();
     });
   });
 

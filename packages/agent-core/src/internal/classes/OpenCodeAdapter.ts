@@ -40,6 +40,11 @@ export interface AdapterOptions {
   buildCliArgs: (config: TaskConfig) => Promise<string[]>;
   onBeforeStart?: () => Promise<void>;
   getModelDisplayName?: (modelId: string) => string;
+  /**
+   * Lazy sandbox factory, called once per adapter instance.
+   * When present, overrides sandboxProvider and sandboxConfig.
+   */
+  sandboxFactory?: () => { provider: SandboxProvider; config: SandboxConfig };
   /** Optional sandbox provider for restricting agent FS/network access */
   sandboxProvider?: SandboxProvider;
   /** Sandbox configuration used when sandboxProvider is set */
@@ -105,8 +110,27 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     super();
     this.options = options;
     this.currentTaskId = taskId || null;
-    this.sandboxProvider = options.sandboxProvider ?? new DisabledSandboxProvider();
-    this.sandboxConfig = options.sandboxConfig ?? DEFAULT_SANDBOX_CONFIG;
+    // Prefer the lazy factory so runtime config changes (e.g. sandbox:set-config)
+    // are picked up for each new task without recreating the TaskManager.
+    if (options.sandboxFactory) {
+      const { provider, config } = options.sandboxFactory();
+      this.sandboxProvider = provider;
+      this.sandboxConfig = config;
+    } else {
+      // Guard against fail-open: a non-disabled sandboxConfig requires an explicit provider.
+      if (
+        options.sandboxConfig &&
+        options.sandboxConfig.mode !== 'disabled' &&
+        !options.sandboxProvider
+      ) {
+        throw new Error(
+          `sandboxProvider must be supplied when sandboxConfig.mode is "${options.sandboxConfig.mode}". ` +
+            'Omitting it causes the task to run unsandboxed on the host.',
+        );
+      }
+      this.sandboxProvider = options.sandboxProvider ?? new DisabledSandboxProvider();
+      this.sandboxConfig = options.sandboxConfig ?? DEFAULT_SANDBOX_CONFIG;
+    }
     this.streamParser = new StreamParser();
     this.completionEnforcer = this.createCompletionEnforcer();
     this.setupStreamParsing();

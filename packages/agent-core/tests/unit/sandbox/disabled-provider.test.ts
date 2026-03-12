@@ -47,12 +47,20 @@ describe('DisabledSandboxProvider', () => {
       env: { COMSPEC: 'cmd.exe' },
     };
 
-    const frozen = { ...original };
+    // Deep-clone nested arrays/objects so the assertion catches mutations to
+    // original.args and original.env references (shallow spread would miss these).
+    const frozen: SpawnArgs = {
+      file: original.file,
+      args: [...original.args],
+      cwd: original.cwd,
+      env: { ...original.env },
+    };
     await provider.wrapSpawnArgs(original, DEFAULT_SANDBOX_CONFIG);
 
     expect(original.file).toBe(frozen.file);
     expect(original.args).toEqual(frozen.args);
     expect(original.cwd).toBe(frozen.cwd);
+    expect(original.env).toEqual(frozen.env);
   });
 
   it('dispose should resolve without error', async () => {

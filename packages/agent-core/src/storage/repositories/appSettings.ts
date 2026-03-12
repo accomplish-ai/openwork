@@ -174,9 +174,17 @@ export function setTheme(theme: ThemePreference): void {
 
 export function getSandboxConfig(): SandboxConfig {
   const row = getRow();
-  const parsed = safeParseJsonWithFallback<SandboxConfig>(row.sandbox_config);
-  if (parsed) {
-    return parsed;
+  const parsed = safeParseJsonWithFallback<Partial<SandboxConfig>>(row.sandbox_config);
+  // Validate required fields before merging — bare {} passes JSON.parse but
+  // would return an incomplete config if spread directly.
+  if (
+    parsed &&
+    (parsed.mode === 'disabled' || parsed.mode === 'native' || parsed.mode === 'docker') &&
+    Array.isArray(parsed.allowedPaths) &&
+    typeof parsed.networkRestricted === 'boolean' &&
+    Array.isArray(parsed.allowedHosts)
+  ) {
+    return { ...DEFAULT_SANDBOX_CONFIG, ...parsed };
   }
   return { ...DEFAULT_SANDBOX_CONFIG };
 }

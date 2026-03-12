@@ -47,7 +47,7 @@ export class NativeSandboxProvider implements SandboxProvider {
     };
   }
 
-  buildSandboxEnvironment(config: SandboxConfig): Record<string, string> {
+  private buildSandboxEnvironment(config: SandboxConfig): Record<string, string> {
     const env: Record<string, string> = {
       ACCOMPLISH_SANDBOX_ENABLED: '1',
       ACCOMPLISH_SANDBOX_MODE: 'native',

@@ -192,17 +192,12 @@ describe('DockerSandboxProvider', () => {
       expect(result.args[0]).toBe('run');
     });
 
-    it('should preserve cwd and env on result', async () => {
+    it('should preserve cwd and include original env vars merged with sandbox env', async () => {
       const result = await provider.wrapSpawnArgs(BASE_SPAWN_ARGS, DOCKER_CONFIG);
       expect(result.cwd).toBe(BASE_SPAWN_ARGS.cwd);
-      expect(result.env).toBe(BASE_SPAWN_ARGS.env);
-    });
-  });
-
-  describe('buildSandboxEnvironment', () => {
-    it('should include ACCOMPLISH_SANDBOX_MODE=docker', () => {
-      const env = provider.buildSandboxEnvironment(DOCKER_CONFIG);
-      expect(env['ACCOMPLISH_SANDBOX_MODE']).toBe('docker');
+      // env is a new merged object: original vars preserved + ACCOMPLISH_SANDBOX_MODE injected
+      expect(result.env).toMatchObject(BASE_SPAWN_ARGS.env);
+      expect(result.env['ACCOMPLISH_SANDBOX_MODE']).toBe('docker');
     });
   });
 });
