@@ -8,6 +8,8 @@ import {
   getCliVersion,
 } from '../../../src/opencode/cli-resolver.js';
 
+const itIfWindows = process.platform === 'win32' ? it : it.skip;
+
 describe('CLI Resolver', () => {
   let testDir: string;
   const originalAppRoot = process.env.APP_ROOT;
@@ -122,6 +124,40 @@ describe('CLI Resolver', () => {
       });
 
       expect(result).toBeNull();
+    });
+
+    itIfWindows('resolves development CLI via opencode-ai launcher realpath in pnpm layout', () => {
+      const appRoot = path.join(testDir, 'app');
+      const launcherPath = path.join(appRoot, 'node_modules', 'opencode-ai');
+      const launcherStoreRoot = path.join(testDir, '.pnpm', 'opencode-ai@1.2.6', 'node_modules');
+      const realLauncherPath = path.join(launcherStoreRoot, 'opencode-ai');
+      const cliPath = path.join(launcherStoreRoot, 'opencode-windows-x64', 'bin', 'opencode.exe');
+
+      fs.mkdirSync(launcherPath, { recursive: true });
+      fs.mkdirSync(realLauncherPath, { recursive: true });
+      fs.mkdirSync(path.dirname(cliPath), { recursive: true });
+      fs.writeFileSync(cliPath, 'binary');
+
+      const originalRealpathSync = fs.realpathSync;
+      const realpathSpy = vi.spyOn(fs, 'realpathSync').mockImplementation(((
+        inputPath: fs.PathLike,
+      ) => {
+        if (String(inputPath) === launcherPath) {
+          return realLauncherPath;
+        }
+        return originalRealpathSync(inputPath);
+      }) as typeof fs.realpathSync);
+
+      const result = resolveCliPath({
+        isPackaged: false,
+        appPath: appRoot,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.source).toBe('local');
+      expect(result?.cliPath).toBe(cliPath);
+
+      realpathSpy.mockRestore();
     });
   });
 
