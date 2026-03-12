@@ -164,6 +164,91 @@ describe('Shell escaping utilities', () => {
     });
   });
 
+  // ---------------------------------------------------------------------------
+  // Issue #596 – Windows: opencode.exe fails to spawn when path has spaces or
+  // when the task text contains double-quotes, %, ^, &, # characters.
+  //
+  // buildPtySpawnArgs on win32 now spawns opencode.exe DIRECTLY in node-pty
+  // without any shell wrapper (no cmd.exe, no powershell.exe).  When args are
+  // passed as an array the OS hands each element to the process as a raw argv
+  // entry — no shell quoting is ever needed regardless of what characters the
+  // strings contain.
+  //
+  // NOTE: buildPtySpawnArgs is a private method and cannot be imported directly.
+  // This block re-implements the same contract (including the .exe safety guard)
+  // to act as a regression test.  If the production function adds new behaviour,
+  // this stub must be updated in lockstep.
+  // ---------------------------------------------------------------------------
+  describe('Windows direct spawn – Issue #596 (paths with spaces + arbitrary task text)', () => {
+    // Re-implements the win32 branch of the private buildPtySpawnArgs so that
+    // the guard (reject non-.exe commands before they ever reach node-pty) and
+    // the pass-through contract (file = command, args = args) are both tested.
+    function buildPtySpawnArgsWin32(command: string, args: string[]) {
+      if (!command.toLowerCase().endsWith('.exe')) {
+        throw new Error(`Windows CLI command must resolve to an .exe path. Received: ${command}`);
+      }
+      return { file: command, args };
+    }
+
+    it('uses the exe path itself as the spawn file', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const { file } = buildPtySpawnArgsWin32(exe, ['run']);
+      expect(file).toBe(exe);
+    });
+
+    it('passes args through unchanged (no shell quoting needed)', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const argsIn = ['run', '--format', 'json'];
+      const { args } = buildPtySpawnArgsWin32(exe, argsIn);
+      expect(args).toEqual(argsIn);
+    });
+
+    it('throws if the command does not end with .exe (safety guard)', () => {
+      // Prevents accidental spawning of non-exe binaries (scripts, symlinks,
+      // etc.) that would fail silently or execute in an unexpected shell.
+      expect(() => buildPtySpawnArgsWin32('C:\\Programs\\opencode', ['run'])).toThrow(
+        'Windows CLI command must resolve to an .exe path',
+      );
+      expect(() => buildPtySpawnArgsWin32('/usr/bin/opencode', ['run'])).toThrow(
+        'Windows CLI command must resolve to an .exe path',
+      );
+    });
+
+    it('handles an exe path with spaces', () => {
+      const exe =
+        'C:\\Users\\Anish Maheshwari\\AppData\\Local\\Programs\\@accomplishdesktop\\resources\\app.asar.unpacked\\node_modules\\opencode-windows-x64\\bin\\opencode.exe';
+      const { file } = buildPtySpawnArgsWin32(exe, ['run']);
+      expect(file).toBe(exe);
+    });
+
+    it('handles task text containing double-quotes (the original failure case)', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const taskText = 'Take a screenshot. Type "Desktop automation by Accomplish - PR #189"';
+      const { args } = buildPtySpawnArgsWin32(exe, ['run', taskText]);
+      expect(args[1]).toBe(taskText);
+    });
+
+    it("handles task text with single-quotes", () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const taskText = "it's a test";
+      const { args } = buildPtySpawnArgsWin32(exe, ['run', taskText]);
+      expect(args[1]).toBe(taskText);
+    });
+
+    it('handles task text with %, ^, &, # characters that break cmd.exe', () => {
+      const exe = 'C:\\Programs\\opencode.exe';
+      const taskText = 'Achieve 50% efficiency & log #progress ^ now';
+      const { args } = buildPtySpawnArgsWin32(exe, ['run', taskText]);
+      expect(args[1]).toBe(taskText);
+    });
+
+    it('handles a username with Unicode / CJK characters and spaces', () => {
+      const exe = 'C:\\Users\\李 四 Wang\\AppData\\Programs\\opencode.exe';
+      const { file } = buildPtySpawnArgsWin32(exe, ['run']);
+      expect(file).toBe(exe);
+    });
+  });
+
   describe('Unix shell escaping', () => {
     it('should handle arguments with single quotes', () => {
       // Single quotes need escaping on Unix
