@@ -8,10 +8,12 @@ import { Wrench, Terminal, Check, Copy, Play } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import { StreamingText } from '../ui/streaming-text';
 import { BrowserScriptCard } from '../BrowserScriptCard';
 import { getToolDisplayInfo } from '../../constants/tool-mappings';
 import { SpinningIcon } from './SpinningIcon';
+import { CodeBlock } from '@/components/ui/CodeBlock';
 
 export interface MessageBubbleProps {
   message: TaskMessage;
@@ -97,8 +99,9 @@ export const MessageBubble = memo(
       'prose-p:text-foreground prose-p:my-2',
       'prose-strong:text-foreground prose-strong:font-semibold',
       'prose-em:text-foreground',
+      // prose-code is overridden by CodeBlock for fenced blocks; inline code keeps default
       'prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs',
-      'prose-pre:bg-muted prose-pre:text-foreground prose-pre:p-3 prose-pre:rounded-lg',
+      'prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0',
       'prose-ul:text-foreground prose-ol:text-foreground',
       'prose-li:text-foreground prose-li:my-1',
       'prose-a:text-primary prose-a:underline',
@@ -107,6 +110,22 @@ export const MessageBubble = memo(
       'prose-table:w-full prose-thead:border-b prose-thead:border-border prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-foreground prose-th:font-semibold prose-td:px-3 prose-td:py-2 prose-td:text-foreground prose-tr:border-b prose-tr:border-border',
       'break-words',
     );
+
+    // Custom renderer so fenced code blocks get syntax highlighting and a copy
+    // button while inline backtick code keeps the simple prose style.
+    const markdownComponents: Components = {
+      code({ className, children, ...props }) {
+        const code = String(children).replace(/\n$/, '');
+        const match = /language-([\w-]+)/.exec(className || '');
+        const inline = typeof className === 'undefined' && !code.includes('\n');
+
+        return (
+          <CodeBlock language={match ? match[1] : undefined} inline={inline} {...props}>
+            {code}
+          </CodeBlock>
+        );
+      },
+    };
 
     return (
       <motion.div
@@ -180,13 +199,17 @@ export const MessageBubble = memo(
                   >
                     {(streamedText) => (
                       <div className={proseClasses}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamedText}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {streamedText}
+                        </ReactMarkdown>
                       </div>
                     )}
                   </StreamingText>
                 ) : (
                   <div className={proseClasses}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 )}
                 <p
