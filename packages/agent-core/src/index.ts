@@ -246,6 +246,7 @@ export type {
   TaskResult,
   TaskProgress,
   TaskUpdateEvent,
+  FileAttachmentInfo,
 } from './common/types/task.js';
 export { STARTUP_STAGES } from './common/types/task.js';
 

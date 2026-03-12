@@ -3,6 +3,7 @@ import { ipcMain, BrowserWindow, shell, dialog, nativeTheme } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import { URL } from 'url';
 import fs from 'fs';
+import path from 'path';
 import {
   isOpenCodeCliInstalled,
   getOpenCodeCliVersion,
@@ -100,6 +101,7 @@ import { skillsManager } from '../skills';
 import { registerVertexHandlers } from '../providers';
 
 const API_KEY_VALIDATION_TIMEOUT_MS = 15000;
+const MAX_ATTACHMENT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 function assertTrustedWindow(window: BrowserWindow | null): BrowserWindow {
   if (!window || window.isDestroyed()) {
@@ -306,6 +308,7 @@ export function registerIPCHandlers(): void {
       sessionId: string,
       prompt: string,
       existingTaskId?: string,
+      attachments?: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[],
     ) => {
       const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
       const sender = event.sender;
@@ -349,6 +352,7 @@ export function registerIPCHandlers(): void {
           sessionId: validatedSessionId,
           taskId,
           modelId: selectedModelForResume?.model,
+          files: attachments,
         },
         callbacks,
       );
@@ -619,6 +623,197 @@ export function registerIPCHandlers(): void {
       isActive: true,
       createdAt: new Date().toISOString(),
     };
+  });
+
+  handle('task:pick-files', async (event: IpcMainInvokeEvent) => {
+    const window = assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+
+    const result = await dialog.showOpenDialog(window, {
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        {
+          name: 'Supported Files',
+          extensions: ['png', 'jpg', 'jpeg', 'gif', 'txt', 'md', 'json', 'js', 'ts', 'py', 'pdf'],
+        },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return [];
+    }
+
+    if (result.filePaths.length > 5) {
+      throw new Error('You can only select a maximum of 5 files.');
+    }
+
+    const attachments: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[] = [];
+
+    for (const filePath of result.filePaths) {
+      const stats = await fs.promises.stat(filePath);
+
+      if (stats.size > MAX_ATTACHMENT_FILE_SIZE) {
+        throw new Error(`File ${path.basename(filePath)} exceeds the 10MB size limit.`);
+      }
+
+      const ext = path.extname(filePath).toLowerCase().substring(1);
+      let type: 'image' | 'text' | 'code' | 'pdf' | 'other' = 'other';
+      let content: string | undefined = undefined;
+
+      switch (ext) {
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+          type = 'image';
+          break;
+        case 'pdf':
+          type = 'pdf';
+          break;
+        case 'txt':
+        case 'md':
+        case 'json':
+          type = 'text';
+          content = await fs.promises.readFile(filePath, 'utf-8');
+          break;
+        case 'js':
+        case 'ts':
+        case 'py':
+          type = 'code';
+          content = await fs.promises.readFile(filePath, 'utf-8');
+          break;
+      }
+
+      attachments.push({
+        id: crypto.randomUUID(),
+        name: path.basename(filePath),
+        path: filePath,
+        size: stats.size,
+        type,
+        content,
+      });
+    }
+
+    return attachments;
+  });
+
+  handle('task:process-dropped-files', async (event: IpcMainInvokeEvent, paths: string[]) => {
+    assertTrustedWindow(BrowserWindow.fromWebContents(event.sender));
+
+    if (!paths || paths.length === 0) {
+      return [];
+    }
+
+    if (paths.length > 5) {
+      throw new Error('You can only drop a maximum of 5 files.');
+    }
+
+    // Security: reject non-absolute paths and paths in sensitive system directories
+    // to prevent a compromised renderer from using this channel as a file-read primitive.
+    const BLOCKED_PREFIXES = [
+      // Unix/macOS system dirs
+      '/etc/',
+      '/sys/',
+      '/proc/',
+      '/dev/',
+      '/boot/',
+      '/root/',
+      // Windows system dirs (normalised to forward-slash lower-case for comparison)
+      'c:/windows/',
+      'c:/system32/',
+      'c:/program files/',
+      'c:/programdata/',
+    ];
+
+    for (const p of paths) {
+      // Resolve symlinks to get the real path, preventing traversal via symlinks
+      let resolvedReal: string;
+      try {
+        resolvedReal = await fs.promises.realpath(p);
+      } catch {
+        throw new Error(`Cannot resolve path for ${path.basename(p)}.`);
+      }
+
+      if (!path.isAbsolute(resolvedReal)) {
+        throw new Error('Only absolute file paths are accepted.');
+      }
+      const lower = resolvedReal.replace(/\\/g, '/').toLowerCase();
+      if (BLOCKED_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+        throw new Error(`Access to ${path.basename(p)} is not permitted.`);
+      }
+    }
+
+    const attachments: import('@accomplish_ai/agent-core/common').FileAttachmentInfo[] = [];
+
+    for (const filePath of paths) {
+      // Re-use the real path already resolved in the security check above
+      const resolvedPath = await fs.promises.realpath(filePath).catch(() => path.resolve(filePath));
+      if (!fs.existsSync(resolvedPath)) {
+        throw new Error(`File ${path.basename(resolvedPath)} does not exist.`);
+      }
+
+      const stats = await fs.promises.stat(resolvedPath);
+
+      if (stats.size > MAX_ATTACHMENT_FILE_SIZE) {
+        throw new Error(`File ${path.basename(resolvedPath)} exceeds the 10MB size limit.`);
+      }
+
+      const ext = path.extname(resolvedPath).toLowerCase().substring(1);
+      let type: 'image' | 'text' | 'code' | 'pdf' | 'other' = 'other';
+      let content: string | undefined = undefined;
+
+      // Note: We only allow certain safe drag-n-drop file extensions
+      const allowedExts = [
+        'png',
+        'jpg',
+        'jpeg',
+        'gif',
+        'txt',
+        'md',
+        'json',
+        'js',
+        'ts',
+        'py',
+        'pdf',
+      ];
+      if (!allowedExts.includes(ext)) {
+        throw new Error(`File type .${ext} is not supported for attachments.`);
+      }
+
+      switch (ext) {
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+          type = 'image';
+          break;
+        case 'pdf':
+          type = 'pdf';
+          break;
+        case 'txt':
+        case 'md':
+        case 'json':
+          type = 'text';
+          content = await fs.promises.readFile(resolvedPath, 'utf-8');
+          break;
+        case 'js':
+        case 'ts':
+        case 'py':
+          type = 'code';
+          content = await fs.promises.readFile(resolvedPath, 'utf-8');
+          break;
+      }
+
+      attachments.push({
+        id: crypto.randomUUID(),
+        name: path.basename(resolvedPath),
+        path: resolvedPath,
+        size: stats.size,
+        type,
+        content,
+      });
+    }
+
+    return attachments;
   });
 
   handle('bedrock:get-credentials', async (_event: IpcMainInvokeEvent) => {

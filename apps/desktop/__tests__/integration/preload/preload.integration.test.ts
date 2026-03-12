@@ -168,6 +168,7 @@ describe('Preload Script Integration', () => {
             s: string,
             p: string,
             t?: string,
+            attachments?: unknown[],
           ) => Promise<unknown>
         )('session_123', 'Continue', 'task_456');
         expect(mockInvoke).toHaveBeenCalledWith(
@@ -175,6 +176,7 @@ describe('Preload Script Integration', () => {
           'session_123',
           'Continue',
           'task_456',
+          undefined,
         );
       });
     });
