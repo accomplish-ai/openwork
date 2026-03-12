@@ -1225,16 +1225,32 @@ export function registerIPCHandlers(): void {
         ...(config.dockerImage !== undefined && {
           dockerImage: sanitizeString(config.dockerImage, 'dockerImage', 256),
         }),
-        ...(config.networkPolicy !== undefined && {
-          networkPolicy: {
-            allowOutbound: Boolean(config.networkPolicy.allowOutbound),
-            ...(Array.isArray(config.networkPolicy.allowedHosts) && {
-              allowedHosts: config.networkPolicy.allowedHosts.map((h) =>
-                sanitizeString(h, 'networkPolicy.allowedHost', 256),
-              ),
-            }),
-          },
-        }),
+        ...(config.networkPolicy !== undefined &&
+          (() => {
+            if (config.networkPolicy === null || typeof config.networkPolicy !== 'object') {
+              throw new Error('Invalid networkPolicy: must be a non-null object');
+            }
+            const { allowOutbound, allowedHosts: npHosts } = config.networkPolicy;
+            if (typeof allowOutbound !== 'boolean') {
+              throw new Error('Invalid networkPolicy.allowOutbound: must be a boolean');
+            }
+            if (
+              npHosts !== undefined &&
+              !(Array.isArray(npHosts) && npHosts.every((h: unknown) => typeof h === 'string'))
+            ) {
+              throw new Error('Invalid networkPolicy.allowedHosts: must be an array of strings');
+            }
+            return {
+              networkPolicy: {
+                allowOutbound,
+                ...(Array.isArray(npHosts) && {
+                  allowedHosts: npHosts.map((h) =>
+                    sanitizeString(h, 'networkPolicy.allowedHost', 256),
+                  ),
+                }),
+              },
+            };
+          })()),
       });
     },
   );

@@ -50,9 +50,13 @@ export function SandboxPanel() {
     async (newConfig: SandboxConfig) => {
       setSaving(true);
       setSaveError(null);
+      let merged: SandboxConfig = DEFAULT_CONFIG;
+      setConfig((prev) => {
+        merged = { ...prev, ...newConfig };
+        return merged;
+      });
       try {
-        await accomplish.setSandboxConfig(newConfig);
-        setConfig(newConfig);
+        await accomplish.setSandboxConfig(merged);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to save sandbox configuration';
         setSaveError(message);
@@ -72,12 +76,14 @@ export function SandboxPanel() {
   );
 
   const handleNetworkToggle = useCallback(async () => {
-    const currentPolicy = config.networkPolicy ?? { allowOutbound: true };
+    const currentPolicy = config.networkPolicy ?? { allowOutbound: !config.networkRestricted };
+    const newAllowOutbound = !currentPolicy.allowOutbound;
     await saveConfig({
       ...config,
+      networkRestricted: !newAllowOutbound,
       networkPolicy: {
         ...currentPolicy,
-        allowOutbound: !currentPolicy.allowOutbound,
+        allowOutbound: newAllowOutbound,
       },
     });
   }, [config, saveConfig]);
@@ -89,10 +95,11 @@ export function SandboxPanel() {
       .map((h) => h.trim())
       .filter(Boolean);
     const newHosts = hostList.length > 0 ? hostList : undefined;
-    const currentPolicy = config.networkPolicy ?? { allowOutbound: true };
+    const currentPolicy = config.networkPolicy ?? { allowOutbound: !config.networkRestricted };
     if (JSON.stringify(newHosts) !== JSON.stringify(currentPolicy.allowedHosts)) {
       saveConfig({
         ...config,
+        allowedHosts: newHosts ?? [],
         networkPolicy: { ...currentPolicy, allowedHosts: newHosts },
       });
     }
@@ -122,7 +129,7 @@ export function SandboxPanel() {
     }
   }, [config, saveConfig]);
 
-  const netPolicy = config.networkPolicy ?? { allowOutbound: true };
+  const netPolicy = config.networkPolicy ?? { allowOutbound: !config.networkRestricted };
   const isDockerMode = config.mode === 'docker';
 
   return (
@@ -148,6 +155,22 @@ export function SandboxPanel() {
               <div className="text-sm font-medium text-foreground">No Sandbox (Default)</div>
               <p className="text-sm text-muted-foreground">
                 Agent runs directly on your system with full access. Best for trusted tasks.
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sandbox-mode"
+              checked={config.mode === 'native'}
+              onChange={() => handleModeChange('native')}
+              className="mt-1 h-4 w-4 rounded-full border-border text-primary focus:ring-primary/50"
+            />
+            <div>
+              <div className="text-sm font-medium text-foreground">Native Sandbox</div>
+              <p className="text-sm text-muted-foreground">
+                Agent runs directly on your system with OS-level sandboxing restrictions applied.
               </p>
             </div>
           </label>
