@@ -892,6 +892,17 @@ export function ExecutionPage() {
             )}
 
             <div className="max-w-4xl mx-auto space-y-2">
+              {currentTask.status === 'failed' && currentTask.result?.error && (
+                <Alert
+                  variant="destructive"
+                  className="py-2 px-3 flex items-center gap-2 [&>svg]:static [&>svg~*]:pl-0"
+                >
+                  <WarningCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs leading-tight">
+                    {currentTask.result.error}
+                  </AlertDescription>
+                </Alert>
+              )}
               {speechInput.error && (
                 <Alert
                   variant="destructive"

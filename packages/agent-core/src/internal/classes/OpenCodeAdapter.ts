@@ -727,6 +727,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
     console.log(`[OpenCode Adapter] Starting session resumption with session ${sessionId}`);
 
     this.streamParser.reset();
+    this.outputBuffer = '';
 
     const config: TaskConfig = {
       prompt,
@@ -771,6 +772,11 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           (cleanData.length > LOG_TRUNCATION_LIMIT ? '...' : '');
         console.log('[OpenCode CLI stdout]:', truncated);
         this.emit('debug', { type: 'stdout', message: cleanData });
+
+        this.outputBuffer += cleanData;
+        if (this.outputBuffer.length > OpenCodeAdapter.OUTPUT_BUFFER_MAX) {
+          this.outputBuffer = this.outputBuffer.slice(-OpenCodeAdapter.OUTPUT_BUFFER_MAX);
+        }
 
         this.streamParser.feed(cleanData);
       }

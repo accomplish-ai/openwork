@@ -11,8 +11,7 @@ export function classifyProcessError(exitCode: number, outputBuffer: string): st
   if (
     output.includes('insufficient_quota') ||
     output.includes('exceeded your current quota') ||
-    output.includes('billing_hard_limit_reached') ||
-    output.includes('you exceeded your current quota')
+    output.includes('billing_hard_limit_reached')
   ) {
     return 'API quota exceeded. Check your billing and usage limits, then try again.';
   }
@@ -22,7 +21,7 @@ export function classifyProcessError(exitCode: number, outputBuffer: string): st
     output.includes('rate limit') ||
     output.includes('ratelimit') ||
     output.includes('too many requests') ||
-    output.includes('429')
+    /\b(?:http|status|statuscode)\s*429\b/i.test(output)
   ) {
     return 'Rate limit reached. Please wait a moment before retrying.';
   }
@@ -40,7 +39,8 @@ export function classifyProcessError(exitCode: number, outputBuffer: string): st
 
   if (
     output.includes('model_not_found') ||
-    output.includes('does not exist') ||
+    output.includes('model does not exist') ||
+    output.includes('the model does not exist') ||
     output.includes('model not found') ||
     output.includes('no such model')
   ) {
