@@ -122,6 +122,11 @@ export class SkillsManager {
       return this.addFromUrl(sourcePath);
     }
 
+    const stat = fs.statSync(sourcePath);
+    if (stat.isDirectory()) {
+      return this.addFromFolder(sourcePath);
+    }
+
     return this.addFromFile(sourcePath);
   }
 
@@ -236,6 +241,29 @@ export class SkillsManager {
     const destPath = this.prepareSkillDir(frontmatter);
     fs.copyFileSync(sourcePath, destPath);
     return this.persistSkill(frontmatter, destPath, 'custom');
+  }
+
+  private addFromFolder(folderPath: string): Skill {
+    const skillMdPath = path.join(folderPath, 'SKILL.md');
+    if (!fs.existsSync(skillMdPath)) {
+      throw new Error(`Selected folder does not contain a SKILL.md file: ${folderPath}`);
+    }
+
+    const content = fs.readFileSync(skillMdPath, 'utf-8');
+    const frontmatter = this.validateSkillFrontmatter(content);
+    const destSkillMdPath = this.prepareSkillDir(frontmatter);
+    const destDir = path.dirname(destSkillMdPath);
+
+    // Copy all top-level files from the source folder into the destination
+    const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const srcFile = path.join(folderPath, entry.name);
+      const destFile = path.join(destDir, entry.name);
+      fs.copyFileSync(srcFile, destFile);
+    }
+
+    return this.persistSkill(frontmatter, destSkillMdPath, 'custom');
   }
 
   private async addFromUrl(rawUrl: string): Promise<Skill> {
