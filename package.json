@@ -52,8 +52,12 @@
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "overrides": {
-      "fast-xml-parser": ">=5.3.4"
-    }
+      "fast-xml-parser": ">=5.3.4",
+      "tar": ">=7.5.8"
+    },
+    "ignoredOptionalDependencies": [
+      "sharp"
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
