@@ -6,6 +6,8 @@ import type {
   LMStudioConfig,
 } from '../../common/types/provider.js';
 import type { ThemePreference } from '../../types/storage.js';
+import type { SandboxConfig } from '../../common/types/sandbox.js';
+import { DEFAULT_SANDBOX_CONFIG } from '../../common/types/sandbox.js';
 import { getDatabase } from '../database.js';
 import { safeParseJsonWithFallback } from '../../utils/json.js';
 
@@ -20,6 +22,7 @@ interface AppSettingsRow {
   lmstudio_config: string | null;
   openai_base_url: string | null;
   theme: string;
+  sandbox_config: string;
 }
 
 export interface AppSettings {
@@ -169,6 +172,20 @@ export function setTheme(theme: ThemePreference): void {
   db.prepare('UPDATE app_settings SET theme = ? WHERE id = 1').run(theme);
 }
 
+export function getSandboxConfig(): SandboxConfig {
+  const row = getRow();
+  const parsed = safeParseJsonWithFallback<SandboxConfig>(row.sandbox_config);
+  if (parsed) {
+    return parsed;
+  }
+  return { ...DEFAULT_SANDBOX_CONFIG };
+}
+
+export function setSandboxConfig(config: SandboxConfig): void {
+  const db = getDatabase();
+  db.prepare('UPDATE app_settings SET sandbox_config = ? WHERE id = 1').run(JSON.stringify(config));
+}
+
 export function getAppSettings(): AppSettings {
   const row = getRow();
   return {
@@ -198,7 +215,8 @@ export function clearAppSettings(): void {
       azure_foundry_config = NULL,
       lmstudio_config = NULL,
       openai_base_url = '',
-      theme = 'system'
+      theme = 'system',
+      sandbox_config = '${JSON.stringify(DEFAULT_SANDBOX_CONFIG)}'
     WHERE id = 1`,
   ).run();
 }
