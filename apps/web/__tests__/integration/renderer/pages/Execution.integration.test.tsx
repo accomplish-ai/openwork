@@ -26,6 +26,9 @@ const mockOnTaskUpdate = vi.fn();
 const mockOnTaskUpdateBatch = vi.fn();
 const mockOnPermissionRequest = vi.fn();
 const mockOnTaskStatusChange = vi.fn();
+const mockGetEnabledSkills = vi.fn();
+const mockGetConnectors = vi.fn();
+const mockResyncSkills = vi.fn();
 
 // Helper to create mock task
 function createMockTask(
@@ -91,6 +94,10 @@ const mockAccomplish = {
   saveBedrockCredentials: vi.fn().mockResolvedValue(undefined),
   speechIsConfigured: vi.fn().mockResolvedValue(true),
   getTodosForTask: vi.fn().mockResolvedValue([]),
+  getEnabledSkills: mockGetEnabledSkills,
+  getConnectors: mockGetConnectors,
+  setConnectorEnabled: vi.fn().mockResolvedValue(undefined),
+  resyncSkills: mockResyncSkills,
 };
 
 // Mock the accomplish module
@@ -218,6 +225,27 @@ function renderWithRouter(taskId: string = 'task-123') {
 describe('Execution Page Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetEnabledSkills.mockResolvedValue([
+      {
+        id: 'skill-git-helper',
+        name: 'Git Helper',
+        description: 'Helps with git tasks',
+        command: '/git-helper',
+        source: 'official',
+        isHidden: false,
+      },
+      {
+        id: 'skill-calendar-prep',
+        name: 'Calendar Prep',
+        description: 'Prepares calendar agenda',
+        command: '/calendar-prep',
+        source: 'custom',
+        isHidden: false,
+      },
+    ]);
+    mockGetConnectors.mockResolvedValue([]);
+    mockResyncSkills.mockResolvedValue(undefined);
+    (window as Window & { accomplish: typeof mockAccomplish }).accomplish = mockAccomplish;
     // Reset store state
     mockStoreState = {
       currentTask: null,
@@ -486,6 +514,26 @@ describe('Execution Page Integration', () => {
       });
     });
 
+    it('should call sendFollowUp with continue when Continue button is clicked', async () => {
+      mockStoreState.currentTask = createMockTask('task-123', 'Task', 'waiting_permission');
+      mockStoreState.permissionRequest = {
+        id: 'perm-1',
+        taskId: 'task-123',
+        type: 'question',
+        question: 'How should I proceed?',
+        createdAt: new Date().toISOString(),
+      };
+
+      renderWithRouter('task-123');
+
+      const continueButton = screen.getByRole('button', { name: /continue task/i });
+      fireEvent.click(continueButton);
+
+      await waitFor(() => {
+        expect(mockSendFollowUp).toHaveBeenCalledWith('continue', []);
+      });
+    });
+
     it('should call respondToPermission with deny when Deny is clicked', async () => {
       mockStoreState.currentTask = createMockTask('task-123', 'Task', 'running');
       mockStoreState.permissionRequest = {
@@ -605,7 +653,7 @@ describe('Execution Page Integration', () => {
       fireEvent.click(sendButton);
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Continue with the next step');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('Continue with the next step', []);
       });
     });
 
@@ -621,7 +669,7 @@ describe('Execution Page Integration', () => {
       fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('Do more work');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('Do more work', []);
       });
     });
 
@@ -646,6 +694,50 @@ describe('Execution Page Integration', () => {
 
       const sendButton = screen.getByRole('button', { name: /send/i });
       expect(sendButton).toBeDisabled();
+    });
+
+    it('should keep skills submenu open when interacting with search in plus menu', async () => {
+      const task = createMockTask('task-123', 'Done', 'completed');
+      task.sessionId = 'session-abc';
+      mockStoreState.currentTask = task;
+
+      renderWithRouter('task-123');
+
+      const addContentButton = screen.getByTitle('Add content');
+      fireEvent.pointerDown(addContentButton, { button: 0, ctrlKey: false });
+      const skillsTrigger = await screen.findByText('Use Skills');
+
+      fireEvent.pointerMove(skillsTrigger);
+      fireEvent.click(skillsTrigger);
+      const searchInput = await screen.findByPlaceholderText('Search skills...');
+      fireEvent.pointerLeave(skillsTrigger, { relatedTarget: searchInput });
+      fireEvent.pointerMove(searchInput);
+      fireEvent.click(searchInput);
+      fireEvent.change(searchInput, { target: { value: 'git' } });
+
+      expect(screen.getByPlaceholderText('Search skills...')).toHaveValue('git');
+      expect(screen.getByText('Git Helper')).toBeInTheDocument();
+      expect(screen.queryByText('Calendar Prep')).not.toBeInTheDocument();
+    });
+
+    it('should keep skills submenu open when refresh is clicked', async () => {
+      const task = createMockTask('task-123', 'Done', 'completed');
+      task.sessionId = 'session-abc';
+      mockStoreState.currentTask = task;
+
+      renderWithRouter('task-123');
+
+      const addContentButton = screen.getByTitle('Add content');
+      fireEvent.pointerDown(addContentButton, { button: 0, ctrlKey: false });
+      const skillsTrigger = await screen.findByText('Use Skills');
+
+      fireEvent.pointerMove(skillsTrigger);
+      fireEvent.click(skillsTrigger);
+
+      const refreshButton = await screen.findByRole('button', { name: 'Refresh' });
+      fireEvent.click(refreshButton);
+
+      expect(screen.getByPlaceholderText('Search skills...')).toBeInTheDocument();
     });
   });
 
@@ -945,7 +1037,8 @@ describe('Execution Page Integration', () => {
 
       renderWithRouter('task-123');
 
-      expect(screen.getByText(/task cancelled/i)).toBeInTheDocument();
+      // Assert - cancelled tasks render a badge span, not a heading
+      expect(screen.getByText(/cancelled/i)).toBeInTheDocument();
     });
 
     it('should show Continue button for interrupted task with session and messages', () => {
@@ -988,7 +1081,7 @@ describe('Execution Page Integration', () => {
       fireEvent.click(continueButton);
 
       await waitFor(() => {
-        expect(mockSendFollowUp).toHaveBeenCalledWith('continue');
+        expect(mockSendFollowUp).toHaveBeenCalledWith('continue', []);
       });
     });
   });

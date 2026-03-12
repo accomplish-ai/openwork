@@ -5,6 +5,7 @@
   "buttons": {
     "send": "发送",
     "submit": "提交",
+    "stop": "停止",
     "cancel": "取消",
     "close": "关闭",
     "save": "保存",
@@ -86,5 +87,6 @@
     "configureModel": "配置模型",
     "changeModel": "更换模型"
   },
-  "messages": "{{count}} 条消息"
+  "messages": "{{count}} 条消息",
+  "favorite": "收藏"
 }

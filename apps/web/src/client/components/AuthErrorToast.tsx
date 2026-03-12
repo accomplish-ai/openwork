@@ -1,4 +1,4 @@
-import { AlertTriangle, X } from 'lucide-react';
+import { Warning, X } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
@@ -44,7 +44,7 @@ export function AuthErrorToast({ error, onReLogin, onDismiss }: AuthErrorToastPr
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 shadow-lg backdrop-blur-sm">
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/20 flex-shrink-0">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <Warning className="h-4 w-4 text-destructive" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">

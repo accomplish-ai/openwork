@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Circle, SpinnerGap, XCircle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import type { TodoItem } from '@accomplish_ai/agent-core/common';
 
@@ -46,7 +46,7 @@ export function TodoSidebar({ todos }: TodoSidebarProps) {
                 i === total - 1 && 'rounded-r-full',
                 todo.status === 'completed' || todo.status === 'cancelled'
                   ? 'bg-foreground'
-                  : 'bg-border',
+                  : 'bg-todo-progress-pending',
               )}
             />
           ))}
@@ -70,8 +70,8 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
     <li
       className={cn(
         'flex items-start gap-2 rounded-lg pl-2 pr-1 py-3',
-        todo.status === 'completed' && 'bg-muted',
-        todo.status === 'in_progress' && 'bg-muted/50',
+        todo.status === 'completed' && 'bg-todo-item-completed',
+        todo.status === 'in_progress' && 'bg-todo-item-in-progress',
         todo.status === 'cancelled' && 'opacity-50',
       )}
     >
@@ -91,9 +91,9 @@ function TodoListItem({ todo }: { todo: TodoItem }) {
 function StatusIcon({ status }: { status: TodoItem['status'] }) {
   switch (status) {
     case 'completed':
-      return <CheckCircle2 className="h-4 w-4 text-foreground shrink-0 mt-px" />;
+      return <CheckCircle className="h-4 w-4 text-foreground shrink-0 mt-px" />;
     case 'in_progress':
-      return <Loader2 className="h-4 w-4 text-muted-foreground shrink-0 mt-px animate-spin" />;
+      return <SpinnerGap className="h-4 w-4 text-muted-foreground shrink-0 mt-px animate-spin" />;
     case 'cancelled':
       return <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-px" />;
     case 'pending':

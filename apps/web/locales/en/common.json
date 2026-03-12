@@ -5,6 +5,7 @@
   "buttons": {
     "send": "Send",
     "submit": "Submit",
+    "stop": "Stop",
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
@@ -86,5 +87,6 @@
     "configureModel": "Configure model",
     "changeModel": "Change model"
   },
-  "messages": "{{count}} messages"
+  "messages": "{{count}} messages",
+  "favorite": "Favorite"
 }

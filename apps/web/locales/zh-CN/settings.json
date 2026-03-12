@@ -306,7 +306,7 @@
     "builtByYou": "自建",
     "loading": "加载技能中...",
     "searchPlaceholder": "搜索技能...",
-    "refresh": "刷新技能",
+    "refresh": "刷新",
     "noSkillsFound": "未找到技能",
     "scrollForMore": "滚动查看更多技能",
     "disableSkill": "停用技能",
@@ -354,7 +354,9 @@
     "auto": "自动（跟随系统）",
     "autoUnsupported": "自动（不支持）",
     "en": "English",
-    "zhCN": "简体中文"
+    "zhCN": "简体中文",
+    "ru": "Русский",
+    "fr": "Français"
   },
   "about": {
     "title": "关于",

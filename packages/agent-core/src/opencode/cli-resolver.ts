@@ -1,95 +1,93 @@
 import path from 'path';
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execFileSync, spawnSync } from 'child_process';
 import type { CliResolverConfig, ResolvedCliPaths } from '../types.js';
 
-function getOpenCodePlatformInfo(): { packageName: string; binaryName: string } {
+const WINDOWS_OPENCODE_X64_PACKAGE = 'opencode-windows-x64';
+const WINDOWS_OPENCODE_X64_BASELINE_PACKAGE = 'opencode-windows-x64-baseline';
+const OPENCODE_LAUNCHER_PACKAGE = 'opencode-ai';
+let cachedWindowsPackageNames: string[] | null = null;
+
+function detectWindowsAvx2Support(): boolean {
+  const checkCommand =
+    '(Add-Type -MemberDefinition "[DllImport(""kernel32.dll"")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);" -Name Kernel32 -Namespace Win32 -PassThru)::IsProcessorFeaturePresent(40)';
+
+  for (const shell of ['powershell.exe', 'pwsh.exe', 'pwsh', 'powershell']) {
+    try {
+      const result = spawnSync(shell, ['-NoProfile', '-NonInteractive', '-Command', checkCommand], {
+        encoding: 'utf-8',
+        timeout: 3000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        windowsHide: true,
+      });
+      if (result.status !== 0) {
+        continue;
+      }
+
+      const output = (result.stdout ?? '').trim().toLowerCase();
+      if (output === 'true' || output === '1') {
+        return true;
+      }
+      if (output === 'false' || output === '0') {
+        return false;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return false;
+}
+
+function getWindowsPackageNames(): string[] {
+  if (cachedWindowsPackageNames) {
+    return cachedWindowsPackageNames;
+  }
+
+  const preferAvx2Binary = detectWindowsAvx2Support();
+  cachedWindowsPackageNames = preferAvx2Binary
+    ? [WINDOWS_OPENCODE_X64_PACKAGE, WINDOWS_OPENCODE_X64_BASELINE_PACKAGE]
+    : [WINDOWS_OPENCODE_X64_BASELINE_PACKAGE, WINDOWS_OPENCODE_X64_PACKAGE];
+
+  return cachedWindowsPackageNames;
+}
+
+function getOpenCodePlatformInfo(): { packageNames: string[]; binaryName: string } {
   if (process.platform === 'win32') {
     return {
-      packageName: 'opencode-windows-x64',
+      packageNames: getWindowsPackageNames(),
       binaryName: 'opencode.exe',
     };
   }
   return {
-    packageName: 'opencode-ai',
+    packageNames: ['opencode-ai'],
     binaryName: 'opencode',
   };
 }
 
-function getNvmOpenCodePaths(): string[] {
-  const homeDir = process.env.HOME || '';
-  const nvmVersionsDir = path.join(homeDir, '.nvm/versions/node');
-  const paths: string[] = [];
+function getCandidateAppRoots(appPath?: string): string[] {
+  const roots: string[] = [];
 
-  try {
-    if (fs.existsSync(nvmVersionsDir)) {
-      const versions = fs.readdirSync(nvmVersionsDir);
-      for (const version of versions) {
-        const opencodePath = path.join(nvmVersionsDir, version, 'bin', 'opencode');
-        if (fs.existsSync(opencodePath)) {
-          paths.push(opencodePath);
-        }
-      }
-    }
-  } catch {
-    // intentionally empty
+  if (process.env.APP_ROOT) {
+    roots.push(path.resolve(process.env.APP_ROOT));
   }
 
-  return paths;
-}
-
-function getWindowsNodeModulesExeCandidates(basePath: string): string[] {
-  return [
-    path.join(basePath, 'node_modules', 'opencode-windows-x64', 'bin', 'opencode.exe'),
-    path.join(basePath, 'node_modules', 'opencode-windows-x64-baseline', 'bin', 'opencode.exe'),
-  ];
-}
-
-function resolveOpenCodeExeOnPath(): string | null {
-  try {
-    const output = execSync('where opencode.exe', {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    const candidates = output
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    for (const candidate of candidates) {
-      if (fs.existsSync(candidate)) {
-        return candidate;
-      }
-    }
-  } catch {
-    // intentionally empty
+  if (appPath) {
+    const resolvedAppPath = path.resolve(appPath);
+    roots.push(resolvedAppPath);
+    roots.push(path.resolve(resolvedAppPath, '..'));
+    roots.push(path.resolve(resolvedAppPath, '..', '..'));
   }
-  return null;
+
+  return [...new Set(roots)];
 }
 
-function isOpenCodeOnPath(): boolean {
-  try {
-    const command = process.platform === 'win32' ? 'where opencode' : 'which opencode';
-    execSync(command, { stdio: ['pipe', 'pipe', 'pipe'] });
-    return true;
-  } catch {
-    return false;
-  }
-}
+function resolveBundledCliPath(resourcesPath: string): ResolvedCliPaths | null {
+  const { packageNames, binaryName } = getOpenCodePlatformInfo();
+  const unpackedNodeModulesRoot = path.join(resourcesPath, 'app.asar.unpacked', 'node_modules');
 
-export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | null {
-  const { isPackaged, resourcesPath, appPath } = config;
-
-  if (isPackaged && resourcesPath) {
-    const { packageName, binaryName } = getOpenCodePlatformInfo();
-
-    const cliPath = path.join(
-      resourcesPath,
-      'app.asar.unpacked',
-      'node_modules',
-      packageName,
-      'bin',
-      binaryName,
-    );
+  for (const packageName of packageNames) {
+    const cliPath = path.join(unpackedNodeModulesRoot, packageName, 'bin', binaryName);
 
     if (fs.existsSync(cliPath)) {
       return {
@@ -98,157 +96,109 @@ export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | nu
         source: 'bundled',
       };
     }
-
-    return null;
   }
 
-  const preferGlobal = process.env.ACCOMPLISH_USE_GLOBAL_OPENCODE === '1';
-
   if (process.platform === 'win32') {
-    const localExeCandidates = appPath ? getWindowsNodeModulesExeCandidates(appPath) : [];
+    const resolvedFromLauncher = resolveWindowsCliFromLauncher(
+      unpackedNodeModulesRoot,
+      packageNames,
+    );
+    if (resolvedFromLauncher) {
+      return resolvedFromLauncher;
+    }
+  }
 
-    if (!preferGlobal) {
-      for (const exePath of localExeCandidates) {
-        if (fs.existsSync(exePath)) {
-          console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
+  return null;
+}
+
+function resolveLocalCliPath(appPath?: string): ResolvedCliPaths | null {
+  const appRoots = getCandidateAppRoots(appPath);
+  const { packageNames, binaryName } = getOpenCodePlatformInfo();
+
+  for (const root of appRoots) {
+    if (process.platform === 'win32') {
+      for (const packageName of packageNames) {
+        const cliPath = path.join(root, 'node_modules', packageName, 'bin', binaryName);
+        if (fs.existsSync(cliPath)) {
+          console.log('[CLI Resolver] Using local OpenCode CLI executable:', cliPath);
           return {
-            cliPath: exePath,
-            cliDir: path.dirname(exePath),
+            cliPath,
+            cliDir: path.dirname(cliPath),
             source: 'local',
           };
         }
       }
-    }
 
-    const globalExeCandidates = [
-      path.join(
-        process.env.APPDATA || '',
-        'npm',
-        'node_modules',
-        'opencode-windows-x64',
-        'bin',
-        'opencode.exe',
-      ),
-      path.join(
-        process.env.APPDATA || '',
-        'npm',
-        'node_modules',
-        'opencode-windows-x64-baseline',
-        'bin',
-        'opencode.exe',
-      ),
-      path.join(
-        process.env.LOCALAPPDATA || '',
-        'npm',
-        'node_modules',
-        'opencode-windows-x64',
-        'bin',
-        'opencode.exe',
-      ),
-      path.join(
-        process.env.LOCALAPPDATA || '',
-        'npm',
-        'node_modules',
-        'opencode-windows-x64-baseline',
-        'bin',
-        'opencode.exe',
-      ),
-    ];
-
-    for (const exePath of globalExeCandidates) {
-      if (fs.existsSync(exePath)) {
-        console.log('[CLI Resolver] Using global OpenCode CLI executable:', exePath);
-        return {
-          cliPath: exePath,
-          cliDir: path.dirname(exePath),
-          source: 'global',
-        };
+      const resolvedFromLauncher = resolveWindowsCliFromLauncher(
+        path.join(root, 'node_modules'),
+        packageNames,
+      );
+      if (resolvedFromLauncher) {
+        return resolvedFromLauncher;
       }
+      continue;
     }
 
-    for (const exePath of localExeCandidates) {
-      if (fs.existsSync(exePath)) {
-        console.log('[CLI Resolver] Using local OpenCode CLI executable:', exePath);
+    const cliPath = path.join(root, 'node_modules', '.bin', binaryName);
+    if (fs.existsSync(cliPath)) {
+      console.log('[CLI Resolver] Using local OpenCode CLI executable:', cliPath);
+      return {
+        cliPath,
+        cliDir: path.dirname(cliPath),
+        source: 'local',
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveWindowsCliFromLauncher(
+  nodeModulesRoot: string,
+  packageNames: string[],
+): ResolvedCliPaths | null {
+  const launcherPackagePath = path.join(nodeModulesRoot, OPENCODE_LAUNCHER_PACKAGE);
+  if (!fs.existsSync(launcherPackagePath)) {
+    return null;
+  }
+
+  const candidateModuleRoots = new Set<string>([nodeModulesRoot]);
+  try {
+    const realLauncherPackagePath = fs.realpathSync(launcherPackagePath);
+    candidateModuleRoots.add(path.dirname(realLauncherPackagePath));
+  } catch {
+    // Ignore realpath failures and continue with known roots.
+  }
+
+  for (const moduleRoot of candidateModuleRoots) {
+    for (const packageName of packageNames) {
+      const cliPath = path.join(moduleRoot, packageName, 'bin', 'opencode.exe');
+      if (fs.existsSync(cliPath)) {
+        console.log('[CLI Resolver] Using OpenCode CLI executable via launcher package:', cliPath);
         return {
-          cliPath: exePath,
-          cliDir: path.dirname(exePath),
+          cliPath,
+          cliDir: path.dirname(cliPath),
           source: 'local',
         };
       }
     }
-
-    const pathExe = resolveOpenCodeExeOnPath();
-    if (pathExe) {
-      console.log('[CLI Resolver] Using OpenCode executable on PATH:', pathExe);
-      return {
-        cliPath: pathExe,
-        cliDir: path.dirname(pathExe),
-        source: 'global',
-      };
-    }
-
-    return null;
-  }
-
-  if (appPath && !preferGlobal) {
-    const binName = 'opencode';
-    const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
-    if (fs.existsSync(devCliPath)) {
-      console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
-      return {
-        cliPath: devCliPath,
-        cliDir: path.dirname(devCliPath),
-        source: 'local',
-      };
-    }
-  }
-
-  const nvmPaths = getNvmOpenCodePaths();
-  for (const opencodePath of nvmPaths) {
-    console.log('[CLI Resolver] Using nvm OpenCode CLI:', opencodePath);
-    return {
-      cliPath: opencodePath,
-      cliDir: path.dirname(opencodePath),
-      source: 'global',
-    };
-  }
-
-  const globalOpenCodePaths = ['/usr/local/bin/opencode', '/opt/homebrew/bin/opencode'];
-
-  for (const opencodePath of globalOpenCodePaths) {
-    if (fs.existsSync(opencodePath)) {
-      console.log('[CLI Resolver] Using global OpenCode CLI:', opencodePath);
-      return {
-        cliPath: opencodePath,
-        cliDir: path.dirname(opencodePath),
-        source: 'global',
-      };
-    }
-  }
-
-  if (appPath) {
-    const binName = 'opencode';
-    const devCliPath = path.join(appPath, 'node_modules', '.bin', binName);
-    if (fs.existsSync(devCliPath)) {
-      console.log('[CLI Resolver] Using bundled CLI:', devCliPath);
-      return {
-        cliPath: devCliPath,
-        cliDir: path.dirname(devCliPath),
-        source: 'local',
-      };
-    }
-  }
-
-  if (isOpenCodeOnPath()) {
-    console.log('[CLI Resolver] Using opencode command on PATH');
-    return {
-      cliPath: 'opencode',
-      cliDir: '',
-      source: 'global',
-    };
   }
 
   return null;
+}
+
+export function resolveCliPath(config: CliResolverConfig): ResolvedCliPaths | null {
+  const { isPackaged, resourcesPath, appPath } = config;
+
+  if (isPackaged && resourcesPath) {
+    return resolveBundledCliPath(resourcesPath);
+  }
+
+  if (isPackaged) {
+    return null;
+  }
+
+  return resolveLocalCliPath(appPath);
 }
 
 export function isCliAvailable(config: CliResolverConfig): boolean {
@@ -258,9 +208,11 @@ export function isCliAvailable(config: CliResolverConfig): boolean {
 export async function getCliVersion(cliPath: string): Promise<string | null> {
   try {
     if (cliPath.includes('node_modules')) {
-      const { packageName } = getOpenCodePlatformInfo();
+      const { packageNames } = getOpenCodePlatformInfo();
       const packageJsonCandidates = [
-        path.join(path.dirname(path.dirname(cliPath)), packageName, 'package.json'),
+        ...packageNames.map((packageName) =>
+          path.join(path.dirname(path.dirname(cliPath)), packageName, 'package.json'),
+        ),
         path.join(path.dirname(path.dirname(cliPath)), 'package.json'),
       ];
 
@@ -272,9 +224,7 @@ export async function getCliVersion(cliPath: string): Promise<string | null> {
       }
     }
 
-    const fullCommand = `"${cliPath}" --version`;
-
-    const output = execSync(fullCommand, {
+    const output = execFileSync(cliPath, ['--version'], {
       encoding: 'utf-8',
       timeout: 5000,
       stdio: ['pipe', 'pipe', 'pipe'],

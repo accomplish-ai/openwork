@@ -24,7 +24,9 @@ import type {
   ToolSupportStatus,
   Skill,
   McpConnector,
+  FileAttachmentInfo,
 } from '@accomplish_ai/agent-core/common';
+import type { StoredFavorite } from '@accomplish_ai/agent-core';
 
 // Define the API interface
 interface AccomplishAPI {
@@ -43,12 +45,24 @@ interface AccomplishAPI {
   listTasks(): Promise<Task[]>;
   deleteTask(taskId: string): Promise<void>;
   clearTaskHistory(): Promise<void>;
+  addFavorite(taskId: string): Promise<void>;
+  removeFavorite(taskId: string): Promise<void>;
+  listFavorites(): Promise<StoredFavorite[]>;
+  isFavorite(taskId: string): Promise<boolean>;
+  pickFiles(): Promise<FileAttachmentInfo[]>;
+  getFilePath(file: File): string;
+  processDroppedFiles(paths: string[]): Promise<FileAttachmentInfo[]>;
 
   // Permission responses
   respondToPermission(response: PermissionResponse): Promise<void>;
 
   // Session management
-  resumeSession(sessionId: string, prompt: string, taskId?: string): Promise<Task>;
+  resumeSession(
+    sessionId: string,
+    prompt: string,
+    taskId?: string,
+    attachments?: FileAttachmentInfo[],
+  ): Promise<Task>;
 
   // Settings
   getApiKeys(): Promise<ApiKeyConfig[]>;
@@ -350,6 +364,7 @@ interface AccomplishAPI {
   getEnabledSkills(): Promise<Skill[]>;
   setSkillEnabled(id: string, enabled: boolean): Promise<void>;
   getSkillContent(id: string): Promise<string | null>;
+  getUserSkillsPath(): Promise<string>;
   pickSkillFile(): Promise<string | null>;
   addSkillFromFile(filePath: string): Promise<Skill>;
   addSkillFromGitHub(rawUrl: string): Promise<Skill>;
