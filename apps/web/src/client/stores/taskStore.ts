@@ -507,8 +507,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   loadFavorites: async () => {
     const accomplish = getAccomplish();
-    const favorites = await accomplish.listFavorites();
-    set({ favorites });
+    try {
+      const favorites = await accomplish.listFavorites();
+      set({ favorites });
+    } catch (err) {
+      console.error('[taskStore] Failed to load favorites:', err);
+    }
   },
 
   addFavorite: async (taskId: string) => {

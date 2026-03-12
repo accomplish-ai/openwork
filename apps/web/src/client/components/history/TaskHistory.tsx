@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
-import { Star } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
+import { StarButton } from '../ui/StarButton';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '@accomplish_ai/agent-core/common';
 
@@ -144,17 +144,7 @@ function TaskHistoryItem({
         </p>
       </div>
       {canFavorite && (
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void onToggleFavorite();
-          }}
-          className="p-2 text-text-muted hover:text-foreground transition-colors"
-          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <Star className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
-        </button>
+        <StarButton isFavorite={isFavorited} onToggle={() => void onToggleFavorite()} size="md" />
       )}
       <button
         type="button"

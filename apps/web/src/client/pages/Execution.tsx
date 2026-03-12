@@ -7,6 +7,7 @@ import { getAccomplish } from '../lib/accomplish';
 import { springs } from '../lib/animations';
 import { hasAnyReadyProvider } from '@accomplish_ai/agent-core/common';
 import { Button } from '@/components/ui/button';
+import { StarButton } from '@/components/ui/StarButton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import {
@@ -18,7 +19,6 @@ import {
   Clock,
   Square,
   Download,
-  Star,
   CaretDown,
 } from '@phosphor-icons/react';
 import { isWaitingForUser } from '../lib/waiting-detection';
@@ -76,18 +76,12 @@ function ExecutionCompleteFooter({
       <p className="text-sm text-muted-foreground">Task {statusLabel}</p>
       <div className="flex items-center gap-2">
         {canFavorite && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void handleToggleFavorite()}
-            className="gap-2"
-            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          <StarButton
+            isFavorite={isFavorited}
+            onToggle={() => void handleToggleFavorite()}
+            size="md"
             data-testid="favorite-toggle"
-            aria-pressed={isFavorited}
-          >
-            <Star className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
-            {isFavorited ? 'Favorited' : 'Add to favorites'}
-          </Button>
+          />
         )}
         <Button onClick={onStartNewTask} data-testid="start-new-task">
           Start New Task
