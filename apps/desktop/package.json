@@ -68,7 +68,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitest/coverage-v8": "^4.0.17",
     "concurrently": "^9.1.2",
-    "electron": "^41.0.0",
+    "electron": "^35.7.5",
     "electron-builder": "^26.8.1",
     "esbuild": "^0.27.3",
     "typescript": "^5.7.2",
