@@ -54,7 +54,7 @@
     "jobApplicationAutomation": {
       "title": "Job Application Automation",
       "description": "Filter jobs and submit applications with saved profiles.",
-      "prompt": "Find job listings from Indeed for [query], sort by salary, and apply to the top 5 using my profile."
+      "prompt": "Find job listings from LinkedIn for [query], sort by salary, and apply to the top 5 using my profile."
     },
     "eventCalendarBuilder": {
       "title": "Event Calendar Builder",
