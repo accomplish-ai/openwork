@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron';
 import type { TaskMessage, TaskResult, TaskStatus, TodoItem } from '@accomplish_ai/agent-core';
 import { mapResultToStatus } from '@accomplish_ai/agent-core';
-import { getTaskManager, recoverDevBrowserServer } from '../opencode';
+import { getTaskManager } from '../opencode';
 import type { TaskCallbacks } from '../opencode';
 import { getStorage } from '../store/storage';
 
@@ -184,34 +184,11 @@ export function createTaskCallbacks(options: TaskCallbacksOptions): TaskCallback
       )}s). Reconnecting browser...`;
 
       console.warn(`[TaskCallbacks] ${reason}`);
-
-      void recoverDevBrowserServer(
-        {
-          onProgress: (progress) => {
-            forwardToRenderer('task:progress', {
-              taskId,
-              ...progress,
-            });
-          },
-        },
-        { reason },
-      )
-        .catch((error) => {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.warn('[TaskCallbacks] Browser recovery failed:', errorMessage);
-          if (storage.getDebugMode()) {
-            forwardToRenderer('debug:log', {
-              taskId,
-              timestamp: new Date().toISOString(),
-              type: 'warning',
-              message: `Browser recovery failed: ${errorMessage}`,
-            });
-          }
-        })
-        .finally(() => {
-          browserRecoveryInFlight = false;
-          resetBrowserFailureState();
-        });
+      console.warn(
+        `[TaskCallbacks] recoverDevBrowserServer is currently unavailable. Please restart the browser.`,
+      );
+      browserRecoveryInFlight = false;
+      resetBrowserFailureState();
     },
   };
 }

@@ -13,6 +13,8 @@ export {
   setAzureFoundryConfig,
   getLMStudioConfig,
   setLMStudioConfig,
+  getHuggingFaceLocalConfig,
+  setHuggingFaceLocalConfig,
   getOpenAiBaseUrl,
   setOpenAiBaseUrl,
   getTheme,

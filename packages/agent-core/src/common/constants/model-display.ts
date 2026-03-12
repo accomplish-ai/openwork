@@ -66,6 +66,7 @@ export const PROVIDER_PREFIXES = [
   'zai-coding-plan/',
   'minimax/',
   'lmstudio/',
+  'huggingface-local/',
   'azure-foundry/',
   'vertex/',
 ];

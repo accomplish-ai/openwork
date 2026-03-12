@@ -17,9 +17,7 @@ export {
   isCliAvailable,
   onBeforeStart,
   onBeforeTaskStart,
-  recoverDevBrowserServer,
   getOpenCodeCliPath,
-  isOpenCodeCliAvailable,
   getBundledOpenCodeVersion,
   cleanupVertexServiceAccountKey,
 } from './electron-options';
