@@ -1,4 +1,4 @@
-// apps/desktop/src/renderer/components/settings/ProviderGrid.tsx
+// apps/web/src/client/components/settings/ProviderGrid.tsx
 
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ const PROVIDER_ORDER: ProviderId[] = [
   'zai',
   'ollama',
   'lmstudio',
+  'huggingface-local',
   'xai',
   'openrouter',
   'litellm',

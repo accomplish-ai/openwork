@@ -36,6 +36,7 @@ import {
 import { getApiKey, clearSecureStorage } from './store/secureStorage';
 import { initializeLogCollector, shutdownLogCollector, getLogCollector } from './logging';
 import { skillsManager } from './skills';
+import { startHuggingFaceServer, stopHuggingFaceServer } from './providers/huggingface-local';
 
 if (process.argv.includes('--e2e-skip-auth')) {
   (global as Record<string, unknown>).E2E_SKIP_AUTH = true;
@@ -285,6 +286,17 @@ if (!gotTheLock) {
           }
         }
       }
+
+      // Auto-start HuggingFace local server if enabled
+      const hfConfig = storage.getHuggingFaceLocalConfig();
+      if (hfConfig?.enabled && hfConfig.selectedModelId) {
+        console.log(
+          `[Main] Auto-starting HuggingFace server for model: ${hfConfig.selectedModelId}`,
+        );
+        startHuggingFaceServer(hfConfig.selectedModelId).catch((err: unknown) => {
+          console.error('[Main] Failed to auto-start HuggingFace local server:', err);
+        });
+      }
     } catch (err) {
       console.error('[Main] Provider validation failed:', err);
     }
@@ -340,6 +352,10 @@ app.on('before-quit', () => {
   oauthBrowserFlow.dispose();
   closeStorage();
   shutdownLogCollector();
+  // Stop the HF inference server so its port is released before process exit
+  stopHuggingFaceServer().catch((err: unknown) => {
+    console.warn('[Main] Failed to stop HuggingFace server on quit:', err);
+  });
 });
 
 if (process.platform === 'win32' && !app.isPackaged) {
