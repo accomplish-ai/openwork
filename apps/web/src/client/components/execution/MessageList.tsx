@@ -115,9 +115,9 @@ export const MessageBubble = memo(
     // button while inline backtick code keeps the simple prose style.
     const markdownComponents: Components = {
       code({ className, children, ...props }) {
-        const match = /language-(\w+)/.exec(className || '');
-        const inline = !match && !className;
         const code = String(children).replace(/\n$/, '');
+        const match = /language-([\w-]+)/.exec(className || '');
+        const inline = typeof className === 'undefined' && !code.includes('\n');
 
         return (
           <CodeBlock language={match ? match[1] : undefined} inline={inline} {...props}>

@@ -110,4 +110,29 @@ describe('CodeBlock', () => {
       });
     });
   });
+
+  describe('regression: plain fenced block without a language class', () => {
+    it('renders block UI (copy button present) when inline=false and no language is given', () => {
+      // A fenced code block without a language info-string has no className;
+      // the renderer must NOT treat it as inline.
+      render(<CodeBlock inline={false}>{'const x = 1\n'}</CodeBlock>);
+
+      expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
+      // Should show the default language label for blocks
+      expect(screen.getByText('text')).toBeInTheDocument();
+    });
+  });
+
+  describe('regression: hyphenated language identifier', () => {
+    it('renders the language label and copy button for "shell-session"', () => {
+      render(
+        <CodeBlock language="shell-session" inline={false}>
+          {'echo hello\n'}
+        </CodeBlock>,
+      );
+
+      expect(screen.getByText('shell-session')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
+    });
+  });
 });

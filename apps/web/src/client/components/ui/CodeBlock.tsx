@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Check, Copy } from '@phosphor-icons/react';
@@ -23,7 +23,32 @@ interface CodeBlockProps {
 
 export function CodeBlock({ language, children, inline = false }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [isDark, setIsDark] = useState(isDarkMode);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear the copy-reset timer on unmount to avoid calling setState after unmount.
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Re-sync isDark whenever the 'dark' class is toggled on <html>.
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -49,7 +74,7 @@ export function CodeBlock({ language, children, inline = false }: CodeBlockProps
     );
   }
 
-  const dark = isDarkMode();
+  const dark = isDark;
   const displayLang = language || 'text';
 
   return (
