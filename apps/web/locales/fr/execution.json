@@ -16,7 +16,7 @@
   "thinkingPhrases": {
     "doing": "En cours...",
     "executing": "Exécution...",
-    "running": "Exécution...",
+    "running": "En cours...",
     "handling": "Traitement...",
     "accomplishing": "Accomplissement..."
   },
@@ -94,5 +94,6 @@
   "todos": {
     "title": "Tâches",
     "progress": "{{completed}} sur {{total}}"
-  }
+  },
+  "startNewTask": "Nouvelle tâche"
 }

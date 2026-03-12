@@ -11,5 +11,9 @@
   "select": "Sélectionner",
   "close": "Fermer",
   "confirmDelete": "Voulez-vous vraiment supprimer cette tâche ?",
-  "deleteTask": "Supprimer la tâche"
+  "deleteTask": "Supprimer la tâche",
+  "favorite": {
+    "add": "Ajouter aux favoris",
+    "remove": "Retirer des favoris"
+  }
 }

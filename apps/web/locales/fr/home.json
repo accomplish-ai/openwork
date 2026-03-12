@@ -13,7 +13,7 @@
   "examplePrompts": "Exemples de requêtes",
   "useCases": {
     "calendarPrepNotes": {
-      "title": "Notes de préparation",
+      "title": "Préparation réunions",
       "description": "Consultez les réunions de demain et rédigez des notes de préparation.",
       "prompt": "Consultez mon Google Agenda pour les réunions de demain et rédigez des notes de préparation dans un nouveau Google Doc."
     },
@@ -57,5 +57,12 @@
       "description": "Sélectionnez les meilleurs événements et ajoutez-les au calendrier.",
       "prompt": "Parcourez les événements sur Eventbrite, filtrez par lieu et ajoutez les 5 meilleurs à mon calendrier."
     }
+  },
+  "favorites": {
+    "title": "Favoris",
+    "empty": "Marquez les tâches terminées ou interrompues comme favorites pour les voir ici.",
+    "showAll": "Afficher les {{count}} favoris",
+    "showAll_one": "Afficher {{count}} favori",
+    "showAll_other": "Afficher les {{count}} favoris"
   }
 }
