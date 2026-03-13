@@ -155,8 +155,11 @@ export function registerIPCHandlers(): void {
       );
     }
 
+    // Always update the window reference so the permission/question APIs
+    // use the current window (handles window recreation on macOS reactivation)
+    initPermissionApi(window, () => taskManager.getActiveTaskId());
+
     if (!permissionApiInitialized) {
-      initPermissionApi(window, () => taskManager.getActiveTaskId());
       startPermissionApiServer();
       startQuestionApiServer();
       permissionApiInitialized = true;
