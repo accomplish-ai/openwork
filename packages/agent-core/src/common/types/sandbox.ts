@@ -57,6 +57,8 @@ export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
   allowedPaths: [],
   networkRestricted: false,
   allowedHosts: [],
+  dockerImage: undefined,
+  networkPolicy: { allowOutbound: true },
 };
 
 /** Arguments passed through the sandbox provider spawn wrapper */
@@ -64,7 +66,7 @@ export interface SpawnArgs {
   file: string;
   args: string[];
   cwd: string;
-  env: Record<string, string>;
+  env: NodeJS.ProcessEnv;
 }
 
 /**

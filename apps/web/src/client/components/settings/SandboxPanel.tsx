@@ -39,7 +39,9 @@ export function SandboxPanel() {
     accomplish
       .getSandboxConfig()
       .then((c) => {
-        if (c) setConfig(c);
+        if (c) {
+          setConfig(c);
+        }
       })
       .catch((err) => {
         console.error('Failed to load sandbox config:', err);

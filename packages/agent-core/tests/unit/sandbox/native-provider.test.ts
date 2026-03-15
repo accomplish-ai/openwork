@@ -50,6 +50,25 @@ describe('NativeSandboxProvider', () => {
       const provider = new NativeSandboxProvider('linux');
       await expect(provider.isAvailable()).resolves.toBe(true);
     });
+
+    it('should return true on darwin when sandbox-exec is available', async () => {
+      const fs = await import('fs');
+      vi.mocked(fs.default.accessSync).mockImplementation(() => undefined);
+
+      const provider = new NativeSandboxProvider('darwin');
+      await expect(provider.isAvailable()).resolves.toBe(true);
+    });
+
+    it('should return false on darwin when sandbox-exec is not available', async () => {
+      const fs = await import('fs');
+      const enoent = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      vi.mocked(fs.default.accessSync).mockImplementation(() => {
+        throw enoent;
+      });
+
+      const provider = new NativeSandboxProvider('darwin');
+      await expect(provider.isAvailable()).resolves.toBe(false);
+    });
   });
 
   describe('sandbox env var injection (via wrapSpawnArgs)', () => {

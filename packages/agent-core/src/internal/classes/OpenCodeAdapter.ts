@@ -284,7 +284,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
           file: spawnFile,
           args: spawnArgs,
           cwd: safeCwd,
-          env: env as Record<string, string>,
+          env: env,
         },
         this.sandboxConfig,
       );
@@ -786,7 +786,7 @@ export class OpenCodeAdapter extends EventEmitter<OpenCodeAdapterEvents> {
         file: spawnFile,
         args: spawnArgs,
         cwd: safeCwd,
-        env: env as Record<string, string>,
+        env: env,
       },
       this.sandboxConfig,
     );
