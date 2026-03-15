@@ -16,6 +16,7 @@ import {
   type BrowserServerConfig,
   type CliResolverConfig,
   type EnvironmentConfig,
+  type SandboxPaths,
 } from '@accomplish_ai/agent-core';
 import { getModelDisplayName } from '@accomplish_ai/agent-core';
 import type {
@@ -350,7 +351,14 @@ export function createElectronTaskManagerOptions(): TaskManagerOptions {
       // the TaskManager.
       sandboxFactory: () => {
         const config = getStorage().getSandboxConfig();
-        return { provider: createSandboxProvider(config, process.platform), config };
+        const getSandboxPaths = (): SandboxPaths => ({
+          configDir: app.getPath('userData'),
+          openDataHome: app.getPath('appData'),
+        });
+        return {
+          provider: createSandboxProvider(config, process.platform, getSandboxPaths),
+          config,
+        };
       },
     },
     defaultWorkingDirectory: app.getPath('temp'),

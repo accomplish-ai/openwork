@@ -36,10 +36,15 @@ const FORWARDED_ENV_KEYS = [
   'OPENROUTER_API_KEY',
   'OPENAI_BASE_URL',
   'ACCOMPLISH_TASK_ID',
+  // Safe runtime / locale vars
+  'ACCOMPLISH_SANDBOX_MODE',
+  'ACCOMPLISH_SANDBOX_ENABLED',
+  'LANG',
+  'LC_ALL',
+  'TERM',
+  'COLORTERM',
+  'NO_COLOR',
 ];
-
-/** Keys that must NOT be forwarded as-is (they differ inside the container) */
-const BLOCKED_ENV_KEYS = new Set(['PATH', 'HOME', 'USER']);
 
 export class DockerSandboxProvider implements SandboxProvider {
   readonly name = 'docker';
@@ -156,12 +161,6 @@ export class DockerSandboxProvider implements SandboxProvider {
     for (const key of FORWARDED_ENV_KEYS) {
       const val = spawnArgs.env[key];
       if (val) {
-        dockerArgs.push('-e', `${key}=${val}`);
-      }
-    }
-    // Also forward any extra keys not in the blocked set (catch-all)
-    for (const [key, val] of Object.entries(spawnArgs.env)) {
-      if (val && !BLOCKED_ENV_KEYS.has(key) && !FORWARDED_ENV_KEYS.includes(key)) {
         dockerArgs.push('-e', `${key}=${val}`);
       }
     }
