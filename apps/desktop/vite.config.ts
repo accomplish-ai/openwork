@@ -1,10 +1,54 @@
 import { defineConfig } from 'vite';
 import electron from 'vite-plugin-electron';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import esbuild from 'esbuild';
 import pkg from './package.json';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Compile theme-core.ts → public/theme-init.js for the desktop renderer dev server.
+ * Mirrors the same plugin in apps/web/vite.config.ts.
+ */
+function buildThemeInit(): import('vite').Plugin {
+  const outfile = path.resolve(__dirname, 'public/theme-init.js');
+
+  async function generate() {
+    await esbuild.build({
+      stdin: {
+        contents: `import { initEarlyTheme } from '../../web/src/client/lib/theme-core.ts'; initEarlyTheme();`,
+        resolveDir: __dirname,
+        loader: 'ts',
+      },
+      bundle: true,
+      format: 'iife',
+      outfile,
+      platform: 'browser',
+      minify: false,
+    });
+  }
+
+  return {
+    name: 'build-theme-init',
+    async buildStart() {
+      await generate();
+    },
+    configureServer(server) {
+      const pending = generate().catch((e) => {
+        server.config.logger.error(`[build-theme-init] Failed to generate theme-init.js: ${e}`);
+      });
+      server.middlewares.use('/theme-init.js', async (_req, _res, next) => {
+        await pending;
+        next();
+      });
+    },
+  };
+}
 
 export default defineConfig(() => ({
   plugins: [
+    buildThemeInit(),
     electron([
       {
         entry: 'src/main/index.ts',
