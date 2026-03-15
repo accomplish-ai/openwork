@@ -1,15 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getAccomplish } from '@/lib/accomplish';
-
-// Local type matching the shape returned by accomplish.getSandboxConfig()
-interface SandboxConfigShape {
-  mode: string;
-  allowedPaths: string[];
-  networkRestricted: boolean;
-  allowedHosts: string[];
-  dockerImage?: string;
-  networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
-}
+import type { SandboxConfig } from '@accomplish_ai/agent-core';
 
 interface SandboxSectionProps {
   visible: boolean;
@@ -17,7 +8,7 @@ interface SandboxSectionProps {
 
 export function SandboxSection({ visible }: SandboxSectionProps) {
   const [sandboxEnabled, setSandboxEnabled] = useState(false);
-  const [sandboxConfig, setSandboxConfig] = useState<SandboxConfigShape | null>(null);
+  const [sandboxConfig, setSandboxConfig] = useState<SandboxConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const accomplish = getAccomplish();
 
@@ -41,7 +32,7 @@ export function SandboxSection({ visible }: SandboxSectionProps) {
 
     // Round-trip the full existing config, only mutating the mode, so
     // allowedPaths / allowedHosts / networkRestricted are preserved.
-    const updated: SandboxConfigShape = {
+    const updated: SandboxConfig = {
       ...(sandboxConfig ?? { allowedPaths: [], networkRestricted: false, allowedHosts: [] }),
       mode: newMode,
     };

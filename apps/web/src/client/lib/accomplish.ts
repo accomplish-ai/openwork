@@ -26,7 +26,7 @@ import type {
   McpConnector,
   FileAttachmentInfo,
 } from '@accomplish_ai/agent-core/common';
-import type { StoredFavorite } from '@accomplish_ai/agent-core';
+import type { StoredFavorite, SandboxConfig } from '@accomplish_ai/agent-core';
 
 // Define the API interface
 interface AccomplishAPI {
@@ -374,22 +374,8 @@ interface AccomplishAPI {
   showSkillInFolder(filePath: string): Promise<void>;
 
   // Sandbox configuration
-  getSandboxConfig(): Promise<{
-    mode: string;
-    allowedPaths: string[];
-    networkRestricted: boolean;
-    allowedHosts: string[];
-    dockerImage?: string;
-    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
-  }>;
-  setSandboxConfig(config: {
-    mode: string;
-    allowedPaths: string[];
-    networkRestricted: boolean;
-    allowedHosts: string[];
-    dockerImage?: string;
-    networkPolicy?: { allowOutbound: boolean; allowedHosts?: string[] };
-  }): Promise<void>;
+  getSandboxConfig(): Promise<SandboxConfig>;
+  setSandboxConfig(config: SandboxConfig): Promise<void>;
 
   // MCP Connectors
   getConnectors(): Promise<McpConnector[]>;
