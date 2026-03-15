@@ -34,7 +34,11 @@ export class NativeSandboxProvider implements SandboxProvider {
 
   async wrapSpawnArgs(args: SpawnArgs, config: SandboxConfig): Promise<SpawnArgs> {
     const sandboxEnv = this.buildSandboxEnvironment(config);
-    const mergedEnv = { ...args.env, ...sandboxEnv };
+    const mergedEnv: Record<string, string> = Object.fromEntries(
+      Object.entries({ ...args.env, ...sandboxEnv }).filter(
+        (entry): entry is [string, string] => entry[1] !== undefined,
+      ),
+    );
 
     if (this.platform === 'darwin') {
       return this.wrapDarwin(args, config, mergedEnv);
